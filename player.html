@@ -1,225 +1,271 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoFlix Official - Style Cinema</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root { 
-            --gold: #FFD700; 
-            --bg: #000; 
-            --glass: rgba(255, 255, 255, 0.05);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CongoFlix</title>
 
-        body { 
-            margin: 0; 
-            background: radial-gradient(circle, #0a0a0a, #000); 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            color: white; 
-            overflow-x: hidden;
-        }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        /* 1. LECTEUR VIDEO PRO AVEC GLOW */
-        .video-box { 
-            position: relative; 
-            width: 100vw; 
-            aspect-ratio: 16/9; 
-            background: #000;
-            box-shadow: 0 0 30px rgba(255, 200, 0, 0.4);
-            margin-bottom: 10px;
-        }
-        iframe { width: 100%; height: 100%; border: none; display: block; }
-        
-        .back-btn { 
-            position: absolute; top: 12px; left: 12px; z-index: 10; 
-            width: 38px; height: 38px; border-radius: 50%; 
-            border: 1.5px solid var(--gold); display: flex; 
-            align-items: center; justify-content: center; 
-            color: var(--gold); background: rgba(0,0,0,0.5); 
-            text-decoration: none; 
-        }
+<style>
 
-        /* 2. TITRE & EPISODE (IDENTIQUE IMAGE GPT) */
-        .title-container { text-align: center; padding: 10px 0; }
-        .title { 
-            font-size: 28px; color: var(--gold); 
-            letter-spacing: 3px; font-weight: 900;
-            text-shadow: 0 0 20px var(--gold); 
-            margin: 0; text-transform: uppercase;
-        }
-        .episode { color: var(--gold); margin: 0; font-size: 20px; font-weight: bold; }
+:root{
+--gold:#FFD700;
+--bg:#000;
+--glass:rgba(255,255,255,0.05);
+}
 
-        /* 3. BARRE D'ACTIONS (FAVORIS ÉTOILE) */
-        .stats { 
-            display: flex; justify-content: space-around; 
-            margin: 15px 0; color: var(--gold); 
-            font-weight: bold; 
-        }
-        .act-item { text-align: center; cursor: pointer; }
-        .act-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+/* BASE */
+body{
+margin:0;
+background:radial-gradient(circle at top,#0a0a0a,#000);
+color:white;
+font-family:Segoe UI;
+}
 
-        /* 4. EFFET VITRINE (GLASS-BOX) */
-        .container { padding: 0 20px 40px; }
-        .glass-box { 
-            background: var(--glass); 
-            backdrop-filter: blur(10px); 
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 200, 0, 0.3); 
-            border-radius: 15px; 
-            padding: 20px; 
-            box-shadow: 0 0 25px rgba(255, 200, 0, 0.2);
-            margin: 20px 0;
-        }
-        #txtDesc { font-size: 14px; line-height: 1.6; color: #ccc; margin: 0; }
+/* VIDEO CINEMA */
+.video-box{
+width:100%;
+aspect-ratio:16/9;
+position:relative;
+overflow:hidden;
+}
 
-        /* 5. CASTING VISUAL (CERCLÉ) */
-        .section { color: var(--gold); letter-spacing: 2px; font-size: 14px; font-weight: bold; margin-bottom: 15px; }
-        .casting { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
-        .casting::-webkit-scrollbar { display: none; }
-        .actor-unit { flex-shrink: 0; text-align: center; width: 75px; }
-        .actor-unit img { 
-            width: 70px; height: 70px; border-radius: 50%; 
-            border: 2px solid var(--gold); object-fit: cover;
-            box-shadow: 0 0 10px var(--gold); margin-bottom: 5px;
-        }
+.video-box::after{
+content:"";
+position:absolute;
+inset:0;
+background:linear-gradient(to top,#000 5%,transparent);
+}
 
-        /* MODULE COMMENTAIRES (DRAWER) */
-        #tkDrawer { 
-            position: fixed; bottom: 0; width: 100%; height: 75vh; 
-            background: #121212; border-radius: 20px 20px 0 0; 
-            transform: translateY(100%); transition: 0.3s; z-index: 2000;
-            display: flex; flex-direction: column;
-        }
-        #tkDrawer.active { transform: translateY(0); }
-        .tk-header { padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #222; }
-        .tk-list { flex: 1; overflow-y: auto; padding: 20px; }
-        .tk-input-box { padding: 10px 15px 30px; display: flex; gap: 10px; border-top: 1px solid #222; }
-        .input-pill { flex: 1; background: #262626; border-radius: 20px; padding: 0 15px; }
-        #tkField { width: 100%; background: transparent; border: none; color: white; padding: 10px 0; outline: none; }
-    </style>
+/* BACK */
+.back-btn{
+position:absolute;
+top:15px;
+left:15px;
+width:42px;
+height:42px;
+border-radius:50%;
+border:1px solid var(--gold);
+display:flex;
+align-items:center;
+justify-content:center;
+color:var(--gold);
+background:rgba(0,0,0,0.5);
+backdrop-filter:blur(8px);
+}
+
+/* ACTIONS */
+.actions{
+display:flex;
+justify-content:space-around;
+padding:18px 0;
+}
+
+.act-item{
+text-align:center;
+flex:1;
+color:#aaa;
+font-size:12px;
+}
+
+.act-item i{
+font-size:22px;
+color:var(--gold);
+display:block;
+margin-bottom:5px;
+text-shadow:0 0 10px var(--gold);
+}
+
+/* TITRE */
+#txtTitle{
+font-size:32px;
+text-align:center;
+color:var(--gold);
+font-weight:900;
+letter-spacing:3px;
+text-shadow:0 0 20px var(--gold);
+}
+
+/* DESCRIPTION VITRINE */
+#txtDesc{
+margin:20px;
+padding:20px;
+border-radius:15px;
+background:var(--glass);
+backdrop-filter:blur(12px);
+border:1px solid rgba(255,215,0,0.3);
+box-shadow:0 0 25px rgba(255,215,0,0.2);
+color:#ddd;
+}
+
+/* CAST */
+.cast-label{
+margin-left:20px;
+color:var(--gold);
+font-weight:bold;
+letter-spacing:2px;
+}
+
+.cast-row{
+display:flex;
+gap:15px;
+overflow-x:auto;
+padding:20px;
+}
+
+.actor img{
+width:75px;
+height:75px;
+border-radius:50%;
+border:2px solid var(--gold);
+box-shadow:0 0 12px var(--gold);
+}
+
+/* COMMENTS */
+#tkDrawer{
+position:fixed;
+bottom:0;
+width:100%;
+height:75vh;
+background:rgba(15,15,15,0.95);
+backdrop-filter:blur(15px);
+border-top:1px solid rgba(255,215,0,0.2);
+transform:translateY(100%);
+transition:0.3s;
+display:flex;
+flex-direction:column;
+}
+
+#tkDrawer.active{
+transform:translateY(0);
+}
+
+.tk-header{
+padding:15px;
+text-align:center;
+color:var(--gold);
+text-shadow:0 0 10px var(--gold);
+}
+
+.tk-list{
+flex:1;
+overflow:auto;
+padding:15px;
+}
+
+.comment{
+display:flex;
+gap:10px;
+margin-bottom:20px;
+}
+
+.c-avatar{
+width:36px;
+height:36px;
+border-radius:50%;
+border:1px solid var(--gold);
+}
+
+.c-text{
+color:#eee;
+}
+
+.input-pill{
+background:rgba(255,255,255,0.08);
+border-radius:20px;
+padding:5px 15px;
+flex:1;
+}
+
+#tkField{
+background:none;
+border:none;
+color:white;
+width:100%;
+}
+
+.tk-send{
+color:var(--gold);
+font-size:22px;
+background:none;
+border:none;
+}
+
+</style>
 </head>
+
 <body>
 
-    <div class="video-box">
-        <a href="javascript:history.back()" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
-        <div id="playerRoot" style="width:100%; height:100%;"></div>
-    </div>
+<div class="video-box">
+<a href="javascript:history.back()" class="back-btn">
+<i class="fa-solid fa-arrow-left"></i>
+</a>
 
-    <div class="title-container">
-        <h1 class="title" id="txtTitle">Chargement...</h1>
-        <h2 class="episode">EPISODE <span id="epNum">01</span></h2>
-    </div>
+<div id="playerRoot" style="width:100%;height:100%"></div>
+</div>
 
-    <div class="stats">
-        <div class="act-item"><i class="fa-solid fa-eye"></i> <span id="statV">0</span></div>
-        <div class="act-item" id="mainLikeBtn"><i class="fa-solid fa-heart"></i> <span id="statL">0</span></div>
-        <div class="act-item" onclick="toggleTk()"><i class="fa-solid fa-comment"></i> <span id="statC">0</span></div>
-        <div class="act-item" id="mainFavBtn"><i class="fa-solid fa-star"></i> <span>FAVORIS</span></div>
-    </div>
+<div class="actions">
+<div class="act-item"><i class="fa-solid fa-eye"></i><span id="statV">0</span></div>
+<div class="act-item" id="mainLikeBtn"><i class="fa-solid fa-heart"></i><span id="statL">0</span></div>
+<div class="act-item" onclick="toggleTk()"><i class="fa-solid fa-comment"></i><span id="statC">0</span></div>
+<div class="act-item"><i class="fa-solid fa-star"></i><span>Favoris</span></div>
+</div>
 
-    <div class="container">
-        <div class="glass-box">
-            <p id="txtDesc">...</p>
-        </div>
+<h1 id="txtTitle">Chargement...</h1>
 
-        <h3 class="section">CASTING VISUAL</h3>
-        <div id="rowCast" class="casting">
-            </div>
-    </div>
+<div id="txtDesc">...</div>
 
-    <div id="tkDrawer">
-        <div class="tk-header">COMMENTAIRES <i class="fa-solid fa-xmark" style="float:right" onclick="toggleTk()"></i></div>
-        <div id="tkList" class="tk-list"></div>
-        <div class="tk-input-box">
-            <div class="input-pill"><input type="text" id="tkField" placeholder="Votre avis..."></div>
-            <button style="background:none; border:none; color:var(--gold); font-size:20px;" onclick="handlePost()"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
-    </div>
+<span class="cast-label">CASTING VISUAL</span>
+<div id="rowCast" class="cast-row"></div>
+
+<!-- COMMENTS -->
+<div id="tkDrawer">
+<div class="tk-header">
+<span id="hCount">0</span> COMMENTAIRES
+</div>
+
+<div id="tkList" class="tk-list"></div>
+
+<div style="display:flex;padding:10px;gap:10px;">
+<input id="tkField" placeholder="Commentaire..." style="flex:1;background:#222;border:none;color:white;padding:10px;border-radius:20px;">
+<button id="tkSend"><i class="fa-solid fa-paper-plane"></i></button>
+</div>
+</div>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
-        authDomain: "congo-streaming-51333.firebaseapp.com",
-        projectId: "congo-streaming-51333",
-        appId: "1:304286627819:android:36e0b43b8b10508a054bae"
-    };
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const params = new URLSearchParams(window.location.search);
-    const filmId = params.get('id') || "MUSHOTA_VS_KARANI_01";
-    const userId = localStorage.getItem('user_id') || "U" + Math.floor(Math.random()*9999);
+const app = initializeApp({
+apiKey:"AIzaSyCoWWX...",
+authDomain:"congo-streaming-51333.firebaseapp.com",
+projectId:"congo-streaming-51333"
+});
 
-    // SYNCHRONISATION FIREBASE
-    onSnapshot(doc(db, "films", filmId), (snapshot) => {
-        const data = snapshot.data();
-        if(!data) return;
+const db = getFirestore(app);
 
-        document.getElementById('txtTitle').innerText = data.titre || filmId.replace(/_/g, ' ');
-        document.getElementById('txtDesc').innerText = data.description || "Pas de description.";
-        document.getElementById('statV').innerText = data.views || 0;
-        document.getElementById('statL').innerText = (data.likes || []).length;
+onSnapshot(doc(db,"films","MUSHOTA_VS_KARANI_01"),(snap)=>{
+const d=snap.data();
+if(!d)return;
 
-        // Player
-        if(!document.getElementById('playerRoot').innerHTML && data.url) {
-            document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
-        }
+txtTitle.innerText=d.titre || "MUSHOTA VS KARANI";
+txtDesc.innerText=d.description || "...";
 
-        // Casting
-        const acteurs = data.acteurs || [];
-        document.getElementById('rowCast').innerHTML = acteurs.map(url => `
-            <div class="actor-unit">
-                <img src="${url}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
-                <b style="font-size:10px">CAST</b>
-            </div>
-        `).join('');
+statV.innerText=d.views||0;
+statL.innerText=(d.likes||[]).length;
 
-        // Commentaires
-        const comms = (data.comments || []).filter(c => typeof c === 'object');
-        document.getElementById('statC').innerText = comms.length;
-        document.getElementById('tkList').innerHTML = comms.slice().reverse().map(c => `
-            <div style="display:flex; gap:10px; margin-bottom:15px">
-                <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:30px; height:30px; border-radius:50%">
-                <div>
-                    <div style="font-size:11px; color:var(--gold); font-weight:bold">${c.nom}</div>
-                    <div style="font-size:13px">${c.text}</div>
-                </div>
-            </div>
-        `).join('');
-    });
+if(!playerRoot.innerHTML && d.url){
+playerRoot.innerHTML=`<iframe src="${d.url}"></iframe>`;
+}
+});
 
-    // ACTIONS
-    window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
-    
-    window.handlePost = async () => {
-        const val = document.getElementById('tkField').value.trim();
-        if(!val) return;
-        const ref = doc(db, "films", filmId);
-        const snap = await getDoc(ref);
-        let allComms = (snap.data().comments || []).filter(c => typeof c === 'object');
-        
-        allComms.push({ 
-            id: "C-"+Date.now(), 
-            nom: localStorage.getItem('user_name') || "Fan CongoFlix", 
-            text: val, 
-            photo: localStorage.getItem('user_img'), 
-            date: Date.now() 
-        });
-        
-        await updateDoc(ref, { comments: allComms });
-        document.getElementById('tkField').value = "";
-    };
+window.toggleTk=()=>{
+tkDrawer.classList.toggle("active");
+}
 
-    document.getElementById('mainLikeBtn').onclick = async () => {
-        const ref = doc(db, "films", filmId);
-        const s = await getDoc(ref);
-        const l = s.data().likes || [];
-        await updateDoc(ref, { likes: l.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) });
-    };
 </script>
+
 </body>
 </html>
