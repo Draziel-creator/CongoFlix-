@@ -19,21 +19,20 @@
         .act-item { text-align: center; color: #888; font-size: 11px; flex: 1; cursor: pointer; }
         .act-item i { font-size: 24px; color: var(--gold); margin-bottom: 4px; display: block; }
 
-        /* ÉTAPE ACTUELLE : INFOS FILM & CASTING RÉTABLIS */
+        /* INFOS FILM & CASTING */
         .info-pane { padding: 20px; }
         #txtTitle { font-size: 26px; color: var(--gold); font-weight: 900; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 1px; }
-        #txtDesc { font-size: 14px; color: #ccc; line-height: 1.6; border-left: 4px solid var(--gold); padding-left: 15px; margin-bottom: 30px; text-align: justify; }
+        #txtDesc { font-size: 14px; color: #ccc; line-height: 1.6; border-left: 4px solid var(--gold); padding-left: 15px; margin-bottom: 30px; }
         
-        .cast-label { color: var(--gold); font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; display: block; }
+        .cast-label { color: var(--gold); font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; display: block; }
         .cast-row { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: none; }
         .cast-row::-webkit-scrollbar { display: none; }
         
-        .actor { flex-shrink: 0; width: 85px; text-align: center; transition: 0.3s; }
-        .actor:active { transform: scale(0.9); }
-        .actor img { width: 75px; height: 75px; border-radius: 50%; border: 2.5px solid var(--gold); object-fit: cover; margin-bottom: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .actor b { font-size: 11px; color: #fff; display: block; line-height: 1.3; font-weight: 600; }
+        .actor { flex-shrink: 0; width: 85px; text-align: center; }
+        .actor img { width: 75px; height: 75px; border-radius: 50%; border: 2.5px solid var(--gold); object-fit: cover; margin-bottom: 8px; }
+        .actor b { font-size: 11px; color: #fff; display: block; line-height: 1.3; }
 
-        /* MODULE COMMENTAIRES TIKTOK AVEC POCHE DE RÉPONSES */
+        /* MODULE COMMENTAIRES TIKTOK */
         #tkDrawer { position: fixed; bottom: 0; width: 100%; height: 75vh; background: var(--tk-gray); border-radius: 12px 12px 0 0; transform: translateY(100%); transition: 0.3s cubic-bezier(0.2, 0, 0, 1); z-index: 2000; display: flex; flex-direction: column; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
         #tkDrawer.active { transform: translateY(0); }
         .tk-header { padding: 15px; text-align: center; font-size: 13px; font-weight: bold; border-bottom: 0.5px solid #222; position: relative; }
@@ -47,12 +46,12 @@
         .c-text { font-size: 14px; color: #eee; line-height: 1.4; }
         .c-foot { display: flex; gap: 15px; margin-top: 8px; font-size: 11px; color: #555; font-weight: bold; cursor: pointer; }
 
-        /* LIKE DU COMMENTAIRE (FIREBASE SYNC) */
+        /* LIKE DU COMMENTAIRE */
         .c-like-zone { text-align: center; color: #444; min-width: 35px; cursor: pointer; }
         .c-like-zone i { font-size: 18px; display: block; margin-bottom: 2px; transition: 0.2s; }
         .c-like-zone i.active { color: #ff3b5c; }
 
-        /* POCHE DE RÉPONSES ACCORDÉON */
+        /* POCHE DE RÉPONSES */
         .replies-toggle { margin-top: 12px; font-size: 12px; color: #555; display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold; }
         .replies-toggle::before { content: ""; width: 25px; height: 1px; background: #333; display: inline-block; }
         .replies-pocket { display: none; margin-top: 15px; padding-left: 15px; border-left: 1px solid #222; }
@@ -60,7 +59,7 @@
         .reply-item { display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-start; }
         .r-avatar { width: 24px; height: 24px; border-radius: 50%; }
 
-        /* BARRE D'ENTRÉE TIKTOK */
+        /* BARRE D'ENTRÉE */
         .tk-input-box { padding: 10px 15px 30px; background: var(--tk-gray); border-top: 0.5px solid #222; display: flex; align-items: center; gap: 12px; }
         .input-pill { flex: 1; background: var(--tk-input); border-radius: 22px; display: flex; align-items: center; padding: 0 15px; }
         #tkField { flex: 1; background: transparent; border: none; color: #fff; padding: 10px 0; font-size: 14px; outline: none; }
@@ -83,7 +82,7 @@
     </div>
 
     <div class="info-pane">
-        <h1 id="txtTitle">CHARGEMENT...</h1>
+        <h1 id="txtTitle">Chargement...</h1>
         <div id="txtDesc">...</div>
         <span class="cast-label">Casting du film</span>
         <div id="rowCast" class="cast-row"></div>
@@ -131,36 +130,36 @@
         const data = snapshot.data();
         if(!data) return;
 
-        // MISE À JOUR TITRE ET DESCRIPTION
-        document.getElementById('txtTitle').innerText = data.titre || data.title || "Film Inconnu";
-        document.getElementById('txtDesc').innerText = data.description || "Aucune description disponible pour ce film.";
+        // FIX : On vérifie les deux orthographes possibles pour éviter le "undefined"
+        document.getElementById('txtTitle').innerText = data.titre || data.title || "Titre non disponible";
+        document.getElementById('txtDesc').innerText = data.description || "Pas de description.";
         
         document.getElementById('statV').innerText = data.views || 0;
         document.getElementById('statL').innerText = (data.likes || []).length;
         document.getElementById('statC').innerText = (data.comments || []).length;
         document.getElementById('hCount').innerText = (data.comments || []).length;
 
-        if(!document.getElementById('playerRoot').innerHTML) {
+        if(!document.getElementById('playerRoot').innerHTML && data.url) {
             document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
         }
 
-        // MISE À JOUR DU CASTING (AVEC PHOTOS ET NOMS)
-        if(data.acteurs_full) {
-            document.getElementById('rowCast').innerHTML = data.acteurs_full.map(a => `
-                <div class="actor" onclick="alert('Profil de ${a.nom}')">
+        // FIX CASTING : On s'assure que acteurs_full est bien parcouru
+        const acteurs = data.acteurs_full || data.acteurs || [];
+        if(acteurs.length > 0) {
+            document.getElementById('rowCast').innerHTML = acteurs.map(a => `
+                <div class="actor">
                     <img src="${a.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}">
-                    <b>${a.nom}</b>
+                    <b>${a.nom || a.name || 'Acteur'}</b>
                 </div>
             `).join('');
         } else {
-            document.getElementById('rowCast').innerHTML = "<p style='font-size:11px; color:#555;'>Casting non renseigné</p>";
+            document.getElementById('rowCast').innerHTML = "<p style='color:#444; font-size:12px'>Casting bientôt disponible</p>";
         }
 
         const comms = data.comments || [];
         document.getElementById('tkList').innerHTML = comms.slice().reverse().map(c => {
             const replies = c.replies || [];
             const hasLiked = (c.likedBy || []).includes(userId);
-            
             return `
             <div class="comment">
                 <img src="${c.photo || userImg}" class="c-avatar">
@@ -168,10 +167,9 @@
                     <div class="c-user">${c.nom}</div>
                     <div class="c-text">${c.text}</div>
                     <div class="c-foot"><span onclick="prepareReply('${c.id}', '${c.nom}')">Répondre</span></div>
-                    
                     ${replies.length > 0 ? `
                         <div class="replies-toggle" onclick="togglePocket(this)">
-                            Afficher les réponses (${replies.length}) <i class="fa-solid fa-chevron-down" style="font-size:10px"></i>
+                            Afficher les réponses (${replies.length}) <i class="fa-solid fa-chevron-down"></i>
                         </div>
                         <div class="replies-pocket">
                             ${replies.map(r => `
@@ -215,15 +213,7 @@
                 return c;
             });
         } else {
-            allComments.push({
-                id: "C-" + Date.now(),
-                nom: userName,
-                text: val,
-                photo: userImg,
-                date: Date.now(),
-                likedBy: [],
-                replies: []
-            });
+            allComments.push({ id: "C-" + Date.now(), nom: userName, text: val, photo: userImg, date: Date.now(), likedBy: [], replies: [] });
         }
         await updateDoc(doc(db, "films", filmId), { comments: allComments });
         document.getElementById('tkField').value = "";
@@ -236,11 +226,7 @@
         const updated = (snap.data().comments || []).map(c => {
             if(c.id === cid) {
                 let currentLikes = c.likedBy || [];
-                if(currentLikes.includes(userId)) {
-                    currentLikes = currentLikes.filter(uid => uid !== userId);
-                } else {
-                    currentLikes.push(userId);
-                }
+                currentLikes = currentLikes.includes(userId) ? currentLikes.filter(u => u !== userId) : [...currentLikes, userId];
                 return {...c, likedBy: currentLikes};
             }
             return c;
@@ -250,18 +236,12 @@
 
     window.togglePocket = (el) => {
         const pocket = el.nextElementSibling;
-        const icon = el.querySelector('i');
         const isOpen = pocket.classList.toggle('open');
-        icon.className = isOpen ? "fa-solid fa-chevron-up" : "fa-solid fa-chevron-down";
-        el.firstChild.textContent = isOpen ? "Masquer les réponses " : `Afficher les réponses (${pocket.children.length}) `;
+        el.querySelector('i').className = isOpen ? "fa-solid fa-chevron-up" : "fa-solid fa-chevron-down";
     };
 
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
-    
-    document.getElementById('tkField').oninput = function() {
-        document.getElementById('tkSend').classList.toggle('active', this.value.length > 0);
-    };
-
+    document.getElementById('tkField').oninput = function() { document.getElementById('tkSend').classList.toggle('active', this.value.length > 0); };
     document.getElementById('mainLikeBtn').onclick = async () => {
         const ref = doc(db, "films", filmId);
         const s = await getDoc(ref);
