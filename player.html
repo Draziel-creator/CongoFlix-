@@ -3,94 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CongoFlix - Visionnage Pro</title>
+    <title>CongoFlix - Visionnage Premium</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --gold: #ffd700; --bg: #000; --card: #111; --gray: #222; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        :root { --gold: #ffd700; --bg: #000; --card: #0a0a0a; --glass: rgba(255, 255, 255, 0.05); }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
         
-        /* HEADER CINÉMATIQUE */
-        .player-header { width: 100%; position: relative; aspect-ratio: 16/9; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        /* HEADER & LECTEUR */
+        .player-header { width: 100%; position: relative; aspect-ratio: 16/9; background: #000; }
         .back-btn { 
             position: absolute; top: 15px; left: 15px; z-index: 100;
-            width: 35px; height: 35px; border-radius: 50%;
+            width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--gold);
             display: flex; align-items: center; justify-content: center;
-            color: #fff; background: rgba(0,0,0,0.6); text-decoration: none; font-size: 18px; border: 1px solid rgba(255,255,255,0.2);
+            color: var(--gold); background: rgba(0,0,0,0.7); text-decoration: none;
         }
 
-        /* BARRE DE STATS ÉPURÉE */
-        .stats-bar { display: flex; justify-content: space-around; padding: 15px 10px; background: linear-gradient(to bottom, #111, #000); border-bottom: 1px solid #1a1a1a; }
-        .stat-item { display: flex; flex-direction: column; align-items: center; font-size: 12px; color: #aaa; cursor: pointer; transition: 0.3s; }
-        .stat-item i { font-size: 20px; color: var(--gold); margin-bottom: 4px; }
-        .stat-item:active { transform: scale(0.9); }
+        /* STATS BAR */
+        .stats-bar { display: flex; justify-content: space-around; padding: 15px; background: var(--card); border-bottom: 1px solid #1a1a1a; }
+        .stat-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #777; cursor: pointer; }
+        .stat-item i { font-size: 22px; color: var(--gold); margin-bottom: 4px; }
 
-        /* CONTENT PROFESSIONNEL */
-        .content { padding: 25px 20px; }
-        .movie-title { font-size: 28px; color: #fff; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
-        .movie-desc { font-size: 14px; color: #999; margin-top: 15px; line-height: 1.6; text-align: justify; border-left: 3px solid var(--gold); padding-left: 15px; }
+        /* DESCRIPTION STYLE UNIQUE */
+        .content { padding: 20px; }
+        .movie-title { font-size: 26px; color: var(--gold); margin: 0; font-weight: 900; text-transform: uppercase; }
+        .desc-container { 
+            margin-top: 15px; padding: 15px; background: var(--glass); 
+            border-radius: 4px 20px 4px 20px; border-left: 4px solid var(--gold);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .movie-desc { font-size: 14px; color: #ccc; line-height: 1.6; margin: 0; font-style: italic; }
 
-        /* CASTING LISTE VERTICALE */
-        .cast-section { margin-top: 30px; }
-        .cast-title { font-size: 13px; color: var(--gold); font-weight: bold; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
-        .cast-container { display: flex; flex-direction: column; gap: 15px; }
-        .actor-row { display: flex; align-items: center; gap: 15px; background: #0a0a0a; padding: 10px; border-radius: 50px 15px 15px 50px; border: 1px solid #151515; }
-        .actor-img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; }
-        .actor-name { font-size: 15px; font-weight: 600; color: #eee; }
+        /* CASTING : IMAGES HORIZONTALES + NOMS VERTICAUX */
+        .cast-section { margin-top: 25px; }
+        .cast-title { font-size: 14px; color: var(--gold); font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; }
+        .cast-wrapper { display: flex; flex-direction: column; gap: 15px; }
+        .cast-imgs-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; }
+        .actor-circle { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; flex-shrink: 0; }
+        .cast-names-list { display: flex; flex-direction: column; gap: 5px; border-top: 1px solid #222; padding-top: 10px; }
+        .actor-name-item { font-size: 13px; color: #888; display: flex; align-items: center; }
+        .actor-name-item::before { content: "•"; color: var(--gold); margin-right: 8px; }
 
         /* COMMENTAIRES STYLE TIKTOK */
-        #commentPocket { position: fixed; bottom: 0; width: 100%; height: 75vh; background: #0f0f0f; border-radius: 20px 20px 0 0; transform: translateY(100%); transition: 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.1); z-index: 1000; padding: 20px; box-sizing: border-box; }
+        #commentPocket { 
+            position: fixed; bottom: 0; width: 100%; height: 75vh; 
+            background: #0d0d0d; border-radius: 15px 15px 0 0; 
+            transform: translateY(100%); transition: 0.4s; z-index: 1000; 
+            padding: 20px; box-sizing: border-box; display: flex; flex-direction: column;
+        }
         #commentPocket.active { transform: translateY(0); }
-        .comment-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px; }
+        .tk-header { font-size: 13px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 10px; }
         
-        .tiktok-comment { display: flex; gap: 12px; margin-bottom: 20px; }
-        .tk-avatar { width: 35px; height: 35px; border-radius: 50%; background: var(--gray); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--gold); flex-shrink: 0; border: 1px solid #333; }
-        .tk-body { flex: 1; }
-        .tk-user { font-size: 13px; color: #888; font-weight: bold; margin-bottom: 2px; }
-        .tk-text { font-size: 14px; color: #efefef; line-height: 1.4; }
-        .tk-footer { font-size: 11px; color: #555; margin-top: 5px; display: flex; gap: 15px; }
-        .tk-reply { font-weight: bold; color: #777; cursor: pointer; }
+        #commentList { flex: 1; overflow-y: auto; }
+        .tk-comment { display: flex; gap: 12px; margin-bottom: 20px; animation: fadeIn 0.3s; }
+        .tk-avatar { width: 35px; height: 35px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; color: var(--gold); font-weight: bold; flex-shrink: 0; }
+        .tk-user { font-size: 12px; color: #666; font-weight: bold; }
+        .tk-text { font-size: 14px; color: #eee; margin-top: 2px; }
+        .tk-reply { font-size: 11px; color: #444; margin-top: 5px; font-weight: bold; }
 
-        .input-area { display: flex; gap: 10px; margin-top: 10px; background: #1a1a1a; padding: 10px; border-radius: 30px; border: 1px solid #333; }
-        #commInput { flex: 1; background: none; border: none; color: #fff; outline: none; padding-left: 10px; font-size: 14px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .tk-input-box { display: flex; gap: 10px; padding: 15px 0; border-top: 1px solid #222; }
+        #commInput { flex: 1; background: #1a1a1a; border: none; color: #fff; padding: 10px 15px; border-radius: 25px; outline: none; }
     </style>
 </head>
 <body>
 
     <div class="player-header">
-        <a onclick="history.back()" class="back-btn"><i class="fa-solid fa-chevron-left"></i></a>
-        <div id="videoContainer" style="width:100%; height:100%;">
-            </div>
+        <a onclick="history.back()" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+        <div id="videoContainer" style="width:100%; height:100%;"></div>
     </div>
 
     <div class="stats-bar">
-        <div class="stat-item"><i class="fa-solid fa-play-circle"></i> <span id="v-count">0</span></div>
+        <div class="stat-item"><i class="fa-solid fa-eye"></i> <span id="v-count">0</span></div>
         <div class="stat-item" onclick="handleLike()"><i class="fa-solid fa-heart"></i> <span id="l-count">0</span></div>
-        <div class="stat-item" onclick="toggleComments()"><i class="fa-solid fa-comment-dots"></i> <span id="c-count">0</span></div>
-        <div class="stat-item" onclick="handleFavoris()"><i class="fa-solid fa-star"></i> <span>Favoris</span></div>
+        <div class="stat-item" onclick="toggleComments()"><i class="fa-solid fa-comment"></i> <span id="c-count">0</span></div>
+        <div class="stat-item" onclick="handleFavoris()"><i class="fa-solid fa-star"></i> <span id="fav-status">Favoris</span></div>
     </div>
 
     <div class="content">
         <h1 id="movieTitle" class="movie-title">...</h1>
-        <p id="movieDesc" class="movie-desc">Chargement des données...</p>
+        <div class="desc-container">
+            <p id="movieDesc" class="movie-desc">...</p>
+        </div>
 
         <div class="cast-section">
-            <div class="cast-title">Acteurs & Rôles</div>
-            <div id="castList" class="cast-container">
-                </div>
+            <div class="cast-title">Casting & Équipe</div>
+            <div class="cast-wrapper">
+                <div id="castImgs" class="cast-imgs-row"></div>
+                <div id="castNames" class="cast-names-list"></div>
+            </div>
         </div>
     </div>
 
     <div id="commentPocket">
-        <div class="comment-header">
-            <span style="font-weight: bold;"><span id="c-count-top">0</span> commentaires</span>
-            <i class="fa-solid fa-xmark" onclick="toggleComments()" style="font-size: 20px; color: #555;"></i>
-        </div>
-        
-        <div id="commentList" style="height:calc(100% - 100px); overflow-y:auto; padding-right: 5px;"></div>
-        
-        <div class="input-area">
+        <div class="tk-header"><span id="c-count-top">0</span> commentaires</div>
+        <div id="commentList"></div>
+        <div class="tk-input-box">
             <input type="text" id="commInput" placeholder="Ajouter un commentaire...">
-            <button onclick="sendComment()" style="background:none; border:none; color:var(--gold); font-size:18px;"><i class="fa-solid fa-paper-plane"></i></button>
+            <button onclick="sendComment()" style="background:none; border:none; color:var(--gold); font-size:22px;"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
 
@@ -113,10 +123,6 @@
     const urlParams = new URLSearchParams(window.location.search);
     let filmId = urlParams.get('id') || localStorage.getItem('film_choisi');
 
-    // Récupération des infos utilisateur (depuis ton espace compte)
-    const userName = localStorage.getItem('user_name') || "Fan CongoFlix";
-    const userPhoto = localStorage.getItem('user_photo') || "";
-
     async function loadFilm() {
         if(!filmId) return;
         const filmRef = doc(db, "films", filmId);
@@ -125,7 +131,7 @@
             const data = s.data();
             if(!data) return;
 
-            // Gestion du lecteur (Iframe ou Direct)
+            // Lecteur
             const videoContainer = document.getElementById('videoContainer');
             if(data.url.includes('embed') || data.url.includes('vip')) {
                 videoContainer.innerHTML = `<iframe src="${data.url}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>`;
@@ -133,67 +139,56 @@
                 videoContainer.innerHTML = `<video src="${data.url}" controls poster="${data.poster}" style="width:100%; height:100%;"></video>`;
             }
 
-            document.getElementById('movieTitle').innerText = data.title || "Sans titre";
-            document.getElementById('movieDesc').innerText = data.description || "Aucune description disponible.";
+            // Infos
+            document.getElementById('movieTitle').innerText = data.title || "SANS TITRE";
+            document.getElementById('movieDesc').innerText = data.description || "Pas de description.";
             document.getElementById('v-count').innerText = data.views || 0;
             document.getElementById('l-count').innerText = data.likes?.length || 0;
-            document.getElementById('c-count').innerText = (data.comments || []).length;
-            document.getElementById('c-count-top').innerText = (data.comments || []).length;
+            const nbComm = (data.comments || []).length;
+            document.getElementById('c-count').innerText = nbComm;
+            document.getElementById('c-count-top').innerText = nbComm;
 
-            // Remplissage Casting Vertical avec Noms
-            const castDiv = document.getElementById('castList');
-            const noms = data.acteurs_noms || []; // Champ à ajouter dans Firebase si tu veux les vrais noms
-            castDiv.innerHTML = (data.acteurs || []).map((url, i) => `
-                <div class="actor-row">
-                    <img src="${url}" class="actor-img">
-                    <span class="actor-name">${noms[i] || "Acteur " + (i+1)}</span>
-                </div>
-            `).join('');
+            // Casting
+            const castImgs = document.getElementById('castImgs');
+            const castNames = document.getElementById('castNames');
+            const noms = data.acteurs_noms || [];
+            
+            castImgs.innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-circle">`).join('');
+            castNames.innerHTML = (data.acteurs || []).map((_, i) => `<div class="actor-name-item">${noms[i] || "Acteur " + (i+1)}</div>`).join('');
 
-            // Remplissage Commentaires TikTok
+            // Commentaires
             const cList = document.getElementById('commentList');
-            cList.innerHTML = (data.comments || []).reverse().map(c => `
-                <div class="tiktok-comment">
-                    <div class="tk-avatar">${c.nom ? c.nom.charAt(0).toUpperCase() : 'F'}</div>
+            cList.innerHTML = (data.comments || []).slice().reverse().map(c => `
+                <div class="tk-comment">
+                    <div class="tk-avatar">${(c.nom || "F").charAt(0).toUpperCase()}</div>
                     <div class="tk-body">
-                        <div class="tk-user">@${c.nom.toLowerCase().replace(/\s/g, '')}</div>
+                        <div class="tk-user">${c.nom || "Fan CongoFlix"}</div>
                         <div class="tk-text">${c.text}</div>
-                        <div class="tk-footer">
-                            <span>${new Date(c.date).toLocaleDateString()}</span>
-                            <span class="tk-reply">Répondre</span>
-                        </div>
+                        <div class="tk-reply">Répondre</div>
                     </div>
                 </div>
             `).join('');
         });
 
-        await updateDoc(filmRef, { views: increment(1) }).catch(e => console.log(e));
+        updateDoc(filmRef, { views: increment(1) }).catch(e => console.log(e));
     }
 
-    // FONCTION FAVORIS (Envoyer vers "ma liste")
+    // GESTION FAVORIS (Correction AppCreator24)
     window.handleFavoris = () => {
-        let favoris = JSON.parse(localStorage.getItem('ma_liste')) || [];
-        if(!favoris.includes(filmId)) {
-            favoris.push(filmId);
-            localStorage.setItem('ma_liste', JSON.stringify(favoris));
-            alert("Ajouté à votre liste !");
-        } else {
-            alert("Déjà dans vos favoris.");
-        }
+        // Envoi l'ID à l'application AppCreator24 pour la section "Ma Liste"
+        window.location.href = "appcreator24://favoris/" + filmId;
+        document.getElementById('fav-status').innerText = "Ajouté !";
     };
 
-    window.handleLike = () => updateDoc(doc(db, "films", filmId), { likes: arrayUnion(userName) });
+    window.handleLike = () => updateDoc(doc(db, "films", filmId), { likes: arrayUnion("user_" + Date.now()) });
     window.toggleComments = () => document.getElementById('commentPocket').classList.toggle('active');
     
     window.sendComment = async () => {
         const txt = document.getElementById('commInput').value;
         if(!txt) return;
+        const uName = localStorage.getItem('user_name') || "Fan CongoFlix";
         await updateDoc(doc(db, "films", filmId), {
-            comments: arrayUnion({ 
-                nom: userName, 
-                text: txt, 
-                date: Date.now() 
-            })
+            comments: arrayUnion({ nom: uName, text: txt, date: Date.now() })
         });
         document.getElementById('commInput').value = "";
     };
