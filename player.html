@@ -3,146 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CongoFlix - Visionnage</title>
+    <title>CongoFlix - Province</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --gold: #ffd700; --bg: #000; --card: #111; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
-        .player-header { width: 100%; position: relative; aspect-ratio: 16/9; background: #000; }
-        video { width: 100%; height: 100%; display: block; object-fit: contain; }
-        .back-btn { 
-            position: absolute; top: 15px; left: 15px; z-index: 10;
-            width: 40px; height: 40px; border: 2px solid var(--gold); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            color: var(--gold); background: rgba(0,0,0,0.5); text-decoration: none; font-size: 20px;
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+
+        header { padding: 20px; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 15px; }
+        /* Correction : utilisation de javascript pour un retour propre sans page blanche */
+        .back-home { color: var(--gold); text-decoration: none; font-size: 20px; cursor: pointer; }
+        h1 { font-size: 18px; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+
+        .container { padding: 15px; }
+
+        .movie-card { 
+            background: var(--card); 
+            border-radius: 15px; 
+            margin-bottom: 15px; 
+            display: flex; 
+            overflow: hidden; 
+            border: 1px solid #222;
+            height: 140px;
+            cursor: pointer;
         }
-        .stats-bar { display: flex; justify-content: space-around; padding: 15px; background: var(--card); border-top: 1px solid #222; }
-        .stat-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #888; }
-        .stat-item i { font-size: 22px; color: var(--gold); margin-bottom: 5px; }
-        .content { padding: 20px; }
-        .movie-title { font-size: 24px; color: var(--gold); margin: 0; font-weight: bold; }
-        .movie-desc { font-size: 14px; color: #bbb; margin-top: 10px; line-height: 1.6; }
-        .cast-section { margin-top: 20px; }
-        .cast-title { font-size: 14px; color: var(--gold); font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
-        .cast-list { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; }
-        .actor-img { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; flex-shrink: 0; }
-        .dl-section { padding: 0 20px 20px; }
-        .btn-dl { width: 100%; background: var(--gold); color: #000; border: none; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 16px; }
-        #commentPocket { position: fixed; bottom: 0; width: 100%; height: 70vh; background: #0a0a0a; border-radius: 25px 25px 0 0; transform: translateY(100%); transition: 0.4s; z-index: 1000; border-top: 1px solid #333; padding: 20px; box-sizing: border-box; }
-        #commentPocket.active { transform: translateY(0); }
+
+        .movie-info { 
+            flex: 1; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+        }
+
+        .movie-title { 
+            font-size: 16px; 
+            font-weight: bold; 
+            color: var(--gold); 
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .btn-group { display: flex; gap: 10px; }
+        
+        .btn-action { 
+            flex: 1;
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .btn-play { background: var(--gold); color: #000; }
+        .btn-dl { background: #222; color: var(--gold); border: 1px solid var(--gold); }
+
+        .movie-poster { 
+            width: 100px; 
+            height: 100%; 
+            object-fit: cover; 
+            border-left: 1px solid #222;
+        }
     </style>
 </head>
 <body>
 
-    <div class="player-header">
-        <a onclick="history.back()" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
-        <video id="videoPlayer" controls poster=""></video>
-    </div>
+    <header>
+        <a onclick="window.location.href='appcreator24://section/home'" class="back-home"><i class="fa-solid fa-arrow-left"></i></a>
+        <h1 id="provinceTitle">Films du Nord-Kivu</h1>
+    </header>
 
-    <div class="stats-bar">
-        <div class="stat-item"><i class="fa-solid fa-eye"></i> <span id="v-count">0</span></div>
-        <div class="stat-item" onclick="handleLike()"><i class="fa-solid fa-heart"></i> <span id="l-count">0</span></div>
-        <div class="stat-item" onclick="toggleComments()"><i class="fa-solid fa-comment"></i> <span id="c-count">0</span></div>
-    </div>
+    <div class="container">
 
-    <div class="content">
-        <h1 id="movieTitle" class="movie-title">Chargement...</h1>
-        <p id="movieDesc" class="movie-desc">...</p>
-
-        <div class="cast-section">
-            <div class="cast-title">Casting</div>
-            <div id="castList" class="cast-list"></div>
-        </div>
-    </div>
-
-    <div class="dl-section">
-        <button class="btn-dl" onclick="startDownload()">TÉLÉCHARGER LA VIDÉO</button>
-    </div>
-
-    <div id="commentPocket">
-        <div style="width:40px; height:5px; background:#333; margin: 0 auto 15px; border-radius:10px;" onclick="toggleComments()"></div>
-        <div id="commentList" style="height:80%; overflow-y:auto;"></div>
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <input type="text" id="commInput" placeholder="Avis..." style="flex:1; background:#222; border:none; color:#fff; padding:10px; border-radius:20px;">
-            <button onclick="sendComment()" style="background:none; border:none; color:var(--gold); font-size:20px;"><i class="fa-solid fa-paper-plane"></i></button>
-        </div>
-    </div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    // CONFIGURATION WEB (Utilise tes vraies clés ici)
-    const firebaseConfig = {
-        apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
-        authDomain: "congo-streaming-51333.firebaseapp.com",
-        projectId: "congo-streaming-51333",
-        storageBucket: "congo-streaming-51333.appspot.com",
-        messagingSenderId: "304286627819",
-        appId: "1:304286627819:web:ee606adc4f6b4002054bae"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const filmId = localStorage.getItem('film_choisi');
-
-    async function loadFilm() {
-        if(!filmId) {
-            document.getElementById('movieTitle').innerText = "Erreur : Aucun ID";
-            return;
-        }
-
-        const filmRef = doc(db, "films", filmId);
-
-        onSnapshot(filmRef, (s) => {
-            const data = s.data();
-            if(!data) {
-                document.getElementById('movieTitle').innerText = "Film non trouvé";
-                return;
-            }
-            
-            // CORRECTION DES NOMS DE CHAMPS (title au lieu de titre)
-            document.getElementById('movieTitle').innerText = data.title || "Sans titre";
-            document.getElementById('movieDesc').innerText = data.description || "";
-            document.getElementById('videoPlayer').src = data.url || "";
-            document.getElementById('videoPlayer').poster = data.poster || "";
-            document.getElementById('v-count').innerText = data.views || 0;
-            document.getElementById('l-count').innerText = data.likes?.length || 0;
-            
-            const castDiv = document.getElementById('castList');
-            castDiv.innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img">`).join('');
-
-            const cList = document.getElementById('commentList');
-            cList.innerHTML = (data.comments || []).reverse().map(c => `
-                <div style="margin-bottom:15px;">
-                    <b style="font-size:12px; color:var(--gold);">${c.nom}</b>
-                    <div style="font-size:14px;">${c.text}</div>
+        <div class="movie-card" onclick="ouvrirFilm('MAMAN_FILM_01', 'nord-kivu')">
+            <div class="movie-info">
+                <h2 class="movie-title">Maman (L'ouverture)</h2>
+                <div class="btn-group">
+                    <div class="btn-action btn-play"><i class="fa-solid fa-play"></i> VOIR</div>
+                    <div class="btn-action btn-dl"><i class="fa-solid fa-download"></i></div>
                 </div>
-            `).join('');
-            document.getElementById('c-count').innerText = (data.comments || []).length;
-        });
+            </div>
+            <img src="https://i.ibb.co/vC18txxm/Chat-GPT-Image-5-avr-2026-07-23-46.png" class="movie-poster">
+        </div>
 
-        // Augmenter les vues
-        await updateDoc(filmRef, { views: increment(1) }).catch(e => console.log(e));
-    }
+        <div class="movie-card" onclick="ouvrirFilm('MUSHOTA_VS_KARANI_01', 'nord-kivu')">
+            <div class="movie-info">
+                <h2 class="movie-title">Mushota vs Karani</h2>
+                <div class="btn-group">
+                    <div class="btn-action btn-play"><i class="fa-solid fa-play"></i> VOIR</div>
+                    <div class="btn-action btn-dl"><i class="fa-solid fa-download"></i></div>
+                </div>
+            </div>
+            <img src="https://blogger.googleusercontent.com/img/a/AVvXsEiwYOGJAgWkb59ffJ54I7ITP78" class="movie-poster">
+        </div>
 
-    window.handleLike = () => updateDoc(doc(db, "films", filmId), { likes: arrayUnion("user_" + Math.random()) });
-    window.toggleComments = () => document.getElementById('commentPocket').classList.toggle('active');
-    window.sendComment = async () => {
-        const txt = document.getElementById('commInput').value;
-        if(!txt) return;
-        await updateDoc(doc(db, "films", filmId), {
-            comments: arrayUnion({ nom: "Fan CongoFlix", text: txt, date: Date.now() })
-        });
-        document.getElementById('commInput').value = "";
-    };
-    window.startDownload = () => {
-        const url = document.getElementById('videoPlayer').src;
-        if(url) window.open(url, '_blank');
-    };
+    </div>
 
-    loadFilm();
-</script>
+    <script>
+        function ouvrirFilm(id, province) {
+            // Sauvegarde de l'ID exact pour que player.html le récupère dans Firebase
+            localStorage.setItem('film_choisi', id);
+            localStorage.setItem('page_retour', province);
+            
+            // Redirection vers le lecteur GitHub
+            window.location.href = "https://draziel-creator.github.io/CongoFlix-/player.html";
+        }
+    </script>
+
 </body>
 </html>
