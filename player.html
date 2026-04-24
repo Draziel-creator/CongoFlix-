@@ -1,271 +1,302 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CongoFlix</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CongoFlix Official</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --gold: #ffd700; --bg: #000; --tk-gray: #121212; --tk-input: #262626; }
+        
+        body { 
+            background: radial-gradient(circle at top, #0a0a0a, #000); 
+            color: #fff; 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; padding: 0; overflow-x: hidden; 
+        }
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        /* 1. LECTEUR AVEC EFFET "TROU DE LUMIÈRE" */
+        .video-box { 
+            width: 100vw; aspect-ratio: 16/9; background: #000; 
+            position: relative; margin: 0; 
+            z-index: 2;
+        }
+        /* L'effet de lumière qui sort du dessous */
+        .video-box::after {
+            content: "";
+            position: absolute;
+            bottom: -15px; left: 10%; right: 10%;
+            height: 20px;
+            background: var(--gold);
+            filter: blur(25px);
+            opacity: 0.5;
+            z-index: -1;
+        }
+        iframe { width: 100%; height: 100%; border: none; display: block; }
+        .back-btn { position: absolute; top: 12px; left: 12px; z-index: 10; width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--gold); display: flex; align-items: center; justify-content: center; color: var(--gold); background: rgba(0,0,0,0.4); text-decoration: none; }
 
-<style>
+        /* 2. TITRE STYLE STREAMING (FIN ET PRO) */
+        .title-container { text-align: center; padding: 20px 10px 5px; }
+        #txtTitle { 
+            font-size: 22px; /* Réduit */
+            color: #fff; 
+            font-weight: 300; /* Plus fin */
+            text-transform: uppercase; 
+            letter-spacing: 5px; 
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            margin: 0;
+        }
 
-:root{
---gold:#FFD700;
---bg:#000;
---glass:rgba(255,255,255,0.05);
-}
+        /* 3. BARRE D'ACTIONS */
+        .actions { display: flex; justify-content: space-around; padding: 15px 5px; border-bottom: 1px solid #1a1a1a; }
+        .act-item { text-align: center; color: #888; font-size: 11px; flex: 1; cursor: pointer; }
+        .act-item i { font-size: 24px; color: var(--gold); margin-bottom: 4px; display: block; }
 
-/* BASE */
-body{
-margin:0;
-background:radial-gradient(circle at top,#0a0a0a,#000);
-color:white;
-font-family:Segoe UI;
-}
+        /* 4. TEXTE AVEC GUILLEMETS STYLE GPT */
+        .info-pane { padding: 20px; }
+        .glass-box {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 12px;
+            padding: 25px 20px 20px;
+            position: relative;
+            margin-bottom: 30px;
+        }
+        /* Le petit guillemet en haut à gauche */
+        .glass-box::before {
+            content: "\201C";
+            position: absolute;
+            top: -10px; left: 15px;
+            font-size: 50px;
+            color: var(--gold);
+            font-family: serif;
+            line-height: 1;
+        }
+        #txtDesc { font-size: 14px; color: #ccc; line-height: 1.6; margin: 0; }
 
-/* VIDEO CINEMA */
-.video-box{
-width:100%;
-aspect-ratio:16/9;
-position:relative;
-overflow:hidden;
-}
+        /* 5. CASTING (Images horizontales, Noms verticaux) */
+        .cast-label { color: var(--gold); font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; display: block; }
+        .cast-row { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: none; }
+        .cast-row::-webkit-scrollbar { display: none; }
+        
+        .actor { flex-shrink: 0; width: 80px; text-align: center; }
+        .actor img { width: 75px; height: 75px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; margin-bottom: 8px; box-shadow: 0 0 10px rgba(255,215,0,0.3); }
+        /* Style liste d'appel vertical pour le texte du casting */
+        .actor b { 
+            font-size: 10px; color: var(--gold); display: block; 
+            text-transform: uppercase; letter-spacing: 1px;
+            writing-mode: horizontal-tb; /* Garde le texte lisible mais empilé si long */
+        }
 
-.video-box::after{
-content:"";
-position:absolute;
-inset:0;
-background:linear-gradient(to top,#000 5%,transparent);
-}
+        /* 6. MODULE COMMENTAIRES TIKTOK (REPARÉ) */
+        #tkDrawer { position: fixed; bottom: 0; width: 100%; height: 75vh; background: var(--tk-gray); border-radius: 12px 12px 0 0; transform: translateY(100%); transition: 0.3s cubic-bezier(0.2, 0, 0, 1); z-index: 2000; display: flex; flex-direction: column; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
+        #tkDrawer.active { transform: translateY(0); }
+        .tk-header { padding: 15px; text-align: center; font-size: 13px; font-weight: bold; border-bottom: 0.5px solid #222; position: relative; }
+        .tk-close { position: absolute; right: 20px; font-size: 20px; color: #666; cursor: pointer; }
+        .tk-list { flex: 1; overflow-y: auto; padding: 20px; }
+        .comment { display: flex; gap: 12px; margin-bottom: 22px; align-items: flex-start; }
+        .c-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+        .c-main { flex: 1; }
+        .c-user { font-size: 12px; color: #777; font-weight: bold; margin-bottom: 2px; }
+        .c-text { font-size: 14px; color: #eee; line-height: 1.4; }
+        .c-foot { display: flex; gap: 15px; margin-top: 8px; font-size: 11px; color: #555; font-weight: bold; cursor: pointer; }
+        .c-like-zone { text-align: center; color: #444; min-width: 35px; cursor: pointer; }
+        .c-like-zone i { font-size: 18px; display: block; transition: 0.2s; }
+        .c-like-zone i.active { color: #ff3b5c; }
+        
+        /* Réponses */
+        .replies-pocket { display: none; margin-top: 15px; padding-left: 10px; border-left: 1px solid #333; }
+        .replies-pocket.open { display: block; }
 
-/* BACK */
-.back-btn{
-position:absolute;
-top:15px;
-left:15px;
-width:42px;
-height:42px;
-border-radius:50%;
-border:1px solid var(--gold);
-display:flex;
-align-items:center;
-justify-content:center;
-color:var(--gold);
-background:rgba(0,0,0,0.5);
-backdrop-filter:blur(8px);
-}
-
-/* ACTIONS */
-.actions{
-display:flex;
-justify-content:space-around;
-padding:18px 0;
-}
-
-.act-item{
-text-align:center;
-flex:1;
-color:#aaa;
-font-size:12px;
-}
-
-.act-item i{
-font-size:22px;
-color:var(--gold);
-display:block;
-margin-bottom:5px;
-text-shadow:0 0 10px var(--gold);
-}
-
-/* TITRE */
-#txtTitle{
-font-size:32px;
-text-align:center;
-color:var(--gold);
-font-weight:900;
-letter-spacing:3px;
-text-shadow:0 0 20px var(--gold);
-}
-
-/* DESCRIPTION VITRINE */
-#txtDesc{
-margin:20px;
-padding:20px;
-border-radius:15px;
-background:var(--glass);
-backdrop-filter:blur(12px);
-border:1px solid rgba(255,215,0,0.3);
-box-shadow:0 0 25px rgba(255,215,0,0.2);
-color:#ddd;
-}
-
-/* CAST */
-.cast-label{
-margin-left:20px;
-color:var(--gold);
-font-weight:bold;
-letter-spacing:2px;
-}
-
-.cast-row{
-display:flex;
-gap:15px;
-overflow-x:auto;
-padding:20px;
-}
-
-.actor img{
-width:75px;
-height:75px;
-border-radius:50%;
-border:2px solid var(--gold);
-box-shadow:0 0 12px var(--gold);
-}
-
-/* COMMENTS */
-#tkDrawer{
-position:fixed;
-bottom:0;
-width:100%;
-height:75vh;
-background:rgba(15,15,15,0.95);
-backdrop-filter:blur(15px);
-border-top:1px solid rgba(255,215,0,0.2);
-transform:translateY(100%);
-transition:0.3s;
-display:flex;
-flex-direction:column;
-}
-
-#tkDrawer.active{
-transform:translateY(0);
-}
-
-.tk-header{
-padding:15px;
-text-align:center;
-color:var(--gold);
-text-shadow:0 0 10px var(--gold);
-}
-
-.tk-list{
-flex:1;
-overflow:auto;
-padding:15px;
-}
-
-.comment{
-display:flex;
-gap:10px;
-margin-bottom:20px;
-}
-
-.c-avatar{
-width:36px;
-height:36px;
-border-radius:50%;
-border:1px solid var(--gold);
-}
-
-.c-text{
-color:#eee;
-}
-
-.input-pill{
-background:rgba(255,255,255,0.08);
-border-radius:20px;
-padding:5px 15px;
-flex:1;
-}
-
-#tkField{
-background:none;
-border:none;
-color:white;
-width:100%;
-}
-
-.tk-send{
-color:var(--gold);
-font-size:22px;
-background:none;
-border:none;
-}
-
-</style>
+        .tk-input-box { padding: 10px 15px 30px; background: var(--tk-gray); border-top: 0.5px solid #222; display: flex; align-items: center; gap: 12px; }
+        .input-pill { flex: 1; background: var(--tk-input); border-radius: 22px; padding: 0 15px; }
+        #tkField { flex: 1; background: transparent; border: none; color: #fff; padding: 10px 0; font-size: 14px; outline: none; width: 100%; }
+        .tk-send { color: var(--gold); font-size: 24px; background: none; border: none; opacity: 0.4; pointer-events: none; }
+        .tk-send.active { opacity: 1; pointer-events: auto; }
+    </style>
 </head>
-
 <body>
 
-<div class="video-box">
-<a href="javascript:history.back()" class="back-btn">
-<i class="fa-solid fa-arrow-left"></i>
-</a>
+    <div class="video-box">
+        <a href="javascript:history.back()" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+        <div id="playerRoot" style="width:100%; height:100%;"></div>
+    </div>
 
-<div id="playerRoot" style="width:100%;height:100%"></div>
-</div>
+    <div class="title-container">
+        <h1 id="txtTitle">Chargement...</h1>
+    </div>
 
-<div class="actions">
-<div class="act-item"><i class="fa-solid fa-eye"></i><span id="statV">0</span></div>
-<div class="act-item" id="mainLikeBtn"><i class="fa-solid fa-heart"></i><span id="statL">0</span></div>
-<div class="act-item" onclick="toggleTk()"><i class="fa-solid fa-comment"></i><span id="statC">0</span></div>
-<div class="act-item"><i class="fa-solid fa-star"></i><span>Favoris</span></div>
-</div>
+    <div class="actions">
+        <div class="act-item"><i class="fa-solid fa-eye"></i> <span id="statV">0</span></div>
+        <div class="act-item" id="mainLikeBtn"><i class="fa-solid fa-heart"></i> <span id="statL">0</span></div>
+        <div class="act-item" onclick="toggleTk()"><i class="fa-solid fa-comment"></i> <span id="statC">0</span></div>
+        <div class="act-item" id="mainFavBtn"><i class="fa-solid fa-star"></i> <span>Favoris</span></div>
+    </div>
 
-<h1 id="txtTitle">Chargement...</h1>
+    <div class="info-pane">
+        <div class="glass-box">
+            <p id="txtDesc">...</p>
+        </div>
+        
+        <span class="cast-label">Casting Visual</span>
+        <div id="rowCast" class="cast-row"></div>
+    </div>
 
-<div id="txtDesc">...</div>
-
-<span class="cast-label">CASTING VISUAL</span>
-<div id="rowCast" class="cast-row"></div>
-
-<!-- COMMENTS -->
-<div id="tkDrawer">
-<div class="tk-header">
-<span id="hCount">0</span> COMMENTAIRES
-</div>
-
-<div id="tkList" class="tk-list"></div>
-
-<div style="display:flex;padding:10px;gap:10px;">
-<input id="tkField" placeholder="Commentaire..." style="flex:1;background:#222;border:none;color:white;padding:10px;border-radius:20px;">
-<button id="tkSend"><i class="fa-solid fa-paper-plane"></i></button>
-</div>
-</div>
+    <div id="tkDrawer">
+        <div class="tk-header">
+            <span id="hCount">0</span> COMMENTAIRES
+            <i class="fa-solid fa-xmark tk-close" onclick="toggleTk()"></i>
+        </div>
+        <div id="tkList" class="tk-list"></div>
+        <div class="tk-input-box">
+            <img id="myAvatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:32px; height:32px; border-radius:50%">
+            <div class="input-pill">
+                <input type="text" id="tkField" placeholder="Ajouter un commentaire...">
+            </div>
+            <button id="tkSend" class="tk-send" onclick="handlePost()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
 
 <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    const firebaseConfig = {
+        apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
+        authDomain: "congo-streaming-51333.firebaseapp.com",
+        projectId: "congo-streaming-51333",
+        appId: "1:304286627819:android:36e0b43b8b10508a054bae"
+    };
 
-const app = initializeApp({
-apiKey:"AIzaSyCoWWX...",
-authDomain:"congo-streaming-51333.firebaseapp.com",
-projectId:"congo-streaming-51333"
-});
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const params = new URLSearchParams(window.location.search);
+    const filmId = params.get('id') || "MUSHOTA_VS_KARANI_01";
+    
+    const userId = localStorage.getItem('user_id') || "U" + Math.floor(Math.random()*9999);
+    const userName = localStorage.getItem('user_name') || "Fan CongoFlix";
+    const userImg = localStorage.getItem('user_img') || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    document.getElementById('myAvatar').src = userImg;
 
-const db = getFirestore(app);
+    let targetCommentId = null;
 
-onSnapshot(doc(db,"films","MUSHOTA_VS_KARANI_01"),(snap)=>{
-const d=snap.data();
-if(!d)return;
+    onSnapshot(doc(db, "films", filmId), (snapshot) => {
+        const data = snapshot.data();
+        if(!data) return;
 
-txtTitle.innerText=d.titre || "MUSHOTA VS KARANI";
-txtDesc.innerText=d.description || "...";
+        // Titre : On affiche uniquement l'ID ou le titre Firebase
+        document.getElementById('txtTitle').innerText = data.titre || filmId.replace(/_/g, ' ');
+        document.getElementById('txtDesc').innerText = data.description || "Pas de description.";
+        document.getElementById('statV').innerText = data.views || 0;
+        document.getElementById('statL').innerText = (data.likes || []).length;
 
-statV.innerText=d.views||0;
-statL.innerText=(d.likes||[]).length;
+        if(!document.getElementById('playerRoot').innerHTML && data.url) {
+            document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
+        }
 
-if(!playerRoot.innerHTML && d.url){
-playerRoot.innerHTML=`<iframe src="${d.url}"></iframe>`;
-}
-});
+        // Casting horizontal avec labels verticaux
+        const acteurs = data.acteurs || [];
+        document.getElementById('rowCast').innerHTML = acteurs.map(url => `
+            <div class="actor">
+                <img src="${url}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                <b>Casting</b>
+            </div>
+        `).join('');
 
-window.toggleTk=()=>{
-tkDrawer.classList.toggle("active");
-}
+        // Système de commentaires complet (réparé)
+        const comms = (data.comments || []).filter(c => typeof c === 'object');
+        document.getElementById('statC').innerText = comms.length;
+        document.getElementById('hCount').innerText = comms.length;
 
+        document.getElementById('tkList').innerHTML = comms.slice().reverse().map(c => {
+            const replies = c.replies || [];
+            const hasLiked = (c.likedBy || []).includes(userId);
+            return `
+            <div class="comment">
+                <img src="${c.photo || userImg}" class="c-avatar">
+                <div class="c-main">
+                    <div class="c-user">${c.nom}</div>
+                    <div class="c-text">${c.text}</div>
+                    <div class="c-foot"><span onclick="prepareReply('${c.id}', '${c.nom}')">Répondre</span></div>
+                    ${replies.length > 0 ? `
+                        <div style="margin-top:10px; font-size:12px; color:#555; cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">
+                           ——— Afficher ${replies.length} réponses
+                        </div>
+                        <div class="replies-pocket">
+                            ${replies.map(r => `
+                                <div style="display:flex; gap:8px; margin-bottom:10px">
+                                    <img src="${r.photo || userImg}" style="width:24px; height:24px; border-radius:50%">
+                                    <div class="c-main">
+                                        <div class="c-user" style="font-size:11px">${r.nom}</div>
+                                        <div class="c-text" style="font-size:13px">${r.text}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="c-like-zone" onclick="likeComment('${c.id}')">
+                    <i class="fa-heart ${hasLiked ? 'fa-solid active' : 'fa-regular'}"></i>
+                    <span style="font-size:10px">${(c.likedBy || []).length}</span>
+                </div>
+            </div>`;
+        }).join('');
+    });
+
+    // Fonctions Comments
+    window.prepareReply = (cid, name) => {
+        targetCommentId = cid;
+        const field = document.getElementById('tkField');
+        field.placeholder = "Répondre à " + name + "...";
+        field.focus();
+    };
+
+    window.handlePost = async () => {
+        const val = document.getElementById('tkField').value.trim();
+        if(!val) return;
+        const ref = doc(db, "films", filmId);
+        const snap = await getDoc(ref);
+        let allComments = (snap.data().comments || []).filter(c => typeof c === 'object');
+
+        if(targetCommentId) {
+            allComments = allComments.map(c => {
+                if(c.id === targetCommentId) {
+                    const reps = c.replies || [];
+                    return {...c, replies: [...reps, {nom: userName, text: val, photo: userImg, date: Date.now()}]};
+                }
+                return c;
+            });
+        } else {
+            allComments.push({ id: "C-" + Date.now(), nom: userName, text: val, photo: userImg, date: Date.now(), likedBy: [], replies: [] });
+        }
+        await updateDoc(ref, { comments: allComments });
+        document.getElementById('tkField').value = "";
+        targetCommentId = null;
+    };
+
+    window.likeComment = async (cid) => {
+        const snap = await getDoc(doc(db, "films", filmId));
+        const updated = (snap.data().comments || []).map(c => {
+            if(c.id === cid) {
+                let currentLikes = c.likedBy || [];
+                currentLikes = currentLikes.includes(userId) ? currentLikes.filter(u => u !== userId) : [...currentLikes, userId];
+                return {...c, likedBy: currentLikes};
+            }
+            return c;
+        });
+        await updateDoc(doc(db, "films", filmId), { comments: updated });
+    };
+
+    window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
+    document.getElementById('tkField').oninput = function() { document.getElementById('tkSend').classList.toggle('active', this.value.length > 0); };
+    
+    document.getElementById('mainLikeBtn').onclick = async () => {
+        const ref = doc(db, "films", filmId);
+        const s = await getDoc(ref);
+        const l = s.data().likes || [];
+        await updateDoc(ref, { likes: l.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) });
+    };
 </script>
-
 </body>
 </html>
