@@ -3,128 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoFlix Premium</title>
+    <title>CongoFlix Official - Style Cinema</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { 
-            --gold: #ffd700; 
-            --gold-glow: rgba(255, 215, 0, 0.4);
+            --gold: #FFD700; 
             --bg: #000; 
             --glass: rgba(255, 255, 255, 0.05);
-            --tk-gray: #121212; 
         }
 
         body { 
-            background: radial-gradient(circle at top, #1a1a1a, #000); 
-            color: #fff; 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
             margin: 0; 
-            padding: 0; 
-            overflow-x: hidden; 
+            background: radial-gradient(circle, #0a0a0a, #000); 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            color: white; 
+            overflow-x: hidden;
         }
 
-        /* LECTEUR AVEC GLOW */
+        /* 1. LECTEUR VIDEO PRO AVEC GLOW */
         .video-box { 
+            position: relative; 
             width: 100vw; 
             aspect-ratio: 16/9; 
-            background: #000; 
-            position: relative; 
-            box-shadow: 0 0 35px var(--gold-glow);
-            z-index: 5;
+            background: #000;
+            box-shadow: 0 0 30px rgba(255, 200, 0, 0.4);
+            margin-bottom: 10px;
         }
         iframe { width: 100%; height: 100%; border: none; display: block; }
         
         .back-btn { 
-            position: absolute; top: 15px; left: 15px; z-index: 10; 
-            width: 40px; height: 40px; border-radius: 50%; 
-            border: 2px solid var(--gold); display: flex; 
+            position: absolute; top: 12px; left: 12px; z-index: 10; 
+            width: 38px; height: 38px; border-radius: 50%; 
+            border: 1.5px solid var(--gold); display: flex; 
             align-items: center; justify-content: center; 
-            color: var(--gold); background: rgba(0,0,0,0.6); 
-            text-shadow: 0 0 10px var(--gold);
+            color: var(--gold); background: rgba(0,0,0,0.5); 
+            text-decoration: none; 
         }
 
-        /* BARRE D'ACTIONS STYLE VITRINE */
-        .actions { 
-            display: flex; justify-content: space-around; 
-            padding: 20px 10px; 
-            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.5));
-        }
-        .act-item { text-align: center; color: #fff; font-size: 12px; flex: 1; cursor: pointer; }
-        .act-item i { 
-            font-size: 24px; color: var(--gold); 
-            margin-bottom: 6px; display: block; 
-            filter: drop-shadow(0 0 8px var(--gold));
-        }
-
-        /* INFOS & GLASSBOX */
-        .info-pane { padding: 0 20px 30px; }
-        
-        #txtTitle { 
+        /* 2. TITRE & EPISODE (IDENTIQUE IMAGE GPT) */
+        .title-container { text-align: center; padding: 10px 0; }
+        .title { 
             font-size: 28px; color: var(--gold); 
-            font-weight: 900; margin: 10px 0; 
-            text-transform: uppercase; letter-spacing: 2px;
-            text-shadow: 0 0 15px var(--gold-glow);
+            letter-spacing: 3px; font-weight: 900;
+            text-shadow: 0 0 20px var(--gold); 
+            margin: 0; text-transform: uppercase;
         }
+        .episode { color: var(--gold); margin: 0; font-size: 20px; font-weight: bold; }
 
-        .glass-box {
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 15px;
-            padding: 18px;
+        /* 3. BARRE D'ACTIONS (FAVORIS ÉTOILE) */
+        .stats { 
+            display: flex; justify-content: space-around; 
+            margin: 15px 0; color: var(--gold); 
+            font-weight: bold; 
+        }
+        .act-item { text-align: center; cursor: pointer; }
+        .act-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+
+        /* 4. EFFET VITRINE (GLASS-BOX) */
+        .container { padding: 0 20px 40px; }
+        .glass-box { 
+            background: var(--glass); 
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 200, 0, 0.3); 
+            border-radius: 15px; 
+            padding: 20px; 
+            box-shadow: 0 0 25px rgba(255, 200, 0, 0.2);
             margin: 20px 0;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
+        #txtDesc { font-size: 14px; line-height: 1.6; color: #ccc; margin: 0; }
 
-        #txtDesc { font-size: 14px; color: #ddd; line-height: 1.6; margin: 0; }
-
-        /* CASTING VISUAL */
-        .section-label { 
-            color: var(--gold); font-size: 14px; 
-            font-weight: bold; text-transform: uppercase; 
-            margin-bottom: 15px; display: block;
-            letter-spacing: 1px;
-        }
-        .cast-row { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
-        .cast-row::-webkit-scrollbar { display: none; }
-        
-        .actor-circle { flex-shrink: 0; text-align: center; width: 80px; }
-        .actor-circle img { 
+        /* 5. CASTING VISUAL (CERCLÉ) */
+        .section { color: var(--gold); letter-spacing: 2px; font-size: 14px; font-weight: bold; margin-bottom: 15px; }
+        .casting { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .casting::-webkit-scrollbar { display: none; }
+        .actor-unit { flex-shrink: 0; text-align: center; width: 75px; }
+        .actor-unit img { 
             width: 70px; height: 70px; border-radius: 50%; 
-            border: 2px solid var(--gold); object-fit: cover; 
-            box-shadow: 0 0 15px var(--gold-glow);
-            margin-bottom: 8px;
+            border: 2px solid var(--gold); object-fit: cover;
+            box-shadow: 0 0 10px var(--gold); margin-bottom: 5px;
         }
-        .actor-circle b { font-size: 10px; color: #aaa; text-transform: uppercase; }
 
-        /* DRAWER COMMENTAIRES TIKTOK */
+        /* MODULE COMMENTAIRES (DRAWER) */
         #tkDrawer { 
-            position: fixed; bottom: 0; width: 100%; height: 70vh; 
-            background: var(--tk-gray); border-radius: 20px 20px 0 0; 
-            transform: translateY(100%); transition: 0.4s cubic-bezier(0.33, 1, 0.68, 1); 
-            z-index: 2000; display: flex; flex-direction: column; 
+            position: fixed; bottom: 0; width: 100%; height: 75vh; 
+            background: #121212; border-radius: 20px 20px 0 0; 
+            transform: translateY(100%); transition: 0.3s; z-index: 2000;
+            display: flex; flex-direction: column;
         }
         #tkDrawer.active { transform: translateY(0); }
-        .tk-header { padding: 15px; text-align: center; font-size: 14px; font-weight: bold; border-bottom: 1px solid #222; }
+        .tk-header { padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #222; }
         .tk-list { flex: 1; overflow-y: auto; padding: 20px; }
-
-        /* INPUT STYLE */
-        .tk-input-box { 
-            padding: 10px 15px 25px; background: #121212; 
-            border-top: 1px solid #222; display: flex; align-items: center; gap: 10px; 
-        }
-        .input-pill { 
-            flex: 1; background: #262626; border-radius: 25px; 
-            padding: 0 15px; display: flex; align-items: center; 
-        }
-        #tkField { 
-            flex: 1; background: transparent; border: none; 
-            color: #fff; padding: 12px 0; outline: none; 
-        }
-        .btn-send { color: var(--gold); border: none; background: none; font-size: 20px; opacity: 0.5; }
-        .btn-send.active { opacity: 1; }
-
+        .tk-input-box { padding: 10px 15px 30px; display: flex; gap: 10px; border-top: 1px solid #222; }
+        .input-pill { flex: 1; background: #262626; border-radius: 20px; padding: 0 15px; }
+        #tkField { width: 100%; background: transparent; border: none; color: white; padding: 10px 0; outline: none; }
     </style>
 </head>
 <body>
@@ -134,36 +106,34 @@
         <div id="playerRoot" style="width:100%; height:100%;"></div>
     </div>
 
-    <div class="actions">
-        <div class="act-item"><i class="fa-solid fa-eye"></i> <span id="statV">0</span></div>
-        <div class="act-item" id="mainLikeBtn"><i class="fa-solid fa-heart"></i> <span id="statL">0</span></div>
-        <div class="act-item" onclick="toggleTk()"><i class="fa-solid fa-comment-dots"></i> <span id="statC">0</span></div>
-        <div class="act-item" id="mainFavBtn"><i class="fa-solid fa-star"></i> <span>Favoris</span></div>
+    <div class="title-container">
+        <h1 class="title" id="txtTitle">Chargement...</h1>
+        <h2 class="episode">EPISODE <span id="epNum">01</span></h2>
     </div>
 
-    <div class="info-pane">
-        <h1 id="txtTitle">MUSHOTA VS KARANI</h1>
-        
+    <div class="stats">
+        <div class="act-item"><i class="fa-solid fa-eye"></i> <span id="statV">0</span></div>
+        <div class="act-item" id="mainLikeBtn"><i class="fa-solid fa-heart"></i> <span id="statL">0</span></div>
+        <div class="act-item" onclick="toggleTk()"><i class="fa-solid fa-comment"></i> <span id="statC">0</span></div>
+        <div class="act-item" id="mainFavBtn"><i class="fa-solid fa-star"></i> <span>FAVORIS</span></div>
+    </div>
+
+    <div class="container">
         <div class="glass-box">
-            <p id="txtDesc">Chargement de la description...</p>
+            <p id="txtDesc">...</p>
         </div>
 
-        <span class="section-label">Casting Visual</span>
-        <div id="rowCast" class="cast-row">
+        <h3 class="section">CASTING VISUAL</h3>
+        <div id="rowCast" class="casting">
             </div>
     </div>
 
     <div id="tkDrawer">
-        <div class="tk-header">
-            <span id="hCount">0</span> COMMENTAIRES
-            <i class="fa-solid fa-xmark" style="float:right; cursor:pointer" onclick="toggleTk()"></i>
-        </div>
+        <div class="tk-header">COMMENTAIRES <i class="fa-solid fa-xmark" style="float:right" onclick="toggleTk()"></i></div>
         <div id="tkList" class="tk-list"></div>
         <div class="tk-input-box">
-            <div class="input-pill">
-                <input type="text" id="tkField" placeholder="Ajouter un commentaire...">
-            </div>
-            <button id="tkSend" class="btn-send" onclick="handlePost()"><i class="fa-solid fa-paper-plane"></i></button>
+            <div class="input-pill"><input type="text" id="tkField" placeholder="Votre avis..."></div>
+            <button style="background:none; border:none; color:var(--gold); font-size:20px;" onclick="handlePost()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
 
@@ -184,17 +154,17 @@
     const filmId = params.get('id') || "MUSHOTA_VS_KARANI_01";
     const userId = localStorage.getItem('user_id') || "U" + Math.floor(Math.random()*9999);
 
-    // Sync Temps Réel
-    onSnapshot(doc(db, "films", filmId), (snap) => {
-        const data = snap.data();
+    // SYNCHRONISATION FIREBASE
+    onSnapshot(doc(db, "films", filmId), (snapshot) => {
+        const data = snapshot.data();
         if(!data) return;
 
         document.getElementById('txtTitle').innerText = data.titre || filmId.replace(/_/g, ' ');
-        document.getElementById('txtDesc').innerText = data.description || "Aucune description disponible.";
+        document.getElementById('txtDesc').innerText = data.description || "Pas de description.";
         document.getElementById('statV').innerText = data.views || 0;
         document.getElementById('statL').innerText = (data.likes || []).length;
-        
-        // Vidéo
+
+        // Player
         if(!document.getElementById('playerRoot').innerHTML && data.url) {
             document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
         }
@@ -202,45 +172,45 @@
         // Casting
         const acteurs = data.acteurs || [];
         document.getElementById('rowCast').innerHTML = acteurs.map(url => `
-            <div class="actor-circle">
+            <div class="actor-unit">
                 <img src="${url}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
-                <b>Acteur</b>
+                <b style="font-size:10px">CAST</b>
             </div>
         `).join('');
 
         // Commentaires
         const comms = (data.comments || []).filter(c => typeof c === 'object');
         document.getElementById('statC').innerText = comms.length;
-        document.getElementById('hCount').innerText = comms.length;
         document.getElementById('tkList').innerHTML = comms.slice().reverse().map(c => `
-            <div style="display:flex; gap:12px; margin-bottom:20px;">
-                <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:35px; height:35px; border-radius:50%">
+            <div style="display:flex; gap:10px; margin-bottom:15px">
+                <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:30px; height:30px; border-radius:50%">
                 <div>
-                    <div style="font-size:12px; color:#777; font-weight:bold">${c.nom}</div>
-                    <div style="font-size:14px; color:#eee; margin-top:2px">${c.text}</div>
+                    <div style="font-size:11px; color:var(--gold); font-weight:bold">${c.nom}</div>
+                    <div style="font-size:13px">${c.text}</div>
                 </div>
             </div>
         `).join('');
     });
 
-    // Fonctions d'interaction
+    // ACTIONS
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
-
+    
     window.handlePost = async () => {
         const val = document.getElementById('tkField').value.trim();
         if(!val) return;
-        const snap = await getDoc(doc(db, "films", filmId));
-        let allComments = (snap.data().comments || []).filter(c => typeof c === 'object');
+        const ref = doc(db, "films", filmId);
+        const snap = await getDoc(ref);
+        let allComms = (snap.data().comments || []).filter(c => typeof c === 'object');
         
-        allComments.push({ 
-            id: "C-" + Date.now(), 
+        allComms.push({ 
+            id: "C-"+Date.now(), 
             nom: localStorage.getItem('user_name') || "Fan CongoFlix", 
             text: val, 
             photo: localStorage.getItem('user_img'), 
             date: Date.now() 
         });
-
-        await updateDoc(doc(db, "films", filmId), { comments: allComments });
+        
+        await updateDoc(ref, { comments: allComms });
         document.getElementById('tkField').value = "";
     };
 
@@ -249,11 +219,6 @@
         const s = await getDoc(ref);
         const l = s.data().likes || [];
         await updateDoc(ref, { likes: l.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) });
-    };
-
-    // Gestion de l'état actif du bouton envoi
-    document.getElementById('tkField').oninput = function() {
-        document.getElementById('tkSend').classList.toggle('active', this.value.length > 0);
     };
 </script>
 </body>
