@@ -9,26 +9,27 @@
         :root { --gold: #ffd700; --bg: #000; --card: #0a0a0a; --glass: rgba(255, 255, 255, 0.05); }
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
         
+        /* Tes styles d'origine */
         .player-header { width: 100%; position: relative; aspect-ratio: 16/9; background: #000; }
-        .back-btn { position: absolute; top: 15px; left: 15px; z-index: 100; width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--gold); display: flex; align-items: center; justify-content: center; color: var(--gold); background: rgba(0,0,0,0.7); text-decoration: none; cursor: pointer; }
-
+        .back-btn { position: absolute; top: 15px; left: 15px; z-index: 100; width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--gold); display: flex; align-items: center; justify-content: center; color: var(--gold); background: rgba(0,0,0,0.7); text-decoration: none; cursor:pointer; }
         .stats-bar { display: flex; justify-content: space-around; padding: 15px; background: var(--card); border-bottom: 1px solid #1a1a1a; }
         .stat-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #777; cursor: pointer; }
         .stat-item i { font-size: 22px; color: var(--gold); margin-bottom: 4px; }
+        .active-gold { color: #fff !important; background: var(--gold); border-radius: 4px; padding: 2px 4px; }
 
         .content { padding: 20px; }
         .movie-title { font-size: 26px; color: var(--gold); margin: 0; font-weight: 900; text-transform: uppercase; }
-        .desc-container { margin-top: 15px; padding: 15px; background: var(--glass); border-radius: 4px 20px 4px 20px; border-left: 4px solid var(--gold); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+        .desc-container { margin-top: 15px; padding: 15px; background: var(--glass); border-radius: 4px 20px 4px 20px; border-left: 4px solid var(--gold); }
         .movie-desc { font-size: 14px; color: #ccc; line-height: 1.6; margin: 0; font-style: italic; }
 
         .cast-imgs-row { display: flex; gap: 12px; overflow-x: auto; padding: 10px 0; }
         .actor-circle { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; flex-shrink: 0; }
 
-        #commentPocket { position: fixed; bottom: 0; width: 100%; height: 75vh; background: #0d0d0d; border-radius: 15px 15px 0 0; transform: translateY(100%); transition: 0.4s; z-index: 1000; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
+        /* Style Commentaires TikTok */
+        #commentPocket { position: fixed; bottom: 0; width: 100%; height: 75vh; background: #0d0d0d; border-radius: 15px 15px 0 0; transform: translateY(100%); transition: 0.4s; z-index: 1000; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; border-top: 1px solid #333; }
         #commentPocket.active { transform: translateY(0); }
-        .tk-header { font-size: 13px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        #commentList { flex: 1; overflow-y: auto; }
-        .tk-input-box { display: flex; gap: 10px; padding: 15px 0; border-top: 1px solid #222; }
+        #commentList { flex: 1; overflow-y: auto; margin-bottom: 10px; }
+        .tk-input-box { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid #222; }
         #commInput { flex: 1; background: #1a1a1a; border: none; color: #fff; padding: 10px 15px; border-radius: 25px; outline: none; }
     </style>
 </head>
@@ -51,12 +52,14 @@
         <div class="desc-container">
             <p id="movieDesc" class="movie-desc">...</p>
         </div>
-
         <div id="castImgs" class="cast-imgs-row"></div>
     </div>
 
     <div id="commentPocket">
-        <div class="tk-header"><span id="c-count-top">0</span> commentaires <i class="fa-solid fa-x" onclick="toggleComments()" style="float:right"></i></div>
+        <div style="text-align: center; padding-bottom: 15px; font-weight: bold; border-bottom: 1px solid #222;">
+            <span id="c-count-top">0</span> COMMENTAIRES
+            <i class="fa-solid fa-xmark" onclick="toggleComments()" style="float:right; cursor:pointer; color:#888;"></i>
+        </div>
         <div id="commentList"></div>
         <div class="tk-input-box">
             <input type="text" id="commInput" placeholder="Ajouter un commentaire...">
@@ -79,49 +82,45 @@
     const db = getFirestore(app);
 
     const urlParams = new URLSearchParams(window.location.search);
-    let filmId = urlParams.get('id') || "MUSHOTA_VS_KARANI_01"; 
-    let userId = localStorage.getItem('user_id') || "user_" + Math.floor(Math.random()*999);
+    let filmId = urlParams.get('id') || "MUSHOTA_VS_KARANI_01";
+    let userId = localStorage.getItem('user_id') || "User_" + Math.floor(Math.random()*9000);
 
-    function loadFilm() {
+    async function loadFilm() {
         const filmRef = doc(db, "films", filmId);
 
         onSnapshot(filmRef, (s) => {
             const data = s.data();
-            if(!data) {
-                document.getElementById('movieTitle').innerText = "404: INDISPONIBLE";
-                return;
-            }
+            if(!data) return;
 
-            // Affichage Titre & Desc (Correction champs Firebase)
+            // Update Infos
             document.getElementById('movieTitle').innerText = data.titre || data.title || "SANS TITRE";
             document.getElementById('movieDesc').innerText = data.description || "Pas de description.";
-
-            // Lecteur (Correction balise video -> iframe)
-            const videoContainer = document.getElementById('videoContainer');
-            if(!videoContainer.innerHTML || videoContainer.innerHTML.includes('...')) {
-                videoContainer.innerHTML = `<iframe src="${data.url}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>`;
+            
+            // Video (Iframe)
+            const vContainer = document.getElementById('videoContainer');
+            if(!vContainer.innerHTML || vContainer.innerHTML.includes('...')) {
+                vContainer.innerHTML = `<iframe src="${data.url}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>`;
             }
 
-            // Stats
-            document.getElementById('v-count').innerText = data.views || 0;
+            // Stats & Like
             const likes = data.likes || [];
+            document.getElementById('v-count').innerText = data.views || 0;
             document.getElementById('l-count').innerText = likes.length;
             if(likes.includes(userId)) document.getElementById('like-icon').style.color = "red";
 
             // Casting
-            const acteurs = data.acteurs || [];
-            document.getElementById('castImgs').innerHTML = acteurs.map(url => `<img src="${url}" class="actor-circle">`).join('');
+            document.getElementById('castImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-circle">`).join('');
 
-            // Commentaires
+            // Affichage des commentaires
             const comments = data.comments || [];
             document.getElementById('c-count').innerText = comments.length;
             document.getElementById('c-count-top').innerText = comments.length;
             document.getElementById('commentList').innerHTML = comments.slice().reverse().map(c => `
-                <div style="display:flex; gap:10px; margin-bottom:15px;">
-                    <div style="width:30px; height:30px; background:#333; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px;">${(c.nom || 'F').charAt(0)}</div>
+                <div style="display:flex; gap:12px; margin-bottom:15px; animation: fadeIn 0.3s;">
+                    <div style="width:35px; height:35px; background:#222; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--gold); font-weight:bold;">${(c.nom || 'F').charAt(0)}</div>
                     <div>
-                        <div style="font-size:11px; color:var(--gold)">${c.nom}</div>
-                        <div style="font-size:13px">${c.text}</div>
+                        <div style="font-size:12px; color:#666; font-weight:bold;">${c.nom}</div>
+                        <div style="font-size:14px; color:#eee; margin-top:2px;">${c.text}</div>
                     </div>
                 </div>
             `).join('');
@@ -130,11 +129,29 @@
         updateDoc(filmRef, { views: increment(1) }).catch(() => {});
     }
 
-    // FONCTIONS BOUTONS (Synchronisées Firebase)
+    // --- FONCTIONS ACTIONS ---
+
+    window.sendComment = async () => {
+        const input = document.getElementById('commInput');
+        const txt = input.value.trim();
+        if(!txt) return;
+
+        const filmRef = doc(db, "films", filmId);
+        await updateDoc(filmRef, {
+            comments: arrayUnion({
+                nom: localStorage.getItem('user_name') || "Fan CongoFlix",
+                text: txt,
+                date: Date.now()
+            })
+        });
+        input.value = ""; // Vider l'input
+    };
+
     window.handleLike = async () => {
         const filmRef = doc(db, "films", filmId);
         const snap = await getDoc(filmRef);
         const likes = snap.data().likes || [];
+
         if(likes.includes(userId)) {
             await updateDoc(filmRef, { likes: arrayRemove(userId) });
             document.getElementById('like-icon').style.color = "var(--gold)";
@@ -145,18 +162,15 @@
     };
 
     window.handleFavoris = () => {
-        document.getElementById('fav-icon').style.color = "white";
-        document.getElementById('fav-status').innerText = "Ma Liste";
-        try { window.location.href = "appcreator24://favoris/" + filmId; } catch(e) {}
-    };
-
-    window.sendComment = async () => {
-        const txt = document.getElementById('commInput').value;
-        if(!txt) return;
-        await updateDoc(doc(db, "films", filmId), {
-            comments: arrayUnion({ nom: "Fan CongoFlix", text: txt, date: Date.now() })
-        });
-        document.getElementById('commInput').value = "";
+        // Change l'aspect visuel immédiatement
+        const btn = document.getElementById('fav-status');
+        const icon = document.getElementById('fav-icon');
+        
+        btn.innerText = "Ma Liste";
+        icon.classList.add('active-gold');
+        
+        // Envoi vers l'app AppCreator24
+        window.location.href = "appcreator24://favoris/" + filmId;
     };
 
     window.toggleComments = () => document.getElementById('commentPocket').classList.toggle('active');
