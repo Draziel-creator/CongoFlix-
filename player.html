@@ -184,7 +184,7 @@
     let userName = "Fan CongoFlix";
     let userImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-    // ÉCOUTEUR DE CONNEXION (LA MAGIE)
+    // --- LOGIQUE DE DÉTECTION AMÉLIORÉE ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
@@ -196,8 +196,30 @@
                 userImg = d.photoURL || userImg;
                 document.getElementById('myAvatar').src = userImg;
             }
+        } else {
+            currentUser = null;
+            // On ne réinitialise pas le userId GUEST ici pour permettre la lecture sans crash
         }
     });
+
+    // Fonction pour forcer la vérification avant chaque action sensible
+    async function checkUserConnection() {
+        if (currentUser) return true;
+        // Tentative de récupération forcée au cas où onAuthStateChanged est lent
+        return new Promise((resolve) => {
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
+                unsubscribe();
+                if (user) {
+                    currentUser = user;
+                    userId = user.uid;
+                    resolve(true);
+                } else {
+                    resolve(false);
+                }
+            });
+            setTimeout(() => resolve(false), 1500); // Timeout après 1.5s
+        });
+    }
 
     window.showAuthAlert = () => {
         const alert = document.getElementById('authAlert');
@@ -267,7 +289,9 @@
     };
 
     window.handlePost = async () => {
-        if(!currentUser) { showAuthAlert(); return; }
+        const isConnected = await checkUserConnection();
+        if(!isConnected) { showAuthAlert(); return; }
+        
         const val = document.getElementById('tkField').value.trim();
         if(!val) return;
         const ref = doc(db, "films", filmId);
@@ -290,7 +314,9 @@
     };
 
     window.likeComment = async (cid) => {
-        if(!currentUser) { showAuthAlert(); return; }
+        const isConnected = await checkUserConnection();
+        if(!isConnected) { showAuthAlert(); return; }
+        
         const snap = await getDoc(doc(db, "films", filmId));
         const updated = (snap.data().comments || []).map(c => {
             if(c.id === cid) {
@@ -304,14 +330,21 @@
     };
 
     document.getElementById('mainLikeBtn').onclick = async () => {
-        if(!currentUser) { showAuthAlert(); return; }
+        const isConnected = await checkUserConnection();
+        if(!isConnected) { showAuthAlert(); return; }
+        
         const ref = doc(db, "films", filmId);
         const s = await getDoc(ref);
         const l = s.data().likes || [];
         await updateDoc(ref, { likes: l.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) });
     };
 
-    document.getElementById('mainFavBtn').onclick = () => { if(!currentUser) showAuthAlert(); else alert("Ajouté !"); };
+    document.getElementById('mainFavBtn').onclick = async () => { 
+        const isConnected = await checkUserConnection();
+        if(!isConnected) showAuthAlert(); 
+        else alert("Ajouté aux favoris !"); 
+    };
+
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
     document.getElementById('tkField').oninput = function() { document.getElementById('tkSend').classList.toggle('active', this.value.length > 0); };
 </script>
