@@ -20,14 +20,13 @@
             width: 100vw; aspect-ratio: 16/9; background: #000; 
             position: relative; margin: 0; z-index: 2;
         }
-        /* Effet de lumière augmenté */
         .video-box::after {
             content: "";
             position: absolute;
             bottom: -10px; left: 0; right: 0;
             height: 15px;
             background: var(--gold);
-            filter: blur(30px); /* Plus flou et intense */
+            filter: blur(30px);
             opacity: 0.8;
             z-index: -1;
         }
@@ -37,7 +36,7 @@
         /* 2. TITRE RÉDUIT */
         .title-container { text-align: center; padding: 25px 10px 5px; }
         #txtTitle { 
-            font-size: 18px; /* Taille réduite */
+            font-size: 18px; 
             color: #fff; 
             font-weight: 300; 
             text-transform: uppercase; 
@@ -50,7 +49,6 @@
         .actions { display: flex; justify-content: space-around; padding: 15px 5px; border-bottom: 1px solid #1a1a1a; }
         .act-item { text-align: center; color: #888; font-size: 11px; flex: 1; cursor: pointer; }
         .act-item i { font-size: 24px; color: var(--gold); margin-bottom: 4px; display: block; transition: 0.3s; }
-        /* État liké en rouge */
         .act-item.is-liked i { color: var(--red) !important; }
         .act-item.is-liked span { color: var(--red); }
 
@@ -72,18 +70,16 @@
         }
         #txtDesc { font-size: 14px; color: #ccc; line-height: 1.6; margin: 0; }
 
-        /* 5. CASTING (IMAGES H + NOMS V) */
+        /* 5. CASTING */
         .cast-label { color: var(--gold); font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; display: block; }
         .cast-row-imgs { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: none; }
         .cast-row-imgs::-webkit-scrollbar { display: none; }
         .actor-img { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; flex-shrink: 0; }
-        
-        /* Liste d'appel verticale pour les noms */
-        .cast-list-names { margin-top: 10px; border-left: 1px solid rgba(255,215,0,0.3); padding-left: 15px; }
+        .cast-list-vertical { margin-top: 10px; border-left: 1px solid rgba(255,215,0,0.3); padding-left: 15px; }
         .cast-name-item { font-size: 13px; color: #eee; margin-bottom: 8px; display: flex; align-items: center; }
         .cast-name-item::before { content: "•"; color: var(--gold); margin-right: 10px; font-weight: bold; }
 
-        /* 6. MODULE COMMENTAIRES (CONSERVÉ TEL QUEL) */
+        /* 6. MODULE COMMENTAIRES */
         #tkDrawer { position: fixed; bottom: 0; width: 100%; height: 75vh; background: var(--tk-gray); border-radius: 12px 12px 0 0; transform: translateY(100%); transition: 0.3s cubic-bezier(0.2, 0, 0, 1); z-index: 2000; display: flex; flex-direction: column; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
         #tkDrawer.active { transform: translateY(0); }
         .tk-header { padding: 15px; text-align: center; font-size: 13px; font-weight: bold; border-bottom: 0.5px solid #222; position: relative; }
@@ -105,6 +101,15 @@
         #tkField { flex: 1; background: transparent; border: none; color: #fff; padding: 10px 0; font-size: 14px; outline: none; width: 100%; }
         .tk-send { color: var(--gold); font-size: 24px; background: none; border: none; opacity: 0.4; pointer-events: none; }
         .tk-send.active { opacity: 1; pointer-events: auto; }
+
+        /* ALERTE CONNEXION */
+        #authAlert { 
+            display:none; position:fixed; bottom:25px; left:5%; width:90%; 
+            background:var(--red); color:#fff; padding:15px; border-radius:12px; 
+            z-index:3000; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); 
+            font-weight:bold; animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(100px); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -129,9 +134,10 @@
         <div class="glass-box">
             <p id="txtDesc">...</p>
         </div>
-        
         <span class="cast-label">Casting Visual</span>
-        <div id="rowCastImgs" class="cast-row-imgs"></div> <div id="listCastNames" class="cast-list-vertical"></div> </div>
+        <div id="rowCastImgs" class="cast-row-imgs"></div> 
+        <div id="listCastNames" class="cast-list-vertical"></div> 
+    </div>
 
     <div id="tkDrawer">
         <div class="tk-header">
@@ -148,8 +154,15 @@
         </div>
     </div>
 
+    <div id="authAlert">
+        Connecte-toi pour interagir !
+        <br>
+        <a href="go:COMPTE1" style="display:inline-block; margin-top:10px; background:#fff; color:var(--red); padding:8px 20px; border-radius:20px; text-decoration:none; font-size:12px;">SE CONNECTER</a>
+    </div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -161,15 +174,36 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+
     const params = new URLSearchParams(window.location.search);
     const filmId = params.get('id') || "MUSHOTA_VS_KARANI_01";
     
-    const userId = localStorage.getItem('user_id') || "U" + Math.floor(Math.random()*9999);
-    const userName = localStorage.getItem('user_name') || "Fan CongoFlix";
-    const userImg = localStorage.getItem('user_img') || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-    document.getElementById('myAvatar').src = userImg;
+    let currentUser = null;
+    let userId = localStorage.getItem('user_id') || "GUEST_" + Math.floor(Math.random()*9999);
+    let userName = "Fan CongoFlix";
+    let userImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-    let targetCommentId = null;
+    // ÉCOUTEUR DE CONNEXION (LA MAGIE)
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            userId = user.uid;
+            const userSnap = await getDoc(doc(db, "users", user.uid));
+            if(userSnap.exists()){
+                const d = userSnap.data();
+                userName = d.name || user.email.split('@')[0];
+                userImg = d.photoURL || userImg;
+                document.getElementById('myAvatar').src = userImg;
+            }
+        }
+    });
+
+    window.showAuthAlert = () => {
+        const alert = document.getElementById('authAlert');
+        alert.style.display = 'block';
+        setTimeout(() => { alert.style.display = 'none'; }, 5000);
+    };
 
     onSnapshot(doc(db, "films", filmId), (snapshot) => {
         const data = snapshot.data();
@@ -179,7 +213,6 @@
         document.getElementById('txtDesc').innerText = data.description || "Pas de description.";
         document.getElementById('statV').innerText = data.views || 0;
         
-        // Gestion Like TikTok (Rouge/Jaune)
         const likes = data.likes || [];
         document.getElementById('statL').innerText = likes.length;
         const likeBtn = document.getElementById('mainLikeBtn');
@@ -193,17 +226,11 @@
             document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
         }
 
-        // Casting : Photos H + Noms V
         const acteurs = data.acteurs || [];
         const noms = data.noms_acteurs || ["Casting officiel"];
-        document.getElementById('rowCastImgs').innerHTML = acteurs.map(url => `
-            <img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
-        `).join('');
-        document.getElementById('listCastNames').innerHTML = noms.map(n => `
-            <div class="cast-name-item">${n}</div>
-        `).join('');
+        document.getElementById('rowCastImgs').innerHTML = acteurs.map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
+        document.getElementById('listCastNames').innerHTML = noms.map(n => `<div class="cast-name-item">${n}</div>`).join('');
 
-        // Système de commentaires complet (conservé)
         const comms = (data.comments || []).filter(c => typeof c === 'object');
         document.getElementById('statC').innerText = comms.length;
         document.getElementById('hCount').innerText = comms.length;
@@ -219,20 +246,8 @@
                     <div class="c-text">${c.text}</div>
                     <div class="c-foot"><span onclick="prepareReply('${c.id}', '${c.nom}')">Répondre</span></div>
                     ${replies.length > 0 ? `
-                        <div style="margin-top:10px; font-size:12px; color:#555; cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">
-                            ——— Afficher ${replies.length} réponses
-                        </div>
-                        <div class="replies-pocket">
-                            ${replies.map(r => `
-                                <div style="display:flex; gap:8px; margin-bottom:10px">
-                                    <img src="${r.photo || userImg}" style="width:24px; height:24px; border-radius:50%">
-                                    <div class="c-main">
-                                        <div class="c-user" style="font-size:11px">${r.nom}</div>
-                                        <div class="c-text" style="font-size:13px">${r.text}</div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
+                        <div style="margin-top:10px; font-size:12px; color:#555; cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher ${replies.length} réponses</div>
+                        <div class="replies-pocket">${replies.map(r => `<div style="display:flex; gap:8px; margin-bottom:10px"><img src="${r.photo}" style="width:24px; height:24px; border-radius:50%"><div class="c-main"><div class="c-user" style="font-size:11px">${r.nom}</div><div class="c-text" style="font-size:13px">${r.text}</div></div></div>`).join('')}</div>
                     ` : ''}
                 </div>
                 <div class="c-like-zone" onclick="likeComment('${c.id}')">
@@ -243,7 +258,7 @@
         }).join('');
     });
 
-    // Fonctions Comments conservées
+    let targetCommentId = null;
     window.prepareReply = (cid, name) => {
         targetCommentId = cid;
         const field = document.getElementById('tkField');
@@ -252,6 +267,7 @@
     };
 
     window.handlePost = async () => {
+        if(!currentUser) { showAuthAlert(); return; }
         const val = document.getElementById('tkField').value.trim();
         if(!val) return;
         const ref = doc(db, "films", filmId);
@@ -274,6 +290,7 @@
     };
 
     window.likeComment = async (cid) => {
+        if(!currentUser) { showAuthAlert(); return; }
         const snap = await getDoc(doc(db, "films", filmId));
         const updated = (snap.data().comments || []).map(c => {
             if(c.id === cid) {
@@ -286,15 +303,17 @@
         await updateDoc(doc(db, "films", filmId), { comments: updated });
     };
 
-    window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
-    document.getElementById('tkField').oninput = function() { document.getElementById('tkSend').classList.toggle('active', this.value.length > 0); };
-    
     document.getElementById('mainLikeBtn').onclick = async () => {
+        if(!currentUser) { showAuthAlert(); return; }
         const ref = doc(db, "films", filmId);
         const s = await getDoc(ref);
         const l = s.data().likes || [];
         await updateDoc(ref, { likes: l.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) });
     };
+
+    document.getElementById('mainFavBtn').onclick = () => { if(!currentUser) showAuthAlert(); else alert("Ajouté !"); };
+    window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
+    document.getElementById('tkField').oninput = function() { document.getElementById('tkSend').classList.toggle('active', this.value.length > 0); };
 </script>
 </body>
 </html>
