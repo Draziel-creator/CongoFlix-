@@ -3,72 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CongoFlix - Visionnage</title>
+    <title>CongoFlix - Visionnage Premium</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --gold: #ffd700; --bg: #000; --glass: rgba(255, 215, 0, 0.1); }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        
-        .player-header { width: 100%; aspect-ratio: 16/9; background: #000; position: relative; border-bottom: 2px solid var(--gold); }
-        .back-btn { position: absolute; top: 15px; left: 15px; z-index: 100; width: 38px; height: 38px; border-radius: 50%; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; color: var(--gold); background: rgba(0,0,0,0.7); cursor: pointer; }
-
-        .stats-bar { display: flex; justify-content: space-around; padding: 15px; background: #0a0a0a; border-bottom: 1px solid #222; }
-        .stat-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #666; cursor: pointer; }
-        .stat-item i { font-size: 20px; margin-bottom: 4px; }
-        .active-gold { color: var(--gold) !important; text-shadow: 0 0 8px var(--gold); }
-
+        :root { --gold: #ffd700; --bg: #000; --card: #0a0a0a; --glass: rgba(255, 255, 255, 0.05); }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        .player-header { width: 100%; position: relative; aspect-ratio: 16/9; background: #000; }
+        .back-btn { position: absolute; top: 15px; left: 15px; z-index: 100; width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--gold); display: flex; align-items: center; justify-content: center; color: var(--gold); background: rgba(0,0,0,0.7); text-decoration: none; cursor:pointer; }
+        .stats-bar { display: flex; justify-content: space-around; padding: 15px; background: var(--card); border-bottom: 1px solid #1a1a1a; }
+        .stat-item { display: flex; flex-direction: column; align-items: center; font-size: 11px; color: #777; cursor: pointer; }
+        .stat-item i { font-size: 22px; color: var(--gold); margin-bottom: 4px; }
         .content { padding: 20px; }
-        .movie-title { font-size: 22px; color: var(--gold); font-weight: 800; text-transform: uppercase; margin: 0; }
-        
-        .desc-box { 
-            margin: 15px 0; padding: 15px; background: var(--glass); 
-            border-radius: 0 20px 0 20px; border-left: 4px solid var(--gold);
-        }
-        .movie-desc { font-size: 14px; color: #ccc; line-height: 1.4; margin: 0; }
-
-        .cast-imgs { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
-        .actor-circle { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; flex-shrink: 0; }
-        .cast-names { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; color: #aaa; font-size: 13px; }
-        .actor-name-item::before { content: "•"; color: var(--gold); margin-right: 10px; }
-
-        #commentPocket { position: fixed; bottom: 0; width: 100%; height: 70vh; background: #0d0d0d; border-radius: 20px 20px 0 0; transform: translateY(100%); transition: 0.4s; z-index: 1000; display: flex; flex-direction: column; border-top: 1px solid #333; }
+        .movie-title { font-size: 26px; color: var(--gold); margin: 0; font-weight: 900; text-transform: uppercase; }
+        .desc-container { margin-top: 15px; padding: 15px; background: var(--glass); border-radius: 4px 20px 4px 20px; border-left: 4px solid var(--gold); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+        .movie-desc { font-size: 14px; color: #ccc; line-height: 1.6; margin: 0; font-style: italic; }
+        .cast-imgs-row { display: flex; gap: 12px; overflow-x: auto; padding: 10px 0; }
+        .actor-circle { width: 55px; height: 55px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; flex-shrink: 0; }
+        #commentPocket { position: fixed; bottom: 0; width: 100%; height: 75vh; background: #0d0d0d; border-radius: 15px 15px 0 0; transform: translateY(100%); transition: 0.4s; z-index: 1000; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; }
         #commentPocket.active { transform: translateY(0); }
-        .tk-header { padding: 15px; text-align: center; border-bottom: 1px solid #222; position: relative; font-weight: bold; font-size: 14px; }
-        .close-btn { position: absolute; right: 20px; top: 15px; color: #888; font-size: 20px; }
-        #commentList { flex: 1; overflow-y: auto; padding: 15px; }
+        #commentList { flex: 1; overflow-y: auto; }
+        .tk-comment { display: flex; gap: 12px; margin-bottom: 20px; }
+        .tk-avatar { width: 35px; height: 35px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; color: var(--gold); font-weight: bold; }
+        .tk-input-box { display: flex; gap: 10px; padding: 15px 0; border-top: 1px solid #222; }
+        #commInput { flex: 1; background: #1a1a1a; border: none; color: #fff; padding: 10px 15px; border-radius: 25px; outline: none; }
+        .active-fav { color: #fff !important; background: var(--gold) !important; border-radius: 5px; padding: 2px 5px; }
     </style>
 </head>
 <body>
 
     <div class="player-header">
-        <div class="back-btn" onclick="history.back()"><i class="fa-solid fa-arrow-left"></i></div>
+        <div onclick="history.back()" class="back-btn"><i class="fa-solid fa-arrow-left"></i></div>
         <div id="videoContainer" style="width:100%; height:100%;"></div>
     </div>
 
     <div class="stats-bar">
-        <div class="stat-item"><i class="fa-solid fa-eye active-gold"></i> <span id="v-count">0</span></div>
-        <div class="stat-item" id="likeBtn" onclick="handleLike()"><i class="fa-solid fa-heart"></i> <span id="l-count">0</span></div>
+        <div class="stat-item"><i class="fa-solid fa-eye"></i> <span id="v-count">0</span></div>
+        <div class="stat-item" onclick="handleLike()"><i class="fa-solid fa-heart" id="heart-icon"></i> <span id="l-count">0</span></div>
         <div class="stat-item" onclick="toggleComments()"><i class="fa-solid fa-comment"></i> <span id="c-count">0</span></div>
-        <div class="stat-item" id="favBtn" onclick="toggleFavorite()"><i class="fa-solid fa-star"></i> <span id="f-text">Favoris</span></div>
+        <div class="stat-item" onclick="handleFavoris()"><i class="fa-solid fa-star" id="fav-icon"></i> <span id="fav-status">Favoris</span></div>
     </div>
 
     <div class="content">
         <h1 id="movieTitle" class="movie-title">CHARGEMENT...</h1>
-        <div class="desc-box">
-            <p id="movieDesc" class="movie-desc">Recherche des données sur CongoFlix...</p>
+        <div class="desc-container">
+            <p id="movieDesc" class="movie-desc">...</p>
         </div>
 
-        <h3 style="font-size: 14px; color: var(--gold);">CASTING DU FILM</h3>
-        <div id="castImgs" class="cast-imgs"></div>
-        <div id="castNames" class="cast-names"></div>
+        <div class="cast-section">
+            <div id="castImgs" class="cast-imgs-row"></div>
+            <div id="castNames" style="font-size: 13px; color: #888; margin-top: 10px;"></div>
+        </div>
     </div>
 
     <div id="commentPocket">
-        <div class="tk-header">
-            <span id="c-count-top">0</span> COMMENTAIRES
-            <i class="fa-solid fa-xmark close-btn" onclick="toggleComments()"></i>
-        </div>
+        <div class="tk-header"><span id="c-count-top">0</span> commentaires <i class="fa-solid fa-xmark" onclick="toggleComments()" style="float:right"></i></div>
         <div id="commentList"></div>
+        <div class="tk-input-box">
+            <input type="text" id="commInput" placeholder="Votre avis...">
+            <button onclick="sendComment()" style="background:none; border:none; color:var(--gold); font-size:22px;"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
     </div>
 
 <script type="module">
@@ -85,102 +78,92 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Récupération ID (On utilise celui de ta capture Firestore)
     const urlParams = new URLSearchParams(window.location.search);
-    const filmId = urlParams.get('id') || "MUSHOTA_VS_KARANI_01";
-    const userId = localStorage.getItem('user_id') || "USER_" + Math.floor(Math.random()*9999);
+    let filmId = urlParams.get('id') || "MUSHOTA_VS_KARANI_01";
+    let userId = localStorage.getItem('user_id') || "User_" + Math.floor(Math.random()*9000);
 
-    async function startCongoFlix() {
+    function loadFilm() {
         const filmRef = doc(db, "films", filmId);
-        
-        // Vérifier Favoris au démarrage
-        const userRef = doc(db, "users", userId);
-        const uSnap = await getDoc(userRef);
-        if(uSnap.exists() && (uSnap.data().favorites || []).includes(filmId)) {
-            document.getElementById('favBtn').classList.add('active-gold');
-            document.getElementById('f-text').innerText = "Ma Liste";
-        }
 
-        // Ecouteur temps réel (C'est ici qu'on branche Firebase)
-        onSnapshot(filmRef, (docSnap) => {
-            if (!docSnap.exists()) {
-                document.getElementById('movieTitle').innerText = "FILM NON TROUVÉ";
-                return;
+        onSnapshot(filmRef, (s) => {
+            const data = s.data();
+            if(!data) { document.getElementById('movieTitle').innerText = "INDISPONIBLE"; return; }
+
+            // Correction Lecteur (Forcer Iframe pour les liens embed)
+            const vContainer = document.getElementById('videoContainer');
+            if(!vContainer.innerHTML || vContainer.innerHTML.includes('CHARGEMENT')) {
+                vContainer.innerHTML = `<iframe src="${data.url}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>`;
             }
 
-            const data = docSnap.data();
-
-            // Remplissage Vidéo (vérifie si c'est un lien direct ou iframe)
-            const videoContainer = document.getElementById('videoContainer');
-            if(!videoContainer.innerHTML) {
-                if(data.url.includes('<iframe')) {
-                    videoContainer.innerHTML = data.url;
-                } else {
-                    videoContainer.innerHTML = `<iframe src="${data.url}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>`;
-                }
-            }
-
-            // Textes
+            // Correction Titre (ton Firestore utilise 'titre')
             document.getElementById('movieTitle').innerText = data.titre || data.title || "SANS TITRE";
             document.getElementById('movieDesc').innerText = data.description || "Aucune description.";
             
-            // Compteurs
+            // Stats
             document.getElementById('v-count').innerText = data.views || 0;
-            document.getElementById('l-count').innerText = (data.likes || []).length;
-            document.getElementById('c-count').innerText = (data.comments || []).length;
-            document.getElementById('c-count-top').innerText = (data.comments || []).length;
+            const likes = data.likes || [];
+            document.getElementById('l-count').innerText = likes.length;
+            if(likes.includes(userId)) document.getElementById('heart-icon').style.color = "red";
 
-            if((data.likes || []).includes(userId)) document.getElementById('likeBtn').classList.add('active-gold');
-
-            // Casting (Images + Noms Verticaux)
+            // Casting
             const acteurs = data.acteurs || [];
             document.getElementById('castImgs').innerHTML = acteurs.map(url => `<img src="${url}" class="actor-circle">`).join('');
-            document.getElementById('castNames').innerHTML = acteurs.map((_, i) => `<div class="actor-name-item">Acteur Principal ${i+1}</div>`).join('');
+            
+            // Commentaires
+            const comments = data.comments || [];
+            document.getElementById('c-count').innerText = comments.length;
+            document.getElementById('c-count-top').innerText = comments.length;
+            document.getElementById('commentList').innerHTML = comments.slice().reverse().map(c => `
+                <div class="tk-comment">
+                    <div class="tk-avatar">${(c.nom || 'F').charAt(0)}</div>
+                    <div>
+                        <div style="font-size:12px; font-weight:bold; color:#666">${c.nom}</div>
+                        <div style="font-size:14px">${c.text}</div>
+                    </div>
+                </div>
+            `).join('');
         });
 
-        // Ajouter une vue
-        updateDoc(filmRef, { views: increment(1) }).catch(console.error);
+        updateDoc(filmRef, { views: increment(1) }).catch(() => {});
     }
 
-    // Fonctions Boutons
+    // GESTION DES BOUTONS
     window.handleLike = async () => {
         const filmRef = doc(db, "films", filmId);
-        const s = await getDoc(filmRef);
-        const likes = s.data().likes || [];
+        const docSnap = await getDoc(filmRef);
+        const likes = docSnap.data().likes || [];
+        
         if(likes.includes(userId)) {
             await updateDoc(filmRef, { likes: arrayRemove(userId) });
-            document.getElementById('likeBtn').classList.remove('active-gold');
+            document.getElementById('heart-icon').style.color = "#ffd700";
         } else {
             await updateDoc(filmRef, { likes: arrayUnion(userId) });
-            document.getElementById('likeBtn').classList.add('active-gold');
+            document.getElementById('heart-icon').style.color = "red";
         }
     };
 
-    window.toggleFavorite = async () => {
-        const userRef = doc(db, "users", userId);
-        const uSnap = await getDoc(userRef);
-        const favs = uSnap.exists() ? (uSnap.data().favorites || []) : [];
+    window.handleFavoris = () => {
+        // Enregistre en local pour éviter l'erreur de scheme si on est sur PC
+        localStorage.setItem('fav_' + filmId, "true");
+        document.getElementById('fav-status').innerText = "Ma Liste";
+        document.getElementById('fav-icon').classList.add('active-fav');
+        
+        // Tentative d'envoi vers l'app (silencieux)
+        try { window.location.href = "appcreator24://favoris/" + filmId; } catch(e) {}
+    };
 
-        if(favs.includes(filmId)) {
-            await updateDoc(userRef, { favorites: arrayRemove(filmId) });
-            document.getElementById('favBtn').classList.remove('active-gold');
-            document.getElementById('f-text').innerText = "Favoris";
-        } else {
-            // Création automatique si user n'existe pas encore
-            try {
-                await updateDoc(userRef, { favorites: arrayUnion(filmId) });
-            } catch {
-                import { setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-                await setDoc(userRef, { favorites: [filmId], name: "Fan CongoFlix" });
-            }
-            document.getElementById('favBtn').classList.add('active-gold');
-            document.getElementById('f-text').innerText = "Ma Liste";
-        }
+    window.sendComment = async () => {
+        const txt = document.getElementById('commInput').value;
+        if(!txt) return;
+        await updateDoc(doc(db, "films", filmId), {
+            comments: arrayUnion({ nom: "Fan CongoFlix", text: txt, date: Date.now() })
+        });
+        document.getElementById('commInput').value = "";
     };
 
     window.toggleComments = () => document.getElementById('commentPocket').classList.toggle('active');
 
-    startCongoFlix();
+    loadFilm();
 </script>
 </body>
 </html>
