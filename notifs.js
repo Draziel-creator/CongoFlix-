@@ -1,4 +1,3 @@
-// CONFIGURATION DE TA BASE (N'Y TOUCHE PAS)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -17,7 +16,7 @@ const db = getFirestore(app);
 const notifContainer = document.getElementById('notif-list-container');
 const countLabel = document.getElementById('notif-badge');
 
-// 1. FONCTION POUR CHARGER LES MESSAGES
+// ON CHARGE DIRECTEMENT SANS VÉRIFIER
 const loadNotifications = () => {
     const qNotifs = query(collection(db, "global_notifications"), orderBy("Timestamp", "desc"));
     onSnapshot(qNotifs, (snapshot) => {
@@ -42,31 +41,5 @@ const loadNotifications = () => {
     });
 };
 
-// 2. FONCTION POUR AFFICHER LE CADENAS
-const showLoggedOutUI = () => {
-    if(notifContainer) {
-        notifContainer.innerHTML = `
-            <div style="text-align:center; padding:40px 20px;">
-                <div style="font-size:50px; margin-bottom:15px;">🔒</div>
-                <h3 style="color:#ffd700;">Espace Membre</h3>
-                <p style="color:#888; font-size:14px;">Connectez-vous sur votre profil pour voir les messages.</p>
-            </div>`;
-    }
-};
-
-// 3. LE SYSTÈME DE VÉRIFICATION PAR MÉMOIRE LOCALE
-const checkAuthStatus = () => {
-    // On regarde la "boîte aux lettres" remplie par index.html
-    const isLoggedIn = localStorage.getItem('congoFlix_isLoggedIn');
-
-    if (isLoggedIn === 'true') {
-        console.log("Accès autorisé par LocalStorage");
-        loadNotifications();
-    } else {
-        console.log("Accès refusé");
-        showLoggedOutUI();
-    }
-};
-
-// Lancer la vérification au chargement
-checkAuthStatus();
+// Lancement immédiat
+loadNotifications();
