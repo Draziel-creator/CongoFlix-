@@ -43,6 +43,7 @@
             font-size: 13px;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
         }
 
@@ -83,6 +84,9 @@
         .stars i { font-size: 28px; color: #333; cursor: pointer; padding: 5px; }
         .stars i.active { color: var(--gold); }
         textarea { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 12px; border-radius: 10px; margin-top: 10px; box-sizing: border-box; }
+        
+        /* Badge Notification */
+        .notif-badge { position: absolute; top: -5px; right: -8px; background: red; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: none; align-items: center; justify-content: center; border: 2px solid #000; }
     </style>
 </head>
 <body>
@@ -91,6 +95,11 @@
         <a href="go:W1" class="back-link">
             <div class="back-circle">➔</div>
         </a>
+        
+        <div id="notif-trigger" class="hidden" onclick="toggleModal('notif-modal')" style="position:relative; cursor:pointer; padding: 5px;">
+            <i class="fa-solid fa-bell" style="color:var(--gold); font-size:24px;"></i>
+            <div id="notif-count" class="notif-badge">0</div>
+        </div>
         
         <a href="player.html" id="nav-player-btn" class="player-btn hidden">
             <i class="fa-solid fa-play"></i> LECTEUR
@@ -148,14 +157,26 @@
         <button onclick="logout()" style="background:none; color:#444; border:none; width:100%; margin:30px 0;">DÉCONNEXION</button>
     </div>
 
+    <div id="notif-modal" class="overlay-modal hidden">
+        <div class="modal-content" style="text-align:left; max-height: 80vh; overflow-y: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="color:var(--gold); margin:0;">Messages</h3>
+                <span onclick="toggleModal('notif-modal')" style="color:var(--gold); font-size:28px; cursor:pointer;">&times;</span>
+            </div>
+            <div id="integrated-notif-list">
+                <p style="text-align:center; color:#444;">Aucun message</p>
+            </div>
+        </div>
+    </div>
+
     <div id="photo-alert-modal" class="overlay-modal hidden">
         <div class="modal-content">
             <i class="fa-solid fa-image" style="font-size: 40px; color: var(--gold); margin-bottom: 15px;"></i>
             <h3 style="color:var(--gold); margin-top:0;">Attention Image</h3>
             <p style="font-size: 13px; color: #ccc; line-height: 1.5; text-align: justify;">
-                Veuillez choisir une image de <b>basse taille</b>. Cet espace n'accepte pas les images HD lourdes (iPhone ou marques récentes).
+                Veuillez choisir une image de <b>basse taille</b>. Cet espace n'accepte pas les images HD lourdes.
                 <br><br>
-                <b>Astuce :</b> Si vous aimez une image, faites-en une <b>capture d'écran</b> ! Elle sera moins lourde tout en restant claire.
+                <b>Astuce :</b> Faites-en une <b>capture d'écran</b> !
             </p>
             <div style="display:flex; gap:10px;">
                 <button class="btn-main" style="background:#333; color:#fff;" onclick="toggleModal('photo-alert-modal')">ANNULER</button>
@@ -186,7 +207,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", 
@@ -277,20 +298,46 @@
                 const cred = await createUserWithEmailAndPassword(auth, email, pass);
                 await setDoc(doc(db, "users", cred.user.uid), { name: email.split('@')[0], history: [] });
             }
-            localStorage.setItem('congoFlix_isLoggedIn', 'true');
         } catch (e) { 
             err.style.display = 'block'; 
             err.innerText = "Email ou mot de passe invalide."; 
         }
     };
 
+    // --- LOGIQUE NOTIFICATIONS INTÉGRÉE ---
+    const loadIntegratedNotifs = () => {
+        const q = query(collection(db, "global_notifications"), orderBy("Timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            let html = "";
+            let count = 0;
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                count++;
+                html += `
+                    <div style="background:#000; padding:15px; border-radius:12px; margin-bottom:12px; border-left:4px solid var(--gold); border: 1px solid #333;">
+                        <b style="color:var(--gold)">${data.title || data.Title || "Message"}</b><br>
+                        <span style="color:#ccc; font-size:14px;">${data.message || data.Message || ""}</span>
+                    </div>`;
+            });
+            const list = document.getElementById('integrated-notif-list');
+            const badge = document.getElementById('notif-count');
+            if(list) list.innerHTML = count === 0 ? '<p style="text-align:center; color:#444;">Aucun message</p>' : html;
+            if(badge) {
+                badge.innerText = count;
+                badge.style.display = count > 0 ? 'flex' : 'none';
+            }
+        });
+    };
+
     onAuthStateChanged(auth, async (user) => {
         const navBtn = document.getElementById('nav-player-btn');
+        const notifTrigger = document.getElementById('notif-trigger');
         if(user) {
-            localStorage.setItem('congoFlix_isLoggedIn', 'true');
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
             navBtn.classList.remove('hidden');
+            notifTrigger.classList.remove('hidden');
+            loadIntegratedNotifs(); // Lancer les notifications
             const snap = await getDoc(doc(db, "users", user.uid));
             if(snap.exists()){
                 const d = snap.data();
@@ -300,10 +347,10 @@
                 renderHistoryUI();
             }
         } else {
-            localStorage.setItem('congoFlix_isLoggedIn', 'false');
             document.getElementById('auth-screen').classList.remove('hidden');
             document.getElementById('main-app').classList.add('hidden');
             navBtn.classList.add('hidden');
+            notifTrigger.classList.add('hidden');
         }
     });
 
@@ -338,7 +385,6 @@
     };
 
     window.logout = () => {
-        localStorage.setItem('congoFlix_isLoggedIn', 'false');
         signOut(auth);
     };
 
