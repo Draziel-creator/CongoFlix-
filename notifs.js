@@ -43,29 +43,46 @@ const loadNotifications = () => {
     });
 };
 
-// FONCTION POUR AFFICHER LE CADENAS
+// FONCTION POUR AFFICHER LE CADENAS AVEC VÉRIFICATION SANS ERREUR
 const showLoggedOutUI = () => {
     if(notifContainer) {
         notifContainer.innerHTML = `
             <div style="text-align:center; padding:40px 20px;">
                 <div style="font-size:50px; margin-bottom:15px;">🔒</div>
                 <h3 style="color:#ffd700;">Accès Restreint</h3>
-                <p style="color:#888; font-size:14px;">Veuillez vous connecter sur votre profil pour voir les messages.</p>
-                <button onclick="location.reload()" 
-                   style="background:#ffd700; color:#000; padding:10px 25px; border:none; border-radius:20px; font-weight:bold; cursor:pointer;">
-                   ACTUALISER
+                <p style="color:#888; font-size:14px; margin-bottom:20px;">Connectez-vous sur votre profil, puis revenez ici pour cliquer sur le bouton.</p>
+                <button id="check-auth-btn" 
+                   style="background:#ffd700; color:#000; padding:12px 25px; border:none; border-radius:20px; font-weight:bold; cursor:pointer; width:100%;">
+                   VÉRIFIER MA CONNEXION
                 </button>
             </div>`;
+
+        // Écouteur de clic pour vérifier la connexion sans recharger
+        const btn = document.getElementById('check-auth-btn');
+        if(btn) {
+            btn.onclick = () => {
+                if (auth.currentUser) {
+                    loadNotifications();
+                } else {
+                    btn.innerText = "CONNEXION NON DÉTECTÉE...";
+                    btn.style.background = "#333";
+                    btn.style.color = "#fff";
+                    setTimeout(() => {
+                        btn.innerText = "VÉRIFIER MA CONNEXION";
+                        btn.style.background = "#ffd700";
+                        btn.style.color = "#000";
+                    }, 2000);
+                }
+            };
+        }
     }
 };
 
-// --- LE CERVEAU DU FICHIER : ÉCOUTER LA CONNEXION EN TEMPS RÉEL ---
+// --- LE CERVEAU DU FICHIER ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        console.log("Utilisateur détecté, chargement des messages...");
         loadNotifications();
     } else {
-        console.log("Aucun utilisateur, affichage du cadenas.");
         showLoggedOutUI();
     }
 });
