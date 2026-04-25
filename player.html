@@ -52,7 +52,7 @@
         .act-item.is-liked i { color: var(--red) !important; }
         .act-item.is-liked span { color: var(--red); }
 
-        /* 4. DESCRIPTION EFFET VITRINE GPT */
+        /* 4. DESCRIPTION EFFET VITRINE */
         .info-pane { padding: 20px; }
         .glass-box {
             background: rgba(255, 255, 255, 0.03);
@@ -157,13 +157,13 @@
     <div id="authAlert">
         Connecte-toi pour interagir !
         <br>
-        <a href="go:COMPTE1" style="display:inline-block; margin-top:10px; background:#fff; color:var(--red); padding:8px 20px; border-radius:20px; text-decoration:none; font-size:12px;">SE CONNECTER</a>
+        <a href="account.html" style="display:inline-block; margin-top:10px; background:#fff; color:var(--red); padding:8px 20px; border-radius:20px; text-decoration:none; font-size:12px;">SE CONNECTER</a>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
@@ -180,11 +180,11 @@
     const filmId = params.get('id') || "MUSHOTA_VS_KARANI_01";
     
     let currentUser = null;
-    let userId = localStorage.getItem('user_id') || "GUEST_" + Math.floor(Math.random()*9999);
+    let userId = "GUEST_" + Math.floor(Math.random()*9999);
     let userName = "Fan CongoFlix";
     let userImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-    // --- LOGIQUE DE DÉTECTION AMÉLIORÉE ---
+    // --- DETECTION CONNEXION ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
@@ -195,31 +195,20 @@
                 userName = d.name || user.email.split('@')[0];
                 userImg = d.photoURL || userImg;
                 document.getElementById('myAvatar').src = userImg;
+                
+                // AJOUT AUTOMATIQUE À L'HISTORIQUE DE L'UTILISATEUR
+                const filmSnap = await getDoc(doc(db, "films", filmId));
+                if(filmSnap.exists()){
+                    const fData = filmSnap.data();
+                    const historyItem = { id: filmId, title: fData.titre, poster: fData.poster || "" };
+                    const currentHistory = d.history || [];
+                    if(!currentHistory.find(h => h.id === filmId)){
+                        await updateDoc(doc(db, "users", user.uid), { history: arrayUnion(historyItem) });
+                    }
+                }
             }
-        } else {
-            currentUser = null;
-            // On ne réinitialise pas le userId GUEST ici pour permettre la lecture sans crash
         }
     });
-
-    // Fonction pour forcer la vérification avant chaque action sensible
-    async function checkUserConnection() {
-        if (currentUser) return true;
-        // Tentative de récupération forcée au cas où onAuthStateChanged est lent
-        return new Promise((resolve) => {
-            const unsubscribe = onAuthStateChanged(auth, (user) => {
-                unsubscribe();
-                if (user) {
-                    currentUser = user;
-                    userId = user.uid;
-                    resolve(true);
-                } else {
-                    resolve(false);
-                }
-            });
-            setTimeout(() => resolve(false), 1500); // Timeout après 1.5s
-        });
-    }
 
     window.showAuthAlert = () => {
         const alert = document.getElementById('authAlert');
@@ -227,6 +216,7 @@
         setTimeout(() => { alert.style.display = 'none'; }, 5000);
     };
 
+    // --- CHARGEMENT DES DONNÉES DU FILM ---
     onSnapshot(doc(db, "films", filmId), (snapshot) => {
         const data = snapshot.data();
         if(!data) return;
@@ -238,38 +228,34 @@
         const likes = data.likes || [];
         document.getElementById('statL').innerText = likes.length;
         const likeBtn = document.getElementById('mainLikeBtn');
-        if(likes.includes(userId)) {
-            likeBtn.classList.add('is-liked');
-        } else {
-            likeBtn.classList.remove('is-liked');
-        }
+        if(likes.includes(userId)) likeBtn.classList.add('is-liked');
+        else likeBtn.classList.remove('is-liked');
 
         if(!document.getElementById('playerRoot').innerHTML && data.url) {
             document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
+            // Incrémenter les vues une seule fois
+            updateDoc(doc(db, "films", filmId), { views: increment(1) });
         }
 
-        const acteurs = data.acteurs || [];
-        const noms = data.noms_acteurs || ["Casting officiel"];
-        document.getElementById('rowCastImgs').innerHTML = acteurs.map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
-        document.getElementById('listCastNames').innerHTML = noms.map(n => `<div class="cast-name-item">${n}</div>`).join('');
+        document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
+        document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || ["Casting officiel"]).map(n => `<div class="cast-name-item">${n}</div>`).join('');
 
         const comms = (data.comments || []).filter(c => typeof c === 'object');
         document.getElementById('statC').innerText = comms.length;
         document.getElementById('hCount').innerText = comms.length;
 
         document.getElementById('tkList').innerHTML = comms.slice().reverse().map(c => {
-            const replies = c.replies || [];
             const hasLiked = (c.likedBy || []).includes(userId);
             return `
             <div class="comment">
-                <img src="${c.photo || userImg}" class="c-avatar">
+                <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="c-avatar">
                 <div class="c-main">
                     <div class="c-user">${c.nom}</div>
                     <div class="c-text">${c.text}</div>
                     <div class="c-foot"><span onclick="prepareReply('${c.id}', '${c.nom}')">Répondre</span></div>
-                    ${replies.length > 0 ? `
-                        <div style="margin-top:10px; font-size:12px; color:#555; cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher ${replies.length} réponses</div>
-                        <div class="replies-pocket">${replies.map(r => `<div style="display:flex; gap:8px; margin-bottom:10px"><img src="${r.photo}" style="width:24px; height:24px; border-radius:50%"><div class="c-main"><div class="c-user" style="font-size:11px">${r.nom}</div><div class="c-text" style="font-size:13px">${r.text}</div></div></div>`).join('')}</div>
+                    ${(c.replies || []).length > 0 ? `
+                        <div style="margin-top:10px; font-size:12px; color:#555; cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher ${c.replies.length} réponses</div>
+                        <div class="replies-pocket">${c.replies.map(r => `<div style="display:flex; gap:8px; margin-bottom:10px"><img src="${r.photo}" style="width:24px; height:24px; border-radius:50%"><div class="c-main"><div class="c-user" style="font-size:11px">${r.nom}</div><div class="c-text" style="font-size:13px">${r.text}</div></div></div>`).join('')}</div>
                     ` : ''}
                 </div>
                 <div class="c-like-zone" onclick="likeComment('${c.id}')">
@@ -280,6 +266,7 @@
         }).join('');
     });
 
+    // --- ACTIONS ---
     let targetCommentId = null;
     window.prepareReply = (cid, name) => {
         targetCommentId = cid;
@@ -289,14 +276,12 @@
     };
 
     window.handlePost = async () => {
-        const isConnected = await checkUserConnection();
-        if(!isConnected) { showAuthAlert(); return; }
-        
+        if(!currentUser) { showAuthAlert(); return; }
         const val = document.getElementById('tkField').value.trim();
         if(!val) return;
         const ref = doc(db, "films", filmId);
         const snap = await getDoc(ref);
-        let allComments = (snap.data().comments || []).filter(c => typeof c === 'object');
+        let allComments = snap.data().comments || [];
         if(targetCommentId) {
             allComments = allComments.map(c => {
                 if(c.id === targetCommentId) {
@@ -314,9 +299,7 @@
     };
 
     window.likeComment = async (cid) => {
-        const isConnected = await checkUserConnection();
-        if(!isConnected) { showAuthAlert(); return; }
-        
+        if(!currentUser) { showAuthAlert(); return; }
         const snap = await getDoc(doc(db, "films", filmId));
         const updated = (snap.data().comments || []).map(c => {
             if(c.id === cid) {
@@ -330,19 +313,16 @@
     };
 
     document.getElementById('mainLikeBtn').onclick = async () => {
-        const isConnected = await checkUserConnection();
-        if(!isConnected) { showAuthAlert(); return; }
-        
+        if(!currentUser) { showAuthAlert(); return; }
         const ref = doc(db, "films", filmId);
         const s = await getDoc(ref);
         const l = s.data().likes || [];
         await updateDoc(ref, { likes: l.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) });
     };
 
-    document.getElementById('mainFavBtn').onclick = async () => { 
-        const isConnected = await checkUserConnection();
-        if(!isConnected) showAuthAlert(); 
-        else alert("Ajouté aux favoris !"); 
+    document.getElementById('mainFavBtn').onclick = () => { 
+        if(!currentUser) showAuthAlert(); 
+        else alert("Ajouté à vos favoris !"); 
     };
 
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
