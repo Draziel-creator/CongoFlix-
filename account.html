@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --gold: #ffd700; --bg: #000; --card: #111; --error: #ff4d4d; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
+        .hidden { display: none !important; }
+        
+        /* BARRE DE NAVIGATION */
+        .top-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Espace entre les deux boutons */
+            margin-bottom: 20px;
+        }
+
+        .back-link { text-decoration: none; -webkit-tap-highlight-color: transparent; }
+
+        /* Flèche W1 (Gauche) */
+        .back-circle {
+            width: 38px;
+            height: 38px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: rgba(255, 215, 0, 0.05);
+            transform: rotate(180deg); 
+        }
+
+        /* Bouton Lecteur (Droite) */
+        .player-btn {
+            background: var(--gold);
+            color: #000;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Profil */
+        .profile-header { text-align: center; padding: 10px 0; }
+        .avatar-wrapper { position: relative; display: inline-block; cursor: pointer; }
+        #user-photo { width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; background: #222; }
+        .edit-badge { position: absolute; bottom: 5px; right: 5px; background: var(--gold); color: #000; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg); font-size: 12px; }
+        .user-name-box { font-size: 22px; color: var(--gold); font-weight: bold; margin-top: 10px; }
+
+        /* Popups */
+        .overlay-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--gold); width: 85%; text-align: center; box-sizing: border-box; }
+
+        /* Historique Style */
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 10px 0; }
+        .history-title { color: var(--gold); font-size: 16px; font-weight: bold; margin:0; }
+        .btn-clear-all { background: none; border: 1px solid #444; color: #888; font-size: 10px; padding: 5px 10px; border-radius: 20px; cursor: pointer; }
+        .movie-scroll-x { display: flex; flex-wrap: nowrap; gap: 15px; overflow-x: auto; padding-bottom: 15px; min-height: 120px; }
+        .history-card { min-width: 140px; background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid #222; position: relative; }
+        .history-card img { width: 100%; height: 85px; object-fit: cover; cursor: pointer; }
+
+        /* Avis Lumineux */
+        .rating-card { background: var(--card); border: 1px solid var(--gold); padding: 20px; border-radius: 15px; text-align: center; }
+        #rating-text { color: var(--gold); text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); font-size: 15px; min-height: 40px; transition: 0.5s; font-weight: bold; }
+
+        /* Auth */
+        .auth-input { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: #fff; box-sizing: border-box; }
+        #error-msg { color: var(--error); font-size: 13px; margin-bottom: 10px; display: none; }
+        .pass-group { position: relative; }
+        .toggle-pass { position: absolute; right: 15px; top: 18px; color: #555; }
+
+        /* Boutons */
+        .btn-main { background: var(--gold); color: #000; border: none; padding: 16px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
+        .btn-link-site { display: block; background: #111; color: var(--gold); border: 1px solid var(--gold); text-decoration: none; text-align: center; padding: 15px; border-radius: 12px; font-weight: bold; margin: 20px 0; }
+        .stars i { font-size: 28px; color: #333; cursor: pointer; padding: 5px; }
+        .stars i.active { color: var(--gold); }
+        textarea { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 12px; border-radius: 10px; margin-top: 10px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+    <div class="top-nav">
+        <a href="go:W1" class="back-link">
+            <div class="back-circle">➔</div>
+        </a>
+        
+        <a href="player.html" id="nav-player-btn" class="player-btn hidden">
+            <i class="fa-solid fa-play"></i> LECTEUR
+        </a>
+    </div>
+
+    <div id="auth-screen" class="hidden">
+        <div style="padding: 20px; text-align: center;">
+            <h2 style="color:var(--gold); margin-top: 40px;">CONGOFLIX</h2>
+            <p style="color: #555; font-size: 12px;">LA VITRINE DE LA RDC</p>
+            <div id="error-msg"></div>
+            <input type="email" id="email" class="auth-input" placeholder="Email">
+            <div class="pass-group">
+                <input type="password" id="password" class="auth-input" placeholder="Mot de passe">
+                <i class="fa-solid fa-eye toggle-pass" onclick="togglePasswordVisibility()"></i>
+            </div>
+            <button class="btn-main" id="authBtn" onclick="handleAuth()">S'IDENTIFIER</button>
+            <div style="margin-top:20px; font-size:14px; color:#888;" id="switchBox">
+                Pas de compte ? <span style="color:var(--gold); cursor:pointer;" onclick="toggleAuthMode()">Créer un compte</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app" class="hidden">
+        <div class="profile-header">
+            <div class="avatar-wrapper" onclick="document.getElementById('fileInput').click()">
+                <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+                <div class="edit-badge"><i class="fa-solid fa-camera"></i></div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="uploadImage(event)">
+            <div class="user-name-box" id="user-name">...</div>
+        </div>
+
+        <a href="https://congoflix-rdc.blogspot.com/?m=1" class="btn-link-site">ACCÉDER AU SITE WEB</a>
+
+        <div class="history-header">
+            <h3 class="history-title">Mon Historique</h3>
+            <button class="btn-clear-all" onclick="confirmDeleteAll()">Tout effacer</button>
+        </div>
+        <div class="movie-scroll-x" id="history-list"></div>
+
+        <div class="rating-card">
+            <h4 id="rating-text">Comment trouvez-vous l'appli ?</h4>
+            <div class="stars">
+                <i class="fa-solid fa-star" onclick="setRate(1)"></i>
+                <i class="fa-solid fa-star" onclick="setRate(2)"></i>
+                <i class="fa-solid fa-star" onclick="setRate(3)"></i>
+                <i class="fa-solid fa-star" onclick="setRate(4)"></i>
+                <i class="fa-solid fa-star" onclick="setRate(5)"></i>
+            </div>
+            <textarea id="appComment" placeholder="Message pour CongoFlix..."></textarea>
+            <button class="btn-main" id="sendBtn" onclick="saveRating()">ENVOYER L'AVIS</button>
+        </div>
+
+        <button onclick="logout()" style="background:none; color:#444; border:none; width:100%; margin:30px 0;">DÉCONNEXION</button>
+    </div>
+
+    <div id="success-modal" class="overlay-modal hidden">
+        <div class="modal-content">
+            <i class="fa-solid fa-circle-check" style="font-size: 50px; color: var(--gold); margin-bottom: 15px;"></i>
+            <h3 style="margin:0; color:var(--gold);">Avis reçu !</h3>
+            <p style="font-size: 14px; color: #ccc;">Merci de soutenir le cinéma congolais.</p>
+            <button class="btn-main" onclick="toggleModal('success-modal')">OK !</button>
+        </div>
+    </div>
+
+    <div id="delete-confirm-modal" class="overlay-modal hidden">
+        <div class="modal-content" style="max-width:300px;">
+            <p id="confirm-msg" style="margin-bottom:20px; font-size:14px;"></p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-main" style="background:#333; color:#fff;" onclick="toggleModal('delete-confirm-modal')">Non</button>
+                <button id="execute-delete-btn" class="btn-main" style="background:var(--error); color:#fff;">Oui</button>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", 
+        authDomain: "congo-streaming-51333.firebaseapp.com", 
+        projectId: "congo-streaming-51333", 
+        appId: "1:304286627819:android:36e0b43b8b10508a054bae" 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let localHistory = [];
+    let isLoginMode = true;
+    let currentRate = 0;
+
+    window.toggleModal = (id) => document.getElementById(id).classList.toggle('hidden');
+
+    // --- HISTORIQUE (Avec clic pour retourner au film) ---
+    window.renderHistoryUI = () => {
+        const list = document.getElementById('history-list');
+        if(localHistory.length === 0) { list.innerHTML = '<p style="color:#333; font-size:12px;">Aucun film vu.</p>'; return; }
+        list.innerHTML = localHistory.map((m, i) => `
+            <div class="history-card">
+                <div class="delete-btn-icon" onclick="askDeleteMovie(${i})"><i class="fa-solid fa-trash"></i></div>
+                <img src="${m.poster}" onclick="window.location.href='player.html?id=${m.id}'">
+                <p style="font-size:9px; text-align:center; padding:3px; margin:0;">${m.title}</p>
+            </div>
+        `).join('');
+    };
+
+    window.askDeleteMovie = (index) => {
+        document.getElementById('confirm-msg').innerText = "Supprimer ce film de l'historique ?";
+        document.getElementById('execute-delete-btn').onclick = async () => {
+            localHistory.splice(index, 1);
+            renderHistoryUI();
+            toggleModal('delete-confirm-modal');
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { history: localHistory });
+        };
+        toggleModal('delete-confirm-modal');
+    };
+
+    window.confirmDeleteAll = () => {
+        if(localHistory.length === 0) return;
+        document.getElementById('confirm-msg').innerText = "Voulez-vous vider tout votre historique ?";
+        document.getElementById('execute-delete-btn').onclick = async () => {
+            localHistory = [];
+            renderHistoryUI();
+            toggleModal('delete-confirm-modal');
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { history: [] });
+        };
+        toggleModal('delete-confirm-modal');
+    };
+
+    // --- AUTHENTIFICATION ---
+    window.toggleAuthMode = () => {
+        isLoginMode = !isLoginMode;
+        document.getElementById('authBtn').innerText = isLoginMode ? "S'IDENTIFIER" : "CRÉER MON COMPTE";
+        document.getElementById('switchBox').innerHTML = isLoginMode ? 
+            'Pas de compte ? <span style="color:var(--gold); cursor:pointer;" onclick="toggleAuthMode()">Créer un compte</span>' :
+            'Déjà inscrit ? <span style="color:var(--gold); cursor:pointer;" onclick="toggleAuthMode()">Se connecter</span>';
+    };
+
+    window.togglePasswordVisibility = () => {
+        const p = document.getElementById('password');
+        p.type = p.type === "password" ? "text" : "password";
+    };
+
+    window.handleAuth = async () => {
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('password').value;
+        const err = document.getElementById('error-msg');
+        if(!email || !pass) return;
+        try {
+            if(isLoginMode) {
+                await signInWithEmailAndPassword(auth, email, pass);
+                window.location.href = "player.html";
+            } else {
+                const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                await setDoc(doc(db, "users", cred.user.uid), { name: email.split('@')[0], history: [] });
+                window.location.href = "player.html";
+            }
+        } catch (e) { 
+            err.style.display = 'block'; 
+            err.innerText = "Email ou mot de passe invalide."; 
+        }
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+        const navBtn = document.getElementById('nav-player-btn');
+        if(user) {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            navBtn.classList.remove('hidden'); // Affiche le bouton Lecteur en haut
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if(snap.exists()){
+                const d = snap.data();
+                document.getElementById('user-name').innerText = d.name;
+                if(d.photoURL) document.getElementById('user-photo').src = d.photoURL;
+                localHistory = d.history || [];
+                renderHistoryUI();
+            }
+        } else {
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+            navBtn.classList.add('hidden');
+        }
+    });
+
+    // --- RATING & PHOTO ---
+    window.setRate = (n) => {
+        currentRate = n;
+        document.querySelectorAll('.stars i').forEach((s, i) => s.classList.toggle('active', i < n));
+    };
+
+    window.saveRating = async () => {
+        if(currentRate === 0) return;
+        const text = document.getElementById('appComment').value;
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { appRating: currentRate, feedback: text });
+        
+        // Notification Telegram
+        const token = "8622143155:AAH_Db9WSYKSUw6UaKECYKdl27HsStW3VpU";
+        const message = `🎬 CONGOFLIX - NOUVEL AVIS\nUtilisateur: ${document.getElementById('user-name').innerText}\nNote: ${currentRate}/5\nCommentaire: ${text}`;
+        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=6325666767&text=${encodeURIComponent(message)}`);
+        
+        toggleModal('success-modal');
+        document.getElementById('appComment').value = "";
+        setRate(0);
+    };
+
+    window.uploadImage = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            document.getElementById('user-photo').src = reader.result;
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { photoURL: reader.result });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.logout = () => signOut(auth);
+
+    // Animation texte
+    const phrases = ["Votre expérience nous importe", "Un film à suggérer ?", "CongoFlix: le miroir de la RDC", "Notez l'application"];
+    let pIdx = 0;
+    setInterval(() => {
+        pIdx = (pIdx + 1) % phrases.length;
+        const txt = document.getElementById('rating-text');
+        if(txt) { txt.style.opacity = 0; setTimeout(() => { txt.innerText = phrases[pIdx]; txt.style.opacity = 1; }, 500); }
+    }, 4000);
+</script>
+</body>
+</html>
