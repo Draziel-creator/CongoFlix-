@@ -13,13 +13,12 @@
         .top-nav {
             display: flex;
             align-items: center;
-            justify-content: space-between; /* Espace entre les deux boutons */
+            justify-content: space-between;
             margin-bottom: 20px;
         }
 
         .back-link { text-decoration: none; -webkit-tap-highlight-color: transparent; }
 
-        /* Flèche W1 (Gauche) */
         .back-circle {
             width: 38px;
             height: 38px;
@@ -34,7 +33,6 @@
             transform: rotate(180deg); 
         }
 
-        /* Bouton Lecteur (Droite) */
         .player-btn {
             background: var(--gold);
             color: #000;
@@ -53,7 +51,9 @@
         .avatar-wrapper { position: relative; display: inline-block; cursor: pointer; }
         #user-photo { width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; background: #222; }
         .edit-badge { position: absolute; bottom: 5px; right: 5px; background: var(--gold); color: #000; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg); font-size: 12px; }
-        .user-name-box { font-size: 22px; color: var(--gold); font-weight: bold; margin-top: 10px; }
+        
+        /* Nom modifiable */
+        .user-name-box { font-size: 22px; color: var(--gold); font-weight: bold; margin-top: 10px; border: none; background: transparent; text-align: center; width: 100%; outline: none; }
 
         /* Popups */
         .overlay-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; }
@@ -116,12 +116,12 @@
 
     <div id="main-app" class="hidden">
         <div class="profile-header">
-            <div class="avatar-wrapper" onclick="document.getElementById('fileInput').click()">
+            <div class="avatar-wrapper" onclick="toggleModal('photo-alert-modal')">
                 <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
                 <div class="edit-badge"><i class="fa-solid fa-camera"></i></div>
             </div>
             <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="uploadImage(event)">
-            <div class="user-name-box" id="user-name">...</div>
+            <input type="text" class="user-name-box" id="user-name" value="..." onchange="updateProfileName(this.value)">
         </div>
 
         <a href="https://congoflix-rdc.blogspot.com/?m=1" class="btn-link-site">ACCÉDER AU SITE WEB</a>
@@ -146,6 +146,22 @@
         </div>
 
         <button onclick="logout()" style="background:none; color:#444; border:none; width:100%; margin:30px 0;">DÉCONNEXION</button>
+    </div>
+
+    <div id="photo-alert-modal" class="overlay-modal hidden">
+        <div class="modal-content">
+            <i class="fa-solid fa-image" style="font-size: 40px; color: var(--gold); margin-bottom: 15px;"></i>
+            <h3 style="color:var(--gold); margin-top:0;">Attention Image</h3>
+            <p style="font-size: 13px; color: #ccc; line-height: 1.5; text-align: justify;">
+                Veuillez choisir une image de <b>basse taille</b>. Cet espace n'accepte pas les images HD lourdes (iPhone ou marques récentes).
+                <br><br>
+                <b>Astuce :</b> Si vous aimez une image, faites-en une <b>capture d'écran</b> ! Elle sera moins lourde tout en restant claire.
+            </p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-main" style="background:#333; color:#fff;" onclick="toggleModal('photo-alert-modal')">ANNULER</button>
+                <button class="btn-main" onclick="triggerFileInput()">ACCEPTER</button>
+            </div>
+        </div>
     </div>
 
     <div id="success-modal" class="overlay-modal hidden">
@@ -189,13 +205,26 @@
 
     window.toggleModal = (id) => document.getElementById(id).classList.toggle('hidden');
 
-    // --- HISTORIQUE (Avec clic pour retourner au film) ---
+    window.triggerFileInput = () => {
+        toggleModal('photo-alert-modal');
+        document.getElementById('fileInput').click();
+    };
+
+    // --- MISE À JOUR DU NOM ---
+    window.updateProfileName = async (newName) => {
+        if(!newName || newName === "...") return;
+        try {
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { name: newName });
+        } catch (e) { console.error("Erreur mise à jour nom", e); }
+    };
+
+    // --- HISTORIQUE ---
     window.renderHistoryUI = () => {
         const list = document.getElementById('history-list');
         if(localHistory.length === 0) { list.innerHTML = '<p style="color:#333; font-size:12px;">Aucun film vu.</p>'; return; }
         list.innerHTML = localHistory.map((m, i) => `
             <div class="history-card">
-                <div class="delete-btn-icon" onclick="askDeleteMovie(${i})"><i class="fa-solid fa-trash"></i></div>
+                <div class="delete-btn-icon" style="position:absolute; top:5px; right:5px; color:white; background:rgba(0,0,0,0.5); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; z-index:5;" onclick="askDeleteMovie(${i})"><i class="fa-solid fa-trash"></i></div>
                 <img src="${m.poster}" onclick="window.location.href='player.html?id=${m.id}'">
                 <p style="font-size:9px; text-align:center; padding:3px; margin:0;">${m.title}</p>
             </div>
@@ -247,11 +276,9 @@
         try {
             if(isLoginMode) {
                 await signInWithEmailAndPassword(auth, email, pass);
-                window.location.href = "player.html";
             } else {
                 const cred = await createUserWithEmailAndPassword(auth, email, pass);
                 await setDoc(doc(db, "users", cred.user.uid), { name: email.split('@')[0], history: [] });
-                window.location.href = "player.html";
             }
         } catch (e) { 
             err.style.display = 'block'; 
@@ -264,11 +291,11 @@
         if(user) {
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
-            navBtn.classList.remove('hidden'); // Affiche le bouton Lecteur en haut
+            navBtn.classList.remove('hidden');
             const snap = await getDoc(doc(db, "users", user.uid));
             if(snap.exists()){
                 const d = snap.data();
-                document.getElementById('user-name').innerText = d.name;
+                document.getElementById('user-name').value = d.name || "Utilisateur";
                 if(d.photoURL) document.getElementById('user-photo').src = d.photoURL;
                 localHistory = d.history || [];
                 renderHistoryUI();
@@ -291,9 +318,8 @@
         const text = document.getElementById('appComment').value;
         await updateDoc(doc(db, "users", auth.currentUser.uid), { appRating: currentRate, feedback: text });
         
-        // Notification Telegram
         const token = "8622143155:AAH_Db9WSYKSUw6UaKECYKdl27HsStW3VpU";
-        const message = `🎬 CONGOFLIX - NOUVEL AVIS\nUtilisateur: ${document.getElementById('user-name').innerText}\nNote: ${currentRate}/5\nCommentaire: ${text}`;
+        const message = `🎬 CONGOFLIX - NOUVEL AVIS\nUtilisateur: ${document.getElementById('user-name').value}\nNote: ${currentRate}/5\nCommentaire: ${text}`;
         fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=6325666767&text=${encodeURIComponent(message)}`);
         
         toggleModal('success-modal');
@@ -303,6 +329,7 @@
 
     window.uploadImage = (e) => {
         const file = e.target.files[0];
+        if(!file) return;
         const reader = new FileReader();
         reader.onloadend = async () => {
             document.getElementById('user-photo').src = reader.result;
