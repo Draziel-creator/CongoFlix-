@@ -52,6 +52,14 @@
         .act-item.is-liked i { color: var(--red) !important; }
         .act-item.is-liked span { color: var(--red); }
 
+        /* ANIMATION FAVORIS */
+        .act-item.is-fav i { 
+            color: var(--gold) !important; 
+            text-shadow: 0 0 15px var(--gold); 
+            transform: scale(1.2);
+        }
+        .act-item.is-fav span { color: var(--gold); font-weight: bold; }
+
         /* 4. DESCRIPTION EFFET VITRINE */
         .info-pane { padding: 20px; }
         .glass-box {
@@ -127,7 +135,7 @@
         <div class="act-item"><i class="fa-solid fa-eye"></i> <span id="statV">0</span></div>
         <div class="act-item" id="mainLikeBtn"><i class="fa-solid fa-heart"></i> <span id="statL">0</span></div>
         <div class="act-item" onclick="toggleTk()"><i class="fa-solid fa-comment"></i> <span id="statC">0</span></div>
-        <div class="act-item" id="mainFavBtn"><i class="fa-solid fa-star"></i> <span>Favoris</span></div>
+        <div class="act-item" id="mainFavBtn"><i class="fa-solid fa-star"></i> <span id="favText">Favoris</span></div>
     </div>
 
     <div class="info-pane">
@@ -155,7 +163,7 @@
     </div>
 
     <div id="authAlert">
-        Connecte-toi pour interagir !
+        <span id="authAlertMsg">Connecte-toi pour interagir !</span>
         <br>
         <a href="index.html" style="display:inline-block; margin-top:10px; background:#fff; color:var(--red); padding:8px 20px; border-radius:20px; text-decoration:none; font-size:12px;">SE CONNECTER</a>
     </div>
@@ -198,7 +206,14 @@
                 userImg = d.photoURL || userImg;
                 document.getElementById('myAvatar').src = userImg;
                 
-                // LOGIQUE D'HISTORIQUE MISE À JOUR
+                // Vérifier si déjà en favoris pour l'affichage initial
+                const favs = d.favorites || [];
+                if(favs.some(f => f.id === filmId)) {
+                    const btn = document.getElementById('mainFavBtn');
+                    btn.classList.add('is-fav');
+                    document.getElementById('favText').innerText = "Ma Liste";
+                }
+
                 const filmSnap = await getDoc(doc(db, "films", filmId));
                 if(filmSnap.exists()){
                     const fData = filmSnap.data();
@@ -206,28 +221,20 @@
                         id: filmId, 
                         title: fData.titre || "Sans titre", 
                         poster: fData.poster || "",
-                        watchedAt: Date.now() // Timestamp pour trier par date
+                        watchedAt: Date.now()
                     };
-
                     const currentHistory = d.history || [];
-                    
-                    // On cherche si le film existe déjà pour éviter les doublons
                     const existingFilm = currentHistory.find(h => h.id === filmId);
-                    
-                    if(existingFilm) {
-                        // Si il existe, on le retire d'abord (pour le remettre en premier)
-                        await updateDoc(userRef, { history: arrayRemove(existingFilm) });
-                    }
-                    
-                    // On ajoute la version la plus récente dans l'historique
+                    if(existingFilm) await updateDoc(userRef, { history: arrayRemove(existingFilm) });
                     await updateDoc(userRef, { history: arrayUnion(historyItem) });
                 }
             }
         }
     });
 
-    window.showAuthAlert = () => {
+    window.showAuthAlert = (msg) => {
         const alert = document.getElementById('authAlert');
+        document.getElementById('authAlertMsg').innerText = msg || "Connecte-toi pour interagir !";
         alert.style.display = 'block';
         setTimeout(() => { alert.style.display = 'none'; }, 5000);
     };
@@ -282,6 +289,36 @@
     });
 
     // --- ACTIONS ---
+    document.getElementById('mainFavBtn').onclick = async () => { 
+        if(!currentUser) {
+            showAuthAlert("Tu dois te connecter pour mettre en favoris !");
+            return;
+        }
+
+        const btn = document.getElementById('mainFavBtn');
+        const userRef = doc(db, "users", currentUser.uid);
+        const filmSnap = await getDoc(doc(db, "films", filmId));
+        const fData = filmSnap.data();
+
+        const favItem = {
+            id: filmId,
+            titre: fData.titre || filmId,
+            image: fData.poster || ""
+        };
+
+        if(btn.classList.contains('is-fav')) {
+            // Retirer
+            await updateDoc(userRef, { favorites: arrayRemove(favItem) });
+            btn.classList.remove('is-fav');
+            document.getElementById('favText').innerText = "Favoris";
+        } else {
+            // Ajouter avec animation
+            await updateDoc(userRef, { favorites: arrayUnion(favItem) });
+            btn.classList.add('is-fav');
+            document.getElementById('favText').innerText = "Ma Liste";
+        }
+    };
+
     let targetCommentId = null;
     window.prepareReply = (cid, name) => {
         targetCommentId = cid;
@@ -333,11 +370,6 @@
         const s = await getDoc(ref);
         const l = s.data().likes || [];
         await updateDoc(ref, { likes: l.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) });
-    };
-
-    document.getElementById('mainFavBtn').onclick = () => { 
-        if(!currentUser) showAuthAlert(); 
-        else alert("Ajouté à vos favoris !"); 
     };
 
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
