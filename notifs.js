@@ -1,6 +1,6 @@
+// CONFIGURATION DE TA BASE (N'Y TOUCHE PAS)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = { 
     apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY", 
@@ -13,12 +13,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app);
 
 const notifContainer = document.getElementById('notif-list-container');
 const countLabel = document.getElementById('notif-badge');
 
-// FONCTION POUR AFFICHER LES MESSAGES
+// 1. FONCTION POUR CHARGER LES MESSAGES
 const loadNotifications = () => {
     const qNotifs = query(collection(db, "global_notifications"), orderBy("Timestamp", "desc"));
     onSnapshot(qNotifs, (snapshot) => {
@@ -43,46 +42,31 @@ const loadNotifications = () => {
     });
 };
 
-// FONCTION POUR AFFICHER LE CADENAS AVEC VÉRIFICATION SANS ERREUR
+// 2. FONCTION POUR AFFICHER LE CADENAS
 const showLoggedOutUI = () => {
     if(notifContainer) {
         notifContainer.innerHTML = `
             <div style="text-align:center; padding:40px 20px;">
                 <div style="font-size:50px; margin-bottom:15px;">🔒</div>
-                <h3 style="color:#ffd700;">Accès Restreint</h3>
-                <p style="color:#888; font-size:14px; margin-bottom:20px;">Connectez-vous sur votre profil, puis revenez ici pour cliquer sur le bouton.</p>
-                <button id="check-auth-btn" 
-                   style="background:#ffd700; color:#000; padding:12px 25px; border:none; border-radius:20px; font-weight:bold; cursor:pointer; width:100%;">
-                   VÉRIFIER MA CONNEXION
-                </button>
+                <h3 style="color:#ffd700;">Espace Membre</h3>
+                <p style="color:#888; font-size:14px;">Connectez-vous sur votre profil pour voir les messages.</p>
             </div>`;
-
-        // Écouteur de clic pour vérifier la connexion sans recharger
-        const btn = document.getElementById('check-auth-btn');
-        if(btn) {
-            btn.onclick = () => {
-                if (auth.currentUser) {
-                    loadNotifications();
-                } else {
-                    btn.innerText = "CONNEXION NON DÉTECTÉE...";
-                    btn.style.background = "#333";
-                    btn.style.color = "#fff";
-                    setTimeout(() => {
-                        btn.innerText = "VÉRIFIER MA CONNEXION";
-                        btn.style.background = "#ffd700";
-                        btn.style.color = "#000";
-                    }, 2000);
-                }
-            };
-        }
     }
 };
 
-// --- LE CERVEAU DU FICHIER ---
-onAuthStateChanged(auth, (user) => {
-    if (user) {
+// 3. LE SYSTÈME DE VÉRIFICATION PAR MÉMOIRE LOCALE
+const checkAuthStatus = () => {
+    // On regarde la "boîte aux lettres" remplie par index.html
+    const isLoggedIn = localStorage.getItem('congoFlix_isLoggedIn');
+
+    if (isLoggedIn === 'true') {
+        console.log("Accès autorisé par LocalStorage");
         loadNotifications();
     } else {
+        console.log("Accès refusé");
         showLoggedOutUI();
     }
-});
+};
+
+// Lancer la vérification au chargement
+checkAuthStatus();
