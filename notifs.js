@@ -50,10 +50,10 @@ const showLoggedOutUI = () => {
             <div style="text-align:center; padding:40px 20px;">
                 <div style="font-size:50px; margin-bottom:15px;">🔒</div>
                 <h3 style="color:#ffd700;">Accès Restreint</h3>
-                <p style="color:#888; font-size:14px;">Connectez-vous pour voir vos messages.</p>
-                <button onclick="window.location.href='index.html'" 
+                <p style="color:#888; font-size:14px;">Veuillez vous connecter sur votre profil pour voir les messages.</p>
+                <button onclick="location.reload()" 
                    style="background:#ffd700; color:#000; padding:10px 25px; border:none; border-radius:20px; font-weight:bold; cursor:pointer;">
-                   SE CONNECTER
+                   ACTUALISER
                 </button>
             </div>`;
     }
