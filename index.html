@@ -210,7 +210,6 @@
         document.getElementById('fileInput').click();
     };
 
-    // --- MISE À JOUR DU NOM ---
     window.updateProfileName = async (newName) => {
         if(!newName || newName === "...") return;
         try {
@@ -218,7 +217,6 @@
         } catch (e) { console.error("Erreur mise à jour nom", e); }
     };
 
-    // --- HISTORIQUE ---
     window.renderHistoryUI = () => {
         const list = document.getElementById('history-list');
         if(localHistory.length === 0) { list.innerHTML = '<p style="color:#333; font-size:12px;">Aucun film vu.</p>'; return; }
@@ -254,7 +252,6 @@
         toggleModal('delete-confirm-modal');
     };
 
-    // --- AUTHENTIFICATION ---
     window.toggleAuthMode = () => {
         isLoginMode = !isLoginMode;
         document.getElementById('authBtn').innerText = isLoginMode ? "S'IDENTIFIER" : "CRÉER MON COMPTE";
@@ -280,7 +277,6 @@
                 const cred = await createUserWithEmailAndPassword(auth, email, pass);
                 await setDoc(doc(db, "users", cred.user.uid), { name: email.split('@')[0], history: [] });
             }
-            // AJOUT : On dit à la boîte aux lettres que la connexion est OK
             localStorage.setItem('congoFlix_isLoggedIn', 'true');
         } catch (e) { 
             err.style.display = 'block'; 
@@ -291,9 +287,7 @@
     onAuthStateChanged(auth, async (user) => {
         const navBtn = document.getElementById('nav-player-btn');
         if(user) {
-            // AJOUT : Sécurité boîte aux lettres
             localStorage.setItem('congoFlix_isLoggedIn', 'true');
-            
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
             navBtn.classList.remove('hidden');
@@ -306,16 +300,13 @@
                 renderHistoryUI();
             }
         } else {
-            // AJOUT : On vide la boîte aux lettres à la déconnexion
             localStorage.setItem('congoFlix_isLoggedIn', 'false');
-            
             document.getElementById('auth-screen').classList.remove('hidden');
             document.getElementById('main-app').classList.add('hidden');
             navBtn.classList.add('hidden');
         }
     });
 
-    // --- RATING & PHOTO ---
     window.setRate = (n) => {
         currentRate = n;
         document.querySelectorAll('.stars i').forEach((s, i) => s.classList.toggle('active', i < n));
@@ -347,12 +338,10 @@
     };
 
     window.logout = () => {
-        // AJOUT : Vider la boîte aux lettres
         localStorage.setItem('congoFlix_isLoggedIn', 'false');
         signOut(auth);
     };
 
-    // Animation texte
     const phrases = ["Votre expérience nous importe", "Un film à suggérer ?", "CongoFlix: le miroir de la RDC", "Notez l'application"];
     let pIdx = 0;
     setInterval(() => {
