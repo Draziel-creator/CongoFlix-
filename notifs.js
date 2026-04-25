@@ -18,17 +18,7 @@ const auth = getAuth(app);
 const notifContainer = document.getElementById('notif-list-container');
 const countLabel = document.getElementById('notif-badge');
 
-// 1. VÉRIFICATION FORCÉE DE LA CONNEXION VIA LOCALSTORAGE
-const checkAccess = () => {
-    const isLogged = localStorage.getItem('congoFlix_isLoggedIn');
-    if (isLogged === 'true') {
-        loadNotifications();
-    } else {
-        showLoggedOutUI();
-    }
-};
-
-// 2. LOGIQUE POUR CHARGER LES MESSAGES
+// FONCTION POUR AFFICHER LES MESSAGES
 const loadNotifications = () => {
     const qNotifs = query(collection(db, "global_notifications"), orderBy("Timestamp", "desc"));
     onSnapshot(qNotifs, (snapshot) => {
@@ -39,16 +29,21 @@ const loadNotifications = () => {
             count++;
             let title = data.title || data.Title || "Message";
             let message = data.message || data.Message || "";
-            html += `<div style="background:#111; padding:15px; border-radius:12px; margin-bottom:12px; border-left:4px solid #ffd700; animation:fadeIn 0.5s ease;">
-                        <b style="color:#ffd700">${title}</b><br>
-                        <span style="color:#ccc; font-size:14px;">${message}</span>
-                     </div>`;
+            html += `
+                <div style="background:#111; padding:15px; border-radius:12px; margin-bottom:12px; border-left:4px solid #ffd700;">
+                    <b style="color:#ffd700">${title}</b><br>
+                    <span style="color:#ccc; font-size:14px;">${message}</span>
+                </div>`;
         });
         if(notifContainer) notifContainer.innerHTML = count === 0 ? '<p style="text-align:center; color:#444;">Aucun message</p>' : html;
-        if(countLabel) { countLabel.innerText = count; countLabel.style.display = count > 0 ? 'flex' : 'none'; }
+        if(countLabel) { 
+            countLabel.innerText = count; 
+            countLabel.style.display = count > 0 ? 'flex' : 'none'; 
+        }
     });
 };
 
+// FONCTION POUR AFFICHER LE CADENAS
 const showLoggedOutUI = () => {
     if(notifContainer) {
         notifContainer.innerHTML = `
@@ -56,21 +51,21 @@ const showLoggedOutUI = () => {
                 <div style="font-size:50px; margin-bottom:15px;">🔒</div>
                 <h3 style="color:#ffd700;">Accès Restreint</h3>
                 <p style="color:#888; font-size:14px;">Connectez-vous pour voir vos messages.</p>
-                <a href="https://draziel-creator.github.io/CongoFlix-/index.html" 
-                   style="display:inline-block; background:#ffd700; color:#000; padding:10px 25px; border-radius:20px; font-weight:bold; text-decoration:none;">
+                <button onclick="window.location.href='index.html'" 
+                   style="background:#ffd700; color:#000; padding:10px 25px; border:none; border-radius:20px; font-weight:bold; cursor:pointer;">
                    SE CONNECTER
-                </a>
+                </button>
             </div>`;
     }
 };
 
-// On lance la vérification au chargement
-checkAccess();
-
-// On écoute aussi Firebase au cas où
+// --- LE CERVEAU DU FICHIER : ÉCOUTER LA CONNEXION EN TEMPS RÉEL ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        localStorage.setItem('congoFlix_isLoggedIn', 'true');
+        console.log("Utilisateur détecté, chargement des messages...");
         loadNotifications();
+    } else {
+        console.log("Aucun utilisateur, affichage du cadenas.");
+        showLoggedOutUI();
     }
 });
