@@ -189,22 +189,38 @@
         if (user) {
             currentUser = user;
             userId = user.uid;
-            const userSnap = await getDoc(doc(db, "users", user.uid));
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+
             if(userSnap.exists()){
                 const d = userSnap.data();
                 userName = d.name || user.email.split('@')[0];
                 userImg = d.photoURL || userImg;
                 document.getElementById('myAvatar').src = userImg;
                 
-                // AJOUT AUTOMATIQUE À L'HISTORIQUE DE L'UTILISATEUR
+                // LOGIQUE D'HISTORIQUE MISE À JOUR
                 const filmSnap = await getDoc(doc(db, "films", filmId));
                 if(filmSnap.exists()){
                     const fData = filmSnap.data();
-                    const historyItem = { id: filmId, title: fData.titre, poster: fData.poster || "" };
+                    const historyItem = { 
+                        id: filmId, 
+                        title: fData.titre || "Sans titre", 
+                        poster: fData.poster || "",
+                        watchedAt: Date.now() // Timestamp pour trier par date
+                    };
+
                     const currentHistory = d.history || [];
-                    if(!currentHistory.find(h => h.id === filmId)){
-                        await updateDoc(doc(db, "users", user.uid), { history: arrayUnion(historyItem) });
+                    
+                    // On cherche si le film existe déjà pour éviter les doublons
+                    const existingFilm = currentHistory.find(h => h.id === filmId);
+                    
+                    if(existingFilm) {
+                        // Si il existe, on le retire d'abord (pour le remettre en premier)
+                        await updateDoc(userRef, { history: arrayRemove(existingFilm) });
                     }
+                    
+                    // On ajoute la version la plus récente dans l'historique
+                    await updateDoc(userRef, { history: arrayUnion(historyItem) });
                 }
             }
         }
@@ -233,7 +249,6 @@
 
         if(!document.getElementById('playerRoot').innerHTML && data.url) {
             document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
-            // Incrémenter les vues une seule fois
             updateDoc(doc(db, "films", filmId), { views: increment(1) });
         }
 
