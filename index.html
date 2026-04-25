@@ -280,6 +280,8 @@
                 const cred = await createUserWithEmailAndPassword(auth, email, pass);
                 await setDoc(doc(db, "users", cred.user.uid), { name: email.split('@')[0], history: [] });
             }
+            // AJOUT : On dit à la boîte aux lettres que la connexion est OK
+            localStorage.setItem('congoFlix_isLoggedIn', 'true');
         } catch (e) { 
             err.style.display = 'block'; 
             err.innerText = "Email ou mot de passe invalide."; 
@@ -289,6 +291,9 @@
     onAuthStateChanged(auth, async (user) => {
         const navBtn = document.getElementById('nav-player-btn');
         if(user) {
+            // AJOUT : Sécurité boîte aux lettres
+            localStorage.setItem('congoFlix_isLoggedIn', 'true');
+            
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
             navBtn.classList.remove('hidden');
@@ -301,6 +306,9 @@
                 renderHistoryUI();
             }
         } else {
+            // AJOUT : On vide la boîte aux lettres à la déconnexion
+            localStorage.setItem('congoFlix_isLoggedIn', 'false');
+            
             document.getElementById('auth-screen').classList.remove('hidden');
             document.getElementById('main-app').classList.add('hidden');
             navBtn.classList.add('hidden');
@@ -338,7 +346,11 @@
         reader.readAsDataURL(file);
     };
 
-    window.logout = () => signOut(auth);
+    window.logout = () => {
+        // AJOUT : Vider la boîte aux lettres
+        localStorage.setItem('congoFlix_isLoggedIn', 'false');
+        signOut(auth);
+    };
 
     // Animation texte
     const phrases = ["Votre expérience nous importe", "Un film à suggérer ?", "CongoFlix: le miroir de la RDC", "Notez l'application"];
