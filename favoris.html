@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes Favoris - CongoFlix</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --gold: #ffd700; --bg: #000; --card-bg: #1a1a1a; --text: #fff; --desc: #555; --error: #ff4444; }
+        body.light-mode { --bg: #f5f5f5; --card-bg: #ffffff; --text: #000; --desc: #888; }
+
+        body { background-color: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; transition: 0.3s; overflow-x: hidden; }
+        
+        .top-nav { display: flex; align-items: center; margin-bottom: 20px; }
+        .back-link { text-decoration: none; -webkit-tap-highlight-color: transparent; }
+        .back-circle { width: 38px; height: 38px; border: 2px solid var(--gold); border-radius: 50%; color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 22px; background: rgba(255, 215, 0, 0.05); transform: rotate(180deg); }
+
+        .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .header-title { font-size: 22px; font-weight: 900; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; border-left: 4px solid var(--gold); padding-left: 15px; margin: 0; }
+
+        .btn-clear-all { background: rgba(255, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error); padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+
+        .overlay-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 20px; border: 1px solid var(--gold); width: 85%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-content i { font-size: 40px; color: var(--error); margin-bottom: 15px; }
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-m { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-no { background: #333; color: #fff; }
+        .btn-yes { background: var(--error); color: #fff; }
+        .hidden { display: none !important; }
+
+        .fav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .movie-card { position: relative; background: var(--card-bg); border-radius: 12px; overflow: hidden; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255, 215, 0, 0.1); }
+        
+        .poster-container { position: relative; width: 100%; padding-top: 150%; cursor: pointer; }
+        .movie-card img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        .movie-info { position: absolute; bottom: 0; width: 100%; background: linear-gradient(transparent, rgba(0,0,0,0.9)); padding: 10px; box-sizing: border-box; color: #fff; }
+        .movie-title { font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .remove-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: #ff4444; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 20px; z-index: 10; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .empty-state { text-align: center; margin-top: 100px; color: var(--desc); }
+    </style>
+</head>
+<body>
+
+    <div class="top-nav">
+        <a href="go:W1" class="back-link">
+            <div class="back-circle">➔</div>
+        </a>
+    </div>
+
+    <div id="confirm-modal" class="overlay-modal hidden">
+        <div class="modal-content">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <p id="confirm-text">Voulez-vous supprimer cet élément ?</p>
+            <div class="modal-btns">
+                <button class="btn-m btn-no" onclick="closeConfirm()">NON</button>
+                <button id="btn-confirm-yes" class="btn-m btn-yes">OUI</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-container">
+        <div class="header-title" id="lbl-fav-title">Ma Liste</div>
+        <button id="btn-clear-ui" class="btn-clear-all" onclick="window.askClearAll()" style="display:none;">TOUT SUPPRIMER</button>
+    </div>
+    
+    <div id="favList" class="fav-grid"></div>
+
+    <div id="emptyMsg" class="empty-state" style="display:none;">
+        <span style="font-size: 40px;">⭐</span>
+        <p id="lbl-empty-text">Votre liste est vide.</p>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
+        authDomain: "congo-streaming-51333.firebaseapp.com",
+        projectId: "congo-streaming-51333",
+        appId: "1:304286627819:android:36e0b43b8b10508a054bae"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    let currentUserId = null;
+
+    const translations = {
+        'fr': { title: "Ma Liste", empty: "Votre liste est vide.<br>Ajoutez des films pour les retrouver ici.", confirm: "Voulez-vous retirer ce film ?", clearAll: "Voulez-vous vider TOUTE votre liste ?", btnClear: "TOUT SUPPRIMER" },
+        'sw': { title: "Orodha Yangu", empty: "Orodha yako ni tupu.", confirm: "Ondoa filamu hii?", clearAll: "Futa orodha YOTE?", btnClear: "FUTA ZOTE" },
+        'ln': { title: "Molongo na ngai", empty: "Molongo na yo ezali mpamba.", confirm: "Longola filme oyo ?", clearAll: "Longola bafilme NYONSO ?", btnClear: "LONGOLA NYONSO" },
+        'en': { title: "My List", empty: "Your list is empty.", confirm: "Remove this movie?", clearAll: "Clear WHOLE list?", btnClear: "CLEAR ALL" }
+    };
+
+    window.closeConfirm = () => document.getElementById('confirm-modal').classList.add('hidden');
+
+    function syncSettings() {
+        const isDark = localStorage.getItem('mode_nuit') !== 'false';
+        document.body.className = isDark ? 'dark-mode' : 'light-mode';
+        const lang = localStorage.getItem('app_lang') || 'fr';
+        const t = translations[lang] || translations['fr'];
+        document.getElementById('lbl-fav-title').innerText = t.title;
+        document.getElementById('lbl-empty-text').innerHTML = t.empty;
+        document.getElementById('btn-clear-ui').innerText = t.btnClear;
+    }
+
+    async function loadFavorites(userId) {
+        syncSettings();
+        const grid = document.getElementById('favList');
+        const empty = document.getElementById('emptyMsg');
+        const clearBtn = document.getElementById('btn-clear-ui');
+
+        try {
+            const userDoc = await getDoc(doc(db, "users", userId));
+            if (userDoc.exists() && userDoc.data().favorites?.length > 0) {
+                const favs = userDoc.data().favorites;
+                grid.innerHTML = favs.map(film => `
+                    <div class="movie-card" id="card-${film.id}">
+                        <button class="remove-btn" onclick="window.askRemove('${film.id}')">×</button>
+                        <div class="poster-container" onclick="window.location.href='player.html?id=${film.id}'">
+                            <img src="${film.image}">
+                            <div class="movie-info">
+                                <div class="movie-title">${film.titre || film.id}</div>
+                            </div>
+                        </div>
+                    </div>`).join('');
+                empty.style.display = "none";
+                clearBtn.style.display = "block";
+            } else {
+                grid.innerHTML = "";
+                empty.style.display = "block";
+                clearBtn.style.display = "none";
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    // Gestion de l'utilisateur connecté
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUserId = user.uid;
+            loadFavorites(user.uid);
+        } else {
+            window.location.href = "compte.html"; // Rediriger si pas connecté
+        }
+    });
+
+    window.askRemove = async (filmId) => {
+        const t = translations[localStorage.getItem('app_lang') || 'fr'];
+        document.getElementById('confirm-text').innerText = t.confirm;
+        const yesBtn = document.getElementById('btn-confirm-yes');
+        yesBtn.onclick = async () => {
+            const userRef = doc(db, "users", currentUserId);
+            const userDoc = await getDoc(userRef);
+            const favs = userDoc.data().favorites || [];
+            const film = favs.find(f => f.id === filmId);
+            if (film) await updateDoc(userRef, { favorites: arrayRemove(film) });
+            closeConfirm();
+            loadFavorites(currentUserId);
+        };
+        document.getElementById('confirm-modal').classList.remove('hidden');
+    };
+
+    window.askClearAll = () => {
+        const t = translations[localStorage.getItem('app_lang') || 'fr'];
+        document.getElementById('confirm-text').innerText = t.clearAll;
+        const yesBtn = document.getElementById('btn-confirm-yes');
+        yesBtn.onclick = async () => {
+            await updateDoc(doc(db, "users", currentUserId), { favorites: [] });
+            closeConfirm();
+            loadFavorites(currentUserId);
+        };
+        document.getElementById('confirm-modal').classList.remove('hidden');
+    };
+</script>
+
+</body>
+</html>
