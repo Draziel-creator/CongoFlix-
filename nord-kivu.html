@@ -12,225 +12,336 @@
     <style>
         :root { 
             --gold: #ffd700; 
+            --blue-verify: #1d9bf0;
             --bg: #000; 
             --card-bg: #121212; 
+            --search-bg: rgba(255, 255, 255, 0.1);
         }
         
         body { 
             background: var(--bg); 
             color: #fff; 
-            font-family: 'Segoe UI', sans-serif; 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
             margin: 0; 
             padding: 0;
+            padding-top: env(safe-area-inset-top);
         }
 
-        /* ZONE DU HAUT (PUB + BOUTONS FLOTTANTS) */
-        .hero-container {
+        /* SECTION HERO (PUB + OVERLAY) */
+        .hero-section {
             position: relative;
             width: 100%;
-            height: 280px; /* Taille pour la bannière pub */
-            background: #111;
+            height: 300px; 
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
 
-        /* Éléments par-dessus la pub */
-        .floating-overlay {
+        .ad-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            background: #111; 
+        }
+
+        .overlay-elements {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 10;
+            z-index: 10; 
+            pointer-events: none; 
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 40%, rgba(0,0,0,0.9) 100%);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            pointer-events: none; /* Pour cliquer sur la pub à travers */
-            background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 50%, rgba(0,0,0,0.8) 100%);
-        }
-
-        .top-nav {
-            display: flex;
-            align-items: center;
             padding: 15px;
-            pointer-events: auto; /* Active les clics sur retour et recherche */
+            box-sizing: border-box;
         }
 
-        /* LE BOUTON RETOUR (Inspiré de ton exemple mais transparent) */
-        .back-link {
-            text-decoration: none;
-            margin-right: 15px;
-        }
-
-        .back-circle {
-            width: 40px;
-            height: 40px;
-            border: 2px solid var(--gold);
-            border-radius: 50%;
-            color: var(--gold);
+        .top-bar {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            background: rgba(0, 0, 0, 0.4); /* Fond sombre transparent */
-            backdrop-filter: blur(5px);
-            transform: rotate(180deg); /* Pour que la flèche pointe à gauche */
+            gap: 15px;
+            pointer-events: auto; 
         }
 
-        .search-bar {
+        .back-btn { 
+            color: #fff;
+            font-size: 22px;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            text-decoration: none;
+        }
+
+        .search-box {
             flex: 1;
-            background: rgba(255,255,255,0.1);
+            height: 40px;
+            background: var(--search-bg);
             backdrop-filter: blur(10px);
-            border-radius: 25px;
-            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 20px;
+            border: 1px solid rgba(255,215,0,0.2);
             display: flex;
             align-items: center;
             padding: 0 15px;
-            height: 40px;
+            position: relative;
         }
 
+        .search-icon { color: var(--gold); font-size: 14px; margin-right: 10px; }
+
         #searchInput {
+            flex: 1;
             background: transparent;
             border: none;
-            color: white;
-            padding-left: 10px;
-            width: 100%;
+            color: #fff;
+            font-size: 14px;
             outline: none;
         }
 
-        /* TITRE PROVINCE AVEC LUMIÈRE JAUNE LARGEUR TOTALE */
-        .province-glow-bar {
-            width: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.5), transparent);
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.3);
-            padding: 8px 0;
-            text-align: center;
+        #searchPlaceholder {
+            position: absolute;
+            left: 39px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
         }
 
-        .province-title {
-            font-size: 26px;
+        #typewriter-cursor {
+            width: 2px;
+            height: 14px;
+            background-color: var(--gold);
+            margin-left: 2px;
+            animation: blink 0.7s infinite;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .province-label {
+            width: 100%;
+            text-align: center;
+            font-size: 32px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 5px;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
-            margin: 0;
+            color: #fff;
+            text-shadow: 2px 2px 20px rgba(0,0,0,1);
+            margin-bottom: 10px;
         }
 
         /* LISTE DES FILMS */
-        .content { padding: 15px; }
-        
+        .container { padding: 15px; }
+        .section-header { color: var(--gold); font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 20px; opacity: 0.8; }
+
         #movie-list {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 15px;
+            gap: 20px;
         }
 
-        .movie-card {
-            display: flex;
-            background: var(--card-bg);
-            border: 1.5px solid #333;
-            border-radius: 12px;
-            height: 110px;
-            overflow: hidden;
-            text-decoration: none;
+        .movie-card { 
+            display: flex; 
+            background: var(--card-bg); 
+            border-radius: 12px; 
+            height: 130px; 
+            overflow: hidden; 
+            border: 1px solid #222;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: fadeIn 0.5s ease-out;
         }
+        .movie-card:active { transform: scale(0.98); }
 
-        .info-box {
-            flex: 1;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .m-title { color: var(--gold); font-weight: bold; font-size: 15px; margin-bottom: 5px; }
-        .m-meta { font-size: 11px; color: #aaa; }
+        .poster-box { width: 110px; height: 100%; flex-shrink: 0; position: relative; }
+        .poster-box img { width: 100%; height: 100%; object-fit: cover; }
+        .quality-tag { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.7); font-size: 9px; padding: 2px 4px; border-radius: 2px; color: var(--gold); }
 
-        .m-poster { width: 100px; flex-shrink: 0; }
-        .m-poster img { width: 100%; height: 100%; object-fit: cover; }
+        .details { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
+        
+        .title-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+        .movie-name { font-size: 16px; font-weight: 800; color: #fff; text-transform: uppercase; line-height: 1.2; }
+        .verify-icon { color: var(--blue-verify); font-size: 14px; }
 
-        #loading { text-align: center; padding: 50px; color: var(--gold); }
+        .meta-info { font-size: 11px; color: #888; margin-bottom: 12px; }
+        .meta-info span { color: var(--gold); font-weight: bold; }
+
+        .btn-play { background: #fff; color: #000; border: none; padding: 8px 18px; border-radius: 6px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; width: fit-content; }
+
+        #loading, #empty-state { text-align: center; color: #888; padding: 50px 0; font-size: 14px; }
+        #loading i { color: var(--gold); font-size: 24px; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
 
-    <div class="hero-container">
-        <div id="ad-zone" style="width:100%; height:100%;">
-            </div>
+    <div class="hero-section">
+        <div class="ad-container">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : 'e86dd4055cd86d43aa42fbae392c77d2',
+                    'format' : 'iframe',
+                    'height' : 250,
+                    'width' : 300,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="https://www.highperformanceformat.com/e86dd4055cd86d43aa42fbae392c77d2/invoke.js"></script>
+        </div>
 
-        <div class="floating-overlay">
-            <div class="top-nav">
-                <a href="go:W1" class="back-link">
-                    <div class="back-circle">➔</div>
-                </a>
-                <div class="search-bar">
-                    <i class="fa-solid fa-search" style="color:var(--gold)"></i>
-                    <input type="text" id="searchInput" placeholder="Rechercher...">
+        <div class="overlay-elements">
+            <div class="top-bar">
+                <a href="appcreator24://section/W1" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+                <div class="search-box">
+                    <i class="fa-solid fa-search search-icon"></i>
+                    <div id="searchPlaceholder">
+                        <span id="typewriter-text"></span><div id="typewriter-cursor"></div>
+                    </div>
+                    <input type="text" id="searchInput" autocomplete="off">
                 </div>
             </div>
 
-            <div class="province-glow-bar">
-                <h1 class="province-title">NORD-KIVU</h1>
-            </div>
+            <div class="province-label">NORD-KIVU</div>
         </div>
     </div>
 
-    <div class="content">
-        <div id="loading"><i class="fa-solid fa-spinner fa-spin"></i> Connexion au serveur...</div>
+    <div class="container">
+        <div class="section-header">NOS FILMS DU NORD-KIVU</div>
+        
+        <div id="loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Connexion au serveur Firebase...
+        </div>
+
+        <div id="empty-state" style="display: none;">
+            <i class="fa-solid fa-video-slash" style="font-size: 24px; color: #444; margin-bottom: 10px; display: block;"></i>
+            Aucun film correspondant dans cette province.
+        </div>
+
         <div id="movie-list"></div>
     </div>
 
     <script>
-        // CONFIG FIREBASE
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
             authDomain: "congo-streaming-51333.firebaseapp.com",
             projectId: "congo-streaming-51333",
-            storageBucket: "congo-streaming-51333.appspot.com",
+            storageBucket: "congo-streaming-51333.firebasestorage.app",
             appId: "1:304286627819:web:ee606adc4f6b4002054bae"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let moviesData = [];
+        let allMovies = []; 
 
-        function getMovies() {
-            // On cherche : province = nord-kivu
+        function loadMovies() {
+            const loadingDiv = document.getElementById('loading');
+            const emptyStateDiv = document.getElementById('empty-state');
+            
+            // FILTRAGE : Uniquement nord-kivu
             db.collection("films").where("province", "==", "nord-kivu")
             .get().then((querySnapshot) => {
-                document.getElementById('loading').style.display = 'none';
-                moviesData = [];
+                loadingDiv.style.display = "none";
+                
+                if (querySnapshot.empty) {
+                    emptyStateDiv.style.display = "block";
+                    return;
+                }
+
+                allMovies = []; 
                 querySnapshot.forEach((doc) => {
-                    moviesData.push({ id: doc.id, ...doc.data() });
+                    allMovies.push({ id: doc.id, ...doc.data() });
                 });
-                displayMovies(moviesData);
+
+                renderMovieList(allMovies);
+
+            }).catch((error) => {
+                console.error("Erreur : ", error);
+                loadingDiv.innerHTML = "Erreur de connexion.";
             });
         }
 
-        function displayMovies(arr) {
-            const container = document.getElementById('movie-list');
-            container.innerHTML = "";
-            arr.forEach(m => {
-                container.innerHTML += `
-                    <a href="player.html?id=${m.id}" class="movie-card">
-                        <div class="info-box">
-                            <div class="m-title">${m.titre}</div>
-                            <div class="m-meta">${m.type || 'Série'} • <span>${m.langue || 'Français'}</span></div>
+        function renderMovieList(movies) {
+            const listContainer = document.getElementById('movie-list');
+            const emptyStateDiv = document.getElementById('empty-state');
+            listContainer.innerHTML = ""; 
+
+            if (movies.length === 0) {
+                emptyStateDiv.style.display = "block";
+                return;
+            } else {
+                emptyStateDiv.style.display = "none";
+            }
+
+            movies.forEach((movie) => {
+                const card = `
+                    <div class="movie-card" onclick="window.location.href='https://draziel-creator.github.io/CongoFlix-/player.html?id=${movie.id}'">
+                        <div class="poster-box">
+                            <img src="${movie.miniature || 'https://via.placeholder.com/110x130'}" alt="Poster">
+                            <div class="quality-tag">HD ${movie.annee || '2026'}</div>
                         </div>
-                        <div class="m-poster">
-                            <img src="${m.miniature}">
+                        <div class="details">
+                            <div class="title-row">
+                                <div class="movie-name">${movie.titre || 'Sans titre'}</div>
+                                <i class="fa-solid fa-circle-check verify-icon"></i>
+                            </div>
+                            <div class="meta-info">
+                                ${movie.type || 'Série'} <span>• Français</span>
+                            </div>
+                            <button class="btn-play">
+                                <i class="fa-solid fa-play"></i> REGARDER
+                            </button>
                         </div>
-                    </a>
+                    </div>
                 `;
+                listContainer.innerHTML += card;
             });
         }
 
-        // Recherche en direct
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = moviesData.filter(m => m.titre.toLowerCase().includes(term));
-            displayMovies(filtered);
+        // --- RECHERCHE ---
+        const searchInput = document.getElementById('searchInput');
+        const searchPlaceholder = document.getElementById('searchPlaceholder');
+
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            searchPlaceholder.style.display = val.length > 0 ? "none" : "flex";
+            const filteredMovies = allMovies.filter(movie => {
+                return (movie.titre || "").toLowerCase().includes(val.toLowerCase());
+            });
+            renderMovieList(filteredMovies);
         });
 
-        window.onload = getMovies;
+        // --- TYPEWRITER ANIMATION ---
+        const words = ["Mushota...", "Séries Nord-Kivu...", "Films en HD...", "CongoFlix..."];
+        const textElement = document.getElementById("typewriter-text");
+        let wordIndex = 0; let charIndex = 0; let isDeleting = false;
+
+        function type() {
+            const currentWord = words[wordIndex];
+            if (isDeleting) {
+                textElement.textContent = currentWord.substring(0, charIndex - 1);
+                charIndex--;
+            } else {
+                textElement.textContent = currentWord.substring(0, charIndex + 1);
+                charIndex++;
+            }
+            let typeSpeed = isDeleting ? 50 : 100;
+            if (!isDeleting && charIndex === currentWord.length) {
+                typeSpeed = 2000; isDeleting = true;
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false; wordIndex = (wordIndex + 1) % words.length; typeSpeed = 500;
+            }
+            setTimeout(type, typeSpeed);
+        }
+
+        window.onload = () => { type(); loadMovies(); };
     </script>
 </body>
 </html>
