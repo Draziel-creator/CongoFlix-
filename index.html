@@ -55,16 +55,16 @@
             cursor: pointer;
             border-radius: 50%;
             /* Effet torche jaune intense derrière */
-            box-shadow: 0 0 30px 10px rgba(255, 215, 0, 0.7), 
-                        0 0 60px 20px rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 35px 12px rgba(255, 215, 0, 0.7), 
+                        0 0 65px 25px rgba(255, 215, 0, 0.2);
         }
         #user-photo { 
             width: 110px; 
             height: 110px; 
             border-radius: 50%; 
-            /* Bordure lumineuse */
-            border: 3px solid #fffb00; 
-            box-shadow: inset 0 0 10px #ffd700;
+            /* Bordure lumineuse visible à l'oeil nu */
+            border: 4px solid #fffb00; 
+            box-shadow: 0 0 15px rgba(255, 251, 0, 0.8), inset 0 0 10px #ffd700;
             object-fit: cover; 
             background: #222; 
             position: relative; 
@@ -91,13 +91,30 @@
         .overlay-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; }
         .modal-content { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid var(--gold); width: 85%; text-align: center; box-sizing: border-box; }
 
-        /* Historique Style */
+        /* Historique Style Fixé */
         .history-header { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 10px 0; }
         .history-title { color: var(--gold); font-size: 16px; font-weight: bold; margin:0; }
         .btn-clear-all { background: none; border: 1px solid #444; color: #888; font-size: 10px; padding: 5px 10px; border-radius: 20px; cursor: pointer; }
         .movie-scroll-x { display: flex; flex-wrap: nowrap; gap: 15px; overflow-x: auto; padding-bottom: 15px; min-height: 120px; }
         .history-card { min-width: 140px; background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid #222; position: relative; }
-        .history-card img { width: 100%; height: 85px; object-fit: cover; cursor: pointer; }
+        .history-card img { width: 100%; height: 85px; object-fit: cover; cursor: pointer; display: block; }
+        .delete-btn-icon { 
+            position: absolute; 
+            top: 5px; 
+            right: 5px; 
+            color: white; 
+            background: rgba(0,0,0,0.7); 
+            border-radius: 50%; 
+            width: 22px; 
+            height: 22px; 
+            display: flex !important; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 10px; 
+            z-index: 5; 
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
 
         /* Avis Lumineux */
         .rating-card { background: var(--card); border: 1px solid var(--gold); padding: 20px; border-radius: 15px; text-align: center; }
@@ -188,7 +205,7 @@
             <p style="font-size: 13px; color: #ccc; line-height: 1.5; text-align: justify;">
                 Veuillez choisir une image de <b>basse taille</b>. Cet espace n'accepte pas les images HD trop détaillées qui pèsent lourd.
                 <br><br>
-                <b>Conseil :</b> Faites une <b>capture d'écran</b> de votre photo et utilisez la capture pour réduire son poids !
+                <b>Conseil :</b> Faites une <b>capture d'écran</b> de votre photo et utilisez la capture !
             </p>
             <div style="display:flex; gap:10px;">
                 <button class="btn-main" style="background:#333; color:#fff;" onclick="toggleModal('photo-alert-modal')">ANNULER</button>
@@ -255,9 +272,11 @@
         if(localHistory.length === 0) { list.innerHTML = '<p style="color:#333; font-size:12px;">Aucun film vu.</p>'; return; }
         list.innerHTML = localHistory.map((m, i) => `
             <div class="history-card">
-                <div class="delete-btn-icon" style="position:absolute; top:5px; right:5px; color:white; background:rgba(0,0,0,0.5); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; z-index:5;" onclick="askDeleteMovie(${i})"><i class="fa-solid fa-trash"></i></div>
+                <div class="delete-btn-icon" onclick="askDeleteMovie(${i})">
+                    <i class="fa-solid fa-trash"></i>
+                </div>
                 <img src="${m.poster}" onclick="window.location.href='player.html?id=${m.id}'">
-                <p style="font-size:9px; text-align:center; padding:3px; margin:0;">${m.title}</p>
+                <p style="font-size:9px; text-align:center; padding:3px; margin:0; color:#ccc;">${m.title}</p>
             </div>
         `).join('');
     };
