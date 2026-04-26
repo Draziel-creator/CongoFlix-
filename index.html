@@ -9,7 +9,7 @@
         body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
         .hidden { display: none !important; }
         
-        /* BARRE DE NAVIGATION (Cloche supprimée ici) */
+        /* BARRE DE NAVIGATION */
         .top-nav {
             display: flex;
             align-items: center;
@@ -47,34 +47,32 @@
             gap: 8px;
         }
 
-        /* Profil avec Effet Lumineux */
+        /* Profil avec Effet Lumineux derrière */
         .profile-header { text-align: center; padding: 10px 0; }
         .avatar-wrapper { 
             position: relative; 
             display: inline-block; 
             cursor: pointer;
             border-radius: 50%;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); /* Effet lumineux derrière */
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.4); /* L'effet de lumière qui sort de derrière */
         }
-        #user-photo { width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; background: #222; transition: 0.3s; }
-        .edit-badge { position: absolute; bottom: 5px; right: 5px; background: var(--gold); color: #000; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg); font-size: 12px; }
+        #user-photo { width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; background: #222; position: relative; z-index: 2; }
+        .edit-badge { position: absolute; bottom: 5px; right: 5px; background: var(--gold); color: #000; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg); font-size: 12px; z-index: 3; }
         
-        /* Input Nom Stylisé */
+        /* Nom modifiable Stylisé */
         .user-name-box { 
             font-size: 22px; 
             color: var(--gold); 
             font-weight: bold; 
             margin-top: 15px; 
-            border: 1px solid transparent; 
+            border: 1px solid rgba(255, 215, 0, 0.2); 
             background: rgba(255, 215, 0, 0.05); 
             text-align: center; 
-            width: 80%; 
+            width: 85%; 
             outline: none; 
-            padding: 8px;
-            border-radius: 12px;
-            transition: 0.3s;
+            padding: 5px;
+            border-radius: 10px;
         }
-        .user-name-box:focus { border: 1px solid var(--gold); background: #111; }
 
         /* Popups */
         .overlay-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; }
@@ -88,12 +86,25 @@
         .history-card { min-width: 140px; background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid #222; position: relative; }
         .history-card img { width: 100%; height: 85px; object-fit: cover; cursor: pointer; }
 
+        /* Avis Lumineux */
+        .rating-card { background: var(--card); border: 1px solid var(--gold); padding: 20px; border-radius: 15px; text-align: center; }
+        #rating-text { color: var(--gold); text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); font-size: 15px; min-height: 40px; transition: 0.5s; font-weight: bold; }
+
+        /* Auth */
+        .auth-input { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #333; background: #1a1a1a; color: #fff; box-sizing: border-box; }
+        #error-msg { color: var(--error); font-size: 13px; margin-bottom: 10px; display: none; }
+        .pass-group { position: relative; }
+        .toggle-pass { position: absolute; right: 15px; top: 18px; color: #555; }
+
         /* Boutons */
         .btn-main { background: var(--gold); color: #000; border: none; padding: 16px; border-radius: 12px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
         .btn-link-site { display: block; background: #111; color: var(--gold); border: 1px solid var(--gold); text-decoration: none; text-align: center; padding: 15px; border-radius: 12px; font-weight: bold; margin: 20px 0; }
         .stars i { font-size: 28px; color: #333; cursor: pointer; padding: 5px; }
         .stars i.active { color: var(--gold); }
         textarea { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 12px; border-radius: 10px; margin-top: 10px; box-sizing: border-box; }
+        
+        /* Badge Notification */
+        .notif-badge { position: absolute; top: -5px; right: -8px; background: red; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: none; align-items: center; justify-content: center; border: 2px solid #000; }
     </style>
 </head>
 <body>
@@ -102,6 +113,11 @@
         <a href="go:W1" class="back-link">
             <div class="back-circle">➔</div>
         </a>
+        
+        <div id="notif-trigger" class="hidden" onclick="toggleModal('notif-modal')" style="position:relative; cursor:pointer; padding: 5px;">
+            <i class="fa-solid fa-bell" style="color:var(--gold); font-size:24px;"></i>
+            <div id="notif-count" class="notif-badge">0</div>
+        </div>
         
         <a href="player.html" id="nav-player-btn" class="player-btn hidden">
             <i class="fa-solid fa-play"></i> LECTEUR
@@ -144,8 +160,8 @@
         </div>
         <div class="movie-scroll-x" id="history-list"></div>
 
-        <div class="rating-card" style="background:var(--card); border:1px solid #222; padding:20px; border-radius:15px; text-align:center;">
-            <h4 id="rating-text" style="color:var(--gold); font-weight:bold;">Comment trouvez-vous l'appli ?</h4>
+        <div class="rating-card">
+            <h4 id="rating-text">Comment trouvez-vous l'appli ?</h4>
             <div class="stars">
                 <i class="fa-solid fa-star" onclick="setRate(1)"></i>
                 <i class="fa-solid fa-star" onclick="setRate(2)"></i>
@@ -160,28 +176,54 @@
         <button onclick="logout()" style="background:none; color:#444; border:none; width:100%; margin:30px 0;">DÉCONNEXION</button>
     </div>
 
-    <div id="photo-alert-modal" class="overlay-modal hidden">
-        <div class="modal-content">
-            <i class="fa-solid fa-triangle-exclamation" style="font-size: 40px; color: var(--gold); margin-bottom: 15px;"></i>
-            <h3 style="color:var(--gold); margin-top:0;">Optimisation de l'image</h3>
-            <p style="font-size: 14px; color: #ccc; line-height: 1.6; text-align: center;">
-                Pour garantir la rapidité de votre profil, veuillez choisir une image <b>légère</b>. <br><br>
-                Les photos trop détaillées (ex: iPhone HD) sont trop lourdes pour notre système.
-            </p>
-            <div style="background: rgba(255, 215, 0, 0.1); padding: 10px; border-radius: 10px; margin: 15px 0;">
-                <p style="font-size: 13px; color: var(--gold); margin: 0;">
-                    <b>💡 Conseil Pro :</b> Ouvrez votre photo dans la galerie, faites une <b>capture d'écran</b>, et utilisez cette capture. Elle sera bien plus légère sans perdre de qualité !
-                </p>
+    <div id="notif-modal" class="overlay-modal hidden">
+        <div class="modal-content" style="text-align:left; max-height: 80vh; overflow-y: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="color:var(--gold); margin:0;">Messages</h3>
+                <span onclick="toggleModal('notif-modal')" style="color:var(--gold); font-size:28px; cursor:pointer;">&times;</span>
             </div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-main" style="background:#222; color:#fff;" onclick="toggleModal('photo-alert-modal')">ANNULER</button>
-                <button class="btn-main" onclick="triggerFileInput()">COMPRIS !</button>
+            <div id="integrated-notif-list">
+                <p style="text-align:center; color:#444;">Aucun message</p>
             </div>
         </div>
     </div>
 
-    <script type="module">
-    // ... Garde tes imports Firebase identiques ...
+    <div id="photo-alert-modal" class="overlay-modal hidden">
+        <div class="modal-content">
+            <i class="fa-solid fa-image" style="font-size: 40px; color: var(--gold); margin-bottom: 15px;"></i>
+            <h3 style="color:var(--gold); margin-top:0;">Attention Image</h3>
+            <p style="font-size: 13px; color: #ccc; line-height: 1.5; text-align: justify;">
+                Veuillez choisir une image de <b>basse taille</b>. Cet espace n'accepte pas les images HD trop détaillées qui pèsent lourd (comme celles prises par iPhone).
+                <br><br>
+                <b>Conseil :</b> Si vous voulez vraiment cette image, allez dans votre galerie, faites-en une <b>capture d'écran</b> et utilisez la capture. Elle sera moins lourde sans perdre de qualité !
+            </p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-main" style="background:#333; color:#fff;" onclick="toggleModal('photo-alert-modal')">ANNULER</button>
+                <button class="btn-main" onclick="triggerFileInput()">COMPRIS</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="success-modal" class="overlay-modal hidden">
+        <div class="modal-content">
+            <i class="fa-solid fa-circle-check" style="font-size: 50px; color: var(--gold); margin-bottom: 15px;"></i>
+            <h3 style="margin:0; color:var(--gold);">Avis reçu !</h3>
+            <p style="font-size: 14px; color: #ccc;">Merci de soutenir le cinéma congolais.</p>
+            <button class="btn-main" onclick="toggleModal('success-modal')">OK !</button>
+        </div>
+    </div>
+
+    <div id="delete-confirm-modal" class="overlay-modal hidden">
+        <div class="modal-content" style="max-width:300px;">
+            <p id="confirm-msg" style="margin-bottom:20px; font-size:14px;"></p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-main" style="background:#333; color:#fff;" onclick="toggleModal('delete-confirm-modal')">Non</button>
+                <button id="execute-delete-btn" class="btn-main" style="background:var(--error); color:#fff;">Oui</button>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -212,18 +254,116 @@
         if(!newName || newName === "...") return;
         try {
             await updateDoc(doc(db, "users", auth.currentUser.uid), { name: newName });
-        } catch (e) { console.error("Erreur", e); }
+        } catch (e) { console.error("Erreur mise à jour nom", e); }
     };
 
-    // ... Garde tes fonctions d'historique, d'auth et de rating ...
-    // (Inutile de remettre loadIntegratedNotifs ici car tu veux les messages sur l'accueil)
+    window.renderHistoryUI = () => {
+        const list = document.getElementById('history-list');
+        if(localHistory.length === 0) { list.innerHTML = '<p style="color:#333; font-size:12px;">Aucun film vu.</p>'; return; }
+        list.innerHTML = localHistory.map((m, i) => `
+            <div class="history-card">
+                <div class="delete-btn-icon" style="position:absolute; top:5px; right:5px; color:white; background:rgba(0,0,0,0.5); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; z-index:5;" onclick="askDeleteMovie(${i})"><i class="fa-solid fa-trash"></i></div>
+                <img src="${m.poster}" onclick="window.location.href='player.html?id=${m.id}'">
+                <p style="font-size:9px; text-align:center; padding:3px; margin:0;">${m.title}</p>
+            </div>
+        `).join('');
+    };
+
+    window.askDeleteMovie = (index) => {
+        document.getElementById('confirm-msg').innerText = "Supprimer ce film de l'historique ?";
+        document.getElementById('execute-delete-btn').onclick = async () => {
+            localHistory.splice(index, 1);
+            renderHistoryUI();
+            toggleModal('delete-confirm-modal');
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { history: localHistory });
+        };
+        toggleModal('delete-confirm-modal');
+    };
+
+    window.confirmDeleteAll = () => {
+        if(localHistory.length === 0) return;
+        document.getElementById('confirm-msg').innerText = "Voulez-vous vider tout votre historique ?";
+        document.getElementById('execute-delete-btn').onclick = async () => {
+            localHistory = [];
+            renderHistoryUI();
+            toggleModal('delete-confirm-modal');
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { history: [] });
+        };
+        toggleModal('delete-confirm-modal');
+    };
+
+    window.toggleAuthMode = () => {
+        isLoginMode = !isLoginMode;
+        document.getElementById('authBtn').innerText = isLoginMode ? "S'IDENTIFIER" : "CRÉER MON COMPTE";
+        document.getElementById('switchBox').innerHTML = isLoginMode ? 
+            'Pas de compte ? <span style="color:var(--gold); cursor:pointer;" onclick="toggleAuthMode()">Créer un compte</span>' :
+            'Déjà inscrit ? <span style="color:var(--gold); cursor:pointer;" onclick="toggleAuthMode()">Se connecter</span>';
+    };
+
+    window.togglePasswordVisibility = () => {
+        const p = document.getElementById('password');
+        p.type = p.type === "password" ? "text" : "password";
+    };
+
+    window.handleAuth = async () => {
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('password').value;
+        const err = document.getElementById('error-msg');
+        if(!email || !pass) return;
+        try {
+            if(isLoginMode) {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } else {
+                const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                await setDoc(doc(db, "users", cred.user.uid), { name: email.split('@')[0], history: [] });
+            }
+        } catch (e) { 
+            err.style.display = 'block'; 
+            err.innerText = "Email ou mot de passe invalide."; 
+        }
+    };
+
+    const loadIntegratedNotifs = () => {
+        const q = query(collection(db, "global_notifications"), orderBy("Timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            let html = "";
+            let count = 0;
+            if (snapshot.empty) {
+                html = '<p style="text-align:center; color:#444;">Aucun message</p>';
+            } else {
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    count++;
+                    const titre = data.title || data.Title || "Message";
+                    const texte = data.message || data.Message || "";
+                    html += `
+                        <div style="background:#000; padding:15px; border-radius:12px; margin-bottom:12px; border-left:4px solid var(--gold); border: 1px solid #333;">
+                            <b style="color:var(--gold)">${titre}</b><br>
+                            <span style="color:#ccc; font-size:14px;">${texte}</span>
+                        </div>`;
+                });
+            }
+            const list = document.getElementById('integrated-notif-list');
+            const badge = document.getElementById('notif-count');
+            if(list) list.innerHTML = html;
+            if(badge) {
+                badge.innerText = count;
+                badge.style.display = count > 0 ? 'flex' : 'none';
+            }
+        }, (error) => {
+            console.error("Erreur de chargement des notifs:", error);
+        });
+    };
 
     onAuthStateChanged(auth, async (user) => {
         const navBtn = document.getElementById('nav-player-btn');
+        const notifTrigger = document.getElementById('notif-trigger');
         if(user) {
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
             navBtn.classList.remove('hidden');
+            notifTrigger.classList.remove('hidden');
+            loadIntegratedNotifs(); 
             const snap = await getDoc(doc(db, "users", user.uid));
             if(snap.exists()){
                 const d = snap.data();
@@ -236,8 +376,28 @@
             document.getElementById('auth-screen').classList.remove('hidden');
             document.getElementById('main-app').classList.add('hidden');
             navBtn.classList.add('hidden');
+            notifTrigger.classList.add('hidden');
         }
     });
+
+    window.setRate = (n) => {
+        currentRate = n;
+        document.querySelectorAll('.stars i').forEach((s, i) => s.classList.toggle('active', i < n));
+    };
+
+    window.saveRating = async () => {
+        if(currentRate === 0) return;
+        const text = document.getElementById('appComment').value;
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { appRating: currentRate, feedback: text });
+        
+        const token = "8622143155:AAH_Db9WSYKSUw6UaKECYKdl27HsStW3VpU";
+        const message = `🎬 CONGOFLIX - NOUVEL AVIS\nUtilisateur: ${document.getElementById('user-name').value}\nNote: ${currentRate}/5\nCommentaire: ${text}`;
+        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=6325666767&text=${encodeURIComponent(message)}`);
+        
+        toggleModal('success-modal');
+        document.getElementById('appComment').value = "";
+        setRate(0);
+    };
 
     window.uploadImage = (e) => {
         const file = e.target.files[0];
@@ -250,8 +410,17 @@
         reader.readAsDataURL(file);
     };
 
-    window.logout = () => signOut(auth);
-    // ... reste du script ...
+    window.logout = () => {
+        signOut(auth);
+    };
+
+    const phrases = ["Votre expérience nous importe", "Un film à suggérer ?", "CongoFlix: le miroir de la RDC", "Notez l'application"];
+    let pIdx = 0;
+    setInterval(() => {
+        pIdx = (pIdx + 1) % phrases.length;
+        const txt = document.getElementById('rating-text');
+        if(txt) { txt.style.opacity = 0; setTimeout(() => { txt.innerText = phrases[pIdx]; txt.style.opacity = 1; }, 500); }
+    }, 4000);
 </script>
 </body>
 </html>
