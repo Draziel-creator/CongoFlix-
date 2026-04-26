@@ -47,16 +47,29 @@
             gap: 8px;
         }
 
-        /* Profil avec Effet Lumineux derrière */
+        /* Profil avec Effet Lumineux Torche Jaune */
         .profile-header { text-align: center; padding: 10px 0; }
         .avatar-wrapper { 
             position: relative; 
             display: inline-block; 
             cursor: pointer;
             border-radius: 50%;
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.4); /* L'effet de lumière qui sort de derrière */
+            /* Effet torche jaune intense derrière */
+            box-shadow: 0 0 30px 10px rgba(255, 215, 0, 0.7), 
+                        0 0 60px 20px rgba(255, 215, 0, 0.3);
         }
-        #user-photo { width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; background: #222; position: relative; z-index: 2; }
+        #user-photo { 
+            width: 110px; 
+            height: 110px; 
+            border-radius: 50%; 
+            /* Bordure lumineuse */
+            border: 3px solid #fffb00; 
+            box-shadow: inset 0 0 10px #ffd700;
+            object-fit: cover; 
+            background: #222; 
+            position: relative; 
+            z-index: 2; 
+        }
         .edit-badge { position: absolute; bottom: 5px; right: 5px; background: var(--gold); color: #000; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg); font-size: 12px; z-index: 3; }
         
         /* Nom modifiable Stylisé */
@@ -102,9 +115,6 @@
         .stars i { font-size: 28px; color: #333; cursor: pointer; padding: 5px; }
         .stars i.active { color: var(--gold); }
         textarea { width: 100%; background: #000; color: #fff; border: 1px solid #333; padding: 12px; border-radius: 10px; margin-top: 10px; box-sizing: border-box; }
-        
-        /* Badge Notification */
-        .notif-badge { position: absolute; top: -5px; right: -8px; background: red; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: none; align-items: center; justify-content: center; border: 2px solid #000; }
     </style>
 </head>
 <body>
@@ -113,11 +123,6 @@
         <a href="go:W1" class="back-link">
             <div class="back-circle">➔</div>
         </a>
-        
-        <div id="notif-trigger" class="hidden" onclick="toggleModal('notif-modal')" style="position:relative; cursor:pointer; padding: 5px;">
-            <i class="fa-solid fa-bell" style="color:var(--gold); font-size:24px;"></i>
-            <div id="notif-count" class="notif-badge">0</div>
-        </div>
         
         <a href="player.html" id="nav-player-btn" class="player-btn hidden">
             <i class="fa-solid fa-play"></i> LECTEUR
@@ -176,26 +181,14 @@
         <button onclick="logout()" style="background:none; color:#444; border:none; width:100%; margin:30px 0;">DÉCONNEXION</button>
     </div>
 
-    <div id="notif-modal" class="overlay-modal hidden">
-        <div class="modal-content" style="text-align:left; max-height: 80vh; overflow-y: auto;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3 style="color:var(--gold); margin:0;">Messages</h3>
-                <span onclick="toggleModal('notif-modal')" style="color:var(--gold); font-size:28px; cursor:pointer;">&times;</span>
-            </div>
-            <div id="integrated-notif-list">
-                <p style="text-align:center; color:#444;">Aucun message</p>
-            </div>
-        </div>
-    </div>
-
     <div id="photo-alert-modal" class="overlay-modal hidden">
         <div class="modal-content">
             <i class="fa-solid fa-image" style="font-size: 40px; color: var(--gold); margin-bottom: 15px;"></i>
             <h3 style="color:var(--gold); margin-top:0;">Attention Image</h3>
             <p style="font-size: 13px; color: #ccc; line-height: 1.5; text-align: justify;">
-                Veuillez choisir une image de <b>basse taille</b>. Cet espace n'accepte pas les images HD trop détaillées qui pèsent lourd (comme celles prises par iPhone).
+                Veuillez choisir une image de <b>basse taille</b>. Cet espace n'accepte pas les images HD trop détaillées qui pèsent lourd.
                 <br><br>
-                <b>Conseil :</b> Si vous voulez vraiment cette image, allez dans votre galerie, faites-en une <b>capture d'écran</b> et utilisez la capture. Elle sera moins lourde sans perdre de qualité !
+                <b>Conseil :</b> Faites une <b>capture d'écran</b> de votre photo et utilisez la capture pour réduire son poids !
             </p>
             <div style="display:flex; gap:10px;">
                 <button class="btn-main" style="background:#333; color:#fff;" onclick="toggleModal('photo-alert-modal')">ANNULER</button>
@@ -323,47 +316,12 @@
         }
     };
 
-    const loadIntegratedNotifs = () => {
-        const q = query(collection(db, "global_notifications"), orderBy("Timestamp", "desc"));
-        onSnapshot(q, (snapshot) => {
-            let html = "";
-            let count = 0;
-            if (snapshot.empty) {
-                html = '<p style="text-align:center; color:#444;">Aucun message</p>';
-            } else {
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    count++;
-                    const titre = data.title || data.Title || "Message";
-                    const texte = data.message || data.Message || "";
-                    html += `
-                        <div style="background:#000; padding:15px; border-radius:12px; margin-bottom:12px; border-left:4px solid var(--gold); border: 1px solid #333;">
-                            <b style="color:var(--gold)">${titre}</b><br>
-                            <span style="color:#ccc; font-size:14px;">${texte}</span>
-                        </div>`;
-                });
-            }
-            const list = document.getElementById('integrated-notif-list');
-            const badge = document.getElementById('notif-count');
-            if(list) list.innerHTML = html;
-            if(badge) {
-                badge.innerText = count;
-                badge.style.display = count > 0 ? 'flex' : 'none';
-            }
-        }, (error) => {
-            console.error("Erreur de chargement des notifs:", error);
-        });
-    };
-
     onAuthStateChanged(auth, async (user) => {
         const navBtn = document.getElementById('nav-player-btn');
-        const notifTrigger = document.getElementById('notif-trigger');
         if(user) {
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
             navBtn.classList.remove('hidden');
-            notifTrigger.classList.remove('hidden');
-            loadIntegratedNotifs(); 
             const snap = await getDoc(doc(db, "users", user.uid));
             if(snap.exists()){
                 const d = snap.data();
@@ -376,7 +334,6 @@
             document.getElementById('auth-screen').classList.remove('hidden');
             document.getElementById('main-app').classList.add('hidden');
             navBtn.classList.add('hidden');
-            notifTrigger.classList.add('hidden');
         }
     });
 
