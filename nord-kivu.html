@@ -12,716 +12,225 @@
     <style>
         :root { 
             --gold: #ffd700; 
-            --blue-verify: #1d9bf0;
             --bg: #000; 
             --card-bg: #121212; 
-            --search-bg: rgba(255, 255, 255, 0.1);
         }
         
         body { 
             background: var(--bg); 
             color: #fff; 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
+            font-family: 'Segoe UI', sans-serif; 
             margin: 0; 
             padding: 0;
-            padding-top: env(safe-area-inset-top);
         }
 
-        /* SECTION HERO (PUB + OVERLAY) */
-        .hero-section {
+        /* ZONE DU HAUT (PUB + BOUTONS FLOTTANTS) */
+        .hero-container {
             position: relative;
             width: 100%;
-            height: 300px; /* Taille idéale pour une bannière 300x250 */
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            height: 280px; /* Taille pour la bannière pub */
+            background: #111;
         }
 
-        /* Conteneur Adsterra */
-        .ad-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1;
-            background: #111; /* Fond sombre pendant le chargement */
-        }
-
-        /* Éléments Flottants (z-index supérieur) */
-        .overlay-elements {
+        /* Éléments par-dessus la pub */
+        .floating-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 10; /* Très haut pour être au-dessus de tout */
-            pointer-events: none; /* Laisse passer le clic vers la pub dans les zones vides */
-            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 40%, rgba(0,0,0,0.9) 100%);
+            z-index: 10;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            pointer-events: none; /* Pour cliquer sur la pub à travers */
+            background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 50%, rgba(0,0,0,0.8) 100%);
+        }
+
+        .top-nav {
+            display: flex;
+            align-items: center;
             padding: 15px;
-            box-sizing: border-box;
+            pointer-events: auto; /* Active les clics sur retour et recherche */
         }
 
-        /* Barre de Recherche et Retour (Haut) */
-        .top-bar {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            pointer-events: auto; /* Active le clic pour cette zone */
-        }
-
-        .back-btn { 
-            color: #fff;
-            font-size: 22px;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        /* LE BOUTON RETOUR (Inspiré de ton exemple mais transparent) */
+        .back-link {
             text-decoration: none;
+            margin-right: 15px;
         }
 
-        /* La barre de recherche moderne */
-        .search-box {
-            flex: 1;
+        .back-circle {
+            width: 40px;
             height: 40px;
-            background: var(--search-bg);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(255,215,0,0.2);
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            position: relative;
-        }
-
-        .search-icon { color: var(--gold); font-size: 14px; margin-right: 10px; }
-
-        /* L'input réel */
-        #searchInput {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-        }
-
-        /* L'élément d'animation placeholder (z-index inférieur à l'input) */
-        #searchPlaceholder {
-            position: absolute;
-            left: 39px;
-            font-size: 14px;
-            color: rgba(255,255,255,0.5);
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-        }
-
-        /* Le curseur clignotant de l'animation */
-        #typewriter-cursor {
-            width: 2px;
-            height: 14px;
-            background-color: var(--gold);
-            margin-left: 2px;
-            animation: blink 0.7s infinite;
-        }
-
-        @keyframes blink { 50% { opacity: 0; } }
-
-        /* Province Title (Bas) */
-        .province-label {
-            width: 100%;
-            text-align: center;
-            font-size: 32px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            color: #fff;
-            text-shadow: 2px 2px 20px rgba(0,0,0,1);
-            margin-bottom: 10px;
-        }
-
-        /* LISTE DES FILMS */
-        .container { padding: 15px; }
-        .section-header { color: var(--gold); font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 20px; opacity: 0.8; }
-
-        /* Conteneur pour les cartes générées */
-        #movie-list {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        /* Carte film style moderne */
-        .movie-card { 
-            display: flex; 
-            background: var(--card-bg); 
-            border-radius: 12px; 
-            height: 130px; 
-            overflow: hidden; 
-            border: 1px solid #222;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            animation: fadeIn 0.5s ease-out;
-        }
-        .movie-card:active { transform: scale(0.98); }
-        .movie-card:hover { box-shadow: 0 4px 15px rgba(255,215,0,0.1); }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .poster-box { width: 110px; height: 100%; flex-shrink: 0; position: relative; }
-        .poster-box img { width: 100%; height: 100%; object-fit: cover; }
-        .quality-tag { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.7); font-size: 9px; padding: 2px 4px; border-radius: 2px; color: var(--gold); }
-
-        .details { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
-        
-        .title-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
-        .movie-name { font-size: 16px; font-weight: 800; color: #fff; text-transform: uppercase; line-height: 1.2; }
-        .verify-icon { color: var(--blue-verify); font-size: 14px; }
-
-        .meta-info { font-size: 11px; color: #888; margin-bottom: 12px; }
-        .meta-info span { color: var(--gold); font-weight: bold; }
-
-        .btn-play { background: #fff; color: #000; border: none; padding: 8px 18px; border-radius: 6px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; width: fit-content; }
-
-        /* Loading & Empty State */
-        #loading, #empty-state { text-align: center; color: var(--text-gray); padding: 50px 0; font-size: 14px; }
-        #loading i { color: var(--gold); font-size: 24px; margin-bottom: 10px; display: block; }
-    </style>
-</head>
-<body>
-
-    <div class="hero-section">
-        <div class="ad-container">
-            <script type="text/javascript">
-                atOptions = {
-                    'key' : 'e86dd4055cd86d43aa42fbae392c77d2',
-                    'format' : 'iframe',
-                    'height' : 250,
-                    'width' : 300,
-                    'params' : {}
-                };
-            </script>
-            <script type="text/javascript" src="https://www.highperformanceformat.com/e86dd4055cd86d43aa42fbae392c77d2/invoke.js"></script>
-        </div>
-
-        <div class="overlay-elements">
-            <div class="top-bar">
-                <a href="appcreator24://section/W1" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
-                <div class="search-box">
-                    <i class="fa-solid fa-search search-icon"></i>
-                    <div id="searchPlaceholder">
-                        <span id="typewriter-text"></span><div id="typewriter-cursor"></div>
-                    </div>
-                    <input type="text" id="searchInput" autocomplete="off">
-                </div>
-            </div>
-
-            <div class="province-label">NORD-KIVU</div>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="section-header">NOS FILMS DU NORD-KIVU</div>
-        
-        <div id="loading">
-            <i class="fa-solid fa-spinner fa-spin"></i>
-            Connexion au serveur Firebase...
-        </div>
-
-        <div id="empty-state" style="display: none;">
-            <i class="fa-solid fa-video-slash" style="font-size: 24px; color: #444; margin-bottom: 10px; display: block;"></i>
-            Aucun film correspondant dans cette province.
-        </div>
-
-        <div id="movie-list"></div>
-    </div>
-
-    <script>
-        // --- 1. CONFIGURATION & INITIALISATION FIREBASE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
-            authDomain: "congo-streaming-51333.firebaseapp.com",
-            databaseURL: "https://congo-streaming-51333-default-rtdb.firebaseio.com",
-            projectId: "congo-streaming-51333",
-            storageBucket: "congo-streaming-51333.firebasestorage.app",
-            messagingSenderId: "304286627819",
-            appId: "1:304286627819:web:ee606adc4f6b4002054bae"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        let allMovies = []; // Pour stocker la liste complète et filtrer en local
-
-        // --- 2. FONCTION CHARGEMENT DYNAMIQUE DEPUIS FIREBASE ---
-        function loadMovies() {
-            const listContainer = document.getElementById('movie-list');
-            const loadingDiv = document.getElementById('loading');
-            const emptyStateDiv = document.getElementById('empty-state');
-            
-            // Requête : On cherche dans la collection "films" ceux qui ont province == "nord-kivu"
-            db.collection("films").where("province", "==", "nord-kivu")
-            .get().then((querySnapshot) => {
-                loadingDiv.style.display = "none"; // Cache le chargement
-                
-                if (querySnapshot.empty) {
-                    emptyStateDiv.style.display = "block";
-                    return;
-                }
-
-                allMovies = []; // Reset local
-
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const id = doc.id;
-                    // On stocke l'ID avec les données pour le clic
-                    allMovies.push({ id, ...data });
-                });
-
-                // Premier affichage complet
-                renderMovieList(allMovies);
-
-            }).catch((error) => {
-                console.error("Erreur Firebase : ", error);
-                loadingDiv.innerHTML = "<i class='fa-solid fa-exclamation-triangle'></i> Erreur de connexion.";
-            });
-        }
-
-        // --- 3. FONCTION D'AFFICHAGE DE LA GRILLE (RENDER) ---
-        function renderMovieList(movies) {
-            const listContainer = document.getElementById('movie-list');
-            const emptyStateDiv = document.getElementById('empty-state');
-            listContainer.innerHTML = ""; // Vide la liste actuelle
-
-            if (movies.length === 0) {
-                emptyStateDiv.style.display = "block";
-                return;
-            } else {
-                emptyStateDiv.style.display = "none";
-            }
-
-            movies.forEach((movie) => {
-                // Utilisation des champs Firebase : miniature, titre, type, annee
-                const card = `
-                    <div class="movie-card" onclick="window.location.href='https://draziel-creator.github.io/CongoFlix-/player.html?id=${movie.id}'">
-                        <div class="poster-box">
-                            <img src="${movie.miniature || 'https://via.placeholder.com/110x130?text=No+Image'}" alt="Poster">
-                            <div class="quality-tag">HD ${movie.annee || '2026'}</div>
-                        </div>
-                        <div class="details">
-                            <div class="title-row">
-                                <div class="movie-name">${movie.titre || 'Sans titre'}C'est noté ! Nous franchissons une étape majeure ici. Le code devient **dynamique et intelligent**.
-
-### Les Fonctionnalités de ce Nouveau Code :
-
-1.  **Firebase Dynamique :** Fini la modification du HTML. Ta page `nord-kivu.html` est maintenant une coquille vide intelligente. Dès qu'elle s'ouvre, elle demande à Firebase : *"Donne-moi tous les films qui sont au Nord-Kivu"*. Firebase répond, et ton code crée les miniatures automatiquement.
-2.  **Mise à jour Instantanée :** Ajoute un film dans Firebase avec `province: "nord-kivu"`, et il apparaît sur ton application sans rien toucher d'autre.
-3.  **Barre de Recherche avec Typewriter :** À côté du bouton retour, une barre de recherche animée affiche des mots qui changent en boucle (ex: "Mushota...", "Série...", "HD..."). Ce n'est que de la décoration pour faire pro, mais dès que l'utilisateur tape une vraie lettre, le filtrage commence.
-4.  **Z-Index Parfait :** La publicité Adsterra (300x250) occupe tout le fond en haut. La barre de recherche, le bouton retour et le nom de la province "flottent" par-dessus avec des effets de transparence et d'ombre pour rester lisibles.
-5.  **Bouton Retour W1 :** Le bouton retour pointe vers `appcreator24://section/W1`.
-
-### Ce que tu dois faire dans Firebase :
-
-Pour que le filtrage fonctionne, n'oublie pas d'ajouter un champ **`province`** (de type `string`) dans tes documents de la collection `films` sur Firebase :
-
-* Pour Mushota, mets `province` = **`nord-kivu`**
-
----
-
-### Le Code Complet (à mettre sur GitHub dans `nord-kivu.html`)
-
-```html
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>CongoFlix - Nord-Kivu</title>
-    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
-    
-    <script src="[https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js](https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js)"></script>
-    <script src="[https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js](https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js)"></script>
-
-    <style>
-        :root { 
-            --gold: #ffd700; 
-            --blue-verify: #1d9bf0;
-            --bg: #000; 
-            --card-bg: #121212; 
-            --search-bg: rgba(255, 255, 255, 0.1);
-        }
-        
-        body { 
-            background: var(--bg); 
-            color: #fff; 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            margin: 0; 
-            padding: 0;
-            padding-top: env(safe-area-inset-top);
-        }
-
-        /* SECTION HERO (PUB + OVERLAY) */
-        .hero-section {
-            position: relative;
-            width: 100%;
-            height: 300px; /* Taille idéale pour une bannière 300x250 */
-            background: #000;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            color: var(--gold);
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 20px;
+            background: rgba(0, 0, 0, 0.4); /* Fond sombre transparent */
+            backdrop-filter: blur(5px);
+            transform: rotate(180deg); /* Pour que la flèche pointe à gauche */
+        }
+
+        .search-bar {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            border: 1px solid rgba(255,215,0,0.3);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            height: 40px;
+        }
+
+        #searchInput {
+            background: transparent;
+            border: none;
+            color: white;
+            padding-left: 10px;
+            width: 100%;
+            outline: none;
+        }
+
+        /* TITRE PROVINCE AVEC LUMIÈRE JAUNE LARGEUR TOTALE */
+        .province-glow-bar {
+            width: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.5), transparent);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.3);
+            padding: 8px 0;
+            text-align: center;
+        }
+
+        .province-title {
+            font-size: 26px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+            margin: 0;
+        }
+
+        /* LISTE DES FILMS */
+        .content { padding: 15px; }
+        
+        #movie-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .movie-card {
+            display: flex;
+            background: var(--card-bg);
+            border: 1.5px solid #333;
+            border-radius: 12px;
+            height: 110px;
             overflow: hidden;
-        }
-
-        /* Conteneur Adsterra */
-        .ad-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1;
-            background: #111; /* Fond sombre pendant le chargement */
-        }
-
-        /* Éléments Flottants (z-index supérieur) */
-        .overlay-elements {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10; /* Très haut pour être au-dessus de tout */
-            pointer-events: none; /* Laisse passer le clic vers la pub dans les zones vides */
-            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 40%, rgba(0,0,0,0.9) 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 15px;
-            box-sizing: border-box;
-        }
-
-        /* Barre de Recherche et Retour (Haut) */
-        .top-bar {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            pointer-events: auto; /* Active le clic pour cette zone */
-        }
-
-        .back-btn { 
-            color: #fff;
-            font-size: 22px;
-            text-shadow: 0 0 10px rgba(0,0,0,0.5);
             text-decoration: none;
         }
 
-        /* La barre de recherche moderne */
-        .search-box {
+        .info-box {
             flex: 1;
-            height: 40px;
-            background: var(--search-bg);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 1px solid rgba(255,215,0,0.2);
+            padding: 12px;
             display: flex;
-            align-items: center;
-            padding: 0 15px;
-            position: relative;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        .search-icon { color: var(--gold); font-size: 14px; margin-right: 10px; }
+        .m-title { color: var(--gold); font-weight: bold; font-size: 15px; margin-bottom: 5px; }
+        .m-meta { font-size: 11px; color: #aaa; }
 
-        /* L'input réel */
-        #searchInput {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-        }
+        .m-poster { width: 100px; flex-shrink: 0; }
+        .m-poster img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* L'élément d'animation placeholder (z-index inférieur à l'input) */
-        #searchPlaceholder {
-            position: absolute;
-            left: 39px;
-            font-size: 14px;
-            color: rgba(255,255,255,0.5);
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-        }
-
-        /* Le curseur clignotant de l'animation */
-        #typewriter-cursor {
-            width: 2px;
-            height: 14px;
-            background-color: var(--gold);
-            margin-left: 2px;
-            animation: blink 0.7s infinite;
-        }
-
-        @keyframes blink { 50% { opacity: 0; } }
-
-        /* Province Title (Bas) */
-        .province-label {
-            width: 100%;
-            text-align: center;
-            font-size: 32px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            color: #fff;
-            text-shadow: 2px 2px 20px rgba(0,0,0,1);
-            margin-bottom: 10px;
-        }
-
-        /* LISTE DES FILMS */
-        .container { padding: 15px; }
-        .section-header { color: var(--gold); font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 20px; opacity: 0.8; }
-
-        /* Conteneur pour les cartes générées */
-        #movie-list {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        /* Carte film style moderne */
-        .movie-card { 
-            display: flex; 
-            background: var(--card-bg); 
-            border-radius: 12px; 
-            height: 130px; 
-            overflow: hidden; 
-            border: 1px solid #222;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            animation: fadeIn 0.5s ease-out;
-        }
-        .movie-card:active { transform: scale(0.98); }
-        .movie-card:hover { box-shadow: 0 4px 15px rgba(255,215,0,0.1); }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .poster-box { width: 110px; height: 100%; flex-shrink: 0; position: relative; }
-        .poster-box img { width: 100%; height: 100%; object-fit: cover; }
-        .quality-tag { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.7); font-size: 9px; padding: 2px 4px; border-radius: 2px; color: var(--gold); }
-
-        .details { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
-        
-        .title-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
-        .movie-name { font-size: 16px; font-weight: 800; color: #fff; text-transform: uppercase; line-height: 1.2; }
-        .verify-icon { color: var(--blue-verify); font-size: 14px; }
-
-        .meta-info { font-size: 11px; color: #888; margin-bottom: 12px; }
-        .meta-info span { color: var(--gold); font-weight: bold; }
-
-        .btn-play { background: #fff; color: #000; border: none; padding: 8px 18px; border-radius: 6px; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; width: fit-content; }
-
-        /* Loading & Empty State */
-        #loading, #empty-state { text-align: center; color: var(--text-gray); padding: 50px 0; font-size: 14px; }
-        #loading i { color: var(--gold); font-size: 24px; margin-bottom: 10px; display: block; }
+        #loading { text-align: center; padding: 50px; color: var(--gold); }
     </style>
 </head>
 <body>
 
-    <div class="hero-section">
-        <div class="ad-container">
-            <script type="text/javascript">
-                atOptions = {
-                    'key' : 'e86dd4055cd86d43aa42fbae392c77d2',
-                    'format' : 'iframe',
-                    'height' : 250,
-                    'width' : 300,
-                    'params' : {}
-                };
-            </script>
-            <script type="text/javascript" src="[https://www.highperformanceformat.com/e86dd4055cd86d43aa42fbae392c77d2/invoke.js](https://www.highperformanceformat.com/e86dd4055cd86d43aa42fbae392c77d2/invoke.js)"></script>
-        </div>
+    <div class="hero-container">
+        <div id="ad-zone" style="width:100%; height:100%;">
+            </div>
 
-        <div class="overlay-elements">
-            <div class="top-bar">
-                <a href="appcreator24://section/W1" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
-                <div class="search-box">
-                    <i class="fa-solid fa-search search-icon"></i>
-                    <div id="searchPlaceholder">
-                        <span id="typewriter-text"></span><div id="typewriter-cursor"></div>
-                    </div>
-                    <input type="text" id="searchInput" autocomplete="off">
+        <div class="floating-overlay">
+            <div class="top-nav">
+                <a href="go:W1" class="back-link">
+                    <div class="back-circle">➔</div>
+                </a>
+                <div class="search-bar">
+                    <i class="fa-solid fa-search" style="color:var(--gold)"></i>
+                    <input type="text" id="searchInput" placeholder="Rechercher...">
                 </div>
             </div>
 
-            <div class="province-label">NORD-KIVU</div>
+            <div class="province-glow-bar">
+                <h1 class="province-title">NORD-KIVU</h1>
+            </div>
         </div>
     </div>
 
-    <div class="container">
-        <div class="section-header">NOS FILMS DU NORD-KIVU</div>
-        
-        <div id="loading">
-            <i class="fa-solid fa-spinner fa-spin"></i>
-            Connexion au serveur Firebase...
-        </div>
-
-        <div id="empty-state" style="display: none;">
-            <i class="fa-solid fa-video-slash" style="font-size: 24px; color: #444; margin-bottom: 10px; display: block;"></i>
-            Aucun film correspondant dans cette province.
-        </div>
-
+    <div class="content">
+        <div id="loading"><i class="fa-solid fa-spinner fa-spin"></i> Connexion au serveur...</div>
         <div id="movie-list"></div>
     </div>
 
     <script>
-        // --- 1. CONFIGURATION & INITIALISATION FIREBASE ---
+        // CONFIG FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
             authDomain: "congo-streaming-51333.firebaseapp.com",
-            databaseURL: "[https://congo-streaming-51333-default-rtdb.firebaseio.com](https://congo-streaming-51333-default-rtdb.firebaseio.com)",
             projectId: "congo-streaming-51333",
-            storageBucket: "congo-streaming-51333.firebasestorage.app",
-            messagingSenderId: "304286627819",
+            storageBucket: "congo-streaming-51333.appspot.com",
             appId: "1:304286627819:web:ee606adc4f6b4002054bae"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let allMovies = []; // Pour stocker la liste complète et filtrer en local
+        let moviesData = [];
 
-        // --- 2. FONCTION CHARGEMENT DYNAMIQUE DEPUIS FIREBASE ---
-        function loadMovies() {
-            const listContainer = document.getElementById('movie-list');
-            const loadingDiv = document.getElementById('loading');
-            const emptyStateDiv = document.getElementById('empty-state');
-            
-            // Requête : On cherche dans la collection "films" ceux qui ont province == "nord-kivu"
+        function getMovies() {
+            // On cherche : province = nord-kivu
             db.collection("films").where("province", "==", "nord-kivu")
             .get().then((querySnapshot) => {
-                loadingDiv.style.display = "none"; // Cache le chargement
-                
-                if (querySnapshot.empty) {
-                    emptyStateDiv.style.display = "block";
-                    return;
-                }
-
-                allMovies = []; // Reset local
-
+                document.getElementById('loading').style.display = 'none';
+                moviesData = [];
                 querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const id = doc.id;
-                    // On stocke l'ID avec les données pour le clic
-                    allMovies.push({ id, ...data });
+                    moviesData.push({ id: doc.id, ...doc.data() });
                 });
-
-                // Premier affichage complet
-                renderMovieList(allMovies);
-
-            }).catch((error) => {
-                console.error("Erreur Firebase : ", error);
-                loadingDiv.innerHTML = "<i class='fa-solid fa-exclamation-triangle'></i> Erreur de connexion.";
+                displayMovies(moviesData);
             });
         }
 
-        // --- 3. FONCTION D'AFFICHAGE DE LA GRILLE (RENDER) ---
-        function renderMovieList(movies) {
-            const listContainer = document.getElementById('movie-list');
-            const emptyStateDiv = document.getElementById('empty-state');
-            listContainer.innerHTML = ""; // Vide la liste actuelle
-
-            if (movies.length === 0) {
-                emptyStateDiv.style.display = "block";
-                return;
-            } else {
-                emptyStateDiv.style.display = "none";
-            }
-
-            movies.forEach((movie) => {
-                // Utilisation des champs Firebase : miniature, titre, type, annee
-                const card = `
-                    <div class="movie-card" onclick="window.location.href='[https://draziel-creator.github.io/CongoFlix-/player.html?id=$](https://draziel-creator.github.io/CongoFlix-/player.html?id=$){movie.id}'">
-                        <div class="poster-box">
-                            <img src="${movie.miniature || '[https://via.placeholder.com/110x130?text=No+Image](https://via.placeholder.com/110x130?text=No+Image)'}" alt="Poster">
-                            <div class="quality-tag">HD ${movie.annee || '2026'}</div>
+        function displayMovies(arr) {
+            const container = document.getElementById('movie-list');
+            container.innerHTML = "";
+            arr.forEach(m => {
+                container.innerHTML += `
+                    <a href="player.html?id=${m.id}" class="movie-card">
+                        <div class="info-box">
+                            <div class="m-title">${m.titre}</div>
+                            <div class="m-meta">${m.type || 'Série'} • <span>${m.langue || 'Français'}</span></div>
                         </div>
-                        <div class="details">
-                            <div class="title-row">
-                                <div class="movie-name">${movie.titre || 'Sans titre'}</div>
-                                <i class="fa-solid fa-circle-check verify-icon"></i>
-                            </div>
-                            <div class="meta-info">
-                                ${movie.type || 'Série'} <span>• Français</span>
-                            </div>
-                            <button class="btn-play">
-                                <i class="fa-solid fa-play"></i> REGARDER
-                            </button>
+                        <div class="m-poster">
+                            <img src="${m.miniature}">
                         </div>
-                    </div>
+                    </a>
                 `;
-                listContainer.innerHTML += card;
             });
         }
 
-        // --- 4. GESTION DE LA RECHERCHE EN TEMPS RÉEL ---
-        const searchInput = document.getElementById('searchInput');
-        const searchPlaceholder = document.getElementById('searchPlaceholder');
-
-        // Cache/Affiche le placeholder animé selon que l'utilisateur tape ou non
-        searchInput.addEventListener('input', (e) => {
-            const val = e.target.value;
-            searchPlaceholder.style.display = val.length > 0 ? "none" : "flex";
-            
-            // FILTRAGE LOCAL (Très rapide)
-            const filteredMovies = allMovies.filter(movie => {
-                const titre = (movie.titre || "").toLowerCase();
-                return titre.includes(val.toLowerCase());
-            });
-            
-            // Re-render avec la liste filtrée
-            renderMovieList(filteredMovies);
+        // Recherche en direct
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = moviesData.filter(m => m.titre.toLowerCase().includes(term));
+            displayMovies(filtered);
         });
 
-        // --- 5. ANIMATION TYPEWRITER DECORATIVE ---
-        const words = ["Mushota vs Karani...", "Séries Nord-Kivu...", "Films en HD...", "CongoFlix..."];
-        const textElement = document.getElementById("typewriter-text");
-        let wordIndex = 0;
-        let charIndex = 0;
-        let isDeleting = false;
-
-        function type() {
-            const currentWord = words[wordIndex];
-            if (isDeleting) {
-                textElement.textContent = currentWord.substring(0, charIndex - 1);
-                charIndex--;
-            } else {
-                textElement.textContent = currentWord.substring(0, charIndex + 1);
-                charIndex++;
-            }
-
-            let typeSpeed = isDeleting ? 50 : 100; // Plus vite en effaçant
-
-            if (!isDeleting && charIndex === currentWord.length) {
-                // Mot fini, pause avant effaçage
-                typeSpeed = 2000;
-                isDeleting = true;
-            } else if (isDeleting && charIndex === 0) {
-                // Mot effacé, mot suivant
-                isDeleting = false;
-                wordIndex = (wordIndex + 1) % words.length;
-                typeSpeed = 500;
-            }
-
-            setTimeout(type, typeSpeed);
-        }
-
-        // Lancement initial
-        window.addEventListener('load', () => {
-            type();
-            loadMovies();
-        });
-
+        window.onload = getMovies;
     </script>
-
 </body>
 </html>
