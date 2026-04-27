@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>CongoFlix - Dessins Animés</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root { 
+            --gold: #ffd700; 
+            --blue-verify: #1d9bf0;
+            --bg: #000; 
+            --card-bg: #121212; 
+            --search-bg: rgba(255, 255, 255, 0.1);
+        }
+        
+        body { 
+            background: var(--bg); 
+            color: #fff; 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; 
+            padding: 0;
+            padding-top: env(safe-area-inset-top);
+        }
+
+        /* SECTION HERO */
+        .hero-section {
+            position: relative;
+            width: 100%;
+            height: 300px; 
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .ad-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            background: #111; 
+        }
+
+        .overlay-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10; 
+            pointer-events: none; 
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 40%, rgba(0,0,0,0.9) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            pointer-events: auto; 
+        }
+
+        .back-btn { 
+            color: #fff;
+            font-size: 22px;
+            text-decoration: none;
+        }
+
+        .search-box {
+            flex: 1;
+            height: 40px;
+            background: var(--search-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255,215,0,0.2);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            position: relative;
+        }
+
+        .search-icon { color: var(--gold); font-size: 14px; margin-right: 10px; }
+
+        #searchInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+        }
+
+        #searchPlaceholder {
+            position: absolute;
+            left: 39px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+        }
+
+        #typewriter-cursor {
+            width: 2px;
+            height: 14px;
+            background-color: var(--gold);
+            margin-left: 2px;
+            animation: blink 0.7s infinite;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* EFFET LUMIERE DESSINS ANIMES */
+        .province-label {
+            width: 100%;
+            text-align: center;
+            font-size: 30px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #fff;
+            animation: shine 3s infinite alternate;
+        }
+
+        @keyframes shine {
+            from { text-shadow: 0 0 5px #fff, 0 0 10px #ffd700, 0 0 20px #ffd700; opacity: 0.8; }
+            to { text-shadow: 0 0 10px #fff, 0 0 30px #ffd700, 0 0 50px #ffd700; opacity: 1; }
+        }
+
+        /* LISTE DES FILMS */
+        .container { padding: 15px; }
+        
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header { 
+            color: var(--gold); 
+            font-size: 12px; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            opacity: 0.8; 
+        }
+
+        .guide-link {
+            color: var(--gold);
+            font-size: 12px;
+            font-weight: bold;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        /* MODAL / GUIDE */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #1a1a1a;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid var(--gold);
+            width: 85%;
+            border-radius: 15px;
+            max-height: 70vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .close-modal {
+            color: #fff;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .modal-title { color: var(--gold); margin-bottom: 15px; font-size: 18px; font-weight: bold; }
+        .modal-text { font-size: 14px; line-height: 1.6; color: #ddd; }
+        .modal-text b { color: var(--gold); }
+
+        #movie-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .movie-card { 
+            display: flex; 
+            background: var(--card-bg); 
+            border-radius: 12px; 
+            height: 130px; 
+            overflow: hidden; 
+            border: 1px solid #222;
+            cursor: pointer;
+            transition: transform 0.2s;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- RÉGLAGE ZOOM OPTIMISÉ POUR 1:1 --- */
+        .poster-box { width: 110px; height: 100%; flex-shrink: 0; position: relative; overflow: hidden; background: #000; }
+        .poster-box img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            transform: scale(1.8); 
+            animation: ultraMoveBack 10s infinite alternate ease-in-out;
+        }
+
+        @keyframes ultraMoveBack {
+            0% { transform: scale(1.8); }
+            100% { transform: scale(1.2); }
+        }
+
+        .quality-tag { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.7); font-size: 9px; padding: 2px 4px; border-radius: 2px; color: var(--gold); z-index: 5; }
+
+        .details { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
+        .title-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+        .movie-name { font-size: 16px; font-weight: 800; color: #fff; text-transform: uppercase; line-height: 1.2; }
+        .verify-icon { color: var(--blue-verify); font-size: 14px; }
+
+        .meta-info { font-size: 11px; color: #888; margin-bottom: 12px; }
+        .meta-info span { color: var(--gold); font-weight: bold; }
+
+        .btn-play { background: #fff; color: #000; border: none; padding: 8px 18px; border-radius: 6px; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 8px; width: fit-content; }
+
+        #loading, #empty-state { text-align: center; color: #888; padding: 50px 0; }
+    </style>
+</head>
+<body>
+
+    <div id="guideModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeGuide()">&times;</span>
+            <div class="modal-title">Note : Guide Espace Enfants</div>
+            <div class="modal-text">
+                <p><b>Place aux héros !</b> Pour que vos enfants profitent au mieux de leurs dessins animés :</p>
+                <p><b>1. Plein écran :</b> Activez la "Rotation automatique" sur votre téléphone ou tablette.</p>
+                <p><b>2. Grand angle :</b> Tournez l'appareil à l'horizontale pour une immersion totale.</p>
+                <p><b>3. Confort :</b> Maintenez le doigt sur le petit carré du lecteur en bas à droite pour agrandir l'image.</p>
+                <p><b>4. Publicité :</b> Cliquez sur <b>"Close Ad"</b> si une bannière apparaît sur l'écran.</p>
+                <p><b>5. Mode Voyage :</b> Utilisez la flèche de téléchargement pour regarder sans connexion internet.</p>
+                <p style="border-top: 1px solid #333; pt-10"><i>Une fenêtre s'ouvre par erreur ? Fermez-la pour revenir sur l'application.</i></p>
+                <p style="text-align:center; color:var(--gold)"><b>Amusez-vous bien sur CongoFlix Kids !</b></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="hero-section">
+        <div class="ad-container">
+            <script type="text/javascript">
+                atOptions = { 'key' : 'e86dd4055cd86d43aa42fbae392c77d2', 'format' : 'iframe', 'height' : 250, 'width' : 300, 'params' : {} };
+            </script>
+            <script type="text/javascript" src="https://www.highperformanceformat.com/e86dd4055cd86d43aa42fbae392c77d2/invoke.js"></script>
+        </div>
+
+        <div class="overlay-elements">
+            <div class="top-bar">
+                <a href="go:W1" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+                <div class="search-box">
+                    <i class="fa-solid fa-search search-icon"></i>
+                    <div id="searchPlaceholder">
+                        <span id="typewriter-text"></span><div id="typewriter-cursor"></div>
+                    </div>
+                    <input type="text" id="searchInput" autocomplete="off">
+                </div>
+            </div>
+            <div class="province-label">DESSINS ANIMÉS</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header-row">
+            <div class="section-header">LE COIN DES ENFANTS</div>
+            <div class="guide-link" onclick="openGuide()">GUIDE <i class="fa-solid fa-circle-question"></i></div>
+        </div>
+        
+        <div id="loading"><i class="fa-solid fa-spinner fa-spin"></i> Chargement...</div>
+        <div id="empty-state" style="display: none;">Pas encore de dessins animés ici.</div>
+        <div id="movie-list"></div>
+    </div>
+
+    <script>
+        function openGuide() { document.getElementById('guideModal').style.display = "block"; }
+        function closeGuide() { document.getElementById('guideModal').style.display = "none"; }
+        window.onclick = function(event) {
+            let modal = document.getElementById('guideModal');
+            if (event.target == modal) modal.style.display = "none";
+        }
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
+            authDomain: "congo-streaming-51333.firebaseapp.com",
+            projectId: "congo-streaming-51333",
+            storageBucket: "congo-streaming-51333.firebasestorage.app",
+            appId: "1:304286627819:web:ee606adc4f6b4002054bae"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        let allMovies = []; 
+
+        function loadMovies() {
+            // Filtrage : province "dessin_anime"
+            db.collection("films").where("province", "==", "dessin_anime").get().then((querySnapshot) => {
+                document.getElementById('loading').style.display = "none";
+                if (querySnapshot.empty) { document.getElementById('empty-state').style.display = "block"; return; }
+                querySnapshot.forEach((doc) => { allMovies.push({ id: doc.id, ...doc.data() }); });
+                renderMovieList(allMovies);
+            });
+        }
+
+        function renderMovieList(movies) {
+            const container = document.getElementById('movie-list');
+            container.innerHTML = ""; 
+            movies.forEach((movie) => {
+                container.innerHTML += `
+                    <div class="movie-card" onclick="window.location.href='https://draziel-creator.github.io/CongoFlix-/player.html?id=${movie.id}'">
+                        <div class="poster-box">
+                            <img src="${movie.poster || 'https://via.placeholder.com/110x130'}" alt="Poster">
+                            <div class="quality-tag">KIDS ${movie.annee || ''}</div>
+                        </div>
+                        <div class="details">
+                            <div class="title-row">
+                                <div class="movie-name">${movie.titre || 'Sans titre'}</div>
+                                <i class="fa-solid fa-circle-check verify-icon"></i>
+                            </div>
+                            <div class="meta-info">${movie.type || 'Animation'} <span>${movie.langue || 'Français'}</span></div>
+                            <button class="btn-play"><i class="fa-solid fa-play"></i> REGARDER</button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            document.getElementById('searchPlaceholder').style.display = val.length > 0 ? "none" : "flex";
+            renderMovieList(allMovies.filter(m => (m.titre || "").toLowerCase().includes(val)));
+        });
+
+        const words = ["Tes héros préférés...", "Aventures animées...", "CongoFlix Kids..."];
+        let wordIdx = 0, charIdx = 0, isDel = false;
+        function type() {
+            const current = words[wordIdx];
+            document.getElementById("typewriter-text").textContent = isDel ? current.substring(0, charIdx--) : current.substring(0, charIdx++);
+            let speed = isDel ? 50 : 100;
+            if (!isDel && charIdx > current.length) { speed = 2000; isDel = true; }
+            else if (isDel && charIdx < 0) { isDel = false; wordIdx = (wordIdx + 1) % words.length; speed = 500; }
+            setTimeout(type, speed);
+        }
+
+        window.onload = () => { type(); loadMovies(); };
+    </script>
+</body>
+</html>
