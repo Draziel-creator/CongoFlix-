@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CongoFlix - Shorts Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root { --gold: #ffd700; --white: #fff; --red: #ff3b5c; --tk-gray: #121212; --tk-input: #262626; }
+
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%; 
+            background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* FLUX TIKTOK */
+        #video-feed {
+            height: 100vh; overflow-y: scroll;
+            scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        #video-feed::-webkit-scrollbar { display: none; }
+
+        .video-card {
+            height: 100vh; width: 100%; scroll-snap-align: start;
+            position: relative; background: #000; display: flex; align-items: center;
+        }
+
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* BOUTON RETOUR W1 */
+        .back-btn {
+            position: fixed; top: 40px; left: 20px; z-index: 999;
+            text-decoration: none; color: #fff; background: rgba(0,0,0,0.3);
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--gold);
+        }
+
+        /* MENU LATÉRAL */
+        .side-menu {
+            position: absolute; right: 12px; bottom: 100px;
+            display: flex; flex-direction: column; align-items: center; gap: 18px; z-index: 100;
+        }
+
+        .user-avatar-link {
+            width: 48px; height: 48px; border-radius: 50%;
+            border: 2px solid #fff; margin-bottom: 8px;
+            background: #333; overflow: hidden;
+        }
+
+        .menu-icon { text-align: center; color: white; cursor: pointer; }
+        .menu-icon i { font-size: 30px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .menu-icon span { display: block; font-size: 12px; font-weight: bold; margin-top: 4px; }
+        .is-liked { color: var(--red) !important; }
+
+        /* INFOS BAS GAUCHE AVEC LOGO */
+        .video-desc {
+            position: absolute; left: 15px; bottom: 30px;
+            color: white; max-width: 75%; z-index: 10;
+        }
+        .logo-mini {
+            width: 100px; margin-bottom: 5px; display: block;
+        }
+        .video-desc p { margin: 0; font-size: 14px; text-shadow: 1px 1px 4px rgba(0,0,0,0.8); }
+
+        /* TIROIR COMMENTAIRES */
+        #tkDrawer {
+            position: fixed; bottom: 0; width: 100%; height: 70vh;
+            background: var(--tk-gray); border-radius: 12px 12px 0 0;
+            transform: translateY(100%); transition: 0.3s ease; z-index: 2000;
+            display: flex; flex-direction: column;
+        }
+        #tkDrawer.active { transform: translateY(0); }
+        .tk-header { padding: 15px; text-align: center; border-bottom: 0.5px solid #333; position: relative; font-weight: bold; color: #fff; }
+        .tk-list { flex: 1; overflow-y: auto; padding: 15px; }
+        .tk-input-box { padding: 10px 15px 25px; background: #1a1a1a; display: flex; align-items: center; gap: 10px; }
+        .input-pill { flex: 1; background: var(--tk-input); border-radius: 20px; padding: 8px 15px; }
+        #commentField { background: transparent; border: none; color: #fff; width: 100%; outline: none; }
+        
+        .comment-item { display: flex; gap: 10px; margin-bottom: 15px; }
+        .c-img { width: 32px; height: 32px; border-radius: 50%; }
+
+        /* ALERTE AUTH */
+        #authAlert { 
+            display:none; position:fixed; bottom:20px; left:5%; width:90%; 
+            background:var(--red); color:#fff; padding:15px; border-radius:12px; 
+            z-index:5000; text-align:center; font-weight:bold;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="go:W1" class="back-btn"><i class="fas fa-home"></i></a>
+
+    <div id="video-feed"></div>
+
+    <div id="tkDrawer">
+        <div class="tk-header">
+            COMMENTAIRES
+            <i class="fas fa-times" style="position:absolute; right:20px; cursor:pointer" onclick="closeComments()"></i>
+        </div>
+        <div id="tkList" class="tk-list"></div>
+        <div class="tk-input-box">
+            <div class="input-pill">
+                <input type="text" id="commentField" placeholder="Ajouter un commentaire...">
+            </div>
+            <button class="btn-send" style="color:var(--gold);background:none;border:none;font-size:20px;" onclick="sendComment()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <div id="authAlert">
+        Connecte-toi pour interagir !<br>
+        <a href="index.html" style="color:white; font-size:12px; text-decoration:underline; display:inline-block; margin-top:5px;">SE CONNECTER / MON COMPTE</a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, doc, getDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Ta config Firebase (API Key mise à jour selon tes codes précédents)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
+            authDomain: "congo-streaming-51333.firebaseapp.com",
+            projectId: "congo-streaming-51333",
+            storageBucket: "congo-streaming-51333.firebasestorage.app",
+            appId: "1:304286627819:android:36e0b43b8b10508a054bae"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+        let activeVideoId = null;
+
+        // AUTHENTICATION INSTANTANÉE
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            loadShorts(); // Recharge les shorts pour appliquer l'état "Liked" si connecté
+        });
+
+        async function loadShorts() {
+            const q = query(collection(db, "films"), where("province", "==", "vidéos courtes"));
+            const querySnapshot = await getDocs(q);
+            const feed = document.getElementById('video-feed');
+            feed.innerHTML = "";
+
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const card = createCard(doc.id, data);
+                feed.appendChild(card);
+            });
+            setupAutoPlay();
+        }
+
+        function createCard(id, data) {
+            const div = document.createElement('div');
+            div.className = 'video-card';
+            const isLiked = data.likes && currentUser && data.likes.includes(currentUser.uid);
+
+            div.innerHTML = `
+                <video loop playsinline src="${data.url}"></video>
+                <div class="side-menu">
+                    <div class="user-avatar-link">
+                        <img src="${data.poster || 'https://i.ibb.co/b5hF1Tbj/Chat-GPT-Image-5-avr-2026-07-48-59.png'}" style="width:100%;height:100%;object-fit:cover">
+                    </div>
+                    <div class="menu-icon ${isLiked ? 'is-liked' : ''}" onclick="handleLike('${id}')">
+                        <i class="fas fa-heart"></i>
+                        <span>${(data.likes || []).length}</span>
+                    </div>
+                    <div class="menu-icon" onclick="openComments('${id}')">
+                        <i class="fas fa-comment-dots"></i>
+                        <span>${(data.comments || []).length}</span>
+                    </div>
+                </div>
+                <div class="video-desc">
+                    <img src="https://i.ibb.co/b5hF1Tbj/Chat-GPT-Image-5-avr-2026-07-48-59.png" class="logo-mini">
+                    <p>${data.titre || ''}</p>
+                </div>
+            `;
+            return div;
+        }
+
+        window.handleLike = async (id) => {
+            if(!currentUser) { showAuth(); return; }
+            const ref = doc(db, "films", id);
+            const snap = await getDoc(ref);
+            const likes = snap.data().likes || [];
+            if(likes.includes(currentUser.uid)) {
+                await updateDoc(ref, { likes: arrayRemove(currentUser.uid) });
+            } else {
+                await updateDoc(ref, { likes: arrayUnion(currentUser.uid) });
+            }
+        };
+
+        window.openComments = (id) => {
+            activeVideoId = id;
+            document.getElementById('tkDrawer').classList.add('active');
+            onSnapshot(doc(db, "films", id), (snap) => {
+                const comms = snap.data().comments || [];
+                document.getElementById('tkList').innerHTML = comms.map(c => `
+                    <div class="comment-item">
+                        <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="c-img">
+                        <div>
+                            <div style="font-size:12px;color:#888;font-weight:bold">${c.nom}</div>
+                            <div style="font-size:14px;color:#fff">${c.text}</div>
+                        </div>
+                    </div>
+                `).join('');
+            });
+        };
+
+        window.sendComment = async () => {
+            if(!currentUser) { showAuth(); return; }
+            const txt = document.getElementById('commentField').value.trim();
+            if(!txt || !activeVideoId) return;
+
+            const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+            const userData = userSnap.exists() ? userSnap.data() : null;
+
+            await updateDoc(doc(db, "films", activeVideoId), {
+                comments: arrayUnion({
+                    nom: userData?.name || "Membre CongoFlix",
+                    photo: userData?.photoURL || "",
+                    text: txt,
+                    date: Date.now()
+                })
+            });
+            document.getElementById('commentField').value = "";
+        };
+
+        window.closeComments = () => document.getElementById('tkDrawer').classList.remove('active');
+
+        function showAuth() {
+            const a = document.getElementById('authAlert');
+            a.style.display = 'block';
+            setTimeout(() => a.style.display='none', 5000);
+        }
+
+        function setupAutoPlay() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(e => {
+                    const v = e.target.querySelector('video');
+                    if(e.isIntersecting) v.play().catch(()=>{}); else v.pause();
+                });
+            }, {threshold: 0.8});
+            document.querySelectorAll('.video-card').forEach(c => observer.observe(c));
+        }
+    </script>
+</body>
+</html>
