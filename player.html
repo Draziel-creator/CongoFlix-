@@ -87,7 +87,7 @@
         .cast-name-item { font-size: 13px; color: #eee; margin-bottom: 8px; display: flex; align-items: center; }
         .cast-name-item::before { content: "•"; color: var(--gold); margin-right: 10px; font-weight: bold; }
 
-        /* 6. NOUVEAU : BARRES DE PROGRESSION (STYLE MOVIEBOX/CONGOFLIX) */
+        /* 6. BARRES DE PROGRESSION (STYLE CONGOFLIX INDEX-BASED) */
         .episodes-container { margin-top: 30px; }
         .ep-card {
             background: rgba(20, 20, 20, 0.8);
@@ -121,7 +121,7 @@
         }
         .progress-fill {
             height: 100%; background: linear-gradient(90deg, var(--gold), #fff);
-            width: 0%; /* Sera mis à jour par Firebase */
+            width: 100%; /* Par défaut à 100% pour simuler une barre pleine */
             box-shadow: 0 0 10px var(--gold);
         }
         .ep-actions { display: flex; justify-content: space-between; align-items: center; }
@@ -240,40 +240,22 @@
     let userName = "Fan CongoFlix";
     let userImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-    // --- DETECTION CONNEXION ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
             userId = user.uid;
             const userRef = doc(db, "users", user.uid);
             const userSnap = await getDoc(userRef);
-
             if(userSnap.exists()){
                 const d = userSnap.data();
                 userName = d.name || user.email.split('@')[0];
                 userImg = d.photoURL || userImg;
                 document.getElementById('myAvatar').src = userImg;
-                
                 const favs = d.favorites || [];
                 if(favs.some(f => f.id === filmId)) {
                     const btn = document.getElementById('mainFavBtn');
                     btn.classList.add('is-fav');
                     document.getElementById('favText').innerText = "Ma Liste";
-                }
-
-                const filmSnap = await getDoc(doc(db, "films", filmId));
-                if(filmSnap.exists()){
-                    const fData = filmSnap.data();
-                    const historyItem = { 
-                        id: filmId, 
-                        title: fData.titre || "Sans titre", 
-                        poster: fData.poster || "",
-                        watchedAt: Date.now()
-                    };
-                    const currentHistory = d.history || [];
-                    const existingFilm = currentHistory.find(h => h.id === filmId);
-                    if(existingFilm) await updateDoc(userRef, { history: arrayRemove(existingFilm) });
-                    await updateDoc(userRef, { history: arrayUnion(historyItem) });
                 }
             }
         }
@@ -286,7 +268,6 @@
         setTimeout(() => { alert.style.display = 'none'; }, 5000);
     };
 
-    // --- CHARGEMENT DES DONNÉES DU FILM ---
     onSnapshot(doc(db, "films", filmId), (snapshot) => {
         const data = snapshot.data();
         if(!data) return;
@@ -309,33 +290,34 @@
         document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
         document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || ["Casting officiel"]).map(n => `<div class="cast-name-item">${n}</div>`).join('');
 
-        // --- GESTION DES BARRES DE PROGRESSION DYNAMIQUES (ÉPISODES/SÉRIES) ---
-        // Attends des champs titre1, titre2... et progress1, progress2...
+        // --- GESTION DES BARRES DE PROGRESSION DYNAMIQUES (DÉTECTION PAR INDEX) ---
         const epContainer = document.getElementById('episodesList');
+        const episodesArray = data.episodes || [];
         let epHtml = "";
-        for (let i = 1; i <= 50; i++) { // Limite arbitraire de 50 pour la boucle infinie
-            const titleField = data[`titre${i}`];
-            const posterField = data[`poster${i}`] || data.poster;
-            const progressValue = data[`progress${i}`] || 0;
-            const dlLink = data[`download${i}`] || `https://congoflix243.embed4me.vip/#8e8yx&dl=1`;
 
-            if (titleField) {
+        // On boucle de 3 en 3 car ta capture montre : [0]=Image, [1]=Titre, [2]=Lien
+        for (let i = 0; i < episodesArray.length; i += 3) {
+            const epImg = episodesArray[i];
+            const epTitre = episodesArray[i+1];
+            const epLink = episodesArray[i+2];
+
+            if (epImg && epTitre && epLink) {
                 epHtml += `
                 <div class="ep-card">
                     <div class="ep-poster-box">
-                        <img src="${posterField}" alt="poster">
+                        <img src="${epImg}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
                         <div class="ep-hd-tag">HD</div>
                     </div>
                     <div class="ep-info">
-                        <div class="ep-title">${titleField}</div>
-                        <div class="progress-bg"><div class="progress-fill" style="width:${progressValue}%"></div></div>
+                        <div class="ep-title">${epTitre}</div>
+                        <div class="progress-bg"><div class="progress-fill" style="width:100%"></div></div>
                         <div class="ep-actions">
-                            <span style="font-size:10px; color:#888;">${progressValue}% terminé</span>
-                            <a href="${dlLink}" class="dl-btn" download><i class="fa-solid fa-cloud-arrow-down"></i></a>
+                            <span style="font-size:10px; color:var(--gold);">Disponible</span>
+                            <a href="${epLink}" class="dl-btn" target="_blank"><i class="fa-solid fa-cloud-arrow-down"></i></a>
                         </div>
                     </div>
                 </div>`;
-            } else { break; } // Arrête la boucle si le champ titreX n'existe pas
+            }
         }
         epContainer.innerHTML = epHtml;
 
@@ -365,15 +347,13 @@
         }).join('');
     });
 
-    // --- ACTIONS ---
     document.getElementById('mainFavBtn').onclick = async () => { 
-        if(!currentUser) { showAuthAlert("Tu dois te connecter pour mettre en favoris !"); return; }
+        if(!currentUser) { showAuthAlert(); return; }
         const btn = document.getElementById('mainFavBtn');
         const userRef = doc(db, "users", currentUser.uid);
         const filmSnap = await getDoc(doc(db, "films", filmId));
         const fData = filmSnap.data();
         const favItem = { id: filmId, titre: fData.titre || filmId, image: fData.poster || "" };
-
         if(btn.classList.contains('is-fav')) {
             await updateDoc(userRef, { favorites: arrayRemove(favItem) });
             btn.classList.remove('is-fav');
@@ -421,9 +401,9 @@
         const snap = await getDoc(doc(db, "films", filmId));
         const updated = (snap.data().comments || []).map(c => {
             if(c.id === cid) {
-                let currentLikes = c.likedBy || [];
-                currentLikes = currentLikes.includes(userId) ? currentLikes.filter(u => u !== userId) : [...currentLikes, userId];
-                return {...c, likedBy: currentLikes};
+                let cl = c.likedBy || [];
+                cl = cl.includes(userId) ? cl.filter(u => u !== userId) : [...cl, userId];
+                return {...c, likedBy: cl};
             }
             return c;
         });
