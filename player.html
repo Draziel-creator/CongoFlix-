@@ -422,6 +422,7 @@
     let userId = "GUEST_" + Math.floor(Math.random()*9999);
     let userName = "Fan CongoFlix";
     let userImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    let currentFilmData = null;
 
     // Fonction pour changer la vidéo sans recharger
     window.loadVideo = (url) => {
@@ -442,20 +443,23 @@
                     userName = d.name || user.email.split('@')[0];
                     userImg = d.photoURL || userImg;
                     document.getElementById('myAvatar').src = userImg;
-                    const favs = d.favorites || [];
-                    if(favs.some(f => f.id === filmId)) {
-                        const btn = document.getElementById('mainFavBtn');
-                        btn.classList.add('is-fav');
-                        document.getElementById('favText').innerText = "Ma Liste";
-                    }
+                    updateFavUI(d.favorites || []);
                 }
             } catch (err) { console.error("Erreur profil:", err); }
         }
     });
 
+    function updateFavUI(favs) {
+        const btn = document.getElementById('mainFavBtn');
+        const isFav = favs.some(f => f.id === filmId);
+        btn.classList.toggle('is-fav', isFav);
+        document.getElementById('favText').innerText = isFav ? "Ma Liste" : "Enregistrer";
+    }
+
     onSnapshot(doc(db, "films", filmId), (snapshot) => {
         if (!snapshot.exists()) return;
         const data = snapshot.data();
+        currentFilmData = data;
         document.getElementById('txtTitle').innerText = data.titre || "Sans Titre";
         document.getElementById('txtDesc').innerText = data.description || "Aucun synopsis disponible.";
         document.getElementById('statV').innerText = (data.views || 0).toLocaleString();
@@ -488,20 +492,16 @@
         const container = document.getElementById('episodesList');
         let html = "";
         let seasons = {};
-
         for (let i = 0; i < epArray.length; i += 3) {
             const img = epArray[i], title = epArray[i+1], link = epArray[i+2];
             const lowerTitle = title.toLowerCase();
             let seasonName = "Épisodes";
-            
             if (lowerTitle.includes('saison') || lowerTitle.includes('partie')) {
                 seasonName = title.split(':')[0].trim();
             }
-
             if(!seasons[seasonName]) seasons[seasonName] = [];
             seasons[seasonName].push({img, title, link});
         }
-
         for (let sName in seasons) {
             html += `
             <div class="season-wrapper">
@@ -547,6 +547,31 @@
             </div>
         `).join('');
     }
+
+    // --- GESTION DES INTERACTIONS (LIKE & FAV) ---
+    document.getElementById('mainLikeBtn').onclick = async () => {
+        if(!currentUser) { window.showAuthAlert(); return; }
+        const filmRef = doc(db, "films", filmId);
+        const isLiked = currentFilmData.likes && currentFilmData.likes.includes(userId);
+        await updateDoc(filmRef, { likes: isLiked ? arrayRemove(userId) : arrayUnion(userId) });
+    };
+
+    document.getElementById('mainFavBtn').onclick = async () => {
+        if(!currentUser) { window.showAuthAlert(); return; }
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
+        const currentFavs = userSnap.data().favorites || [];
+        const isFav = currentFavs.some(f => f.id === filmId);
+        
+        if(isFav) {
+            const itemToRemove = currentFavs.find(f => f.id === filmId);
+            await updateDoc(userRef, { favorites: arrayRemove(itemToRemove) });
+        } else {
+            await updateDoc(userRef, { favorites: arrayUnion({ id: filmId, titre: currentFilmData.titre, affiche: currentFilmData.affiche || "" }) });
+        }
+        const updatedSnap = await getDoc(userRef);
+        updateFavUI(updatedSnap.data().favorites || []);
+    };
 
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
