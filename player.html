@@ -87,7 +87,51 @@
         .cast-name-item { font-size: 13px; color: #eee; margin-bottom: 8px; display: flex; align-items: center; }
         .cast-name-item::before { content: "•"; color: var(--gold); margin-right: 10px; font-weight: bold; }
 
-        /* 6. MODULE COMMENTAIRES */
+        /* 6. NOUVEAU : BARRES DE PROGRESSION (STYLE MOVIEBOX/CONGOFLIX) */
+        .episodes-container { margin-top: 30px; }
+        .ep-card {
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            transition: 0.3s;
+        }
+        .ep-poster-box {
+            width: 100px;
+            height: 60px;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .ep-poster-box img { width: 100%; height: 100%; object-fit: cover; }
+        .ep-hd-tag {
+            position: absolute; top: 4px; right: 4px;
+            background: var(--gold); color: #000;
+            font-size: 8px; font-weight: bold; padding: 2px 4px; border-radius: 3px;
+        }
+        .ep-info { flex: 1; }
+        .ep-title { font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #fff; }
+        .progress-bg {
+            width: 100%; height: 4px; background: #333; border-radius: 10px; overflow: hidden; margin-bottom: 8px;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, var(--gold), #fff);
+            width: 0%; /* Sera mis à jour par Firebase */
+            box-shadow: 0 0 10px var(--gold);
+        }
+        .ep-actions { display: flex; justify-content: space-between; align-items: center; }
+        .dl-btn {
+            color: var(--gold); font-size: 18px; text-decoration: none;
+            background: rgba(255,215,0,0.1); width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center; border-radius: 50%;
+        }
+
+        /* 7. MODULE COMMENTAIRES */
         #tkDrawer { position: fixed; bottom: 0; width: 100%; height: 75vh; background: var(--tk-gray); border-radius: 12px 12px 0 0; transform: translateY(100%); transition: 0.3s cubic-bezier(0.2, 0, 0, 1); z-index: 2000; display: flex; flex-direction: column; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
         #tkDrawer.active { transform: translateY(0); }
         .tk-header { padding: 15px; text-align: center; font-size: 13px; font-weight: bold; border-bottom: 0.5px solid #222; position: relative; }
@@ -142,9 +186,13 @@
         <div class="glass-box">
             <p id="txtDesc">...</p>
         </div>
+
         <span class="cast-label">Casting Visual</span>
         <div id="rowCastImgs" class="cast-row-imgs"></div> 
         <div id="listCastNames" class="cast-list-vertical"></div> 
+
+        <div id="episodesList" class="episodes-container">
+            </div>
     </div>
 
     <div id="tkDrawer">
@@ -206,7 +254,6 @@
                 userImg = d.photoURL || userImg;
                 document.getElementById('myAvatar').src = userImg;
                 
-                // Vérifier si déjà en favoris pour l'affichage initial
                 const favs = d.favorites || [];
                 if(favs.some(f => f.id === filmId)) {
                     const btn = document.getElementById('mainFavBtn');
@@ -244,9 +291,7 @@
         const data = snapshot.data();
         if(!data) return;
 
-        // MODIFICATION ICI : Utilisation du champ 'titre' de Firebase
         document.getElementById('txtTitle').innerText = data.titre || "Titre inconnu";
-        
         document.getElementById('txtDesc').innerText = data.description || "Pas de description.";
         document.getElementById('statV').innerText = data.views || 0;
         
@@ -263,6 +308,36 @@
 
         document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
         document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || ["Casting officiel"]).map(n => `<div class="cast-name-item">${n}</div>`).join('');
+
+        // --- GESTION DES BARRES DE PROGRESSION DYNAMIQUES (ÉPISODES/SÉRIES) ---
+        // Attends des champs titre1, titre2... et progress1, progress2...
+        const epContainer = document.getElementById('episodesList');
+        let epHtml = "";
+        for (let i = 1; i <= 50; i++) { // Limite arbitraire de 50 pour la boucle infinie
+            const titleField = data[`titre${i}`];
+            const posterField = data[`poster${i}`] || data.poster;
+            const progressValue = data[`progress${i}`] || 0;
+            const dlLink = data[`download${i}`] || `https://congoflix243.embed4me.vip/#8e8yx&dl=1`;
+
+            if (titleField) {
+                epHtml += `
+                <div class="ep-card">
+                    <div class="ep-poster-box">
+                        <img src="${posterField}" alt="poster">
+                        <div class="ep-hd-tag">HD</div>
+                    </div>
+                    <div class="ep-info">
+                        <div class="ep-title">${titleField}</div>
+                        <div class="progress-bg"><div class="progress-fill" style="width:${progressValue}%"></div></div>
+                        <div class="ep-actions">
+                            <span style="font-size:10px; color:#888;">${progressValue}% terminé</span>
+                            <a href="${dlLink}" class="dl-btn" download><i class="fa-solid fa-cloud-arrow-down"></i></a>
+                        </div>
+                    </div>
+                </div>`;
+            } else { break; } // Arrête la boucle si le champ titreX n'existe pas
+        }
+        epContainer.innerHTML = epHtml;
 
         const comms = (data.comments || []).filter(c => typeof c === 'object');
         document.getElementById('statC').innerText = comms.length;
@@ -292,29 +367,18 @@
 
     // --- ACTIONS ---
     document.getElementById('mainFavBtn').onclick = async () => { 
-        if(!currentUser) {
-            showAuthAlert("Tu dois te connecter pour mettre en favoris !");
-            return;
-        }
-
+        if(!currentUser) { showAuthAlert("Tu dois te connecter pour mettre en favoris !"); return; }
         const btn = document.getElementById('mainFavBtn');
         const userRef = doc(db, "users", currentUser.uid);
         const filmSnap = await getDoc(doc(db, "films", filmId));
         const fData = filmSnap.data();
-
-        const favItem = {
-            id: filmId,
-            titre: fData.titre || filmId,
-            image: fData.poster || ""
-        };
+        const favItem = { id: filmId, titre: fData.titre || filmId, image: fData.poster || "" };
 
         if(btn.classList.contains('is-fav')) {
-            // Retirer
             await updateDoc(userRef, { favorites: arrayRemove(favItem) });
             btn.classList.remove('is-fav');
             document.getElementById('favText').innerText = "Favoris";
         } else {
-            // Ajouter avec animation
             await updateDoc(userRef, { favorites: arrayUnion(favItem) });
             btn.classList.add('is-fav');
             document.getElementById('favText').innerText = "Ma Liste";
