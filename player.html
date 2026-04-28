@@ -397,7 +397,6 @@
                 
                 updateFavUI(d.favorites || []);
 
-                // Historique
                 const filmSnap = await getDoc(doc(db, "films", filmId));
                 if(filmSnap.exists()){
                     const fData = filmSnap.data();
@@ -477,14 +476,13 @@
         container.innerHTML = html;
     }
 
-    // --- LOGIQUE COMMENTAIRES FIXÉE ---
+    // --- LOGIQUE COMMENTAIRES (FIXÉE) ---
     function renderComments(comms) {
         const list = document.getElementById('tkList');
         const validComms = (comms || []).filter(c => typeof c === 'object');
         document.getElementById('statC').innerText = validComms.length;
         document.getElementById('hCount').innerText = validComms.length;
 
-        // On trie par date décroissante pour voir le plus récent en haut
         list.innerHTML = validComms.sort((a,b) => b.date - a.date).map(c => {
             const hasLiked = (c.likedBy || []).includes(userId);
             return `
@@ -528,27 +526,41 @@
         const val = field.value.trim();
         if(!val) return;
 
-        const ref = doc(db, "films", filmId);
-        const snap = await getDoc(ref);
-        let allComments = snap.data().comments || [];
+        // On bloque visuellement l'envoi pour éviter les doubles clics
+        const btn = document.getElementById('tkSend');
+        btn.style.pointerEvents = "none";
+        btn.style.opacity = "0.3";
 
-        if(targetCommentId) {
-            allComments = allComments.map(c => {
-                if(c.id === targetCommentId) {
-                    const reps = c.replies || [];
-                    return {...c, replies: [...reps, {nom: userName, text: val, photo: userImg, date: Date.now()}]};
-                }
-                return c;
-            });
-        } else {
-            allComments.push({ id: "C-" + Date.now(), nom: userName, text: val, photo: userImg, date: Date.now(), likedBy: [], replies: [] });
+        try {
+            const ref = doc(db, "films", filmId);
+            const snap = await getDoc(ref);
+            let allComments = snap.data().comments || [];
+
+            if(targetCommentId) {
+                allComments = allComments.map(c => {
+                    if(c.id === targetCommentId) {
+                        const reps = c.replies || [];
+                        return {...c, replies: [...reps, {nom: userName, text: val, photo: userImg, date: Date.now()}]};
+                    }
+                    return c;
+                });
+            } else {
+                allComments.push({ id: "C-" + Date.now(), nom: userName, text: val, photo: userImg, date: Date.now(), likedBy: [], replies: [] });
+            }
+
+            await updateDoc(ref, { comments: allComments });
+            
+            // On vide seulement après le succès
+            field.value = "";
+            field.placeholder = "Ajouter un commentaire...";
+            targetCommentId = null;
+            btn.classList.remove('active');
+        } catch (e) {
+            console.error("Erreur post:", e);
+        } finally {
+            btn.style.pointerEvents = "auto";
+            btn.style.opacity = "1";
         }
-
-        await updateDoc(ref, { comments: allComments });
-        field.value = "";
-        field.placeholder = "Ajouter un commentaire...";
-        targetCommentId = null;
-        document.getElementById('tkSend').classList.remove('active');
     };
 
     window.likeComment = async (cid) => {
@@ -566,7 +578,6 @@
         await updateDoc(ref, { comments: updated });
     };
 
-    // --- ACTIONS GLOBALES ---
     window.loadVideo = (url) => {
         document.getElementById('playerRoot').innerHTML = `<iframe src="${url}" allowfullscreen></iframe>`;
         window.scrollTo({top: 0, behavior: 'smooth'});
