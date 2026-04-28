@@ -87,7 +87,7 @@
         .cast-name-item { font-size: 13px; color: #eee; margin-bottom: 8px; display: flex; align-items: center; }
         .cast-name-item::before { content: "•"; color: var(--gold); margin-right: 10px; font-weight: bold; }
 
-        /* 6. BARRES DE PROGRESSION (STYLE CONGOFLIX INDEX-BASED) */
+        /* 6. BARRES DE PROGRESSION */
         .episodes-container { margin-top: 30px; }
         .ep-card {
             background: rgba(20, 20, 20, 0.8);
@@ -121,7 +121,7 @@
         }
         .progress-fill {
             height: 100%; background: linear-gradient(90deg, var(--gold), #fff);
-            width: 100%; /* Par défaut à 100% pour simuler une barre pleine */
+            width: 100%;
             box-shadow: 0 0 10px var(--gold);
         }
         .ep-actions { display: flex; justify-content: space-between; align-items: center; }
@@ -191,8 +191,7 @@
         <div id="rowCastImgs" class="cast-row-imgs"></div> 
         <div id="listCastNames" class="cast-list-vertical"></div> 
 
-        <div id="episodesList" class="episodes-container">
-            </div>
+        <div id="episodesList" class="episodes-container"></div>
     </div>
 
     <div id="tkDrawer">
@@ -290,12 +289,10 @@
         document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
         document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || ["Casting officiel"]).map(n => `<div class="cast-name-item">${n}</div>`).join('');
 
-        // --- GESTION DES BARRES DE PROGRESSION DYNAMIQUES (DÉTECTION PAR INDEX) ---
         const epContainer = document.getElementById('episodesList');
         const episodesArray = data.episodes || [];
         let epHtml = "";
 
-        // On boucle de 3 en 3 car ta capture montre : [0]=Image, [1]=Titre, [2]=Lien
         for (let i = 0; i < episodesArray.length; i += 3) {
             const epImg = episodesArray[i];
             const epTitre = episodesArray[i+1];
@@ -310,7 +307,7 @@
                     </div>
                     <div class="ep-info">
                         <div class="ep-title">${epTitre}</div>
-                        <div class="progress-bg"><div class="progress-fill" style="width:100%"></div></div>
+                        <div class="progress-bg"><div class="progress-fill"></div></div>
                         <div class="ep-actions">
                             <span style="font-size:10px; color:var(--gold);">Disponible</span>
                             <a href="${epLink}" class="dl-btn" target="_blank"><i class="fa-solid fa-cloud-arrow-down"></i></a>
