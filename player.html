@@ -3,191 +3,370 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoFlix Official</title>
+    <title>CongoFlix - La Vitrine de la RDC</title>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        :root { --gold: #ffd700; --bg: #000; --tk-gray: #121212; --tk-input: #262626; --red: #ff3b5c; }
-        
-        body { 
-            background: #000; 
-            color: #fff; 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            margin: 0; padding: 0; overflow-x: hidden; 
+        /* --- SYSTÈME DE DESIGN CONGOFLIX --- */
+        :root { 
+            --gold: #ffd700; 
+            --bg: #000; 
+            --tk-gray: #121212; 
+            --tk-input: #262626; 
+            --red: #ff3b5c; 
+            --glass: rgba(255, 255, 255, 0.03);
+            --border-gold: rgba(255, 215, 0, 0.2);
         }
 
-        /* 1. LECTEUR BORD À BORD ET LUMIÈRE BOOSTÉE */
-        .video-box { 
-            width: 100vw; aspect-ratio: 16/9; background: #000; 
-            position: relative; margin: 0; z-index: 2;
+        body { 
+            background: var(--bg); 
+            color: #fff; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
+
+        /* --- 1. LECTEUR VIDÉO PREMIUM --- */
+        .video-box { 
+            width: 100vw; 
+            aspect-ratio: 16/9; 
+            background: #000; 
+            position: relative; 
+            margin: 0; 
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
         .video-box::after {
             content: "";
             position: absolute;
-            bottom: -10px; left: 0; right: 0;
-            height: 15px;
+            bottom: -5px; left: 10%; right: 10%;
+            height: 10px;
             background: var(--gold);
-            filter: blur(30px);
-            opacity: 0.8;
+            filter: blur(25px);
+            opacity: 0.6;
             z-index: -1;
         }
-        iframe { width: 100%; height: 100%; border: none; display: block; }
-        .back-btn { position: absolute; top: 12px; left: 12px; z-index: 10; width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--gold); display: flex; align-items: center; justify-content: center; color: var(--gold); background: rgba(0,0,0,0.4); text-decoration: none; }
 
-        /* 2. TITRE RÉDUIT */
-        .title-container { text-align: center; padding: 25px 10px 5px; }
+        iframe { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+            display: block; 
+        }
+
+        .back-btn { 
+            position: absolute; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 20; 
+            width: 42px; 
+            height: 42px; 
+            border-radius: 50%; 
+            border: 2px solid var(--gold); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: var(--gold); 
+            background: rgba(0,0,0,0.5); 
+            backdrop-filter: blur(5px);
+            text-decoration: none;
+            transition: transform 0.2s ease;
+        }
+
+        .back-btn:active { transform: scale(0.9); }
+
+        /* --- 2. EN-TÊTE ET TITRAGE --- */
+        .title-container { 
+            text-align: center; 
+            padding: 30px 15px 10px; 
+        }
+
         #txtTitle { 
-            font-size: 18px; 
+            font-size: 20px; 
             color: #fff; 
             font-weight: 300; 
             text-transform: uppercase; 
-            letter-spacing: 5px; 
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+            letter-spacing: 6px; 
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
             margin: 0;
+            animation: fadeInTitle 1s ease-out;
         }
 
-        /* 3. ACTIONS AVEC COULEUR TIKTOK */
-        .actions { display: flex; justify-content: space-around; padding: 15px 5px; border-bottom: 1px solid #1a1a1a; }
-        .act-item { text-align: center; color: #888; font-size: 11px; flex: 1; cursor: pointer; }
-        .act-item i { font-size: 24px; color: var(--gold); margin-bottom: 4px; display: block; transition: 0.3s; }
-        .act-item.is-liked i { color: var(--red) !important; }
-        .act-item.is-liked span { color: var(--red); }
+        @keyframes fadeInTitle {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-        /* ANIMATION FAVORIS */
+        /* --- 3. BARRE D'ACTIONS --- */
+        .actions { 
+            display: flex; 
+            justify-content: space-around; 
+            padding: 20px 10px; 
+            border-bottom: 1px solid #1a1a1a; 
+            background: linear-gradient(to bottom, transparent, #080808);
+        }
+
+        .act-item { 
+            text-align: center; 
+            color: #999; 
+            font-size: 12px; 
+            flex: 1; 
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .act-item i { 
+            font-size: 26px; 
+            color: var(--gold); 
+            margin-bottom: 6px; 
+            display: block; 
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+
+        .act-item.is-liked i { 
+            color: var(--red) !important; 
+            transform: scale(1.1);
+        }
+
         .act-item.is-fav i { 
             color: var(--gold) !important; 
-            text-shadow: 0 0 15px var(--gold); 
-            transform: scale(1.2);
+            text-shadow: 0 0 20px var(--gold);
+            transform: translateY(-3px);
         }
-        .act-item.is-fav span { color: var(--gold); font-weight: bold; }
 
-        /* 4. DESCRIPTION EFFET VITRINE */
-        .info-pane { padding: 20px; }
+        /* --- 4. PANNEAU D'INFORMATIONS --- */
+        .info-pane { padding: 20px; padding-bottom: 100px; }
+
         .glass-box {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 12px;
-            padding: 25px 20px 20px;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border-gold);
+            border-radius: 15px;
+            padding: 30px 20px 20px;
             position: relative;
-            margin-bottom: 30px;
+            margin-bottom: 35px;
         }
+
         .glass-box::before {
             content: "\201C";
-            position: absolute; top: -10px; left: 15px;
-            font-size: 50px; color: var(--gold); font-family: serif; line-height: 1;
+            position: absolute; top: -5px; left: 20px;
+            font-size: 60px; color: var(--gold); font-family: serif; opacity: 0.5;
         }
-        #txtDesc { font-size: 14px; color: #ccc; line-height: 1.6; margin: 0; }
 
-        /* 5. CASTING */
-        .cast-label { color: var(--gold); font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; display: block; }
-        .cast-row-imgs { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; scrollbar-width: none; }
-        .cast-row-imgs::-webkit-scrollbar { display: none; }
-        .actor-img { width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; flex-shrink: 0; }
-        .cast-list-vertical { margin-top: 10px; border-left: 1px solid rgba(255,215,0,0.3); padding-left: 15px; }
-        .cast-name-item { font-size: 13px; color: #eee; margin-bottom: 8px; display: flex; align-items: center; }
-        .cast-name-item::before { content: "•"; color: var(--gold); margin-right: 10px; font-weight: bold; }
+        #txtDesc { 
+            font-size: 14.5px; 
+            color: #ddd; 
+            line-height: 1.7; 
+            margin: 0; 
+            text-align: justify;
+        }
 
-        /* 6. BARRES DE PROGRESSION */
-        .episodes-container { margin-top: 30px; }
-        .ep-card {
-            background: rgba(20, 20, 20, 0.8);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 15px;
+        /* --- 5. CASTING VISUEL --- */
+        .cast-label { 
+            color: var(--gold); 
+            font-size: 13px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            margin-bottom: 20px; 
             display: flex;
             align-items: center;
-            gap: 15px;
-            border: 1px solid rgba(255, 215, 0, 0.1);
+            gap: 10px;
+        }
+
+        .cast-label::after { content: ""; flex: 1; height: 1px; background: var(--border-gold); }
+
+        .cast-row-imgs { 
+            display: flex; 
+            gap: 18px; 
+            overflow-x: auto; 
+            padding-bottom: 20px; 
+            scrollbar-width: none; 
+        }
+
+        .cast-row-imgs::-webkit-scrollbar { display: none; }
+
+        .actor-img { 
+            width: 75px; 
+            height: 75px; 
+            border-radius: 50%; 
+            border: 2px solid var(--gold); 
+            object-fit: cover; 
+            flex-shrink: 0; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .cast-list-vertical { 
+            margin-top: 15px; 
+            border-left: 2px solid var(--border-gold); 
+            padding-left: 20px; 
+        }
+
+        .cast-name-item { 
+            font-size: 14px; 
+            color: #eee; 
+            margin-bottom: 12px; 
+            display: flex; 
+            align-items: center; 
+        }
+
+        /* --- 6. GESTION DES SAISONS (POCHES) --- */
+        .season-pocket {
+            background: linear-gradient(90deg, rgba(255,215,0,0.2), transparent);
+            color: var(--gold);
+            padding: 12px 18px;
+            border-left: 5px solid var(--gold);
+            margin: 35px 0 20px 0;
+            font-weight: bold;
+            font-size: 15px;
+            text-transform: uppercase;
+            border-radius: 0 10px 10px 0;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ep-card {
+            background: rgba(25, 25, 25, 0.6);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            border: 1px solid rgba(255, 215, 0, 0.08);
+            transition: transform 0.2s ease, border 0.3s ease;
+        }
+
+        .ep-card:active { transform: scale(0.97); }
+
+        .ep-poster-box {
+            width: 110px; height: 65px;
+            border-radius: 8px; overflow: hidden;
+            position: relative; flex-shrink: 0;
+        }
+
+        .ep-poster-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        .ep-hd-tag {
+            position: absolute; top: 5px; right: 5px;
+            background: var(--gold); color: #000;
+            font-size: 9px; font-weight: 900; padding: 2px 5px; border-radius: 4px;
+        }
+
+        .ep-info { flex: 1; }
+        .ep-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #fff; }
+        .progress-bg { width: 100%; height: 5px; background: #333; border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), #fff); width: 100%; box-shadow: 0 0 12px var(--gold); }
+
+        .dl-btn {
+            color: var(--gold); font-size: 20px; text-decoration: none;
+            background: rgba(255,215,0,0.12); width: 38px; height: 38px;
+            display: flex; align-items: center; justify-content: center; border-radius: 50%;
             transition: 0.3s;
         }
-        .ep-poster-box {
-            width: 100px;
-            height: 60px;
-            border-radius: 6px;
-            overflow: hidden;
-            position: relative;
-            flex-shrink: 0;
-        }
-        .ep-poster-box img { width: 100%; height: 100%; object-fit: cover; }
-        .ep-hd-tag {
-            position: absolute; top: 4px; right: 4px;
-            background: var(--gold); color: #000;
-            font-size: 8px; font-weight: bold; padding: 2px 4px; border-radius: 3px;
-        }
-        .ep-info { flex: 1; }
-        .ep-title { font-size: 13px; font-weight: bold; margin-bottom: 6px; color: #fff; }
-        .progress-bg {
-            width: 100%; height: 4px; background: #333; border-radius: 10px; overflow: hidden; margin-bottom: 8px;
-        }
-        .progress-fill {
-            height: 100%; background: linear-gradient(90deg, var(--gold), #fff);
-            width: 100%;
-            box-shadow: 0 0 10px var(--gold);
-        }
-        .ep-actions { display: flex; justify-content: space-between; align-items: center; }
-        .dl-btn {
-            color: var(--gold); font-size: 18px; text-decoration: none;
-            background: rgba(255,215,0,0.1); width: 32px; height: 32px;
-            display: flex; align-items: center; justify-content: center; border-radius: 50%;
+
+        /* --- 7. SYSTÈME DE COMMENTAIRES TIKTOK --- */
+        #tkDrawer { 
+            position: fixed; bottom: 0; width: 100%; height: 78vh; 
+            background: var(--tk-gray); border-radius: 15px 15px 0 0; 
+            transform: translateY(100%); transition: 0.4s cubic-bezier(0.33, 1, 0.68, 1); 
+            z-index: 3000; display: flex; flex-direction: column; 
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.9); 
         }
 
-        /* 7. MODULE COMMENTAIRES */
-        #tkDrawer { position: fixed; bottom: 0; width: 100%; height: 75vh; background: var(--tk-gray); border-radius: 12px 12px 0 0; transform: translateY(100%); transition: 0.3s cubic-bezier(0.2, 0, 0, 1); z-index: 2000; display: flex; flex-direction: column; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
         #tkDrawer.active { transform: translateY(0); }
-        .tk-header { padding: 15px; text-align: center; font-size: 13px; font-weight: bold; border-bottom: 0.5px solid #222; position: relative; }
-        .tk-close { position: absolute; right: 20px; font-size: 20px; color: #666; cursor: pointer; }
-        .tk-list { flex: 1; overflow-y: auto; padding: 20px; }
-        .comment { display: flex; gap: 12px; margin-bottom: 22px; align-items: flex-start; }
-        .c-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
-        .c-main { flex: 1; }
-        .c-user { font-size: 12px; color: #777; font-weight: bold; margin-bottom: 2px; }
-        .c-text { font-size: 14px; color: #eee; line-height: 1.4; }
-        .c-foot { display: flex; gap: 15px; margin-top: 8px; font-size: 11px; color: #555; font-weight: bold; cursor: pointer; }
-        .c-like-zone { text-align: center; color: #444; min-width: 35px; cursor: pointer; }
-        .c-like-zone i { font-size: 18px; display: block; transition: 0.2s; }
-        .c-like-zone i.active { color: #ff3b5c; }
-        .replies-pocket { display: none; margin-top: 15px; padding-left: 10px; border-left: 1px solid #333; }
-        .replies-pocket.open { display: block; }
-        .tk-input-box { padding: 10px 15px 30px; background: var(--tk-gray); border-top: 0.5px solid #222; display: flex; align-items: center; gap: 12px; }
-        .input-pill { flex: 1; background: var(--tk-input); border-radius: 22px; padding: 0 15px; }
-        #tkField { flex: 1; background: transparent; border: none; color: #fff; padding: 10px 0; font-size: 14px; outline: none; width: 100%; }
-        .tk-send { color: var(--gold); font-size: 24px; background: none; border: none; opacity: 0.4; pointer-events: none; }
-        .tk-send.active { opacity: 1; pointer-events: auto; }
 
-        /* ALERTE CONNEXION */
-        #authAlert { 
-            display:none; position:fixed; bottom:25px; left:5%; width:90%; 
-            background:var(--red); color:#fff; padding:15px; border-radius:12px; 
-            z-index:3000; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); 
-            font-weight:bold; animation: slideUp 0.3s ease;
+        .tk-header { 
+            padding: 18px; text-align: center; font-size: 14px; font-weight: bold; 
+            border-bottom: 1px solid #222; position: relative; 
         }
-        @keyframes slideUp { from { transform: translateY(100px); } to { transform: translateY(0); } }
+
+        .tk-close { position: absolute; right: 20px; top: 18px; font-size: 22px; color: #777; cursor: pointer; }
+
+        .tk-list { flex: 1; overflow-y: auto; padding: 20px; scroll-behavior: smooth; }
+
+        .comment { display: flex; gap: 14px; margin-bottom: 25px; align-items: flex-start; }
+        .c-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #333; }
+        .c-main { flex: 1; }
+        .c-user { font-size: 13px; color: #888; font-weight: bold; margin-bottom: 4px; }
+        .c-text { font-size: 15px; color: #efefef; line-height: 1.5; }
+
+        .tk-input-box { 
+            padding: 12px 15px 35px; background: var(--tk-gray); 
+            border-top: 1px solid #222; display: flex; align-items: center; gap: 12px; 
+        }
+
+        .input-pill { 
+            flex: 1; background: var(--tk-input); border-radius: 25px; 
+            padding: 0 18px; border: 1px solid #333; 
+        }
+
+        #tkField { 
+            flex: 1; background: transparent; border: none; color: #fff; 
+            padding: 12px 0; font-size: 15px; outline: none; width: 100%; 
+        }
+
+        .tk-send { color: var(--gold); font-size: 26px; background: none; border: none; opacity: 0.3; transition: 0.3s; }
+        .tk-send.active { opacity: 1; pointer-events: auto; transform: scale(1.1); }
+
+        /* --- 8. ALERTES ET NOTIFS --- */
+        #authAlert { 
+            display:none; position:fixed; bottom:30px; left:5%; width:90%; 
+            background:var(--red); color:#fff; padding:18px; border-radius:15px; 
+            z-index:5000; text-align:center; box-shadow:0 15px 40px rgba(0,0,0,0.6); 
+            font-weight:bold; animation: slideUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        @keyframes slideUp { from { transform: translateY(150px); } to { transform: translateY(0); } }
+
+        .loader-mini { width: 20px; height: 20px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: rotate 0.8s linear infinite; }
+        @keyframes rotate { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <div class="video-box">
-        <a href="javascript:history.back()" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
-        <div id="playerRoot" style="width:100%; height:100%;"></div>
+        <a href="javascript:history.back()" class="back-btn" title="Retour">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <div id="playerRoot" style="width:100%; height:100%;">
+            </div>
     </div>
 
     <div class="title-container">
-        <h1 id="txtTitle">Chargement...</h1>
+        <h1 id="txtTitle">Chargement du film...</h1>
     </div>
 
     <div class="actions">
-        <div class="act-item"><i class="fa-solid fa-eye"></i> <span id="statV">0</span></div>
-        <div class="act-item" id="mainLikeBtn"><i class="fa-solid fa-heart"></i> <span id="statL">0</span></div>
-        <div class="act-item" onclick="toggleTk()"><i class="fa-solid fa-comment"></i> <span id="statC">0</span></div>
-        <div class="act-item" id="mainFavBtn"><i class="fa-solid fa-star"></i> <span id="favText">Favoris</span></div>
+        <div class="act-item">
+            <i class="fa-solid fa-play-circle"></i> 
+            <span id="statV">0</span> vues
+        </div>
+        <div class="act-item" id="mainLikeBtn">
+            <i class="fa-solid fa-heart"></i> 
+            <span id="statL">0</span>
+        </div>
+        <div class="act-item" id="openCommentBtn" onclick="toggleTk()">
+            <i class="fa-solid fa-comment-dots"></i> 
+            <span id="statC">0</span>
+        </div>
+        <div class="act-item" id="mainFavBtn">
+            <i class="fa-solid fa-bookmark"></i> 
+            <span id="favText">Enregistrer</span>
+        </div>
     </div>
 
     <div class="info-pane">
         <div class="glass-box">
-            <p id="txtDesc">...</p>
+            <p id="txtDesc">Récupération des informations depuis la base de données CongoFlix...</p>
         </div>
 
-        <span class="cast-label">Casting Visual</span>
+        <span class="cast-label"><i class="fa-solid fa-users"></i> Casting Principal</span>
         <div id="rowCastImgs" class="cast-row-imgs"></div> 
         <div id="listCastNames" class="cast-list-vertical"></div> 
 
@@ -197,29 +376,36 @@
     <div id="tkDrawer">
         <div class="tk-header">
             <span id="hCount">0</span> COMMENTAIRES
-            <i class="fa-solid fa-xmark tk-close" onclick="toggleTk()"></i>
+            <i class="fa-solid fa-times tk-close" onclick="toggleTk()"></i>
         </div>
-        <div id="tkList" class="tk-list"></div>
-        <div class="tk-input-box">
-            <img id="myAvatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:32px; height:32px; border-radius:50%">
-            <div class="input-pill">
-                <input type="text" id="tkField" placeholder="Ajouter un commentaire...">
+        
+        <div id="tkList" class="tk-list">
             </div>
-            <button id="tkSend" class="tk-send" onclick="handlePost()"><i class="fa-solid fa-paper-plane"></i></button>
+
+        <div class="tk-input-box">
+            <img id="myAvatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Moi">
+            <div class="input-pill">
+                <input type="text" id="tkField" placeholder="Exprimez-vous sur ce film..." autocomplete="off">
+            </div>
+            <button id="tkSend" class="tk-send" onclick="handlePost()">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 
     <div id="authAlert">
-        <span id="authAlertMsg">Connecte-toi pour interagir !</span>
+        <span id="authAlertMsg">Connectez-vous pour réagir !</span>
         <br>
-        <a href="index.html" style="display:inline-block; margin-top:10px; background:#fff; color:var(--red); padding:8px 20px; border-radius:20px; text-decoration:none; font-size:12px;">SE CONNECTER</a>
+        <a href="index.html" style="display:inline-block; margin-top:12px; background:#fff; color:var(--red); padding:10px 25px; border-radius:25px; text-decoration:none; font-size:13px; letter-spacing:1px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">SE CONNECTER</a>
     </div>
 
 <script type="module">
+    // Importations Firebase 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // Configuration CongoFlix
     const firebaseConfig = {
         apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
         authDomain: "congo-streaming-51333.firebaseapp.com",
@@ -227,196 +413,240 @@
         appId: "1:304286627819:android:36e0b43b8b10508a054bae"
     };
 
+    // Initialisation
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    // Récupération ID Film
     const params = new URLSearchParams(window.location.search);
     const filmId = params.get('id') || "MUSHOTA_VS_KARANI_01";
     
+    // Variables Globales Utilisateur
     let currentUser = null;
     let userId = "GUEST_" + Math.floor(Math.random()*9999);
     let userName = "Fan CongoFlix";
     let userImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
+    // --- GESTION AUTHENTIFICATION ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
             userId = user.uid;
-            const userRef = doc(db, "users", user.uid);
-            const userSnap = await getDoc(userRef);
-            if(userSnap.exists()){
-                const d = userSnap.data();
-                userName = d.name || user.email.split('@')[0];
-                userImg = d.photoURL || userImg;
-                document.getElementById('myAvatar').src = userImg;
-                const favs = d.favorites || [];
-                if(favs.some(f => f.id === filmId)) {
-                    const btn = document.getElementById('mainFavBtn');
-                    btn.classList.add('is-fav');
-                    document.getElementById('favText').innerText = "Ma Liste";
+            
+            try {
+                const userRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userRef);
+                
+                if(userSnap.exists()){
+                    const d = userSnap.data();
+                    userName = d.name || user.email.split('@')[0];
+                    userImg = d.photoURL || userImg;
+                    document.getElementById('myAvatar').src = userImg;
+                    
+                    // Vérifier si déjà en favoris
+                    const favs = d.favorites || [];
+                    if(favs.some(f => f.id === filmId)) {
+                        const btn = document.getElementById('mainFavBtn');
+                        btn.classList.add('is-fav');
+                        document.getElementById('favText').innerText = "Ma Liste";
+                    }
                 }
+            } catch (err) {
+                console.error("Erreur profil:", err);
             }
         }
     });
 
-    window.showAuthAlert = (msg) => {
-        const alert = document.getElementById('authAlert');
-        document.getElementById('authAlertMsg').innerText = msg || "Connecte-toi pour interagir !";
-        alert.style.display = 'block';
-        setTimeout(() => { alert.style.display = 'none'; }, 5000);
-    };
-
+    // --- RÉCUPÉRATION DATA FILM (TEMPS RÉEL) ---
     onSnapshot(doc(db, "films", filmId), (snapshot) => {
-        const data = snapshot.data();
-        if(!data) return;
+        if (!snapshot.exists()) {
+            document.getElementById('txtTitle').innerText = "Film non trouvé";
+            return;
+        }
 
-        document.getElementById('txtTitle').innerText = data.titre || "Titre inconnu";
-        document.getElementById('txtDesc').innerText = data.description || "Pas de description.";
-        document.getElementById('statV').innerText = data.views || 0;
+        const data = snapshot.data();
+        
+        // Mise à jour textes et stats
+        document.getElementById('txtTitle').innerText = data.titre || "Sans Titre";
+        document.getElementById('txtDesc').innerText = data.description || "Aucun synopsis disponible.";
+        document.getElementById('statV').innerText = (data.views || 0).toLocaleString();
         
         const likes = data.likes || [];
         document.getElementById('statL').innerText = likes.length;
+        
+        // État du bouton Like
         const likeBtn = document.getElementById('mainLikeBtn');
         if(likes.includes(userId)) likeBtn.classList.add('is-liked');
         else likeBtn.classList.remove('is-liked');
 
-        if(!document.getElementById('playerRoot').innerHTML && data.url) {
-            document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
+        // Injection Vidéo (Une seule fois)
+        if(!document.getElementById('playerRoot').innerHTML.trim() && data.url) {
+            document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+            // Incrémenter les vues
             updateDoc(doc(db, "films", filmId), { views: increment(1) });
         }
 
-        document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
-        document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || ["Casting officiel"]).map(n => `<div class="cast-name-item">${n}</div>`).join('');
+        // Rendu Casting
+        renderCasting(data);
 
-        const epContainer = document.getElementById('episodesList');
-        const episodesArray = data.episodes || [];
-        let epHtml = "";
+        // Rendu Épisodes avec Détection de Saison
+        renderEpisodes(data.episodes || []);
 
-        for (let i = 0; i < episodesArray.length; i += 3) {
-            const epImg = episodesArray[i];
-            const epTitre = episodesArray[i+1];
-            const epLink = episodesArray[i+2];
+        // Rendu Commentaires
+        renderComments(data.comments || []);
+    });
 
-            if (epImg && epTitre && epLink) {
-                epHtml += `
+    // --- FONCTIONS DE RENDU (HELPERS) ---
+
+    function renderCasting(data) {
+        const rowImgs = document.getElementById('rowCastImgs');
+        const listNames = document.getElementById('listCastNames');
+        
+        rowImgs.innerHTML = (data.acteurs || []).map(url => `
+            <img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+        `).join('');
+
+        listNames.innerHTML = (data.noms_acteurs || ["Casting CongoFlix"]).map(n => `
+            <div class="cast-name-item"><i class="fa-solid fa-star" style="font-size:8px; color:var(--gold); margin-right:10px;"></i> ${n}</div>
+        `).join('');
+    }
+
+    function renderEpisodes(epArray) {
+        const container = document.getElementById('episodesList');
+        let html = "";
+        let lastSeason = "";
+
+        for (let i = 0; i < epArray.length; i += 3) {
+            const img = epArray[i], title = epArray[i+1], link = epArray[i+2];
+            
+            if (img && title && link) {
+                // Détection intelligente de la "Poche" (Saison)
+                if (title.toLowerCase().includes('saison')) {
+                    const currentSeason = title.split(':')[0].trim(); 
+                    if (currentSeason !== lastSeason) {
+                        lastSeason = currentSeason;
+                        html += `<div class="season-pocket"><i class="fa-solid fa-clapperboard"></i> ${currentSeason}</div>`;
+                    }
+                }
+
+                html += `
                 <div class="ep-card">
                     <div class="ep-poster-box">
-                        <img src="${epImg}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                        <img src="${img}" loading="lazy" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
                         <div class="ep-hd-tag">HD</div>
                     </div>
                     <div class="ep-info">
-                        <div class="ep-title">${epTitre}</div>
+                        <div class="ep-title">${title}</div>
                         <div class="progress-bg"><div class="progress-fill"></div></div>
                         <div class="ep-actions">
-                            <span style="font-size:10px; color:var(--gold);">Disponible</span>
-                            <a href="${epLink}" class="dl-btn" target="_blank"><i class="fa-solid fa-cloud-arrow-down"></i></a>
+                            <span style="font-size:10px; color:var(--gold); font-weight:bold;">EXCLUSIVITÉ</span>
+                            <a href="${link}" class="dl-btn" target="_blank"><i class="fa-solid fa-download"></i></a>
                         </div>
                     </div>
                 </div>`;
             }
         }
-        epContainer.innerHTML = epHtml;
+        container.innerHTML = html || "<p style='color:#666; font-size:12px;'>Aucun épisode supplémentaire.</p>";
+    }
 
-        const comms = (data.comments || []).filter(c => typeof c === 'object');
-        document.getElementById('statC').innerText = comms.length;
-        document.getElementById('hCount').innerText = comms.length;
+    function renderComments(comms) {
+        const list = document.getElementById('tkList');
+        const validComms = comms.filter(c => typeof c === 'object');
+        
+        document.getElementById('statC').innerText = validComms.length;
+        document.getElementById('hCount').innerText = validComms.length;
 
-        document.getElementById('tkList').innerHTML = comms.slice().reverse().map(c => {
-            const hasLiked = (c.likedBy || []).includes(userId);
-            return `
+        list.innerHTML = validComms.slice().reverse().map(c => `
             <div class="comment">
-                <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="c-avatar">
+                <img src="${c.photo || userImg}" class="c-avatar">
                 <div class="c-main">
                     <div class="c-user">${c.nom}</div>
                     <div class="c-text">${c.text}</div>
-                    <div class="c-foot"><span onclick="prepareReply('${c.id}', '${c.nom}')">Répondre</span></div>
-                    ${(c.replies || []).length > 0 ? `
-                        <div style="margin-top:10px; font-size:12px; color:#555; cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher ${c.replies.length} réponses</div>
-                        <div class="replies-pocket">${c.replies.map(r => `<div style="display:flex; gap:8px; margin-bottom:10px"><img src="${r.photo}" style="width:24px; height:24px; border-radius:50%"><div class="c-main"><div class="c-user" style="font-size:11px">${r.nom}</div><div class="c-text" style="font-size:13px">${r.text}</div></div></div>`).join('')}</div>
-                    ` : ''}
+                    <div class="c-foot" onclick="window.prepareReply('${c.id}', '${c.nom}')">Répondre</div>
                 </div>
-                <div class="c-like-zone" onclick="likeComment('${c.id}')">
-                    <i class="fa-heart ${hasLiked ? 'fa-solid active' : 'fa-regular'}"></i>
-                    <span style="font-size:10px">${(c.likedBy || []).length}</span>
-                </div>
-            </div>`;
-        }).join('');
-    });
+            </div>
+        `).join('');
+    }
 
-    document.getElementById('mainFavBtn').onclick = async () => { 
-        if(!currentUser) { showAuthAlert(); return; }
+    // --- ACTIONS UTILISATEURS (WINDOW SCOPE) ---
+
+    window.toggleTk = () => {
+        document.getElementById('tkDrawer').classList.toggle('active');
+    };
+
+    window.handlePost = async () => {
+        const field = document.getElementById('tkField');
+        const text = field.value.trim();
+        
+        if(!currentUser) { window.showAuthAlert(); return; }
+        if(!text) return;
+
+        try {
+            const ref = doc(db, "films", filmId);
+            const newComm = {
+                id: "C-" + Date.now(),
+                nom: userName,
+                text: text,
+                photo: userImg,
+                date: new Date().toISOString(),
+                likedBy: []
+            };
+            
+            await updateDoc(ref, { comments: arrayUnion(newComm) });
+            field.value = "";
+            document.getElementById('tkSend').classList.remove('active');
+        } catch (e) {
+            alert("Erreur lors de l'envoi");
+        }
+    };
+
+    // Gestion Favoris
+    document.getElementById('mainFavBtn').onclick = async () => {
+        if(!currentUser) { window.showAuthAlert(); return; }
+        
         const btn = document.getElementById('mainFavBtn');
-        const userRef = doc(db, "users", currentUser.uid);
+        const userRef = doc(db, "users", userId);
         const filmSnap = await getDoc(doc(db, "films", filmId));
         const fData = filmSnap.data();
-        const favItem = { id: filmId, titre: fData.titre || filmId, image: fData.poster || "" };
+        
+        const item = { id: filmId, titre: fData.titre, poster: fData.poster || "" };
+
         if(btn.classList.contains('is-fav')) {
-            await updateDoc(userRef, { favorites: arrayRemove(favItem) });
+            await updateDoc(userRef, { favorites: arrayRemove(item) });
             btn.classList.remove('is-fav');
-            document.getElementById('favText').innerText = "Favoris";
+            document.getElementById('favText').innerText = "Enregistrer";
         } else {
-            await updateDoc(userRef, { favorites: arrayUnion(favItem) });
+            await updateDoc(userRef, { favorites: arrayUnion(item) });
             btn.classList.add('is-fav');
             document.getElementById('favText').innerText = "Ma Liste";
         }
     };
 
-    let targetCommentId = null;
-    window.prepareReply = (cid, name) => {
-        targetCommentId = cid;
-        const field = document.getElementById('tkField');
-        field.placeholder = "Répondre à " + name + "...";
-        field.focus();
-    };
-
-    window.handlePost = async () => {
-        if(!currentUser) { showAuthAlert(); return; }
-        const val = document.getElementById('tkField').value.trim();
-        if(!val) return;
+    // Gestion Like Film
+    document.getElementById('mainLikeBtn').onclick = async () => {
+        if(!currentUser) { window.showAuthAlert(); return; }
         const ref = doc(db, "films", filmId);
         const snap = await getDoc(ref);
-        let allComments = snap.data().comments || [];
-        if(targetCommentId) {
-            allComments = allComments.map(c => {
-                if(c.id === targetCommentId) {
-                    const reps = c.replies || [];
-                    return {...c, replies: [...reps, {nom: userName, text: val, photo: userImg, date: Date.now()}]};
-                }
-                return c;
-            });
-        } else {
-            allComments.push({ id: "C-" + Date.now(), nom: userName, text: val, photo: userImg, date: Date.now(), likedBy: [], replies: [] });
-        }
-        await updateDoc(ref, { comments: allComments });
-        document.getElementById('tkField').value = "";
-        targetCommentId = null;
-    };
-
-    window.likeComment = async (cid) => {
-        if(!currentUser) { showAuthAlert(); return; }
-        const snap = await getDoc(doc(db, "films", filmId));
-        const updated = (snap.data().comments || []).map(c => {
-            if(c.id === cid) {
-                let cl = c.likedBy || [];
-                cl = cl.includes(userId) ? cl.filter(u => u !== userId) : [...cl, userId];
-                return {...c, likedBy: cl};
-            }
-            return c;
+        const likes = snap.data().likes || [];
+        
+        await updateDoc(ref, { 
+            likes: likes.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) 
         });
-        await updateDoc(doc(db, "films", filmId), { comments: updated });
     };
 
-    document.getElementById('mainLikeBtn').onclick = async () => {
-        if(!currentUser) { showAuthAlert(); return; }
-        const ref = doc(db, "films", filmId);
-        const s = await getDoc(ref);
-        const l = s.data().likes || [];
-        await updateDoc(ref, { likes: l.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) });
+    // Helper Alerte
+    window.showAuthAlert = () => {
+        const alert = document.getElementById('authAlert');
+        alert.style.display = 'block';
+        setTimeout(() => alert.style.display = 'none', 6000);
     };
 
-    window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
-    document.getElementById('tkField').oninput = function() { document.getElementById('tkSend').classList.toggle('active', this.value.length > 0); };
+    // UI Input Auto-activation
+    document.getElementById('tkField').oninput = function() {
+        document.getElementById('tkSend').classList.toggle('active', this.value.length > 0);
+    };
+
 </script>
 </body>
 </html>
