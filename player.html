@@ -240,7 +240,7 @@
             display: flex; align-items: center; justify-content: center; border-radius: 50%;
         }
 
-        /* --- 7. SYSTÈME DE COMMENTAIRES TIKTOK (MISE À JOUR) --- */
+        /* --- 7. SYSTÈME DE COMMENTAIRES TIKTOK --- */
         #tkDrawer { 
             position: fixed; bottom: 0; width: 100%; height: 78vh; 
             background: var(--tk-gray); border-radius: 15px 15px 0 0; 
@@ -289,7 +289,7 @@
             padding: 12px 0; font-size: 15px; outline: none; width: 100%; 
         }
 
-        .tk-send { color: var(--gold); font-size: 26px; background: none; border: none; opacity: 0.3; pointer-events: none; }
+        .tk-send { color: var(--gold); font-size: 26px; background: none; border: none; opacity: 0.3; pointer-events: none; transition: 0.3s; }
         .tk-send.active { opacity: 1; pointer-events: auto; }
 
         /* --- 8. ALERTES --- */
@@ -381,7 +381,7 @@
     let currentFilmData = null;
     let targetCommentId = null;
 
-    // --- DETECTION CONNEXION ET HISTORIQUE ---
+    // --- CONNEXION ET HISTORIQUE ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
@@ -395,23 +395,16 @@
                 userImg = d.photoURL || userImg;
                 document.getElementById('myAvatar').src = userImg;
                 
-                // Favoris UI
-                const favs = d.favorites || [];
-                updateFavUI(favs);
+                updateFavUI(d.favorites || []);
 
-                // Enregistrement Historique
+                // Historique
                 const filmSnap = await getDoc(doc(db, "films", filmId));
                 if(filmSnap.exists()){
                     const fData = filmSnap.data();
-                    const historyItem = { 
-                        id: filmId, 
-                        title: fData.titre || "Sans titre", 
-                        poster: fData.poster || "",
-                        watchedAt: Date.now()
-                    };
+                    const historyItem = { id: filmId, title: fData.titre || "Sans titre", poster: fData.poster || "", watchedAt: Date.now() };
                     const currentHistory = d.history || [];
-                    const existingFilm = currentHistory.find(h => h.id === filmId);
-                    if(existingFilm) await updateDoc(userRef, { history: arrayRemove(existingFilm) });
+                    const existing = currentHistory.find(h => h.id === filmId);
+                    if(existing) await updateDoc(userRef, { history: arrayRemove(existing) });
                     await updateDoc(userRef, { history: arrayUnion(historyItem) });
                 }
             }
@@ -425,7 +418,7 @@
         document.getElementById('favText').innerText = isFav ? "Ma Liste" : "Enregistrer";
     }
 
-    // --- CHARGEMENT DES DONNÉES DU FILM ---
+    // --- CHARGEMENT DU FILM ---
     onSnapshot(doc(db, "films", filmId), (snapshot) => {
         if (!snapshot.exists()) return;
         const data = snapshot.data();
@@ -437,9 +430,7 @@
         
         const likes = data.likes || [];
         document.getElementById('statL').innerText = likes.length;
-        const likeBtn = document.getElementById('mainLikeBtn');
-        if(likes.includes(userId)) likeBtn.classList.add('is-liked');
-        else likeBtn.classList.remove('is-liked');
+        document.getElementById('mainLikeBtn').classList.toggle('is-liked', likes.includes(userId));
 
         if(!document.getElementById('playerRoot').innerHTML.trim() && data.url) {
             document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
@@ -462,9 +453,9 @@
         let seasons = {};
         for (let i = 0; i < epArray.length; i += 3) {
             const img = epArray[i], title = epArray[i+1], link = epArray[i+2];
-            let seasonName = title.includes(':') ? title.split(':')[0].trim() : "Épisodes";
-            if(!seasons[seasonName]) seasons[seasonName] = [];
-            seasons[seasonName].push({img, title, link});
+            let sName = title.includes(':') ? title.split(':')[0].trim() : "Épisodes";
+            if(!seasons[sName]) seasons[sName] = [];
+            seasons[sName].push({img, title, link});
         }
         for (let sName in seasons) {
             html += `
@@ -486,14 +477,15 @@
         container.innerHTML = html;
     }
 
-    // --- LOGIQUE COMMENTAIRES FUSIONNÉE (PARTIE COUPE/COLLE) ---
+    // --- LOGIQUE COMMENTAIRES FIXÉE ---
     function renderComments(comms) {
         const list = document.getElementById('tkList');
         const validComms = (comms || []).filter(c => typeof c === 'object');
         document.getElementById('statC').innerText = validComms.length;
         document.getElementById('hCount').innerText = validComms.length;
 
-        list.innerHTML = validComms.slice().reverse().map(c => {
+        // On trie par date décroissante pour voir le plus récent en haut
+        list.innerHTML = validComms.sort((a,b) => b.date - a.date).map(c => {
             const hasLiked = (c.likedBy || []).includes(userId);
             return `
             <div class="comment">
@@ -503,7 +495,7 @@
                     <div class="c-text">${c.text}</div>
                     <div class="c-foot"><span onclick="prepareReply('${c.id}', '${c.nom}')">Répondre</span></div>
                     ${(c.replies || []).length > 0 ? `
-                        <div style="margin-top:10px; font-size:12px; color:#555; cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher ${c.replies.length} réponses</div>
+                        <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher ${c.replies.length} réponses</div>
                         <div class="replies-pocket">${c.replies.map(r => `
                             <div style="display:flex; gap:8px; margin-bottom:10px">
                                 <img src="${r.photo}" style="width:24px; height:24px; border-radius:50%">
@@ -556,23 +548,25 @@
         field.value = "";
         field.placeholder = "Ajouter un commentaire...";
         targetCommentId = null;
+        document.getElementById('tkSend').classList.remove('active');
     };
 
     window.likeComment = async (cid) => {
         if(!currentUser) { showAuthAlert(); return; }
-        const snap = await getDoc(doc(db, "films", filmId));
+        const ref = doc(db, "films", filmId);
+        const snap = await getDoc(ref);
         const updated = (snap.data().comments || []).map(c => {
             if(c.id === cid) {
-                let currentLikes = c.likedBy || [];
-                currentLikes = currentLikes.includes(userId) ? currentLikes.filter(u => u !== userId) : [...currentLikes, userId];
-                return {...c, likedBy: currentLikes};
+                let l = c.likedBy || [];
+                l = l.includes(userId) ? l.filter(u => u !== userId) : [...l, userId];
+                return {...c, likedBy: l};
             }
             return c;
         });
-        await updateDoc(doc(db, "films", filmId), { comments: updated });
+        await updateDoc(ref, { comments: updated });
     };
 
-    // --- AUTRES ACTIONS ---
+    // --- ACTIONS GLOBALES ---
     window.loadVideo = (url) => {
         document.getElementById('playerRoot').innerHTML = `<iframe src="${url}" allowfullscreen></iframe>`;
         window.scrollTo({top: 0, behavior: 'smooth'});
@@ -591,8 +585,6 @@
         const favItem = { id: filmId, titre: currentFilmData.titre, image: currentFilmData.poster || "" };
         const isFav = document.getElementById('mainFavBtn').classList.contains('is-fav');
         await updateDoc(userRef, { favorites: isFav ? arrayRemove(favItem) : arrayUnion(favItem) });
-        const updatedSnap = await getDoc(userRef);
-        updateFavUI(updatedSnap.data().favorites || []);
     };
 
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
