@@ -532,6 +532,7 @@
         container.innerHTML = html || "<p style='color:#666; font-size:12px;'>Aucun épisode.</p>";
     }
 
+    // --- PARTIE COMMENTAIRE COUPEE DU CODE DE REFERENCE ---
     function renderComments(comms) {
         const list = document.getElementById('tkList');
         const validComms = comms.filter(c => typeof c === 'object');
@@ -547,6 +548,28 @@
             </div>
         `).join('');
     }
+
+    window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
+
+    window.handlePost = async () => {
+        const field = document.getElementById('tkField');
+        const text = field.value.trim();
+        if(!currentUser) { window.showAuthAlert(); return; }
+        if(!text) return;
+        try {
+            await updateDoc(doc(db, "films", filmId), {
+                comments: arrayUnion({
+                    id: "C-" + Date.now(),
+                    nom: userName,
+                    text: text,
+                    photo: userImg,
+                    date: new Date().toISOString()
+                })
+            });
+            field.value = "";
+        } catch (e) { alert("Erreur"); }
+    };
+    // --- FIN DE LA PARTIE COMMENTAIRE ---
 
     // --- GESTION DES INTERACTIONS (LIKE & FAV) ---
     document.getElementById('mainLikeBtn').onclick = async () => {
@@ -571,27 +594,6 @@
         }
         const updatedSnap = await getDoc(userRef);
         updateFavUI(updatedSnap.data().favorites || []);
-    };
-
-    window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
-
-    window.handlePost = async () => {
-        const field = document.getElementById('tkField');
-        const text = field.value.trim();
-        if(!currentUser) { window.showAuthAlert(); return; }
-        if(!text) return;
-        try {
-            await updateDoc(doc(db, "films", filmId), {
-                comments: arrayUnion({
-                    id: "C-" + Date.now(),
-                    nom: userName,
-                    text: text,
-                    photo: userImg,
-                    date: new Date().toISOString()
-                })
-            });
-            field.value = "";
-        } catch (e) { alert("Erreur"); }
     };
 
     window.showAuthAlert = () => {
