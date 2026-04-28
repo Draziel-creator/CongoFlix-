@@ -3,81 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoFlix - Officiel</title>
+    <title>CongoFlix - Version Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --gold: #ffd700; --bg: #000; --tk-gray: #121212; --tk-input: #262626; --red: #ff3b5c; --glass: rgba(255, 255, 255, 0.03); --border-gold: rgba(255, 215, 0, 0.2); }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-        .video-box { width: 100vw; aspect-ratio: 16/9; background: #000; position: relative; z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        iframe { width: 100%; height: 100%; border: none; }
-        .back-btn { position: absolute; top: 15px; left: 15px; z-index: 20; width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; color: var(--gold); background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); text-decoration: none; }
-        .title-container { text-align: center; padding: 25px 15px 5px; }
-        #txtTitle { font-size: 20px; color: #fff; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.4); margin: 0; }
-        .actions { display: flex; justify-content: space-around; padding: 15px 10px; border-bottom: 1px solid #1a1a1a; }
-        .act-item { text-align: center; color: #999; font-size: 11px; flex: 1; cursor: pointer; }
-        .act-item i { font-size: 22px; color: var(--gold); margin-bottom: 5px; display: block; }
-        .act-item.is-liked i { color: var(--red) !important; }
-        .info-pane { padding: 20px; padding-bottom: 100px; }
-        .glass-box { background: var(--glass); border: 1px solid var(--border-gold); border-radius: 15px; padding: 20px; margin-bottom: 25px; font-size: 14px; line-height: 1.6; color: #ccc; }
+        :root { --gold: #ffd700; --bg: #000; --tk-gray: #121212; --tk-input: #262626; --red: #ff3b5c; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
-        /* COMMENTAIRES STYLE TIKTOK */
-        #tkDrawer { position: fixed; bottom: 0; width: 100%; height: 75vh; background: var(--tk-gray); border-radius: 15px 15px 0 0; transform: translateY(100%); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1); z-index: 2000; display: flex; flex-direction: column; }
+        /* Vidéo */
+        .video-box { width: 100vw; aspect-ratio: 16/9; background: #000; position: sticky; top: 0; z-index: 100; }
+        iframe { width: 100%; height: 100%; border: none; }
+        
+        /* Stats */
+        .actions { display: flex; justify-content: space-around; padding: 15px; border-bottom: 1px solid #222; }
+        .act-item { text-align: center; color: var(--gold); font-size: 12px; }
+        .act-item i { display: block; font-size: 20px; margin-bottom: 5px; }
+
+        /* Tiroir TikTok */
+        #tkDrawer { position: fixed; bottom: 0; width: 100%; height: 70vh; background: var(--tk-gray); border-radius: 15px 15px 0 0; transform: translateY(100%); transition: 0.3s ease-out; z-index: 2000; display: flex; flex-direction: column; }
         #tkDrawer.active { transform: translateY(0); }
-        .tk-header { padding: 15px; text-align: center; font-size: 13px; font-weight: bold; border-bottom: 0.5px solid #333; }
-        .tk-close { position: absolute; right: 20px; font-size: 20px; color: #888; }
+        
+        .tk-header { padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #333; position: relative; }
+        .tk-close { position: absolute; right: 20px; top: 15px; font-size: 20px; }
+
         .tk-list { flex: 1; overflow-y: auto; padding: 15px; }
-        .comment { display: flex; gap: 12px; margin-bottom: 20px; }
-        .c-avatar { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; background: #333; }
-        .c-user { font-size: 12px; color: #888; font-weight: bold; margin-bottom: 2px; }
-        .c-text { font-size: 14px; color: #efefef; }
-        .tk-input-box { padding: 10px 15px 25px; background: var(--tk-gray); border-top: 0.5px solid #333; display: flex; align-items: center; gap: 10px; }
-        .input-pill { flex: 1; background: var(--tk-input); border-radius: 20px; padding: 0 15px; }
-        #tkField { flex: 1; background: transparent; border: none; color: #fff; padding: 10px 0; font-size: 14px; outline: none; width: 100%; }
-        .tk-send { color: var(--gold); font-size: 22px; background: none; border: none; opacity: 0.3; pointer-events: none; transition: 0.3s; }
-        .tk-send.active { opacity: 1; pointer-events: auto; transform: scale(1.1); }
-        #authAlert { display:none; position:fixed; bottom:20px; left:5%; width:90%; background:var(--red); color:#fff; padding:15px; border-radius:10px; z-index:5000; text-align:center; }
+        .comment { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 0.5px solid #222; padding-bottom: 10px; }
+        .c-avatar { width: 35px; height: 35px; border-radius: 50%; }
+        .c-user { font-size: 12px; color: #888; font-weight: bold; }
+        .c-text { font-size: 14px; color: #fff; margin-top: 3px; }
+
+        /* Input Fixé en bas */
+        .tk-input-box { padding: 10px 15px 30px; background: #1a1a1a; display: flex; align-items: center; gap: 10px; }
+        .input-pill { flex: 1; background: #333; border-radius: 20px; padding: 0 15px; }
+        #tkField { width: 100%; background: transparent; border: none; color: #fff; padding: 10px 0; outline: none; }
+        
+        .tk-send { background: none; border: none; color: var(--gold); font-size: 22px; opacity: 0.3; pointer-events: none; }
+        .tk-send.can-send { opacity: 1; pointer-events: auto; }
+
+        #authAlert { display:none; position:fixed; top:20%; left:10%; width:80%; background:var(--red); padding:20px; border-radius:10px; z-index:9999; text-align:center; }
     </style>
 </head>
 <body>
 
     <div class="video-box">
-        <a href="javascript:history.back()" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
-        <div id="playerRoot" style="width:100%; height:100%;"></div>
+        <div id="playerRoot"></div>
     </div>
-
-    <div class="title-container"><h1 id="txtTitle">Chargement...</h1></div>
 
     <div class="actions">
-        <div class="act-item"><i class="fa-solid fa-eye"></i> <span id="statV">0</span></div>
-        <div class="act-item" id="mainLikeBtn"><i class="fa-solid fa-heart"></i> <span id="statL">0</span></div>
         <div class="act-item" onclick="toggleTk()"><i class="fa-solid fa-comment"></i> <span id="statC">0</span></div>
-        <div class="act-item" id="mainFavBtn"><i class="fa-solid fa-bookmark"></i> <span id="favText">Sauver</span></div>
+        <div class="act-item" id="btnLike"><i class="fa-solid fa-heart"></i> <span id="statL">0</span></div>
     </div>
 
-    <div class="info-pane">
-        <div class="glass-box" id="txtDesc">Chargement des détails...</div>
-        <div id="episodesList"></div>
-    </div>
-
-    <!-- TIkTok Comments Drawer -->
     <div id="tkDrawer">
-        <div class="tk-header"> <span id="hCount">0</span> COMMENTAIRES <i class="fa-solid fa-xmark tk-close" onclick="toggleTk()"></i></div>
+        <div class="tk-header"> COMMENTAIRES <i class="fa-solid fa-xmark tk-close" onclick="toggleTk()"></i></div>
         <div id="tkList" class="tk-list"></div>
+        
         <div class="tk-input-box">
-            <img id="myAvatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:30px; height:30px; border-radius:50%">
             <div class="input-pill">
-                <input type="text" id="tkField" placeholder="Ajouter un commentaire..." autocomplete="off">
+                <input type="text" id="tkField" placeholder="Écrire un commentaire..." autocomplete="off">
             </div>
             <button id="tkSend" class="tk-send" onclick="handlePost()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
 
-    <div id="authAlert"> Connectez-vous pour interagir ! </div>
+    <div id="authAlert"> Connectez-vous d'abord ! </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
@@ -90,112 +83,101 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    const params = new URLSearchParams(window.location.search);
-    const filmId = params.get('id') || "MUSHOTA_VS_KARANI_01";
-    
+    const filmId = new URLSearchParams(window.location.search).get('id') || "MUSHOTA_VS_KARANI_01";
     let currentUser = null;
-    let userData = { name: "Fan CongoFlix", photo: "https://cdn-icons-png.flaticon.com/512/149/149071.png" };
+    let myData = { name: "Anonyme", photo: "https://cdn-icons-png.flaticon.com/512/149/149071.png" };
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
-            const userSnap = await getDoc(doc(db, "users", user.uid));
-            if(userSnap.exists()){
-                userData.name = userSnap.data().name || user.email.split('@')[0];
-                userData.photo = userSnap.data().photoURL || userData.photo;
-                document.getElementById('myAvatar').src = userData.photo;
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if(snap.exists()) {
+                myData.name = snap.data().name || "Utilisateur";
+                myData.photo = snap.data().photoURL || myData.photo;
             }
         }
     });
 
-    // ÉCOUTEUR TEMPS RÉEL
+    // Lecture temps réel
     onSnapshot(doc(db, "films", filmId), (snapshot) => {
         const data = snapshot.data();
         if(!data) return;
 
-        document.getElementById('txtTitle').innerText = data.titre;
-        document.getElementById('txtDesc').innerText = data.description;
-        document.getElementById('statV').innerText = data.views || 0;
+        // Mise à jour compteur
+        const comms = data.comments || [];
+        document.getElementById('statC').innerText = comms.length;
         document.getElementById('statL').innerText = (data.likes || []).length;
-        
-        // Vidéo auto-load
-        if(!document.getElementById('playerRoot').innerHTML.trim()) {
+
+        // Charger la vidéo une seule fois
+        if(!document.getElementById('playerRoot').innerHTML) {
             document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
-            updateDoc(doc(db, "films", filmId), { views: increment(1) });
         }
 
-        renderComments(data.comments || []);
-    });
-
-    function renderComments(comms) {
+        // Rendu des commentaires (seulement si on ne tape pas)
         const list = document.getElementById('tkList');
-        document.getElementById('statC').innerText = comms.length;
-        document.getElementById('hCount').innerText = comms.length;
-
-        // On ne reconstruit la liste QUE si l'utilisateur n'est pas en train de taper (évite le bug de disparition)
         if (document.activeElement !== document.getElementById('tkField')) {
             list.innerHTML = comms.sort((a,b) => b.date - a.date).map(c => `
                 <div class="comment">
                     <img src="${c.photo}" class="c-avatar">
-                    <div class="c-main">
+                    <div>
                         <div class="c-user">${c.nom}</div>
                         <div class="c-text">${c.text}</div>
                     </div>
                 </div>
             `).join('');
         }
-    }
+    });
 
+    // LA FONCTION QUI RÉPARE TOUT
     window.handlePost = async () => {
-        const field = document.getElementById('tkField');
-        const sendBtn = document.getElementById('tkSend');
-        const val = field.value.trim();
+        const input = document.getElementById('tkField');
+        const btn = document.getElementById('tkSend');
+        const text = input.value.trim();
 
-        if(!currentUser) { showAuthAlert(); return; }
-        if(!val) return;
+        if(!currentUser) { 
+            document.getElementById('authAlert').style.display='block';
+            setTimeout(()=> document.getElementById('authAlert').style.display='none', 2000);
+            return; 
+        }
 
-        // Désactiver bouton pour éviter double post
-        sendBtn.classList.remove('active');
+        if(!text) return;
+
+        // 1. Désactiver le bouton immédiatement
+        btn.classList.remove('can-send');
         
-        const newComment = {
+        // 2. Préparer l'objet
+        const nouveauCom = {
             id: "ID-" + Date.now(),
-            nom: userData.name,
-            text: val,
-            photo: userData.photo,
+            nom: myData.name,
+            text: text,
+            photo: myData.photo,
             date: Date.now()
         };
 
+        // 3. EFFACER LE CHAMP TOUT DE SUITE (C'est ça le secret)
+        input.value = ""; 
+
         try {
-            const filmRef = doc(db, "films", filmId);
-            await updateDoc(filmRef, {
-                comments: arrayUnion(newComment)
+            // 4. Envoyer à Firebase
+            await updateDoc(doc(db, "films", filmId), {
+                comments: arrayUnion(nouveauCom)
             });
-            
-            // NETTOYAGE IMMÉDIAT
-            field.value = "";
-            field.blur(); // Retire le focus pour forcer le rafraîchissement visuel
+            console.log("Envoyé !");
         } catch (e) {
-            console.error("Erreur envoi:", e);
+            // En cas d'erreur, on remet le texte pour que l'utilisateur ne le perde pas
+            input.value = text;
+            btn.classList.add('can-send');
+            alert("Erreur d'envoi. Réessayez.");
         }
     };
 
-    // Gestion de l'état du bouton d'envoi
-    document.getElementById('tkField').oninput = function() {
-        document.getElementById('tkSend').classList.toggle('active', this.value.trim().length > 0);
-    };
-
-    // Touche Entrée pour envoyer
-    document.getElementById('tkField').onkeypress = (e) => {
-        if(e.key === 'Enter') window.handlePost();
-    };
+    // Activer/Désactiver le bouton bleu
+    document.getElementById('tkField').addEventListener('input', function() {
+        document.getElementById('tkSend').classList.toggle('can-send', this.value.trim().length > 0);
+    });
 
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
-    function showAuthAlert() {
-        const a = document.getElementById('authAlert');
-        a.style.display = 'block';
-        setTimeout(() => a.style.display = 'none', 3000);
-    }
 </script>
 </body>
 </html>
