@@ -40,7 +40,6 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* Halo lumineux sous le lecteur */
         .video-box::after {
             content: "";
             position: absolute;
@@ -92,7 +91,6 @@
             font-weight: 800; 
             text-transform: uppercase; 
             letter-spacing: 2px; 
-            /* Effet Halo Doré sur le texte */
             text-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.4);
             margin: 0;
             animation: fadeInTitle 1s ease-out;
@@ -289,9 +287,7 @@
         }
 
         .tk-close { position: absolute; right: 20px; top: 18px; font-size: 22px; color: #777; cursor: pointer; }
-
         .tk-list { flex: 1; overflow-y: auto; padding: 20px; scroll-behavior: smooth; }
-
         .comment { display: flex; gap: 14px; margin-bottom: 25px; align-items: flex-start; }
         .c-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #333; }
         .c-main { flex: 1; }
@@ -316,7 +312,6 @@
         .tk-send { color: var(--gold); font-size: 26px; background: none; border: none; opacity: 0.3; transition: 0.3s; }
         .tk-send.active { opacity: 1; pointer-events: auto; transform: scale(1.1); }
 
-        /* --- 8. ALERTES ET NOTIFS --- */
         #authAlert { 
             display:none; position:fixed; bottom:30px; left:5%; width:90%; 
             background:var(--red); color:#fff; padding:18px; border-radius:15px; 
@@ -325,9 +320,6 @@
         }
 
         @keyframes slideUp { from { transform: translateY(150px); } to { transform: translateY(0); } }
-
-        .loader-mini { width: 20px; height: 20px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: rotate 0.8s linear infinite; }
-        @keyframes rotate { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -336,8 +328,7 @@
         <a href="javascript:history.back()" class="back-btn" title="Retour">
             <i class="fa-solid fa-arrow-left"></i>
         </a>
-        <div id="playerRoot" style="width:100%; height:100%;">
-            </div>
+        <div id="playerRoot" style="width:100%; height:100%;"></div>
     </div>
 
     <div class="title-container">
@@ -380,10 +371,7 @@
             <span id="hCount">0</span> COMMENTAIRES
             <i class="fa-solid fa-times tk-close" onclick="toggleTk()"></i>
         </div>
-        
-        <div id="tkList" class="tk-list">
-            </div>
-
+        <div id="tkList" class="tk-list"></div>
         <div class="tk-input-box">
             <img id="myAvatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Moi">
             <div class="input-pill">
@@ -437,22 +425,13 @@
                     userName = d.name || user.email.split('@')[0];
                     userImg = d.photoURL || userImg;
                     document.getElementById('myAvatar').src = userImg;
-                    const favs = d.favorites || [];
-                    if(favs.some(f => f.id === filmId)) {
-                        const btn = document.getElementById('mainFavBtn');
-                        btn.classList.add('is-fav');
-                        document.getElementById('favText').innerText = "Ma Liste";
-                    }
                 }
-            } catch (err) { console.error("Erreur profil:", err); }
+            } catch (err) { console.error(err); }
         }
     });
 
     onSnapshot(doc(db, "films", filmId), (snapshot) => {
-        if (!snapshot.exists()) {
-            document.getElementById('txtTitle').innerText = "Film non trouvé";
-            return;
-        }
+        if (!snapshot.exists()) return;
         const data = snapshot.data();
         document.getElementById('txtTitle').innerText = data.titre || "Sans Titre";
         document.getElementById('txtDesc').innerText = data.description || "Aucun synopsis disponible.";
@@ -490,7 +469,7 @@
         for (let i = 0; i < epArray.length; i += 3) {
             const img = epArray[i], title = epArray[i+1], link = epArray[i+2];
             if (img && title && link) {
-                // Détection de "Saison" OU "Partie" pour créer la poche
+                // --- LOGIQUE DE LA POCHE (SAISON / PARTIE) ---
                 const lowerTitle = title.toLowerCase();
                 if (lowerTitle.includes('saison') || lowerTitle.includes('partie')) {
                     const currentPocket = title.split(':')[0].trim(); 
@@ -537,9 +516,7 @@
         `).join('');
     }
 
-    window.toggleTk = () => {
-        document.getElementById('tkDrawer').classList.toggle('active');
-    };
+    window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
     window.handlePost = async () => {
         const field = document.getElementById('tkField');
@@ -548,17 +525,10 @@
         if(!text) return;
         try {
             const ref = doc(db, "films", filmId);
-            const newComm = {
-                id: "C-" + Date.now(),
-                nom: userName,
-                text: text,
-                photo: userImg,
-                date: new Date().toISOString()
-            };
+            const newComm = { id: "C-"+Date.now(), nom: userName, text: text, photo: userImg, date: new Date().toISOString() };
             await updateDoc(ref, { comments: arrayUnion(newComm) });
             field.value = "";
-            document.getElementById('tkSend').classList.remove('active');
-        } catch (e) { alert("Erreur lors de l'envoi"); }
+        } catch (e) { console.error(e); }
     };
 
     document.getElementById('mainFavBtn').onclick = async () => {
@@ -584,9 +554,7 @@
         const ref = doc(db, "films", filmId);
         const snap = await getDoc(ref);
         const likes = snap.data().likes || [];
-        await updateDoc(ref, { 
-            likes: likes.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) 
-        });
+        await updateDoc(ref, { likes: likes.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) });
     };
 
     window.showAuthAlert = () => {
