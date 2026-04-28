@@ -532,18 +532,18 @@
         container.innerHTML = html || "<p style='color:#666; font-size:12px;'>Aucun épisode.</p>";
     }
 
-    // --- PARTIE COMMENTAIRE COUPEE DU CODE DE REFERENCE ---
+    // --- COUPE ET COLLE DU SYSTÈME DE COMMENTAIRES ICI ---
     function renderComments(comms) {
         const list = document.getElementById('tkList');
-        const validComms = comms.filter(c => typeof c === 'object');
+        const validComms = (comms || []).filter(c => typeof c === 'object');
         document.getElementById('statC').innerText = validComms.length;
         document.getElementById('hCount').innerText = validComms.length;
         list.innerHTML = validComms.slice().reverse().map(c => `
             <div class="comment">
-                <img src="${c.photo || userImg}" class="c-avatar">
+                <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="c-avatar">
                 <div class="c-main">
-                    <div class="c-user">${c.nom}</div>
-                    <div class="c-text">${c.text}</div>
+                    <div class="c-user">${c.nom || 'Anonyme'}</div>
+                    <div class="c-text">${c.text || ''}</div>
                 </div>
             </div>
         `).join('');
@@ -559,7 +559,7 @@
         try {
             await updateDoc(doc(db, "films", filmId), {
                 comments: arrayUnion({
-                    id: "C-" + Date.now(),
+                    id: "C-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
                     nom: userName,
                     text: text,
                     photo: userImg,
@@ -567,9 +567,13 @@
                 })
             });
             field.value = "";
-        } catch (e) { alert("Erreur"); }
+            document.getElementById('tkSend').classList.remove('active');
+        } catch (e) { 
+            console.error("Erreur commentaire:", e);
+            alert("Erreur lors de la publication."); 
+        }
     };
-    // --- FIN DE LA PARTIE COMMENTAIRE ---
+    // --- FIN DE LA PARTIE COUPEE ---
 
     // --- GESTION DES INTERACTIONS (LIKE & FAV) ---
     document.getElementById('mainLikeBtn').onclick = async () => {
@@ -604,6 +608,11 @@
 
     document.getElementById('tkField').oninput = function() {
         document.getElementById('tkSend').classList.toggle('active', this.value.length > 0);
+    };
+    
+    // Support de la touche "Entrée" pour envoyer le commentaire
+    document.getElementById('tkField').onkeydown = function(e) {
+        if(e.key === "Enter") window.handlePost();
     };
 </script>
 </body>
