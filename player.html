@@ -313,7 +313,7 @@
         <div class="tk-input-box">
             <img id="myAvatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:32px; height:32px; border-radius:50%">
             <div class="input-pill">
-                <input type="text" id="tkField" placeholder="Ajouter un commentaire...">
+                <input type="text" id="tkField" placeholder="Ajouter un commentaire..." autocomplete="off">
             </div>
             <button id="tkSend" class="tk-send" onclick="handlePost()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
@@ -351,21 +351,17 @@
     let currentFilmData = null;
     let targetCommentId = null;
 
-    // --- GESTION AUTHENTIFICATION (SÉCURISÉE) ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
             userId = user.uid;
-            const userRef = doc(db, "users", user.uid);
-            const userSnap = await getDoc(userRef);
-
+            const userSnap = await getDoc(doc(db, "users", user.uid));
             if(userSnap.exists()){
                 const d = userSnap.data();
                 userName = d.name || user.email.split('@')[0];
                 userImg = d.photoURL || userImg;
                 document.getElementById('myAvatar').src = userImg;
                 
-                // État des favoris
                 const favs = d.favorites || [];
                 const btn = document.getElementById('mainFavBtn');
                 if(favs.some(f => f.id === filmId)) {
@@ -378,7 +374,6 @@
         }
     });
 
-    // --- CHARGEMENT DU FILM & COMMENTAIRES TEMPS RÉEL ---
     onSnapshot(doc(db, "films", filmId), (snapshot) => {
         const data = snapshot.data();
         if(!data) return;
@@ -388,14 +383,12 @@
         document.getElementById('txtDesc').innerText = data.description || "Pas de description.";
         document.getElementById('statV').innerText = data.views || 0;
         
-        // Likes Global
         const likes = data.likes || [];
         document.getElementById('statL').innerText = likes.length;
         const likeBtn = document.getElementById('mainLikeBtn');
         if(userId && likes.includes(userId)) likeBtn.classList.add('is-liked');
         else likeBtn.classList.remove('is-liked');
 
-        // Vidéo
         if(!document.getElementById('playerRoot').innerHTML.trim() && data.url) {
             document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
             updateDoc(doc(db, "films", filmId), { views: increment(1) });
@@ -403,7 +396,11 @@
 
         renderCasting(data);
         renderEpisodes(data.episodes || []);
-        renderComments(data.comments || []);
+        
+        // PROTECTION FOCUS : On ne rafraîchit la liste que si l'utilisateur ne tape pas
+        if (document.activeElement !== document.getElementById('tkField')) {
+            renderComments(data.comments || []);
+        }
     });
 
     function renderComments(comms) {
@@ -412,7 +409,6 @@
         document.getElementById('statC').innerText = validComms.length;
         document.getElementById('hCount').innerText = validComms.length;
 
-        // Tri : plus récent en haut
         list.innerHTML = validComms.sort((a,b) => b.date - a.date).map(c => {
             const hasLiked = (c.likedBy || []).includes(userId);
             return `
@@ -423,7 +419,7 @@
                     <div class="c-text">${c.text}</div>
                     <div class="c-foot"><span onclick="prepareReply('${c.id}', '${c.nom}')">Répondre</span></div>
                     ${(c.replies || []).length > 0 ? `
-                        <div style="margin-top:10px; font-size:12px; color:#555; cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher ${c.replies.length} réponses</div>
+                        <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher ${c.replies.length} réponses</div>
                         <div class="replies-pocket">${c.replies.map(r => `
                             <div style="display:flex; gap:8px; margin-top:10px">
                                 <img src="${r.photo}" style="width:24px; height:24px; border-radius:50%">
@@ -443,45 +439,47 @@
         }).join('');
     }
 
-    // --- LOGIQUE POST COMMENTAIRE ---
     window.handlePost = async () => {
         if(!currentUser) { showAuthAlert("Connectez-vous pour commenter !"); return; }
         
         const field = document.getElementById('tkField');
+        const btn = document.getElementById('tkSend');
         const val = field.value.trim();
         if(!val) return;
 
-        const filmRef = doc(db, "films", filmId);
-        const snap = await getDoc(filmRef);
-        let comments = snap.data().comments || [];
+        // --- ACTION IMMÉDIATE (FIX) ---
+        field.value = ""; 
+        field.placeholder = "Envoi...";
+        btn.classList.remove('active');
 
-        if(targetCommentId) {
-            // Réponse
-            comments = comments.map(c => {
-                if(c.id === targetCommentId) {
-                    const reps = c.replies || [];
-                    return { ...c, replies: [...reps, { nom: userName, text: val, photo: userImg, date: Date.now() }] };
-                }
-                return c;
-            });
-        } else {
-            // Nouveau commentaire
-            const newDoc = {
-                id: "ID-" + Date.now() + Math.random().toString(36).substr(2, 5),
-                nom: userName,
-                text: val,
-                photo: userImg,
-                date: Date.now(),
-                likedBy: [],
-                replies: []
-            };
-            comments.push(newDoc);
+        try {
+            const filmRef = doc(db, "films", filmId);
+            const snap = await getDoc(filmRef);
+            let comments = snap.data().comments || [];
+
+            if(targetCommentId) {
+                comments = comments.map(c => {
+                    if(c.id === targetCommentId) {
+                        const reps = c.replies || [];
+                        return { ...c, replies: [...reps, { nom: userName, text: val, photo: userImg, date: Date.now() }] };
+                    }
+                    return c;
+                });
+            } else {
+                comments.push({
+                    id: "ID-" + Date.now() + Math.random().toString(36).substr(2, 5),
+                    nom: userName, text: val, photo: userImg, date: Date.now(),
+                    likedBy: [], replies: []
+                });
+            }
+
+            await updateDoc(filmRef, { comments: comments });
+            field.placeholder = "Ajouter un commentaire...";
+            targetCommentId = null;
+        } catch (e) {
+            field.value = val; // Rend le texte en cas d'erreur
+            alert("Erreur de connexion.");
         }
-
-        await updateDoc(filmRef, { comments: comments });
-        field.value = "";
-        field.placeholder = "Ajouter un commentaire...";
-        targetCommentId = null;
     };
 
     window.prepareReply = (cid, name) => {
@@ -506,7 +504,6 @@
         await updateDoc(ref, { comments: comms });
     };
 
-    // --- AUTRES RENDERERS ---
     function renderCasting(data) {
         document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
         document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || ["Casting officiel"]).map(n => `<div class="cast-name-item"><i class="fa-solid fa-star" style="font-size:8px; color:var(--gold); margin-right:10px;"></i> ${n}</div>`).join('');
@@ -543,7 +540,6 @@
         container.innerHTML = html;
     }
 
-    // --- ACTIONS UI ---
     document.getElementById('mainFavBtn').onclick = async () => { 
         if(!currentUser) return showAuthAlert("Connectez-vous pour enregistrer !");
         const btn = document.getElementById('mainFavBtn');
