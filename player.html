@@ -541,39 +541,29 @@
         container.innerHTML = html;
     }
 
-    // --- LOGIQUE DE SÉCURISATION ET RENOMMAGE ---
+    // --- SOLUTION FINALE POUR MOBILE ---
     window.forceDownload = async (url, title) => {
         const btn = event.currentTarget;
         const icon = btn.querySelector('i');
         
-        // UI: On montre le chargement
+        // On montre que ça charge
         icon.className = "fa-solid fa-spinner fa-spin";
         btn.style.opacity = "0.5";
 
         try {
-            // Téléchargement silencieux du fichier (peu importe son extension .bin, .sys, etc.)
             const response = await fetch(url);
-            if (!response.ok) throw new Error("Erreur réseau");
-            
             const blob = await response.blob();
             const blobUrl = window.URL.createObjectURL(blob);
             
-            // Création du lien de téléchargement "virtuel"
             const link = document.createElement('a');
             link.href = blobUrl;
-            
-            // MAGIE DU RENOMMAGE : On force l'extension .mp4 et on nettoie le titre
-            const safeTitle = title.replace(/[^a-z0-9]/gi, '_');
-            link.download = safeTitle + ".mp4"; 
-            
+            link.download = title.replace(/[^a-z0-9]/gi, '_') + ".mp4"; // Nom propre
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
-            // Libération de la mémoire
             window.URL.revokeObjectURL(blobUrl);
         } catch (e) {
-            // Secours : Si le fetch est bloqué (CORS), on ouvre le lien normalement
+            // Si le mode "sécurisé" échoue, on tente l'ouverture forcée
             window.open(url, '_blank');
         } finally {
             icon.className = "fa-solid fa-download";
