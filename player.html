@@ -530,13 +530,34 @@
                         <div class="ep-card" onclick="window.loadVideo('${ep.link}')">
                             <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
                             <div class="ep-info"><div class="ep-title">${ep.title}</div></div>
-                            <a href="${ep.link}" download class="dl-btn" onclick="event.stopPropagation()"><i class="fa-solid fa-download"></i></a>
+                            <button class="dl-btn" onclick="event.stopPropagation(); downloadRelease('${ep.link}', '${ep.title}')">
+                                <i class="fa-solid fa-download"></i>
+                            </button>
                         </div>`).join('')}
                 </div>
             </div>`;
         }
         container.innerHTML = html;
     }
+
+    // FONCTION POUR TELECHARGEMENT GITHUB RELEASE (JUSQU'A 2GO)
+    window.downloadRelease = async (url, filename) => {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Erreur');
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename || "Film_CongoFlix.mp4";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (e) {
+            window.location.assign(url);
+        }
+    };
 
     document.getElementById('mainFavBtn').onclick = async () => { 
         if(!currentUser) return showAuthAlert("Connectez-vous pour enregistrer !");
