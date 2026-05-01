@@ -531,53 +531,15 @@
                         <div class="ep-card" onclick="window.loadVideo('${ep.link}')">
                             <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
                             <div class="ep-info"><div class="ep-title">${ep.title}</div></div>
-                            <button class="dl-btn" onclick="event.stopPropagation(); window.forceDownload('${ep.link}', '${ep.title}')">
+                            <a href="${ep.link}" download="${ep.title}.mp4" class="dl-btn" onclick="event.stopPropagation();">
                                 <i class="fa-solid fa-download"></i>
-                            </button>
+                            </a>
                         </div>`).join('')}
                 </div>
             </div>`;
         }
         container.innerHTML = html;
     }
-
-    // --- MODULE DE TÉLÉCHARGEMENT FORCÉ (BACKGROUND FETCH) ---
-    window.forceDownload = async (url, title) => {
-        const btn = event.currentTarget;
-        const icon = btn.querySelector('i');
-        
-        // UI Feedback: On active le spinner
-        icon.className = "fa-solid fa-spinner fa-spin";
-        btn.style.pointerEvents = "none";
-
-        try {
-            // Récupération du fichier en arrière-plan (Blob)
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Network response was not ok');
-            
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            
-            // Création d'un lien invisible pour déclencher la sauvegarde
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = title.replace(/[^a-z0-9]/gi, '_') + ".mp4";
-            document.body.appendChild(link);
-            link.click();
-            
-            // Nettoyage
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(blobUrl);
-        } catch (e) {
-            console.error("Download error:", e);
-            // Repli vers l'ouverture classique si le fetch échoue (CORS, etc.)
-            window.open(url, '_blank');
-        } finally {
-            // Reset UI
-            icon.className = "fa-solid fa-download";
-            btn.style.pointerEvents = "auto";
-        }
-    };
 
     document.getElementById('mainFavBtn').onclick = async () => { 
         if(!currentUser) return showAuthAlert("Connectez-vous pour enregistrer !");
