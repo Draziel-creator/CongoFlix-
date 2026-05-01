@@ -238,7 +238,7 @@
             color: var(--gold); font-size: 20px; text-decoration: none;
             background: rgba(255,215,0,0.12); width: 38px; height: 38px;
             display: flex; align-items: center; justify-content: center; border-radius: 50%;
-            border: none; cursor: pointer;
+            border: none; cursor: pointer; transition: 0.3s;
         }
 
         /* --- 7. MODULE COMMENTAIRES --- */
@@ -541,33 +541,41 @@
         container.innerHTML = html;
     }
 
-    // --- SOLUTION FINALE POUR MOBILE ---
+    // --- MODULE DE TÉLÉCHARGEMENT FORCÉ (BACKGROUND FETCH) ---
     window.forceDownload = async (url, title) => {
         const btn = event.currentTarget;
         const icon = btn.querySelector('i');
         
-        // On montre que ça charge
+        // UI Feedback: On active le spinner
         icon.className = "fa-solid fa-spinner fa-spin";
-        btn.style.opacity = "0.5";
+        btn.style.pointerEvents = "none";
 
         try {
+            // Récupération du fichier en arrière-plan (Blob)
             const response = await fetch(url);
+            if (!response.ok) throw new Error('Network response was not ok');
+            
             const blob = await response.blob();
             const blobUrl = window.URL.createObjectURL(blob);
             
+            // Création d'un lien invisible pour déclencher la sauvegarde
             const link = document.createElement('a');
             link.href = blobUrl;
-            link.download = title.replace(/[^a-z0-9]/gi, '_') + ".mp4"; // Nom propre
+            link.download = title.replace(/[^a-z0-9]/gi, '_') + ".mp4";
             document.body.appendChild(link);
             link.click();
+            
+            // Nettoyage
             document.body.removeChild(link);
             window.URL.revokeObjectURL(blobUrl);
         } catch (e) {
-            // Si le mode "sécurisé" échoue, on tente l'ouverture forcée
+            console.error("Download error:", e);
+            // Repli vers l'ouverture classique si le fetch échoue (CORS, etc.)
             window.open(url, '_blank');
         } finally {
+            // Reset UI
             icon.className = "fa-solid fa-download";
-            btn.style.opacity = "1";
+            btn.style.pointerEvents = "auto";
         }
     };
 
