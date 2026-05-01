@@ -238,6 +238,7 @@
             color: var(--gold); font-size: 20px; text-decoration: none;
             background: rgba(255,215,0,0.12); width: 38px; height: 38px;
             display: flex; align-items: center; justify-content: center; border-radius: 50%;
+            border: none; cursor: pointer;
         }
 
         /* --- 7. MODULE COMMENTAIRES --- */
@@ -530,7 +531,7 @@
                         <div class="ep-card" onclick="window.loadVideo('${ep.link}')">
                             <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
                             <div class="ep-info"><div class="ep-title">${ep.title}</div></div>
-                            <button class="dl-btn" onclick="event.stopPropagation(); downloadRelease('${ep.link}', '${ep.title}')">
+                            <button class="dl-btn" onclick="event.stopPropagation(); window.forceDownload('${ep.link}', '${ep.title}')">
                                 <i class="fa-solid fa-download"></i>
                             </button>
                         </div>`).join('')}
@@ -540,22 +541,33 @@
         container.innerHTML = html;
     }
 
-    // FONCTION POUR TELECHARGEMENT GITHUB RELEASE (JUSQU'A 2GO)
-    window.downloadRelease = async (url, filename) => {
+    // --- SOLUTION FINALE POUR MOBILE ---
+    window.forceDownload = async (url, title) => {
+        const btn = event.currentTarget;
+        const icon = btn.querySelector('i');
+        
+        // On montre que ça charge
+        icon.className = "fa-solid fa-spinner fa-spin";
+        btn.style.opacity = "0.5";
+
         try {
             const response = await fetch(url);
-            if (!response.ok) throw new Error('Erreur');
             const blob = await response.blob();
             const blobUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = filename || "Film_CongoFlix.mp4";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = title.replace(/[^a-z0-9]/gi, '_') + ".mp4"; // Nom propre
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
             window.URL.revokeObjectURL(blobUrl);
         } catch (e) {
-            window.location.assign(url);
+            // Si le mode "sécurisé" échoue, on tente l'ouverture forcée
+            window.open(url, '_blank');
+        } finally {
+            icon.className = "fa-solid fa-download";
+            btn.style.opacity = "1";
         }
     };
 
