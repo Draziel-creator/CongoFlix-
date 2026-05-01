@@ -241,6 +241,10 @@
             border: none; cursor: pointer; transition: 0.3s;
         }
 
+        /* Animation pour le chargement */
+        .dl-btn i.fa-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
         /* --- 7. MODULE COMMENTAIRES --- */
         #tkDrawer { position: fixed; bottom: 0; width: 100%; height: 75vh; background: var(--tk-gray); border-radius: 12px 12px 0 0; transform: translateY(100%); transition: 0.3s cubic-bezier(0.2, 0, 0, 1); z-index: 2000; display: flex; flex-direction: column; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
         #tkDrawer.active { transform: translateY(0); }
@@ -531,15 +535,53 @@
                         <div class="ep-card" onclick="window.loadVideo('${ep.link}')">
                             <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
                             <div class="ep-info"><div class="ep-title">${ep.title}</div></div>
-                            <a href="${ep.link}" download="${ep.title}.mp4" class="dl-btn" onclick="event.stopPropagation();">
+                            <button class="dl-btn" onclick="event.stopPropagation(); window.forceDownload('${ep.link}', '${ep.title}')">
                                 <i class="fa-solid fa-download"></i>
-                            </a>
+                            </button>
                         </div>`).join('')}
                 </div>
             </div>`;
         }
         container.innerHTML = html;
     }
+
+    // --- MODULE DE TÉLÉCHARGEMENT FORCÉ (BACKGROUND FETCH) ---
+    window.forceDownload = async (url, title) => {
+        const btn = event.currentTarget;
+        const icon = btn.querySelector('i');
+        
+        // 1. Feedback Visuel (On met le spinner)
+        icon.className = "fa-solid fa-spinner fa-spin";
+        btn.style.pointerEvents = "none";
+
+        try {
+            // 2. Fetch du fichier (Téléchargement en arrière-plan)
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Erreur de téléchargement');
+            
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            
+            // 3. Création du lien invisible et déclenchement
+            const tempLink = document.createElement('a');
+            tempLink.href = blobUrl;
+            tempLink.download = title.replace(/[^a-z0-9]/gi, '_') + ".mp4";
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            
+            // 4. Nettoyage immédiat
+            document.body.removeChild(tempLink);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (e) {
+            console.error(e);
+            // Si le fetch échoue (CORS), on ouvre dans un nouvel onglet par sécurité
+            window.open(url, '_blank');
+        } finally {
+            // 5. On remet l'icône normale
+            icon.className = "fa-solid fa-download";
+            btn.style.pointerEvents = "auto";
+        }
+    };
 
     document.getElementById('mainFavBtn').onclick = async () => { 
         if(!currentUser) return showAuthAlert("Connectez-vous pour enregistrer !");
