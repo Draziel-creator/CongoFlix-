@@ -75,14 +75,15 @@
             backdrop-filter: blur(5px);
             text-decoration: none;
             transition: transform 0.2s ease;
+            cursor: pointer;
         }
 
         .back-btn:active { transform: scale(0.9); }
 
-        /* --- 2. EN-TÊTE ET TITRAGE (REMONTÉ) --- */
+        /* --- 2. EN-TÊTE ET TITRAGE --- */
         .title-container { 
             text-align: center; 
-            padding: 10px 15px 5px; /* Réduit pour coller à la vidéo */
+            padding: 10px 15px 5px;
         }
 
         #txtTitle { 
@@ -95,11 +96,11 @@
             margin: 0;
         }
 
-        /* --- 3. BARRE D'ACTIONS (REMONTÉE) --- */
+        /* --- 3. BARRE D'ACTIONS --- */
         .actions { 
             display: flex; 
             justify-content: space-around; 
-            padding: 10px 10px; /* Réduit pour supprimer l'espace */
+            padding: 10px 10px; 
             border-bottom: 1px solid #1a1a1a; 
             background: linear-gradient(to bottom, transparent, #080808);
         }
@@ -241,13 +242,13 @@
             border: none; cursor: pointer; transition: 0.3s;
         }
 
-        /* --- 7. ZONE PUBLICITÉ (PLACEMENT BAS) --- */
+        /* --- 7. ZONE PUBLICITÉ (NOUVEAU FORMAT 300x160) --- */
         .ad-container {
             display: flex;
             justify-content: center;
             margin: 20px 0;
             width: 100%;
-            min-height: 50px;
+            min-height: 300px;
         }
 
         /* Animation pour le chargement */
@@ -291,11 +292,8 @@
 <body>
 
     <div class="video-box">
-        <!-- CODE BOUTON RETOUR MIS À JOUR ICI -->
-        <a href="javascript:history.back()" class="back-btn">
-            <i class="fa-solid fa-arrow-left"></i>
-            <script src="https://pl29315759.profitablecpmratenetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
-        </a>
+        <!-- BOUTON RETOUR AVEC ACTION PUB DÉCLENCHÉE UNIQUEMENT AU CLIC -->
+        <div class="back-btn" onclick="handleBackAction()"><i class="fa-solid fa-arrow-left"></i></div>
         <div id="playerRoot" style="width:100%; height:100%;"></div>
     </div>
 
@@ -321,9 +319,9 @@
 
         <div id="episodesList" class="episodes-container"></div>
 
-        <!-- ZONE PUB DÉTAIL MISE À JOUR ICI -->
+        <!-- ZONE PUB DÉTAILS (FORMAT 300x160) -->
         <div class="ad-container">
-            <script>
+            <script type="text/javascript">
                 atOptions = {
                     'key' : 'f37eede0de06b709e6c6db90820d116e',
                     'format' : 'iframe',
@@ -332,7 +330,7 @@
                     'params' : {}
                 };
             </script>
-            <script src="https://www.highperformanceformat.com/f37eede0de06b709e6c6db90820d116e/invoke.js"></script>
+            <script type="text/javascript" src="https://www.highperformanceformat.com/f37eede0de06b709e6c6db90820d116e/invoke.js"></script>
         </div>
     </div>
 
@@ -382,6 +380,19 @@
     let userImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
     let currentFilmData = null;
     let targetCommentId = null;
+
+    // FONCTION RETOUR AVEC PUB
+    window.handleBackAction = function() {
+        // Injection dynamique du script pub retour au moment du clic
+        const s = document.createElement('script');
+        s.src = "https://pl29315759.profitablecpmratenetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js";
+        document.body.appendChild(s);
+        
+        // Retour à la page précédente après un mini délai pour laisser le script s'initialiser
+        setTimeout(() => {
+            history.back();
+        }, 200);
+    };
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -472,21 +483,17 @@
 
     window.handlePost = async () => {
         if(!currentUser) { showAuthAlert("Connectez-vous pour commenter !"); return; }
-        
         const field = document.getElementById('tkField');
         const btn = document.getElementById('tkSend');
         const val = field.value.trim();
         if(!val) return;
-
         field.value = ""; 
         field.placeholder = "Envoi...";
         btn.classList.remove('active');
-
         try {
             const filmRef = doc(db, "films", filmId);
             const snap = await getDoc(filmRef);
             let comments = snap.data().comments || [];
-
             if(targetCommentId) {
                 comments = comments.map(c => {
                     if(c.id === targetCommentId) {
@@ -502,7 +509,6 @@
                     likedBy: [], replies: []
                 });
             }
-
             await updateDoc(filmRef, { comments: comments });
             field.placeholder = "Ajouter un commentaire...";
             targetCommentId = null;
