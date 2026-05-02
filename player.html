@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
+        /* --- SYSTÈME DE DESIGN CONGOFLIX --- */
         :root { 
             --gold: #ffd700; 
             --bg: #000; 
@@ -16,7 +17,6 @@
             --red: #ff3b5c; 
             --glass: rgba(255, 255, 255, 0.03);
             --border-gold: rgba(255, 215, 0, 0.2);
-            --drawer-bg: #222222;
         }
 
         body { 
@@ -27,58 +27,91 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- LECTEUR PRINCIPAL --- */
+        /* --- 1. LECTEUR VIDÉO PREMIUM --- */
         .video-box { 
-            width: 100vw; aspect-ratio: 16/9; background: #000; position: relative; z-index: 10;
+            width: 100vw; aspect-ratio: 16/9; background: #000; position: relative; 
+            z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
+
+        .video-box::after {
+            content: ""; position: absolute; bottom: -5px; left: 10%; right: 10%;
+            height: 10px; background: var(--gold); filter: blur(25px); opacity: 0.6; z-index: -1;
+        }
+
         iframe { width: 100%; height: 100%; border: none; display: block; }
 
         .back-btn { 
             position: absolute; top: 15px; left: 15px; z-index: 20; 
-            width: 40px; height: 40px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; 
-            color: #fff; background: rgba(0,0,0,0.5); text-decoration: none;
+            width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--gold); 
+            display: flex; align-items: center; justify-content: center; color: var(--gold); 
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); text-decoration: none;
         }
 
-        /* --- TITRE ET ACTIONS --- */
-        .title-container { padding: 15px; }
-        #txtTitle { font-size: 20px; font-weight: bold; margin: 0; }
+        /* --- 2. EN-TÊTE ET TITRAGE --- */
+        .title-container { text-align: center; padding: 10px 15px 5px; }
+        #txtTitle { 
+            font-size: 22px; color: #fff; font-weight: 800; text-transform: uppercase; 
+            letter-spacing: 2px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); margin: 0;
+        }
 
+        /* --- 3. BARRE D'ACTIONS --- */
         .actions { 
             display: flex; justify-content: space-around; padding: 10px; 
-            border-bottom: 1px solid #1a1a1a;
+            border-bottom: 1px solid #1a1a1a; background: linear-gradient(to bottom, transparent, #080808);
         }
-        .act-item { text-align: center; color: #999; font-size: 11px; flex: 1; }
-        .act-item i { font-size: 22px; color: #fff; margin-bottom: 5px; display: block; }
-        .act-item.is-liked i { color: var(--red); }
-        .act-item.is-fav i { color: var(--gold); }
+        .act-item { text-align: center; color: #999; font-size: 12px; flex: 1; cursor: pointer; }
+        .act-item i { font-size: 26px; color: var(--gold); margin-bottom: 6px; display: block; }
+        .act-item.is-liked i { color: var(--red) !important; }
+        .act-item.is-fav i { color: var(--gold) !important; text-shadow: 0 0 20px var(--gold); transform: scale(1.1); }
 
-        /* --- LISTE ÉPISODES --- */
-        .info-pane { padding: 15px; }
-        .season-wrapper { margin-bottom: 10px; }
+        /* --- 4. PANNEAU D'INFORMATIONS --- */
+        .info-pane { padding: 20px; padding-bottom: 100px; }
+        .glass-box {
+            background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--border-gold);
+            border-radius: 15px; padding: 30px 20px 20px; position: relative; margin-bottom: 35px;
+        }
+        .glass-box::before {
+            content: "\201C"; position: absolute; top: -5px; left: 20px;
+            font-size: 60px; color: var(--gold); font-family: serif; opacity: 0.5;
+        }
+        #txtDesc { font-size: 14.5px; color: #ddd; line-height: 1.7; margin: 0; }
+
+        /* --- 5. CASTING VISUEL --- */
+        .cast-label { 
+            color: var(--gold); font-size: 13px; font-weight: 800; text-transform: uppercase; 
+            margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+        }
+        .cast-label::after { content: ""; flex: 1; height: 1px; background: var(--border-gold); }
+        .cast-row-imgs { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 20px; scrollbar-width: none; }
+        .actor-img { width: 75px; height: 75px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; flex-shrink: 0; }
+        .cast-list-vertical { margin-top: 15px; border-left: 2px solid var(--border-gold); padding-left: 20px; }
+        .cast-name-item { font-size: 14px; color: #eee; margin-bottom: 12px; }
+
+        /* --- 6. GESTION DES SAISONS --- */
+        .season-wrapper { margin-bottom: 15px; border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.03); }
         .season-pocket {
-            padding: 15px; background: #111; display: flex; 
-            justify-content: space-between; font-weight: bold;
+            background: linear-gradient(90deg, rgba(255,215,0,0.2), transparent); color: var(--gold);
+            padding: 15px; font-weight: bold; display: flex; justify-content: space-between; border-left: 5px solid var(--gold);
         }
-        .season-content { display: none; padding: 10px 0; }
+        .season-content { display: none; padding: 10px; }
         .season-wrapper.active .season-content { display: block; }
-
         .ep-card {
-            display: flex; align-items: center; gap: 12px; margin-bottom: 15px;
-            background: #0f0f0f; padding: 10px; border-radius: 8px;
+            background: rgba(25, 25, 25, 0.6); border-radius: 14px; padding: 14px; margin-bottom: 18px;
+            display: flex; align-items: center; gap: 18px; border: 1px solid rgba(255, 215, 0, 0.08);
         }
-        .ep-poster-box { width: 100px; aspect-ratio: 16/9; border-radius: 4px; overflow: hidden; position: relative; }
+        .ep-poster-box { width: 110px; height: 65px; border-radius: 8px; overflow: hidden; position: relative; flex-shrink: 0; }
         .ep-poster-box img { width: 100%; height: 100%; object-fit: cover; }
+        .ep-hd-tag { position: absolute; top: 5px; right: 5px; background: var(--gold); color: #000; font-size: 9px; font-weight: 900; padding: 2px 5px; border-radius: 4px; }
         .ep-info { flex: 1; }
-        .ep-title { font-size: 14px; font-weight: 500; }
-        .detail-btn { background: #333; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; }
+        .ep-title { font-size: 14px; font-weight: 600; color: #fff; }
+        .detail-btn { background: var(--gold); color: #000; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 12px; }
 
         /* --- MODAL STYLE CAPTURE --- */
         #detailDrawer {
-            position: fixed; bottom: 0; width: 100%; height: auto; min-height: 400px;
-            background: var(--drawer-bg); border-radius: 15px 15px 0 0;
+            position: fixed; bottom: 0; width: 100%; height: auto; min-height: 500px;
+            background: #1a1a1a; border-radius: 20px 20px 0 0;
             transform: translateY(100%); transition: 0.4s cubic-bezier(0, 0, 0.2, 1);
-            z-index: 3000; padding-bottom: 30px;
+            z-index: 3000; padding-bottom: 30px; border-top: 1px solid var(--border-gold);
         }
         #detailDrawer.active { transform: translateY(0); }
 
@@ -86,47 +119,34 @@
             padding: 15px; display: flex; align-items: center; justify-content: space-between;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        .drawer-title-box { display: flex; align-items: center; gap: 10px; }
-        .drawer-title-box i { 
-            background: #444; width: 30px; height: 30px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; font-size: 14px;
-        }
-
-        .drawer-buttons {
-            display: flex; gap: 10px; padding: 20px 15px;
-        }
-        .btn-modal {
-            flex: 1; border: none; padding: 12px; border-radius: 6px;
-            font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center;
-        }
-        .btn-gray { background: #3a3a3a; color: #fff; }
+        .drawer-buttons { display: flex; gap: 10px; padding: 15px; }
+        .btn-modal { flex: 1; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-gray { background: #333; color: #fff; }
         .btn-blue { background: #007bff; color: #fff; }
 
-        /* ZONE CONTENU (PUB OU LECTEUR) */
+        /* ZONE LECTEUR / PUB DANS LE MODAL */
         .drawer-media-zone {
-            margin: 0 15px; background: #000; border-radius: 8px;
-            min-height: 250px; overflow: hidden; display: flex;
-            align-items: center; justify-content: center;
-            position: relative;
+            margin: 0 15px; background: #000; border-radius: 12px;
+            min-height: 250px; overflow: hidden; position: relative;
+            display: flex; flex-direction: column; align-items: center;
         }
-        #drawerPlayerContainer { width: 100%; height: 100%; display: none; }
-        #drawerAdContainer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        #modalPlayerContainer { width: 100%; aspect-ratio: 16/9; display: none; }
+        #modalAdContainer { width: 100%; padding: 10px 0; display: flex; justify-content: center; }
 
-        /* --- COMMENTAIRES TIKTOK --- */
-        #tkDrawer { position: fixed; bottom: 0; width: 100%; height: 70vh; background: var(--tk-gray); border-radius: 15px 15px 0 0; transform: translateY(100%); transition: 0.3s; z-index: 4000; display: flex; flex-direction: column; }
+        /* COMMENTAIRES TIKTOK STYLE */
+        #tkDrawer { position: fixed; bottom: 0; width: 100%; height: 75vh; background: var(--tk-gray); border-radius: 12px 12px 0 0; transform: translateY(100%); transition: 0.3s; z-index: 4000; display: flex; flex-direction: column; }
         #tkDrawer.active { transform: translateY(0); }
-        .tk-header { padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #222; }
-        .tk-list { flex: 1; overflow-y: auto; padding: 15px; }
-        .tk-input-box { padding: 10px; background: #1a1a1a; display: flex; gap: 10px; align-items: center; }
-        .input-pill { flex: 1; background: #333; border-radius: 20px; padding: 5px 15px; }
-        .input-pill input { background: transparent; border: none; color: #fff; width: 100%; padding: 8px 0; outline: none; }
+        .tk-header { padding: 15px; text-align: center; border-bottom: 0.5px solid #222; position: relative; }
+        .tk-list { flex: 1; overflow-y: auto; padding: 20px; }
+        .tk-input-box { padding: 10px 15px 30px; background: var(--tk-gray); border-top: 0.5px solid #222; display: flex; align-items: center; gap: 12px; }
+        .input-pill { flex: 1; background: var(--tk-input); border-radius: 22px; padding: 0 15px; }
+        #tkField { background: transparent; border: none; color: #fff; padding: 10px 0; width: 100%; outline: none; }
 
-        #authAlert { display:none; position:fixed; bottom:20px; left:5%; width:90%; background:var(--red); padding:15px; border-radius:10px; z-index:9000; text-align:center; }
+        #authAlert { display:none; position:fixed; bottom:30px; left:5%; width:90%; background:var(--red); padding:18px; border-radius:15px; z-index:5000; text-align:center; }
     </style>
 </head>
 <body>
 
-    <!-- LECTEUR PRINCIPAL -->
     <div class="video-box">
         <a href="javascript:void(0)" onclick="triggerBackAd()" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
         <div id="playerRoot" style="width:100%; height:100%;"></div>
@@ -137,27 +157,31 @@
     </div>
 
     <div class="actions">
-        <div class="act-item"><i class="fa-solid fa-play"></i> <span id="statV">0</span></div>
-        <div class="act-item" id="mainLikeBtn"><i class="fa-regular fa-heart"></i> <span id="statL">0</span></div>
-        <div class="act-item" onclick="toggleTk()"><i class="fa-regular fa-comment"></i> <span id="statC">0</span></div>
-        <div class="act-item" id="mainFavBtn"><i class="fa-regular fa-bookmark"></i> <span id="favText">Ma Liste</span></div>
+        <div class="act-item"><i class="fa-solid fa-play-circle"></i> <span id="statV">0</span></div>
+        <div class="act-item" id="mainLikeBtn"><i class="fa-solid fa-heart"></i> <span id="statL">0</span></div>
+        <div class="act-item" onclick="toggleTk()"><i class="fa-solid fa-comment-dots"></i> <span id="statC">0</span></div>
+        <div class="act-item" id="mainFavBtn"><i class="fa-solid fa-bookmark"></i> <span id="favText">Enregistrer</span></div>
     </div>
 
     <div class="info-pane">
+        <div class="glass-box"><p id="txtDesc">...</p></div>
+        <span class="cast-label"><i class="fa-solid fa-users"></i> Casting Principal</span>
+        <div id="rowCastImgs" class="cast-row-imgs"></div> 
+        <div id="listCastNames" class="cast-list-vertical"></div> 
         <div id="episodesList"></div>
     </div>
 
-    <!-- MODAL STYLE CAPTURE -->
+    <!-- MODAL DE DÉTAILS STYLE CAPTURE -->
     <div id="detailDrawer">
         <div class="drawer-header">
-            <div class="drawer-title-box">
-                <i class="fa-solid fa-arrow-down"></i>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fa-solid fa-arrow-down" style="background:#333; padding:8px; border-radius:50%; font-size:12px;"></i>
                 <div>
                     <div style="font-size:14px; font-weight:bold;">Téléchargement <span style="color:#4caf50">1 fichier(s)</span></div>
-                    <div id="detEpTitle" style="font-size:11px; color:#aaa;">Nom de l'épisode</div>
+                    <div id="detEpTitle" style="font-size:11px; color:#999;">Nom de l'épisode</div>
                 </div>
             </div>
-            <i class="fa-solid fa-xmark" style="font-size:20px; color:#666" onclick="closeDetails()"></i>
+            <i class="fa-solid fa-xmark" style="font-size:22px; color:#999" onclick="closeDetails()"></i>
         </div>
 
         <div style="padding: 15px 15px 0; font-size: 13px; color: #ccc;">
@@ -165,38 +189,41 @@
         </div>
 
         <div class="drawer-buttons">
-            <button class="btn-modal btn-gray" id="btnDownloadNow">Voir le téléchargement</button>
-            <button class="btn-modal btn-blue" id="btnWatchNow">Regarder maintenant</button>
+            <button class="btn-modal btn-gray" id="btnDownloadNow"><i class="fa-solid fa-download"></i> Télécharger</button>
+            <button class="btn-modal btn-blue" id="btnWatchNow"><i class="fa-solid fa-play"></i> Regarder maintenant</button>
         </div>
 
-        <!-- ZONE DE CONTENU DYNAMIQUE -->
         <div class="drawer-media-zone">
-            <!-- LECTEUR (Caché au départ) -->
-            <div id="drawerPlayerContainer"></div>
+            <!-- LE LECTEUR QUI S'OUVRE ICI -->
+            <div id="modalPlayerContainer"></div>
             
-            <!-- PUB (Affichée au départ) -->
-            <div id="drawerAdContainer">
+            <!-- LA PUB (300x250) -->
+            <div id="modalAdContainer">
                 <script type="text/javascript">
                     atOptions = {
-                        'key' : 'f37eede0de06b709e6c6db90820d116e',
+                        'key' : 'e86dd4055cd86d43aa42fbae392c77d2',
                         'format' : 'iframe',
-                        'height' : 300,
-                        'width' : 160,
+                        'height' : 250,
+                        'width' : 300,
                         'params' : {}
                     };
                 </script>
-                <script type="text/javascript" src="https://www.highperformanceformat.com/f37eede0de06b709e6c6db90820d116e/invoke.js"></script>
+                <script type="text/javascript" src="https://www.highperformanceformat.com/e86dd4055cd86d43aa42fbae392c77d2/invoke.js"></script>
             </div>
         </div>
     </div>
 
     <!-- TIROIR COMMENTAIRES -->
     <div id="tkDrawer">
-        <div class="tk-header"> <span id="hCount">0</span> COMMENTAIRES </div>
+        <div class="tk-header">
+            <span id="hCount">0</span> COMMENTAIRES
+            <i class="fa-solid fa-xmark" style="position:absolute; right:20px;" onclick="toggleTk()"></i>
+        </div>
         <div id="tkList" class="tk-list"></div>
         <div class="tk-input-box">
+            <img id="myAvatar" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:32px; height:32px; border-radius:50%">
             <div class="input-pill"><input type="text" id="tkField" placeholder="Ajouter un commentaire..."></div>
-            <button onclick="handlePost()" style="background:none; border:none; color:var(--gold); font-size:20px;"><i class="fa-solid fa-paper-plane"></i></button>
+            <button id="tkSend" style="background:none; border:none; color:var(--gold); font-size:22px;" onclick="handlePost()"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
     </div>
 
@@ -227,8 +254,8 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user; userId = user.uid;
-                const uSnap = await getDoc(doc(db, "users", user.uid));
-                if(uSnap.exists() && (uSnap.data().favorites || []).some(f => f.id === filmId)) {
+                const snap = await getDoc(doc(db, "users", user.uid));
+                if(snap.exists() && (snap.data().favorites || []).some(f => f.id === filmId)) {
                     document.getElementById('mainFavBtn').classList.add('is-fav');
                 }
             }
@@ -238,58 +265,63 @@
             const data = snap.data(); if(!data) return;
             currentFilmData = data;
             document.getElementById('txtTitle').innerText = data.titre || "CongoFlix";
+            document.getElementById('txtDesc').innerText = data.description || "...";
             document.getElementById('statV').innerText = data.views || 0;
             document.getElementById('statL').innerText = (data.likes || []).length;
             
             if(!document.getElementById('playerRoot').innerHTML.trim() && data.url) {
                 document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
+                updateDoc(doc(db, "films", filmId), { views: increment(1) });
             }
+            renderCasting(data);
             renderEpisodes(data.episodes || []);
             renderComments(data.comments || []);
         });
 
         function renderEpisodes(epArray) {
             const container = document.getElementById('episodesList');
-            let seasons = {};
+            let html = ""; let seasons = {};
             for (let i = 0; i < epArray.length; i += 3) {
                 const img = epArray[i], title = epArray[i+1], link = epArray[i+2];
                 let sName = title.includes(':') ? title.split(':')[0].trim() : "Saison 1";
                 if(!seasons[sName]) seasons[sName] = [];
                 seasons[sName].push({img, title, link});
             }
-            container.innerHTML = Object.keys(seasons).map(s => `
-                <div class="season-wrapper active">
+            for (let s in seasons) {
+                html += `
+                <div class="season-wrapper">
                     <div class="season-pocket" onclick="this.parentElement.classList.toggle('active')">
                         <span>${s}</span> <i class="fa-solid fa-chevron-down"></i>
                     </div>
                     <div class="season-content">
                         ${seasons[s].map(ep => `
                             <div class="ep-card" onclick="openDetails('${ep.title.replace(/'/g, "\\'")}', '${ep.link}')">
-                                <div class="ep-poster-box"><img src="${ep.img}"></div>
+                                <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
                                 <div class="ep-info"><div class="ep-title">${ep.title}</div></div>
                                 <button class="detail-btn">Détails</button>
                             </div>
                         `).join('')}
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }
+            container.innerHTML = html;
         }
 
         window.openDetails = (title, link) => {
             document.getElementById('detEpTitle').innerText = title;
-            // Reset zone media : afficher pub, cacher lecteur
-            document.getElementById('drawerAdContainer').style.display = 'flex';
-            document.getElementById('drawerPlayerContainer').style.display = 'none';
-            document.getElementById('drawerPlayerContainer').innerHTML = "";
+            // Réinitialiser le modal : Montrer pub, cacher lecteur
+            document.getElementById('modalAdContainer').style.display = 'flex';
+            document.getElementById('modalPlayerContainer').style.display = 'none';
+            document.getElementById('modalPlayerContainer').innerHTML = "";
             
             document.getElementById('detailDrawer').classList.add('active');
 
             document.getElementById('btnWatchNow').onclick = () => {
-                // Le lecteur remplace la pub dans le modal
-                document.getElementById('drawerAdContainer').style.display = 'none';
-                const p = document.getElementById('drawerPlayerContainer');
-                p.style.display = 'block';
-                p.innerHTML = `<iframe src="${link}" allowfullscreen></iframe>`;
+                // Action : Le lecteur remplace la pub dans le modal
+                document.getElementById('modalAdContainer').style.display = 'none';
+                const container = document.getElementById('modalPlayerContainer');
+                container.style.display = 'block';
+                container.innerHTML = `<iframe src="${link}" allowfullscreen></iframe>`;
             };
 
             document.getElementById('btnDownloadNow').onclick = () => {
@@ -299,18 +331,19 @@
 
         window.closeDetails = () => {
             document.getElementById('detailDrawer').classList.remove('active');
-            document.getElementById('drawerPlayerContainer').innerHTML = "";
+            document.getElementById('modalPlayerContainer').innerHTML = "";
         };
 
         window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
         window.handlePost = async () => {
+            if(!currentUser) return showAuthAlert();
             const f = document.getElementById('tkField');
-            if(!f.value.trim() || !currentUser) return;
+            if(!f.value.trim()) return;
             const ref = doc(db, "films", filmId);
             const snap = await getDoc(ref);
             let c = snap.data().comments || [];
-            c.push({ id: Date.now(), nom: currentUser.displayName || "Fan", text: f.value, date: Date.now() });
+            c.push({ id: Date.now(), nom: currentUser.displayName || "Fan", text: f.value, date: Date.now(), photo: currentUser.photoURL });
             await updateDoc(ref, { comments: c });
             f.value = "";
         };
@@ -319,14 +352,26 @@
             document.getElementById('statC').innerText = comms.length;
             document.getElementById('hCount').innerText = comms.length;
             document.getElementById('tkList').innerHTML = comms.map(c => `
-                <div style="margin-bottom:15px">
-                    <b style="font-size:12px; color:var(--gold)">${c.nom}</b>
-                    <div style="font-size:14px">${c.text}</div>
-                </div>
-            `).join('');
+                <div style="display:flex; gap:12px; margin-bottom:15px">
+                    <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:35px; height:35px; border-radius:50%">
+                    <div>
+                        <div style="font-size:12px; color:#999; font-weight:bold">${c.nom}</div>
+                        <div style="font-size:14px; color:#eee">${c.text}</div>
+                    </div>
+                </div>`).join('');
+        }
+
+        function renderCasting(data) {
+            document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img">`).join('');
+            document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || []).map(n => `<div class="cast-name-item"><i class="fa-solid fa-star" style="color:var(--gold); margin-right:10px;"></i> ${n}</div>`).join('');
         }
 
         window.triggerBackAd = () => { history.back(); };
+        window.showAuthAlert = (m) => { 
+            const a = document.getElementById('authAlert'); 
+            document.getElementById('authAlertMsg').innerText = m || "Action requise";
+            a.style.display='block'; setTimeout(()=>a.style.display='none', 3000);
+        };
     </script>
 </body>
 </html>
