@@ -75,7 +75,6 @@
             backdrop-filter: blur(5px);
             text-decoration: none;
             transition: transform 0.2s ease;
-            cursor: pointer;
         }
 
         .back-btn:active { transform: scale(0.9); }
@@ -235,27 +234,47 @@
         .ep-info { flex: 1; }
         .ep-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #fff; }
         
-        .dl-btn {
-            color: var(--gold); font-size: 20px; text-decoration: none;
-            background: rgba(255,215,0,0.12); width: 38px; height: 38px;
-            display: flex; align-items: center; justify-content: center; border-radius: 50%;
-            border: none; cursor: pointer; transition: 0.3s;
+        /* Bouton Détails spécifique */
+        .detail-btn {
+            background: var(--gold);
+            color: #000;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
         }
 
-        /* --- 7. ZONE PUBLICITÉ (NOUVEAU FORMAT 300x160) --- */
-        .ad-container {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-            width: 100%;
-            min-height: 300px;
+        /* --- NOUVEAU: PANNEAU DÉTAILS ÉPISODE --- */
+        #detailDrawer {
+            position: fixed; bottom: 0; width: 100%; height: 60vh;
+            background: #111; border-radius: 20px 20px 0 0;
+            transform: translateY(100%); transition: 0.4s ease;
+            z-index: 3000; padding: 20px; box-sizing: border-box;
+            border-top: 2px solid var(--gold);
+        }
+        #detailDrawer.active { transform: translateY(0); }
+
+        .drawer-actions {
+            display: flex; flex-direction: column; gap: 15px; align-items: center; margin-top: 20px;
         }
 
-        /* Animation pour le chargement */
-        .dl-btn i.fa-spinner { animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .watch-now-btn {
+            background: #0084ff; color: #fff; width: 80%; padding: 15px;
+            border-radius: 30px; font-weight: bold; border: none; font-size: 16px;
+        }
 
-        /* --- 8. MODULE COMMENTAIRES --- */
+        .download-now-btn {
+            background: #28a745; color: #fff; width: 80%; padding: 15px;
+            border-radius: 30px; font-weight: bold; border: none; font-size: 16px;
+        }
+
+        .close-drawer {
+            position: absolute; top: 15px; right: 20px; font-size: 24px; color: #999;
+        }
+
+        /* --- MODULE COMMENTAIRES --- */
         #tkDrawer { position: fixed; bottom: 0; width: 100%; height: 75vh; background: var(--tk-gray); border-radius: 12px 12px 0 0; transform: translateY(100%); transition: 0.3s cubic-bezier(0.2, 0, 0, 1); z-index: 2000; display: flex; flex-direction: column; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
         #tkDrawer.active { transform: translateY(0); }
         .tk-header { padding: 15px; text-align: center; font-size: 13px; font-weight: bold; border-bottom: 0.5px solid #222; position: relative; }
@@ -292,8 +311,7 @@
 <body>
 
     <div class="video-box">
-        <!-- BOUTON RETOUR AVEC ACTION PUB DÉCLENCHÉE UNIQUEMENT AU CLIC -->
-        <div class="back-btn" onclick="handleBackAction()"><i class="fa-solid fa-arrow-left"></i></div>
+        <a href="javascript:void(0)" onclick="triggerBackAd()" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
         <div id="playerRoot" style="width:100%; height:100%;"></div>
     </div>
 
@@ -318,9 +336,15 @@
         <div id="listCastNames" class="cast-list-vertical"></div> 
 
         <div id="episodesList" class="episodes-container"></div>
+    </div>
 
-        <!-- ZONE PUB DÉTAILS (FORMAT 300x160) -->
-        <div class="ad-container">
+    <!-- PANNEAU DÉTAILS ÉPISODE -->
+    <div id="detailDrawer">
+        <i class="fa-solid fa-xmark close-drawer" onclick="closeDetails()"></i>
+        <h3 id="detEpTitle" style="text-align:center; color:var(--gold);">Nom de l'épisode</h3>
+        
+        <!-- PUB DÉTAILS -->
+        <div style="display:flex; justify-content:center; margin:10px 0;">
             <script type="text/javascript">
                 atOptions = {
                     'key' : 'f37eede0de06b709e6c6db90820d116e',
@@ -331,6 +355,11 @@
                 };
             </script>
             <script type="text/javascript" src="https://www.highperformanceformat.com/f37eede0de06b709e6c6db90820d116e/invoke.js"></script>
+        </div>
+
+        <div class="drawer-actions">
+            <button class="watch-now-btn" id="btnWatchNow"><i class="fa-solid fa-play"></i> Regarder maintenant</button>
+            <button class="download-now-btn" id="btnDownloadNow"><i class="fa-solid fa-download"></i> Télécharger</button>
         </div>
     </div>
 
@@ -354,6 +383,9 @@
         <br>
         <a href="index.html" style="display:inline-block; margin-top:12px; background:#fff; color:var(--red); padding:10px 25px; border-radius:25px; text-decoration:none; font-size:13px;">SE CONNECTER</a>
     </div>
+
+    <!-- SCRIPT PUB RETOUR -->
+    <script src="https://pl29315759.profitablecpmratenetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -380,19 +412,6 @@
     let userImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
     let currentFilmData = null;
     let targetCommentId = null;
-
-    // FONCTION RETOUR AVEC PUB
-    window.handleBackAction = function() {
-        // Injection dynamique du script pub retour au moment du clic
-        const s = document.createElement('script');
-        s.src = "https://pl29315759.profitablecpmratenetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js";
-        document.body.appendChild(s);
-        
-        // Retour à la page précédente après un mini délai pour laisser le script s'initialiser
-        setTimeout(() => {
-            history.back();
-        }, 200);
-    };
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -445,6 +464,7 @@
         }
     });
 
+    // Fonctions de rendu (Commentaires, Casting, etc.) - Toujours intactes
     function renderComments(comms) {
         const list = document.getElementById('tkList');
         const validComms = comms.filter(c => typeof c === 'object');
@@ -481,6 +501,66 @@
         }).join('');
     }
 
+    // --- MODIFICATION: LOGIQUE ÉPISODES AVEC BOUTON DÉTAILS ---
+    function renderEpisodes(epArray) {
+        const container = document.getElementById('episodesList');
+        if(!container) return;
+        let html = "";
+        let seasons = {};
+        for (let i = 0; i < epArray.length; i += 3) {
+            const img = epArray[i], title = epArray[i+1], link = epArray[i+2];
+            let sName = title.includes(':') ? title.split(':')[0].trim() : "Épisodes";
+            if(!seasons[sName]) seasons[sName] = [];
+            seasons[sName].push({img, title, link});
+        }
+        for (let sName in seasons) {
+            html += `
+            <div class="season-wrapper">
+                <div class="season-pocket" onclick="this.parentElement.classList.toggle('active')">
+                    <span><i class="fa-solid fa-layer-group"></i> ${sName}</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
+                <div class="season-content">
+                    ${seasons[sName].map(ep => `
+                        <div class="ep-card" onclick="openDetails('${ep.title}', '${ep.link}')">
+                            <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
+                            <div class="ep-info"><div class="ep-title">${ep.title}</div></div>
+                            <button class="detail-btn">Détails</button>
+                        </div>`).join('')}
+                </div>
+            </div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    window.openDetails = (title, link) => {
+        document.getElementById('detEpTitle').innerText = title;
+        const drawer = document.getElementById('detailDrawer');
+        drawer.classList.add('active');
+
+        // Configurer les boutons du tiroir
+        document.getElementById('btnWatchNow').onclick = () => {
+            window.loadVideo(link);
+            closeDetails();
+        };
+
+        // Bouton Télécharger (attend toujours le mot "épisodes" dans Firebase pour le lien)
+        document.getElementById('btnDownloadNow').onclick = () => {
+            // Ici, on cherche le lien de téléchargement correspondant au titre dans la collection episodes
+            window.forceDownload(link, title);
+        };
+    };
+
+    window.closeDetails = () => document.getElementById('detailDrawer').classList.remove('active');
+
+    window.triggerBackAd = () => {
+        if(typeof show_pub === 'function') {
+            show_pub(); // Déclenche la pub profitablecpm
+        }
+        history.back();
+    };
+
+    // Tout le reste du script original
     window.handlePost = async () => {
         if(!currentUser) { showAuthAlert("Connectez-vous pour commenter !"); return; }
         const field = document.getElementById('tkField');
@@ -545,61 +625,11 @@
         document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || ["Casting officiel"]).map(n => `<div class="cast-name-item"><i class="fa-solid fa-star" style="font-size:8px; color:var(--gold); margin-right:10px;"></i> ${n}</div>`).join('');
     }
 
-    function renderEpisodes(epArray) {
-        const container = document.getElementById('episodesList');
-        if(!container) return;
-        let html = "";
-        let seasons = {};
-        for (let i = 0; i < epArray.length; i += 3) {
-            const img = epArray[i], title = epArray[i+1], link = epArray[i+2];
-            let sName = title.includes(':') ? title.split(':')[0].trim() : "Épisodes";
-            if(!seasons[sName]) seasons[sName] = [];
-            seasons[sName].push({img, title, link});
-        }
-        for (let sName in seasons) {
-            html += `
-            <div class="season-wrapper">
-                <div class="season-pocket" onclick="this.parentElement.classList.toggle('active')">
-                    <span><i class="fa-solid fa-layer-group"></i> ${sName}</span>
-                    <i class="fa-solid fa-chevron-down"></i>
-                </div>
-                <div class="season-content">
-                    ${seasons[sName].map(ep => `
-                        <div class="ep-card" onclick="window.loadVideo('${ep.link}')">
-                            <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
-                            <div class="ep-info"><div class="ep-title">${ep.title}</div></div>
-                            <button class="dl-btn" onclick="event.stopPropagation(); window.forceDownload('${ep.link}', '${ep.title}')">
-                                <i class="fa-solid fa-download"></i>
-                            </button>
-                        </div>`).join('')}
-                </div>
-            </div>`;
-        }
-        container.innerHTML = html;
-    }
-
     window.forceDownload = async (url, title) => {
-        const btn = event.currentTarget;
-        const icon = btn.querySelector('i');
-        icon.className = "fa-solid fa-spinner fa-spin";
-        btn.style.pointerEvents = "none";
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Erreur de téléchargement');
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            const tempLink = document.createElement('a');
-            tempLink.href = blobUrl;
-            tempLink.download = title.replace(/[^a-z0-9]/gi, '_') + ".mp4";
-            document.body.appendChild(tempLink);
-            tempLink.click();
-            document.body.removeChild(tempLink);
-            window.URL.revokeObjectURL(blobUrl);
-        } catch (e) {
             window.open(url, '_blank');
-        } finally {
-            icon.className = "fa-solid fa-download";
-            btn.style.pointerEvents = "auto";
+        } catch (e) {
+            console.log("Erreur de téléchargement");
         }
     };
 
