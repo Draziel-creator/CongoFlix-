@@ -94,7 +94,7 @@
     </div>
 
     <div id="live-overlay">
-        <!-- Cliquer sur la vidéo force le "Play" si le navigateur bloque -->
+        <!-- Correction: muted sur le local video pour éviter l'écho, mais playsinline important -->
         <video id="videoDisplay" autoplay playsinline onclick="this.play()"></video>
         
         <div class="live-controls">
@@ -126,12 +126,13 @@
 
     let myProfile = null;
     let localStream = null;
-    const peer = new Peer('congolive-' + Math.floor(Math.random() * 100000));
+    const peer = new Peer('congolive-' + Math.floor(Math.random() * 100000), {
+        debug: 2 // Aide à voir les erreurs dans la console
+    });
 
-    // Gestion automatique des appels entrants pour le streamer
     peer.on('call', (call) => {
         if (localStream) {
-            console.log("Streamer: Envoi du flux au spectateur");
+            console.log("Envoi du flux vidéo...");
             call.answer(localStream);
         }
     });
@@ -150,13 +151,9 @@
         onSnapshot(collection(db, "active_lives"), (snapshot) => {
             const list = document.getElementById('live-list');
             list.innerHTML = "";
-            if (snapshot.empty) {
-                list.innerHTML = "<p style='grid-column: 1/3; padding:20px; color:#444; text-align:center;'>Aucun live pour le moment.</p>";
-                return;
-            }
             snapshot.forEach((doc) => {
                 const live = doc.data();
-                if (auth.currentUser && doc.id === auth.currentUser.uid) return; // Ne pas voir son propre live dans la liste
+                if (auth.currentUser && doc.id === auth.currentUser.uid) return;
 
                 const card = document.createElement('div');
                 card.className = 'live-card';
@@ -173,10 +170,17 @@
 
     window.startStream = async () => {
         try {
-            // Streamer demande caméra + micro
-            localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+            // On demande explicitement les deux
+            localStream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 1280, height: 720 }, 
+                audio: true
+            });
+            
+            const videoElement = document.getElementById('videoDisplay');
+            videoElement.muted = true; // IMPORTANT: le streamer ne doit pas s'entendre lui-même (écho)
+            videoElement.srcObject = localStream;
+            
             document.getElementById('live-overlay').style.display = 'block';
-            document.getElementById('videoDisplay').srcObject = localStream;
             document.getElementById('current-streamer-name').innerText = myProfile.name;
             document.getElementById('screen-btn').style.display = 'block';
 
@@ -185,36 +189,35 @@
                 photo: myProfile.photoURL || "",
                 peerId: peer.id
             });
-        } catch (e) { alert("Veuillez autoriser la caméra pour streamer."); }
-    };
-
-    window.shareScreen = async () => {
-        try {
-            const screenStream = await navigator.mediaDevices.getDisplayMedia({video: true, audio: true});
-            localStream = screenStream; // On met à jour le flux local
-            document.getElementById('videoDisplay').srcObject = screenStream;
-            alert("Partage d'écran activé !");
-        } catch (e) { console.error("Erreur partage écran", e); }
+        } catch (e) { alert("Erreur Caméra: " + e.message); }
     };
 
     window.joinLive = (peerId, name) => {
         document.getElementById('live-overlay').style.display = 'block';
         document.getElementById('current-streamer-name').innerText = name;
         
-        // ASTUCE: On crée un petit flux audio vide pour forcer PeerJS à se connecter
-        const silentStream = new AudioContext().createMediaStreamDestination().stream;
-        const call = peer.call(peerId, silentStream);
+        // On envoie un flux audio vide pour initier la connexion
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const destination = audioCtx.createMediaStreamDestination();
+        const call = peer.call(peerId, destination.stream);
         
         call.on('stream', (remoteStream) => {
-            console.log("Spectateur: Réception du flux !");
+            console.log("Flux reçu ! Tracks:", remoteStream.getTracks());
             const video = document.getElementById('videoDisplay');
-            video.srcObject = remoteStream;
-            video.play();
-        });
+            video.muted = false; // Le spectateur doit entendre
+            
+            if ("srcObject" in video) {
+                video.srcObject = remoteStream;
+            } else {
+                video.src = window.URL.createObjectURL(remoteStream);
+            }
 
-        call.on('error', (err) => {
-            alert("Erreur de connexion au live.");
-            window.stopLive();
+            // Force le démarrage
+            video.onloadedmetadata = () => {
+                video.play().catch(err => {
+                    console.log("Play auto bloqué, attente d'un clic.");
+                });
+            };
         });
     };
 
