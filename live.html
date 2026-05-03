@@ -94,7 +94,6 @@
     </div>
 
     <div id="live-overlay">
-        <!-- Correction: muted sur le local video pour éviter l'écho, mais playsinline important -->
         <video id="videoDisplay" autoplay playsinline onclick="this.play()"></video>
         
         <div class="live-controls">
@@ -126,13 +125,19 @@
 
     let myProfile = null;
     let localStream = null;
+
+    // CONFIGURATION CRITIQUE : Ajout de serveurs STUN pour passer les pare-feux
     const peer = new Peer('congolive-' + Math.floor(Math.random() * 100000), {
-        debug: 2 // Aide à voir les erreurs dans la console
+        config: {'iceServers': [
+            { url: 'stun:stun.l.google.com:19302' },
+            { url: 'stun:stun1.l.google.com:19302' }
+        ]},
+        debug: 1
     });
 
     peer.on('call', (call) => {
         if (localStream) {
-            console.log("Envoi du flux vidéo...");
+            console.log("Appel entrant : envoi du flux...");
             call.answer(localStream);
         }
     });
@@ -154,7 +159,6 @@
             snapshot.forEach((doc) => {
                 const live = doc.data();
                 if (auth.currentUser && doc.id === auth.currentUser.uid) return;
-
                 const card = document.createElement('div');
                 card.className = 'live-card';
                 card.onclick = () => window.joinLive(live.peerId, live.name);
@@ -170,54 +174,36 @@
 
     window.startStream = async () => {
         try {
-            // On demande explicitement les deux
             localStream = await navigator.mediaDevices.getUserMedia({
-                video: { width: 1280, height: 720 }, 
+                video: { facingMode: "user", width: { ideal: 640 } },
                 audio: true
             });
-            
             const videoElement = document.getElementById('videoDisplay');
-            videoElement.muted = true; // IMPORTANT: le streamer ne doit pas s'entendre lui-même (écho)
             videoElement.srcObject = localStream;
-            
+            videoElement.muted = true;
             document.getElementById('live-overlay').style.display = 'block';
             document.getElementById('current-streamer-name').innerText = myProfile.name;
-            document.getElementById('screen-btn').style.display = 'block';
-
             await setDoc(doc(db, "active_lives", auth.currentUser.uid), {
                 name: myProfile.name,
-                photo: myProfile.photoURL || "",
                 peerId: peer.id
             });
-        } catch (e) { alert("Erreur Caméra: " + e.message); }
+        } catch (e) { alert("Erreur Caméra."); }
     };
 
     window.joinLive = (peerId, name) => {
         document.getElementById('live-overlay').style.display = 'block';
         document.getElementById('current-streamer-name').innerText = name;
         
-        // On envoie un flux audio vide pour initier la connexion
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const destination = audioCtx.createMediaStreamDestination();
-        const call = peer.call(peerId, destination.stream);
+        // On crée un petit flux vide pour lancer l'appel
+        const emptyStream = new AudioContext().createMediaStreamDestination().stream;
+        const call = peer.call(peerId, emptyStream);
         
         call.on('stream', (remoteStream) => {
-            console.log("Flux reçu ! Tracks:", remoteStream.getTracks());
             const video = document.getElementById('videoDisplay');
-            video.muted = false; // Le spectateur doit entendre
-            
-            if ("srcObject" in video) {
-                video.srcObject = remoteStream;
-            } else {
-                video.src = window.URL.createObjectURL(remoteStream);
-            }
-
-            // Force le démarrage
-            video.onloadedmetadata = () => {
-                video.play().catch(err => {
-                    console.log("Play auto bloqué, attente d'un clic.");
-                });
-            };
+            // On s'assure que les pistes vidéo sont bien "active"
+            remoteStream.getVideoTracks().forEach(t => t.enabled = true);
+            video.srcObject = remoteStream;
+            video.onloadedmetadata = () => video.play().catch(e => console.log("Clic requis"));
         });
     };
 
@@ -228,7 +214,6 @@
         }
         window.location.reload();
     };
-
 </script>
 </body>
 </html>
