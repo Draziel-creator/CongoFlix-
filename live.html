@@ -3,164 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoLive - Streaming Gratuit</title>
-    <!-- On utilise PeerJS pour la vidéo gratuite sans serveur payant -->
+    <title>CongoLive - L'App du Peuple</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
-        :root { --gold: #ffd700; --red: #ff3b5c; --bg: #000; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: sans-serif; overflow: hidden; color: white; }
+        :root { --gold: #ffd700; --red: #ff3b5c; --blue: #00a2ff; --dark: #121212; }
+        body { margin: 0; background: var(--dark); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
         
-        /* --- ECRAN VIDEO --- */
-        #video-container { position: absolute; width: 100%; height: 100%; background: #111; display: flex; align-items: center; justify-content: center; }
-        video { width: 100%; height: 100%; object-fit: cover; }
+        /* --- NAVIGATION BAS --- */
+        .nav-bottom { position: fixed; bottom: 0; width: 100%; height: 60px; background: #1a1a1a; display: flex; justify-content: space-around; align-items: center; z-index: 1000; border-top: 1px solid #333; }
+        .nav-item { color: #888; font-size: 20px; text-align: center; cursor: pointer; }
+        .nav-item.active { color: var(--red); }
+        .nav-item span { display: block; font-size: 10px; margin-top: 2px; }
 
-        /* --- INTERFACE --- */
-        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; box-sizing: border-box; z-index: 10; pointer-events: none; }
-        .ui-layer * { pointer-events: auto; }
+        /* --- PAGES --- */
+        .page { display: none; height: calc(100vh - 60px); overflow-y: auto; padding: 10px; box-sizing: border-box; }
+        .page.active { display: block; }
 
-        .header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .user-info { background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 30px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--gold); }
+        /* --- STYLE EXPLORER (Grille Poppo) --- */
+        .header-tabs { display: flex; gap: 20px; font-weight: bold; padding: 10px; border-bottom: 1px solid #333; margin-bottom: 10px; }
+        .tab.active { border-bottom: 2px solid var(--red); color: var(--red); }
         
-        /* COMPTEUR DE POINTS */
-        .reward-box { background: rgba(255, 215, 0, 0.2); border: 1px solid var(--gold); padding: 8px; border-radius: 12px; text-align: center; min-width: 80px; }
-        .reward-box span { display: block; font-size: 14px; font-weight: bold; }
+        .live-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .live-card { position: relative; border-radius: 12px; overflow: hidden; height: 220px; background: #333; }
+        .live-card img { width: 100%; height: 100%; object-fit: cover; }
+        .live-card .badge { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+        .live-card .info { position: absolute; bottom: 8px; left: 8px; font-size: 12px; text-shadow: 1px 1px 2px #000; }
+        
+        /* --- INTERFACE DU LIVE (QUAND ON CLIQUE) --- */
+        #live-view { position: fixed; inset: 0; background: black; z-index: 2000; display: none; }
+        .live-video { width: 100%; height: 100%; object-fit: cover; }
+        
+        .live-ui { position: absolute; inset: 0; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+        .live-ui * { pointer-events: auto; }
 
-        .footer { margin-bottom: 20px; }
-        .chat { height: 120px; overflow-y: auto; margin-bottom: 15px; width: 80%; mask-image: linear-gradient(transparent, black 30%); }
-        .msg { font-size: 13px; margin-bottom: 5px; text-shadow: 1px 1px 2px #000; }
-        .msg b { color: var(--gold); }
+        .top-ui { display: flex; justify-content: space-between; }
+        .streamer-box { background: rgba(0,0,0,0.4); border-radius: 30px; padding: 4px 10px; display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.2); }
+        .streamer-img { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--gold); }
+        
+        .reward-timer { background: linear-gradient(to bottom, #fff700, #ff9100); color: #000; padding: 5px 10px; border-radius: 15px; font-weight: 900; text-align: center; min-width: 60px; box-shadow: 0 0 10px var(--gold); }
 
-        .controls { display: flex; gap: 10px; align-items: center; }
-        .btn-main { flex: 1; background: var(--red); border: none; padding: 12px; border-radius: 25px; color: white; font-weight: bold; cursor: pointer; }
-        .btn-gift { width: 50px; height: 50px; background: linear-gradient(45deg, #ff3b5c, var(--gold)); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 0 15px var(--red); }
+        .chat-area { height: 180px; overflow-y: auto; width: 75%; margin-bottom: 10px; }
+        .chat-msg { font-size: 13px; margin-bottom: 4px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 8px; width: fit-content; }
+        .chat-msg b { color: var(--gold); }
 
-        /* MODAL (POUR L'ID) */
-        #setup-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; }
-        input { padding: 12px; border-radius: 10px; border: none; width: 80%; margin-bottom: 10px; }
+        .bottom-actions { display: flex; gap: 10px; align-items: center; }
+        .chat-input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #555; padding: 10px; border-radius: 20px; color: white; }
+        .gift-btn { width: 50px; height: 50px; background: linear-gradient(45deg, var(--red), #ff9100); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 2px solid white; animation: pulse 2s infinite; }
+
+        /* --- MODAL CADEAUX --- */
+        #gift-modal { position: fixed; bottom: 0; width: 100%; background: #1a1a1a; border-radius: 20px 20px 0 0; padding: 20px; box-sizing: border-box; transform: translateY(100%); transition: 0.3s; z-index: 3000; }
+        #gift-modal.active { transform: translateY(0); }
+        .gift-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .gift-item { text-align: center; font-size: 10px; }
+        .gift-icon { font-size: 30px; margin-bottom: 5px; }
+        .gift-price { color: var(--gold); }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <!-- Fenêtre de départ -->
-    <div id="setup-modal">
-        <div>
-            <h2>CONGO LIVE 🇨🇩</h2>
-            <p>Entre un nom pour ton live ou pour rejoindre :</p>
-            <input type="text" id="peer-id-input" placeholder="Ex: MusiqueCongo"><br>
-            <button class="btn-main" onclick="startApp('streamer')">LANCER MON LIVE</button><br><br>
-            <button class="btn-main" style="background:#444" onclick="startApp('viewer')">REJOINDRE UN LIVE</button>
+    <!-- PAGE EXPLORER (ACCUEIL) -->
+    <div id="page-home" class="page active">
+        <div class="header-tabs">
+            <span class="tab active">Suivi</span>
+            <span class="tab">Explorer</span>
+            <span class="tab">Nouveau</span>
+        </div>
+        
+        <div class="live-grid">
+            <!-- On simule des lives -->
+            <div class="live-card" onclick="openLive('User123')">
+                <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=300">
+                <span class="badge"><i class="fa-solid fa-fire"></i> 1.2K</span>
+                <span class="info">Bienvenue chez moi 🇨🇩</span>
+            </div>
+            <div class="live-card" onclick="openLive('CongoStar')">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300">
+                <span class="badge">Bavardage</span>
+                <span class="info">CongoStar Live</span>
+            </div>
+        </div>
+
+        <button onclick="startMyLive()" style="position:fixed; bottom: 80px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--red); border: none; color: white; font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
+            <i class="fa-solid fa-video"></i>
+        </button>
+    </div>
+
+    <!-- VUE DU LIVE PLEIN ÉCRAN -->
+    <div id="live-view">
+        <video id="mainVideo" class="live-video" autoplay playsinline></video>
+        <video id="miniVideo" autoplay playsinline muted style="position:absolute; top: 100px; right: 20px; width: 100px; border-radius: 10px; border: 2px solid white; display: none;"></video>
+        
+        <div class="live-ui">
+            <div class="top-ui">
+                <div class="streamer-box">
+                    <img src="https://via.placeholder.com/50" class="streamer-img">
+                    <div>
+                        <div id="streamer-name" style="font-size: 12px; font-weight: bold;">Pseudo</div>
+                        <div style="font-size: 10px;"><i class="fa-solid fa-users"></i> 420</div>
+                    </div>
+                </div>
+                <div class="reward-timer" id="timer">05:00</div>
+                <button onclick="closeLive()" style="background:none; border:none; color:white; font-size: 20px;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="bottom-area">
+                <div class="chat-area" id="chat">
+                    <div class="chat-msg"><b>System:</b> Bienvenue sur CongoLive !</div>
+                </div>
+                <div class="bottom-actions">
+                    <input type="text" class="chat-input" placeholder="Dire quelque chose...">
+                    <div class="gift-btn" onclick="toggleGifts()"><i class="fa-solid fa-gift"></i></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="video-container">
-        <video id="remoteVideo" autoplay playsinline></video>
-        <video id="localVideo" autoplay playsinline muted style="width: 100px; position: absolute; top: 100px; right: 20px; border-radius: 10px; border: 2px solid var(--gold); display: none;"></video>
+    <!-- MODAL CADEAUX -->
+    <div id="gift-modal">
+        <h3 style="margin-top: 0;">Envoyer un cadeau</h3>
+        <div class="gift-grid">
+            <div class="gift-item" onclick="sendGift('💎', 10)">
+                <div class="gift-icon">💎</div>
+                <div class="gift-price">10 pts</div>
+            </div>
+            <div class="gift-item" onclick="sendGift('🌹', 50)">
+                <div class="gift-icon">🌹</div>
+                <div class="gift-price">50 pts</div>
+            </div>
+            <div class="gift-item" onclick="sendGift('🔥', 100)">
+                <div class="gift-icon">🔥</div>
+                <div class="gift-price">100 pts</div>
+            </div>
+            <div class="gift-item" onclick="sendGift('👑', 1000)">
+                <div class="gift-icon">👑</div>
+                <div class="gift-price">1K pts</div>
+            </div>
+        </div>
     </div>
 
-    <div class="ui-layer">
-        <div class="header">
-            <div class="user-info">
-                <div style="font-size: 12px;"><b>LIVE:</b> <span id="display-id">...</span></div>
-            </div>
-            <div class="reward-box">
-                <i class="fa-solid fa-gem" style="color: var(--gold);"></i>
-                <span id="timer">05:00</span>
-            </div>
-        </div>
-
-        <div class="footer">
-            <div class="chat" id="chat-box">
-                <div class="msg"><b>CongoLive:</b> Bienvenue ! Restez 5 min pour gagner 10 Diamants.</div>
-            </div>
-            <div class="controls">
-                <button class="btn-main" onclick="location.reload()">QUITTER</button>
-                <div class="btn-gift" onclick="sendGift()"><i class="fa-solid fa-gift"></i></div>
-            </div>
-        </div>
+    <!-- NAV BAS -->
+    <div class="nav-bottom">
+        <div class="nav-item active"><i class="fa-solid fa-house"></i><span>Accueil</span></div>
+        <div class="nav-item"><i class="fa-solid fa-satellite-dish"></i><span>Explore</span></div>
+        <div class="nav-item"><i class="fa-solid fa-comment-dots"></i><span>Chat</span></div>
+        <div class="nav-item"><i class="fa-solid fa-user"></i><span>Moi</span></div>
     </div>
 
 <script>
-    let peer;
+    let peer = new Peer('congolive-user-' + Math.floor(Math.random() * 1000));
     let myStream;
-    const peerInput = document.getElementById('peer-id-input');
-    const timerDisplay = document.getElementById('timer');
-    const chatBox = document.getElementById('chat-box');
+    const giftModal = document.getElementById('gift-modal');
 
-    // 1. DÉMARRAGE DE L'APP
-    function startApp(role) {
-        const id = peerInput.value;
-        if (!id) return alert("Donne un nom au live !");
+    // OUVRIR UN LIVE (VIEWER)
+    function openLive(name) {
+        document.getElementById('live-view').style.display = 'block';
+        document.getElementById('streamer-name').innerText = name;
         
-        document.getElementById('setup-modal').style.display = 'none';
-        document.getElementById('display-id').innerText = id;
-
-        // Connexion au serveur PeerJS gratuit
-        peer = new Peer('congolive-' + id);
-
-        if (role === 'streamer') {
-            startStream();
-        } else {
-            joinStream(id);
-        }
-        startRewardTimer();
-    }
-
-    // 2. LOGIQUE DU STREAMER (Celui qui montre sa caméra)
-    async function startStream() {
-        myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById('localVideo').srcObject = myStream;
-        document.getElementById('localVideo').style.display = 'block';
-        document.getElementById('remoteVideo').srcObject = myStream; // Le streamer voit sa propre image en grand
-
-        peer.on('call', (call) => {
-            call.answer(myStream); // Envoie la vidéo aux spectateurs qui appellent
-        });
-        addChatMessage("Système", "Ton live est prêt ! Partage le nom avec tes amis.");
-    }
-
-    // 3. LOGIQUE DU SPECTATEUR (Celui qui regarde)
-    function joinStream(id) {
-        addChatMessage("Système", "Connexion au live de " + id + "...");
-        // On "appelle" le streamer
-        const call = peer.call('congolive-' + id, null); 
-        
+        // On essaie de se connecter au live
+        const call = peer.call('congolive-' + name, null);
         call.on('stream', (remoteStream) => {
-            document.getElementById('remoteVideo').srcObject = remoteStream;
+            document.getElementById('mainVideo').srcObject = remoteStream;
         });
-
-        call.on('error', (err) => {
-            alert("Impossible de trouver ce live. Vérifie le nom.");
-            location.reload();
-        });
+        startTimer();
     }
 
-    // 4. SYSTÈME DE RÉCOMPENSE (Diamants gratuits)
-    function startRewardTimer() {
-        let timeLeft = 300; // 5 minutes
+    // LANCER SON LIVE (STREAMER)
+    async function startMyLive() {
+        const myId = prompt("Donne un nom à ton Live :", "StarDuCongo");
+        if(!myId) return;
+
+        peer = new Peer('congolive-' + myId); // On recrée le peer avec l'ID choisi
+        
+        document.getElementById('live-view').style.display = 'block';
+        document.getElementById('streamer-name').innerText = "Moi (" + myId + ")";
+        
+        myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('mainVideo').srcObject = myStream;
+        
+        peer.on('call', (call) => {
+            call.answer(myStream);
+        });
+        startTimer();
+    }
+
+    function closeLive() {
+        document.getElementById('live-view').style.display = 'none';
+        if(myStream) myStream.getTracks().forEach(track => track.stop());
+    }
+
+    function toggleGifts() { giftModal.classList.toggle('active'); }
+
+    function sendGift(icon, price) {
+        const chat = document.getElementById('chat');
+        chat.innerHTML += `<div class="chat-msg"><b>Moi:</b> a envoyé ${icon} (${price} pts)</div>`;
+        toggleGifts();
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function startTimer() {
+        let time = 300;
+        const timerDiv = document.getElementById('timer');
         setInterval(() => {
-            if (timeLeft > 0) {
-                timeLeft--;
-                let m = Math.floor(timeLeft / 60);
-                let s = timeLeft % 60;
-                timerDisplay.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-            } else {
-                addChatMessage("CADEAU", "Tu as gagné 10 Diamants ! 💎");
-                timeLeft = 300; 
-                // Ici tu ajouteras le code Firebase pour enregistrer les points
+            if(time > 0) {
+                time--;
+                let m = Math.floor(time/60);
+                let s = time%60;
+                timerDiv.innerText = `${m}:${s<10?'0':''}${s}`;
             }
         }, 1000);
-    }
-
-    function addChatMessage(user, text) {
-        chatBox.innerHTML += `<div class="msg"><b>${user}:</b> ${text}</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function sendGift() {
-        addChatMessage("Moi", "a envoyé un cadeau ! 🎁");
-        // Animation ou son de cadeau ici
     }
 </script>
 </body>
