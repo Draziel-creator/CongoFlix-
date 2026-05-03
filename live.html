@@ -3,217 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoLive - L'App du Peuple</title>
+    <title>CongoLive Pro - Streaming</title>
+    
+    <!-- SDKs nécessaires -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        :root { --gold: #ffd700; --red: #ff3b5c; --blue: #00a2ff; --dark: #121212; }
-        body { margin: 0; background: var(--dark); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
+        :root { --gold: #ffd700; --red: #ff3b5c; }
+        body { margin: 0; background: #121212; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; }
         
-        /* --- NAVIGATION BAS --- */
-        .nav-bottom { position: fixed; bottom: 0; width: 100%; height: 60px; background: #1a1a1a; display: flex; justify-content: space-around; align-items: center; z-index: 1000; border-top: 1px solid #333; }
-        .nav-item { color: #888; font-size: 20px; text-align: center; cursor: pointer; }
-        .nav-item.active { color: var(--red); }
-        .nav-item span { display: block; font-size: 10px; margin-top: 2px; }
-
-        /* --- PAGES --- */
-        .page { display: none; height: calc(100vh - 60px); overflow-y: auto; padding: 10px; box-sizing: border-box; }
-        .page.active { display: block; }
-
-        /* --- STYLE EXPLORER (Grille Poppo) --- */
-        .header-tabs { display: flex; gap: 20px; font-weight: bold; padding: 10px; border-bottom: 1px solid #333; margin-bottom: 10px; }
-        .tab.active { border-bottom: 2px solid var(--red); color: var(--red); }
+        /* Navbar style CongoFlix */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #1a1a1a; border-bottom: 1px solid #333; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-info img { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--gold); object-fit: cover; }
         
-        .live-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .live-card { position: relative; border-radius: 12px; overflow: hidden; height: 220px; background: #333; }
-        .live-card img { width: 100%; height: 100%; object-fit: cover; }
-        .live-card .badge { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 10px; font-size: 10px; }
-        .live-card .info { position: absolute; bottom: 8px; left: 8px; font-size: 12px; text-shadow: 1px 1px 2px #000; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+        .card { background: #1a1a1a; border-radius: 12px; padding: 15px; cursor: pointer; border: 1px solid #333; transition: 0.3s; }
+        .card:hover { border-color: var(--red); }
         
-        /* --- INTERFACE DU LIVE (QUAND ON CLIQUE) --- */
-        #live-view { position: fixed; inset: 0; background: black; z-index: 2000; display: none; }
-        .live-video { width: 100%; height: 100%; object-fit: cover; }
+        #live-overlay { position: fixed; inset: 0; background: black; display: none; z-index: 1000; }
+        video { width: 100%; height: 100%; object-fit: cover; }
         
-        .live-ui { position: absolute; inset: 0; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
-        .live-ui * { pointer-events: auto; }
-
-        .top-ui { display: flex; justify-content: space-between; }
-        .streamer-box { background: rgba(0,0,0,0.4); border-radius: 30px; padding: 4px 10px; display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.2); }
-        .streamer-img { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--gold); }
+        .btn-live { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--red); border: none; color: white; font-size: 24px; box-shadow: 0 4px 15px rgba(255, 59, 92, 0.4); cursor: pointer; z-index: 10; }
         
-        .reward-timer { background: linear-gradient(to bottom, #fff700, #ff9100); color: #000; padding: 5px 10px; border-radius: 15px; font-weight: 900; text-align: center; min-width: 60px; box-shadow: 0 0 10px var(--gold); }
-
-        .chat-area { height: 180px; overflow-y: auto; width: 75%; margin-bottom: 10px; }
-        .chat-msg { font-size: 13px; margin-bottom: 4px; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 8px; width: fit-content; }
-        .chat-msg b { color: var(--gold); }
-
-        .bottom-actions { display: flex; gap: 10px; align-items: center; }
-        .chat-input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #555; padding: 10px; border-radius: 20px; color: white; }
-        .gift-btn { width: 50px; height: 50px; background: linear-gradient(45deg, var(--red), #ff9100); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 2px solid white; animation: pulse 2s infinite; }
-
-        /* --- MODAL CADEAUX --- */
-        #gift-modal { position: fixed; bottom: 0; width: 100%; background: #1a1a1a; border-radius: 20px 20px 0 0; padding: 20px; box-sizing: border-box; transform: translateY(100%); transition: 0.3s; z-index: 3000; }
-        #gift-modal.active { transform: translateY(0); }
-        .gift-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-        .gift-item { text-align: center; font-size: 10px; }
-        .gift-icon { font-size: 30px; margin-bottom: 5px; }
-        .gift-price { color: var(--gold); }
-
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .live-controls { position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; }
+        .btn-exit { background: rgba(255,0,0,0.7); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- PAGE EXPLORER (ACCUEIL) -->
-    <div id="page-home" class="page active">
-        <div class="header-tabs">
-            <span class="tab active">Suivi</span>
-            <span class="tab">Explorer</span>
-            <span class="tab">Nouveau</span>
+    <!-- Barre supérieure connectée au compte -->
+    <div class="top-bar">
+        <div class="user-info">
+            <img id="nav-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+            <span id="nav-name">Chargement...</span>
         </div>
-        
-        <div class="live-grid">
-            <!-- On simule des lives -->
-            <div class="live-card" onclick="openLive('User123')">
-                <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=300">
-                <span class="badge"><i class="fa-solid fa-fire"></i> 1.2K</span>
-                <span class="info">Bienvenue chez moi 🇨🇩</span>
-            </div>
-            <div class="live-card" onclick="openLive('CongoStar')">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300">
-                <span class="badge">Bavardage</span>
-                <span class="info">CongoStar Live</span>
-            </div>
-        </div>
-
-        <button onclick="startMyLive()" style="position:fixed; bottom: 80px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--red); border: none; color: white; font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
-            <i class="fa-solid fa-video"></i>
-        </button>
+        <a href="index.html" style="color: var(--gold); text-decoration: none;"><i class="fa-solid fa-user"></i> Compte</a>
     </div>
 
-    <!-- VUE DU LIVE PLEIN ÉCRAN -->
-    <div id="live-view">
-        <video id="mainVideo" class="live-video" autoplay playsinline></video>
-        <video id="miniVideo" autoplay playsinline muted style="position:absolute; top: 100px; right: 20px; width: 100px; border-radius: 10px; border: 2px solid white; display: none;"></video>
-        
-        <div class="live-ui">
-            <div class="top-ui">
-                <div class="streamer-box">
-                    <img src="https://via.placeholder.com/50" class="streamer-img">
-                    <div>
-                        <div id="streamer-name" style="font-size: 12px; font-weight: bold;">Pseudo</div>
-                        <div style="font-size: 10px;"><i class="fa-solid fa-users"></i> 420</div>
-                    </div>
-                </div>
-                <div class="reward-timer" id="timer">05:00</div>
-                <button onclick="closeLive()" style="background:none; border:none; color:white; font-size: 20px;"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="bottom-area">
-                <div class="chat-area" id="chat">
-                    <div class="chat-msg"><b>System:</b> Bienvenue sur CongoLive !</div>
-                </div>
-                <div class="bottom-actions">
-                    <input type="text" class="chat-input" placeholder="Dire quelque chose...">
-                    <div class="gift-btn" onclick="toggleGifts()"><i class="fa-solid fa-gift"></i></div>
-                </div>
-            </div>
+    <h2 style="font-size: 18px; margin-top: 20px;">Lives en cours</h2>
+    
+    <div id="live-list" class="grid">
+        <div class="card" onclick="promptID()">
+            <i class="fa-solid fa-tower-broadcast" style="font-size: 30px; color: var(--red);"></i>
+            <h3>Rejoindre</h3>
+            <p style="font-size: 12px; color: #888;">Entrer l'ID d'un ami</p>
         </div>
     </div>
 
-    <!-- MODAL CADEAUX -->
-    <div id="gift-modal">
-        <h3 style="margin-top: 0;">Envoyer un cadeau</h3>
-        <div class="gift-grid">
-            <div class="gift-item" onclick="sendGift('💎', 10)">
-                <div class="gift-icon">💎</div>
-                <div class="gift-price">10 pts</div>
-            </div>
-            <div class="gift-item" onclick="sendGift('🌹', 50)">
-                <div class="gift-icon">🌹</div>
-                <div class="gift-price">50 pts</div>
-            </div>
-            <div class="gift-item" onclick="sendGift('🔥', 100)">
-                <div class="gift-icon">🔥</div>
-                <div class="gift-price">100 pts</div>
-            </div>
-            <div class="gift-item" onclick="sendGift('👑', 1000)">
-                <div class="gift-icon">👑</div>
-                <div class="gift-price">1K pts</div>
-            </div>
+    <button class="btn-live" onclick="startStream()"><i class="fa-solid fa-video"></i></button>
+
+    <!-- Ecran du Live plein écran -->
+    <div id="live-overlay">
+        <video id="videoDisplay" autoplay playsinline></video>
+        
+        <div class="live-controls">
+            <button class="btn-exit" onclick="window.location.reload()">QUITTER</button>
+        </div>
+
+        <div style="position:absolute; bottom:40px; left:20px; background:rgba(0,0,0,0.6); padding:15px; border-radius:15px; text-align: left; border-left: 4px solid var(--gold);">
+            <div id="timer" style="font-weight: bold; color: var(--gold);">00:00</div>
+            <div style="font-size: 14px;">Points gagnés: <b id="points" style="color: #00ff00;">0</b></div>
         </div>
     </div>
 
-    <!-- NAV BAS -->
-    <div class="nav-bottom">
-        <div class="nav-item active"><i class="fa-solid fa-house"></i><span>Accueil</span></div>
-        <div class="nav-item"><i class="fa-solid fa-satellite-dish"></i><span>Explore</span></div>
-        <div class="nav-item"><i class="fa-solid fa-comment-dots"></i><span>Chat</span></div>
-        <div class="nav-item"><i class="fa-solid fa-user"></i><span>Moi</span></div>
-    </div>
+<script type="module">
+    // IMPORT FIREBASE (Même version que ton index.html)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<script>
-    let peer = new Peer('congolive-user-' + Math.floor(Math.random() * 1000));
-    let myStream;
-    const giftModal = document.getElementById('gift-modal');
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", 
+        authDomain: "congo-streaming-51333.firebaseapp.com", 
+        projectId: "congo-streaming-51333", 
+        appId: "1:304286627819:android:36e0b43b8b10508a054bae" 
+    };
 
-    // OUVRIR UN LIVE (VIEWER)
-    function openLive(name) {
-        document.getElementById('live-view').style.display = 'block';
-        document.getElementById('streamer-name').innerText = name;
-        
-        // On essaie de se connecter au live
-        const call = peer.call('congolive-' + name, null);
-        call.on('stream', (remoteStream) => {
-            document.getElementById('mainVideo').srcObject = remoteStream;
-        });
-        startTimer();
-    }
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    // LANCER SON LIVE (STREAMER)
-    async function startMyLive() {
-        const myId = prompt("Donne un nom à ton Live :", "StarDuCongo");
-        if(!myId) return;
+    let currentUserData = null;
 
-        peer = new Peer('congolive-' + myId); // On recrée le peer avec l'ID choisi
-        
-        document.getElementById('live-view').style.display = 'block';
-        document.getElementById('streamer-name').innerText = "Moi (" + myId + ")";
-        
-        myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById('mainVideo').srcObject = myStream;
-        
-        peer.on('call', (call) => {
-            call.answer(myStream);
-        });
-        startTimer();
-    }
-
-    function closeLive() {
-        document.getElementById('live-view').style.display = 'none';
-        if(myStream) myStream.getTracks().forEach(track => track.stop());
-    }
-
-    function toggleGifts() { giftModal.classList.toggle('active'); }
-
-    function sendGift(icon, price) {
-        const chat = document.getElementById('chat');
-        chat.innerHTML += `<div class="chat-msg"><b>Moi:</b> a envoyé ${icon} (${price} pts)</div>`;
-        toggleGifts();
-        chat.scrollTop = chat.scrollHeight;
-    }
-
-    function startTimer() {
-        let time = 300;
-        const timerDiv = document.getElementById('timer');
-        setInterval(() => {
-            if(time > 0) {
-                time--;
-                let m = Math.floor(time/60);
-                let s = time%60;
-                timerDiv.innerText = `${m}:${s<10?'0':''}${s}`;
+    // 1. SECURITÉ & RÉCUPÉRATION DU PROFIL
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if(snap.exists()){
+                currentUserData = snap.data();
+                document.getElementById('nav-name').innerText = currentUserData.name || "Utilisateur";
+                if(currentUserData.photoURL) document.getElementById('nav-photo').src = currentUserData.photoURL;
             }
-        }, 1000);
+        } else {
+            // Si pas connecté, retour au fichier index.html (ton fichier compte)
+            window.location.href = "index.html";
+        }
+    });
+
+    // 2. LOGIQUE PEERJS POUR LE LIVE
+    const peer = new Peer('congolive-' + Math.floor(Math.random() * 10000)); 
+
+    peer.on('open', (id) => {
+        console.log("Mon ID Live est : " + id);
+    });
+
+    // Écouter les appels entrants
+    peer.on('call', (call) => {
+        navigator.mediaDevices.getUserMedia({video: true, audio: true}).then((stream) => {
+            call.answer(stream);
+            showLiveUI(stream);
+        });
+    });
+
+    // Lancer son propre live
+    window.startStream = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+            showLiveUI(stream);
+            alert("Live lancé ! Ton ID de connexion est : " + peer.id);
+        } catch (err) {
+            alert("Erreur caméra : " + err);
+        }
+    };
+
+    // Rejoindre un live existant
+    window.promptID = () => {
+        const id = prompt("Entre l'ID du streamer (ex: congolive-1234) :");
+        if(id) {
+            const call = peer.call(id, null);
+            call.on('stream', (remoteStream) => {
+                showLiveUI(remoteStream);
+            });
+        }
+    };
+
+    function showLiveUI(stream) {
+        document.getElementById('live-overlay').style.display = 'block';
+        document.getElementById('videoDisplay').srcObject = stream;
+        startPoints();
+    }
+
+    function startPoints() {
+        let pts = 0;
+        setInterval(() => {
+            pts += 10;
+            document.getElementById('points').innerText = pts;
+        }, 10000); // Gagne 10 points toutes les 10 secondes
     }
 </script>
 </body>
