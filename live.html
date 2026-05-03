@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CongoLive - Streaming Gratuit</title>
+    <!-- On utilise PeerJS pour la vidéo gratuite sans serveur payant -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root { --gold: #ffd700; --red: #ff3b5c; --bg: #000; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: sans-serif; overflow: hidden; color: white; }
+        
+        /* --- ECRAN VIDEO --- */
+        #video-container { position: absolute; width: 100%; height: 100%; background: #111; display: flex; align-items: center; justify-content: center; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- INTERFACE --- */
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; box-sizing: border-box; z-index: 10; pointer-events: none; }
+        .ui-layer * { pointer-events: auto; }
+
+        .header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .user-info { background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 30px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--gold); }
+        
+        /* COMPTEUR DE POINTS */
+        .reward-box { background: rgba(255, 215, 0, 0.2); border: 1px solid var(--gold); padding: 8px; border-radius: 12px; text-align: center; min-width: 80px; }
+        .reward-box span { display: block; font-size: 14px; font-weight: bold; }
+
+        .footer { margin-bottom: 20px; }
+        .chat { height: 120px; overflow-y: auto; margin-bottom: 15px; width: 80%; mask-image: linear-gradient(transparent, black 30%); }
+        .msg { font-size: 13px; margin-bottom: 5px; text-shadow: 1px 1px 2px #000; }
+        .msg b { color: var(--gold); }
+
+        .controls { display: flex; gap: 10px; align-items: center; }
+        .btn-main { flex: 1; background: var(--red); border: none; padding: 12px; border-radius: 25px; color: white; font-weight: bold; cursor: pointer; }
+        .btn-gift { width: 50px; height: 50px; background: linear-gradient(45deg, #ff3b5c, var(--gold)); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 0 15px var(--red); }
+
+        /* MODAL (POUR L'ID) */
+        #setup-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        input { padding: 12px; border-radius: 10px; border: none; width: 80%; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- Fenêtre de départ -->
+    <div id="setup-modal">
+        <div>
+            <h2>CONGO LIVE 🇨🇩</h2>
+            <p>Entre un nom pour ton live ou pour rejoindre :</p>
+            <input type="text" id="peer-id-input" placeholder="Ex: MusiqueCongo"><br>
+            <button class="btn-main" onclick="startApp('streamer')">LANCER MON LIVE</button><br><br>
+            <button class="btn-main" style="background:#444" onclick="startApp('viewer')">REJOINDRE UN LIVE</button>
+        </div>
+    </div>
+
+    <div id="video-container">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <video id="localVideo" autoplay playsinline muted style="width: 100px; position: absolute; top: 100px; right: 20px; border-radius: 10px; border: 2px solid var(--gold); display: none;"></video>
+    </div>
+
+    <div class="ui-layer">
+        <div class="header">
+            <div class="user-info">
+                <div style="font-size: 12px;"><b>LIVE:</b> <span id="display-id">...</span></div>
+            </div>
+            <div class="reward-box">
+                <i class="fa-solid fa-gem" style="color: var(--gold);"></i>
+                <span id="timer">05:00</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="chat" id="chat-box">
+                <div class="msg"><b>CongoLive:</b> Bienvenue ! Restez 5 min pour gagner 10 Diamants.</div>
+            </div>
+            <div class="controls">
+                <button class="btn-main" onclick="location.reload()">QUITTER</button>
+                <div class="btn-gift" onclick="sendGift()"><i class="fa-solid fa-gift"></i></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let peer;
+    let myStream;
+    const peerInput = document.getElementById('peer-id-input');
+    const timerDisplay = document.getElementById('timer');
+    const chatBox = document.getElementById('chat-box');
+
+    // 1. DÉMARRAGE DE L'APP
+    function startApp(role) {
+        const id = peerInput.value;
+        if (!id) return alert("Donne un nom au live !");
+        
+        document.getElementById('setup-modal').style.display = 'none';
+        document.getElementById('display-id').innerText = id;
+
+        // Connexion au serveur PeerJS gratuit
+        peer = new Peer('congolive-' + id);
+
+        if (role === 'streamer') {
+            startStream();
+        } else {
+            joinStream(id);
+        }
+        startRewardTimer();
+    }
+
+    // 2. LOGIQUE DU STREAMER (Celui qui montre sa caméra)
+    async function startStream() {
+        myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('localVideo').srcObject = myStream;
+        document.getElementById('localVideo').style.display = 'block';
+        document.getElementById('remoteVideo').srcObject = myStream; // Le streamer voit sa propre image en grand
+
+        peer.on('call', (call) => {
+            call.answer(myStream); // Envoie la vidéo aux spectateurs qui appellent
+        });
+        addChatMessage("Système", "Ton live est prêt ! Partage le nom avec tes amis.");
+    }
+
+    // 3. LOGIQUE DU SPECTATEUR (Celui qui regarde)
+    function joinStream(id) {
+        addChatMessage("Système", "Connexion au live de " + id + "...");
+        // On "appelle" le streamer
+        const call = peer.call('congolive-' + id, null); 
+        
+        call.on('stream', (remoteStream) => {
+            document.getElementById('remoteVideo').srcObject = remoteStream;
+        });
+
+        call.on('error', (err) => {
+            alert("Impossible de trouver ce live. Vérifie le nom.");
+            location.reload();
+        });
+    }
+
+    // 4. SYSTÈME DE RÉCOMPENSE (Diamants gratuits)
+    function startRewardTimer() {
+        let timeLeft = 300; // 5 minutes
+        setInterval(() => {
+            if (timeLeft > 0) {
+                timeLeft--;
+                let m = Math.floor(timeLeft / 60);
+                let s = timeLeft % 60;
+                timerDisplay.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+            } else {
+                addChatMessage("CADEAU", "Tu as gagné 10 Diamants ! 💎");
+                timeLeft = 300; 
+                // Ici tu ajouteras le code Firebase pour enregistrer les points
+            }
+        }, 1000);
+    }
+
+    function addChatMessage(user, text) {
+        chatBox.innerHTML += `<div class="msg"><b>${user}:</b> ${text}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function sendGift() {
+        addChatMessage("Moi", "a envoyé un cadeau ! 🎁");
+        // Animation ou son de cadeau ici
+    }
+</script>
+</body>
+</html>
