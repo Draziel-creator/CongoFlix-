@@ -10,103 +10,101 @@
         :root { --gold: #ffd700; --red: #ff3b5c; --bg: #000; }
         body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
 
-        /* HEADER : Explorer | Suivis */
+        /* HEADER */
         .top-tabs {
             position: fixed; top: 0; width: 100%; display: flex; justify-content: center; 
-            gap: 30px; padding: 15px 0; background: rgba(0,0,0,0.8); z-index: 100;
+            gap: 30px; padding: 15px 0; background: rgba(0,0,0,0.9); z-index: 100;
         }
-        .tab { font-size: 16px; color: #888; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .tab { font-size: 16px; color: #888; font-weight: bold; cursor: pointer; }
         .tab.active { color: white; border-bottom: 2px solid var(--red); padding-bottom: 5px; }
 
-        /* GRILLE DE LIVES (STYLE POPPO) */
+        /* GRILLE POPPO */
         .live-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
-            padding: 60px 2px 80px 2px; /* Marges pour Header et Nav */
+            padding: 60px 2px 80px 2px;
         }
-        .live-card {
-            position: relative; height: 250px; background: #111; overflow: hidden;
+        .live-card { position: relative; height: 260px; background: #111; overflow: hidden; cursor: pointer; }
+        .live-card img.cover { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Animation CongoFlix en bas à droite */
+        .live-anim {
+            position: absolute; bottom: 10px; right: 10px;
+            background: var(--red); color: white; padding: 4px 8px;
+            border-radius: 5px; font-size: 9px; font-weight: bold;
+            animation: pulse-red 1.5s infinite; z-index: 5;
         }
-        .live-card img { width: 100%; height: 100%; object-fit: cover; }
+        @keyframes pulse-red {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 59, 92, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 92, 0); }
+        }
+
         .live-info {
-            position: absolute; bottom: 0; width: 100%; padding: 10px;
-            background: linear-gradient(transparent, rgba(0,0,0,0.8));
-            font-size: 12px; text-align: left; box-sizing: border-box;
-        }
-        .live-tag {
-            position: absolute; top: 10px; left: 10px; background: var(--red);
-            padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;
+            position: absolute; bottom: 0; width: 100%; padding: 30px 10px 10px 10px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            font-size: 13px; text-align: left; box-sizing: border-box;
         }
 
         /* NAVIGATION BASSE */
         .bottom-nav {
-            position: fixed; bottom: 0; width: 100%; height: 65px;
-            background: #111; display: flex; justify-content: space-around;
+            position: fixed; bottom: 0; width: 100%; height: 70px;
+            background: #080808; display: flex; justify-content: space-around;
             align-items: center; border-top: 1px solid #222; z-index: 100;
         }
-        .nav-item { color: #888; text-decoration: none; font-size: 20px; display: flex; flex-direction: column; align-items: center; }
+        .nav-item { color: #555; text-decoration: none; display: flex; flex-direction: column; align-items: center; }
+        .nav-item i { font-size: 22px; }
         .nav-item span { font-size: 10px; margin-top: 4px; }
         .nav-item.active { color: white; }
 
         .btn-start-live {
-            width: 50px; height: 50px; background: var(--red); 
-            border-radius: 15px; display: flex; align-items: center; 
-            justify-content: center; color: white; font-size: 24px;
-            box-shadow: 0 0 15px rgba(255, 59, 92, 0.4);
+            width: 55px; height: 55px; background: var(--red); 
+            border-radius: 50%; display: flex; align-items: center; 
+            justify-content: center; color: white; font-size: 22px;
+            box-shadow: 0 0 15px rgba(255, 59, 92, 0.4); transform: translateY(-10px);
         }
 
-        /* OVERLAY LIVE */
         #live-overlay { position: fixed; inset: 0; background: black; display: none; z-index: 2000; }
         video { width: 100%; height: 100%; object-fit: cover; }
     </style>
 </head>
 <body>
 
-    <!-- Onglets du haut -->
     <div class="top-tabs">
-        <div class="tab active" onclick="switchTab('explore')">Explorer</div>
-        <div class="tab" onclick="switchTab('follow')">Suivis</div>
+        <div class="tab active" id="tab-explore">Explorer</div>
+        <div class="tab" id="tab-follow">Suivis</div>
     </div>
 
-    <!-- Liste des lives -->
     <div id="live-list" class="live-grid">
-        <!-- Exemple de carte de live (sera généré par JS) -->
-        <div class="live-card" onclick="promptID()">
-            <div class="live-tag">LIVE</div>
-            <img src="https://via.placeholder.com/200x300/111/ffd700?text=CongoFlix">
-            <div class="live-info">
-                <b>Pseudo Streamer</b><br>
-                <span><i class="fa-solid fa-users"></i> 120</span>
-            </div>
-        </div>
+        <!-- Chargement des lives via Firebase -->
+        <p style="grid-column: 1/3; padding: 20px; color: #444;">Recherche de lives...</p>
     </div>
 
-    <!-- Barre de navigation basse -->
     <div class="bottom-nav">
-        <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i><span>Home</span></a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-message"></i><span>Messages</span></a>
+        <a href="#" class="nav-item active"><i class="fa-solid fa-house-ripple"></i><span>Home</span></a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-comment-dots"></i><span>Messages</span></a>
         
+        <!-- Bouton de lancement style vidéo (Play) -->
         <div class="btn-start-live" onclick="startStream()">
-            <i class="fa-solid fa-plus"></i>
+            <i class="fa-solid fa-play"></i>
         </div>
 
-        <a href="#" class="nav-item"><i class="fa-solid fa-ranking-star"></i><span>Top</span></a>
-        <a href="index.html" class="nav-item"><i class="fa-solid fa-user"></i><span>Compte</span></a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-bolt"></i><span>Moments</span></a>
+        <a href="index.html" class="nav-item"><i class="fa-solid fa-circle-user"></i><span>Compte</span></a>
     </div>
 
-    <!-- Ecran Live Plein Écran -->
     <div id="live-overlay">
         <video id="videoDisplay" autoplay playsinline></video>
-        <button onclick="window.location.reload()" style="position:absolute; top:40px; right:20px; background:rgba(255,255,255,0.2); border:none; color:white; padding:10px; border-radius:50%; width:40px; height:40px;"><i class="fa-solid fa-xmark"></i></button>
-        <div style="position:absolute; bottom:20px; left:20px;">
-            <b id="streamer-name">Nom du Streamer</b>
-            <div id="points-box" style="background:var(--red); padding:5px 10px; border-radius:20px; font-size:12px; margin-top:5px;">Gain: <span id="points">0</span> pts</div>
+        <button onclick="stopLive()" style="position:absolute; top:40px; right:20px; background:rgba(0,0,0,0.5); border:none; color:white; width:40px; height:40px; border-radius:50%;"><i class="fa-solid fa-xmark"></i></button>
+        <div style="position:absolute; bottom:30px; left:20px;">
+            <b id="current-streamer-name" style="font-size: 18px; text-shadow: 2px 2px 4px black;">Streamer</b>
+            <div style="background:var(--red); padding:5px 12px; border-radius:20px; font-size:12px; margin-top:8px;">CONGOFLIX LIVE</div>
         </div>
     </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", 
@@ -120,47 +118,83 @@
     const db = getFirestore(app);
 
     let myProfile = null;
+    const peer = new Peer('congolive-' + Math.floor(Math.random() * 10000));
 
+    // 1. CHARGER MON PROFIL
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             const snap = await getDoc(doc(db, "users", user.uid));
             if(snap.exists()) myProfile = snap.data();
+            listenToLives();
         } else {
-            window.location.href = "index.html"; // Rediriger si non connecté
+            window.location.href = "index.html";
         }
     });
 
-    // PEERJS
-    const peer = new Peer('congolive-' + Math.floor(Math.random() * 10000));
-    
-    window.startStream = async () => {
-        const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
-        document.getElementById('live-overlay').style.display = 'block';
-        document.getElementById('videoDisplay').srcObject = stream;
-        document.getElementById('streamer-name').innerText = myProfile?.name || "Moi";
-        alert("Live Actif ! ID : " + peer.id);
-    };
+    // 2. ÉCOUTER LES LIVES EN TEMPS RÉEL (Plus d'ID à taper !)
+    function listenToLives() {
+        onSnapshot(collection(db, "active_lives"), (snapshot) => {
+            const list = document.getElementById('live-list');
+            list.innerHTML = "";
+            
+            if (snapshot.empty) {
+                list.innerHTML = "<p style='grid-column: 1/3; padding:20px; color:#444;'>Aucun live pour le moment.</p>";
+            }
 
-    window.promptID = () => {
-        const id = prompt("Entrer l'ID du Streamer :");
-        if(id) {
-            const call = peer.call(id, null);
-            call.on('stream', (remoteStream) => {
-                document.getElementById('live-overlay').style.display = 'block';
-                document.getElementById('videoDisplay').srcObject = remoteStream;
+            snapshot.forEach((doc) => {
+                const live = doc.data();
+                const card = document.createElement('div');
+                card.className = 'live-card';
+                card.onclick = () => joinLive(live.peerId, live.name);
+                card.innerHTML = `
+                    <div class="live-anim">CONGOFLIX</div>
+                    <img class="cover" src="${live.photo || 'https://via.placeholder.com/200x300'}">
+                    <div class="live-info">
+                        <b>${live.name}</b>
+                    </div>
+                `;
+                list.appendChild(card);
             });
-        }
+        });
+    }
+
+    // 3. LANCER UN LIVE (Envoie les infos à Firebase)
+    window.startStream = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+            document.getElementById('live-overlay').style.display = 'block';
+            document.getElementById('videoDisplay').srcObject = stream;
+            document.getElementById('current-streamer-name').innerText = myProfile.name;
+
+            // On publie le live dans Firestore
+            await setDoc(doc(db, "active_lives", auth.currentUser.uid), {
+                name: myProfile.name,
+                photo: myProfile.photoURL || "",
+                peerId: peer.id,
+                startedAt: Date.now()
+            });
+
+            peer.on('call', (call) => {
+                call.answer(stream);
+            });
+        } catch (e) { alert("Caméra bloquée."); }
     };
 
-    window.switchTab = (type) => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
-        if(type === 'follow') {
-            document.getElementById('live-list').innerHTML = "<p style='grid-column: 1/3; padding:20px;'>Aucun ami en live pour le moment.</p>";
-        } else {
-            location.reload(); // Recharge pour simuler l'exploration
-        }
+    // 4. REJOINDRE (Plus besoin de prompt !)
+    window.joinLive = (peerId, name) => {
+        const call = peer.call(peerId, null);
+        call.on('stream', (remoteStream) => {
+            document.getElementById('live-overlay').style.display = 'block';
+            document.getElementById('videoDisplay').srcObject = remoteStream;
+            document.getElementById('current-streamer-name').innerText = name;
+        });
     };
+
+    window.stopLive = async () => {
+        await deleteDoc(doc(db, "active_lives", auth.currentUser.uid));
+        window.location.reload();
+    };
+
 </script>
 </body>
 </html>
