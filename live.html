@@ -3,186 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoLive Pro - Ultra</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <title>CongoLive Ultra - Fidélité Totale</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --gold: #FFD700; --neon-blue: #00f2ff; --dark-surface: #121212; }
-        body { margin: 0; background: #050505; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
+        :root {
+            --gold-gradient: linear-gradient(180deg, #FFD700 0%, #B8860B 100%);
+            --royal-blue: #007fff;
+            --bg-dark: #020205;
+            --sheet-bg: #1c1e26;
+        }
 
-        /* --- MODE EXPLORER --- */
-        #explore-view { padding: 15px; display: block; height: 100vh; overflow-y: auto; }
-        .explore-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-bottom: 80px; }
-        .live-card { position: relative; height: 250px; border-radius: 15px; overflow: hidden; background: #222; }
-        .live-card img { width: 100%; height: 100%; object-fit: cover; }
-        .live-card .overlay-info { position: absolute; bottom: 0; width: 100%; padding: 10px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); }
+        body { 
+            margin: 0; background: var(--bg-dark); color: white; 
+            font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh;
+        }
 
-        /* --- MODE SALLE DE LIVE (FULL SCREEN) --- */
-        #live-room { display: none; height: 100vh; background: linear-gradient(180deg, #1a1a2e 0%, #000000 100%); position: relative; }
+        /* --- BACKGROUND SCÈNE --- */
+        .main-container {
+            background: radial-gradient(circle at center, #1a1a3a 0%, #020205 100%);
+            height: 100vh; width: 100vw; position: relative;
+        }
+
+        /* --- HEADER --- */
+        .room-info {
+            display: flex; justify-content: space-between; padding: 45px 15px 10px; align-items: center;
+        }
+        .host-badge {
+            background: rgba(0,0,0,0.5); border-radius: 30px; padding: 4px 12px 4px 4px;
+            display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .host-img { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #FFD700; }
+        .stats-top { display: flex; gap: 10px; margin-top: 10px; padding: 0 15px; }
+        .stat-pill { background: rgba(255,255,255,0.1); padding: 2px 10px; border-radius: 10px; font-size: 10px; color: #FFD700; }
+
+        /* --- GRILLE DES 15 PLACES --- */
+        .stage-area { padding-top: 20px; text-align: center; }
         
-        /* En-tête salle */
-        .room-header { display: flex; justify-content: space-between; padding: 40px 15px 10px; align-items: center; }
-        .host-info { display: flex; align-items: center; background: rgba(0,0,0,0.4); border-radius: 25px; padding: 5px 15px 5px 5px; }
-        .host-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--gold); margin-right: 8px; }
+        /* Top 5 (Hôte + VIP) */
+        .vip-circle { position: relative; height: 260px; margin-bottom: 20px; }
+        .seat-1 { /* HÔTE */
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            width: 110px; height: 110px; border: 3px solid #FFD700; border-radius: 50%;
+            background: url('https://via.placeholder.com/150') center/cover;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+        }
+        .seat-1::after { 
+            content: "Hôte"; position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%);
+            background: #ce1126; color: white; font-size: 10px; padding: 2px 10px; border-radius: 10px;
+        }
 
-        /* Sièges de la salle (Style Pro) */
-        .seats-container { padding: 10px; display: flex; flex-direction: column; gap: 20px; }
-        .vip-seats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-        .normal-seats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        
-        .seat { position: relative; display: flex; flex-direction: column; align-items: center; }
-        .seat-circle { width: 65px; height: 65px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; position: relative; }
-        .seat.vip .seat-circle { width: 85px; height: 85px; border: 2px solid var(--gold); box-shadow: 0 0 10px rgba(255,215,0,0.2); }
-        .seat-circle i { color: rgba(255,255,255,0.2); font-size: 24px; }
-        .seat-num { position: absolute; bottom: -5px; background: var(--gold); color: black; font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+        .arc-seats { position: relative; width: 100%; height: 100%; }
+        .seat-vip { position: absolute; width: 65px; height: 65px; border-radius: 50%; border: 2px solid #fff; overflow: hidden; }
+        .s2 { top: 10%; left: 15%; } .s3 { top: 10%; right: 15%; }
+        .s4 { bottom: 10%; left: 10%; } .s5 { bottom: 10%; right: 10%; }
 
-        /* Chat & Actions */
-        .chat-area { position: absolute; bottom: 80px; left: 15px; right: 80px; max-height: 150px; overflow-y: hidden; mask-image: linear-gradient(transparent, black 20%); }
-        .chat-msg { font-size: 13px; margin-bottom: 5px; text-shadow: 1px 1px 2px black; }
-        .chat-msg span { color: var(--gold); font-weight: bold; }
+        /* Grille 6-15 */
+        .audience-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; padding: 0 20px;
+        }
+        .seat-small {
+            width: 50px; height: 50px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;
+            position: relative; margin: 0 auto;
+        }
+        .seat-small i { color: rgba(255,255,255,0.2); font-size: 18px; }
+        .seat-label { font-size: 9px; color: #aaa; margin-top: 4px; display: block; }
 
-        .bottom-actions { position: absolute; bottom: 20px; right: 15px; display: flex; gap: 12px; }
-        .action-btn { width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2); font-size: 18px; }
-        .gift-btn { background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%); border: none; }
+        /* --- BARRE D'ACTIONS --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; height: 70px;
+            display: flex; justify-content: space-around; align-items: center;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+        }
+        .nav-btn { color: white; font-size: 20px; background: none; border: none; }
+        .gift-trigger { 
+            width: 45px; height: 45px; border-radius: 50%; 
+            background: linear-gradient(45deg, #ff416c, #ff4b2b); 
+            display: flex; align-items: center; justify-content: center;
+        }
 
-        /* Modal Cadeaux (Style Sheets) */
-        #gift-sheet { position: fixed; bottom: -100%; left: 0; width: 100%; background: #1a1a1a; border-radius: 20px 20px 0 0; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 3000; padding: 20px 10px; }
+        /* --- MODALE CADEAUX (image_aa1cbb.png) --- */
+        #gift-sheet {
+            position: fixed; bottom: -100%; left: 0; width: 100%; height: 75vh;
+            background: var(--sheet-bg); border-radius: 20px 20px 0 0;
+            transition: 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.1); z-index: 1000;
+            padding: 15px; box-sizing: border-box;
+        }
         #gift-sheet.active { bottom: 0; }
-        .gift-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .gift-card { background: rgba(255,255,255,0.03); padding: 10px 5px; border-radius: 12px; text-align: center; }
-        .gift-card img { width: 40px; height: 40px; margin-bottom: 5px; }
-        .gift-card .pts { color: var(--gold); font-size: 11px; font-weight: bold; display: block; }
-        .gift-card .money { font-size: 9px; color: #888; }
+        
+        .gift-tabs { display: flex; gap: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+        .tab-item { font-size: 14px; color: #888; font-weight: bold; }
+        .tab-item.active { color: #FFD700; border-bottom: 2px solid #FFD700; }
+
+        .gift-container {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+            overflow-y: auto; height: calc(100% - 150px);
+        }
+        .gift-box { text-align: center; padding: 5px; border-radius: 10px; }
+        .gift-box img { width: 45px; height: 45px; object-fit: contain; margin-bottom: 5px; }
+        .g-name { font-size: 9px; display: block; height: 24px; overflow: hidden; }
+        .g-pts { font-size: 10px; color: #FFD700; font-weight: bold; }
+        .g-fc { font-size: 8px; color: #888; }
+
+        .gift-footer {
+            position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px;
+            background: #15171e; display: flex; justify-content: space-between; align-items: center;
+        }
+        .btn-send {
+            background: #6200ee; color: white; border: none; padding: 10px 30px;
+            border-radius: 25px; font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-    <!-- VUE EXPLORER -->
-    <div id="explore-view">
-        <h2 style="color: var(--gold)">CongoLive Explore</h2>
-        <div id="live-list" class="explore-grid"></div>
-        
-        <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
-            <button onclick="startMyLive()" style="background: var(--gold); border: none; padding: 15px 30px; border-radius: 30px; font-weight: bold; font-size: 16px;">LANCER MON LIVE</button>
+<div class="main-container">
+    <!-- HEADER -->
+    <div class="room-info">
+        <div class="host-badge">
+            <img src="https://via.placeholder.com/50" class="host-img">
+            <div style="margin-left:8px">
+                <div style="font-size:12px; font-weight:bold;">PoupéeNoire👑</div>
+                <div style="font-size:9px; color:#FFD700;"><i class="fa-solid fa-fire"></i> Populaire No.1</div>
+            </div>
+        </div>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <div style="font-size:14px;"><i class="fa-solid fa-users"></i> 2</div>
+            <i class="fa-solid fa-xmark" style="font-size:20px;"></i>
         </div>
     </div>
 
-    <!-- VUE SALLE DE LIVE -->
-    <div id="live-room">
-        <div class="room-header">
-            <div class="host-info">
-                <img src="https://via.placeholder.com/100" class="host-avatar" id="room-host-img">
-                <div>
-                    <div style="font-size: 12px; font-weight: bold;" id="room-host-name">Streamer RDC</div>
-                    <div style="font-size: 10px; color: #ccc;">ID: 54317120</div>
-                </div>
-            </div>
-            <button onclick="leaveRoom()" style="background:none; border:none; color:white; font-size:24px;">&times;</button>
-        </div>
-
-        <div class="seats-container">
-            <!-- 6 Grands sièges (VIP) -->
-            <div class="vip-seats">
-                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">1</span></div>
-                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">2</span></div>
-                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">3</span></div>
-                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">4</span></div>
-                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">5</span></div>
-                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">6</span></div>
-            </div>
-            <!-- Petits sièges (Audience) -->
-            <div class="normal-seats">
-                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
-                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
-                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
-                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
-                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
-                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
-                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
-                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
+    <!-- SCÈNE -->
+    <div class="stage-area">
+        <div class="vip-circle">
+            <div class="seat-1"></div>
+            <div class="arc-seats">
+                <div class="seat-vip s2"><img src="https://via.placeholder.com/100" width="100%"></div>
+                <div class="seat-vip s3"><img src="https://via.placeholder.com/100" width="100%"></div>
+                <div class="seat-vip s4"><img src="https://via.placeholder.com/100" width="100%"></div>
+                <div class="seat-vip s5"><img src="https://via.placeholder.com/100" width="100%"></div>
             </div>
         </div>
 
-        <div class="chat-area">
-            <div class="chat-msg"><span>Draziel 🇨🇩:</span> a rejoint la salle</div>
-            <div class="chat-msg"><span>Mary:</span> Bonjour tout le monde !</div>
-        </div>
-
-        <div class="bottom-actions">
-            <button class="action-btn" id="mic-toggle" onclick="toggleMic()"><i class="fa-solid fa-microphone-slash"></i></button>
-            <button class="action-btn gift-btn" onclick="toggleGiftSheet()"><i class="fa-solid fa-gift"></i></button>
+        <div class="audience-grid">
+            <!-- Boucle de 6 à 15 -->
+            <div class="seat-item">
+                <div class="seat-small"><i class="fa-solid fa-couch"></i><span style="position:absolute; bottom:-3px; font-size:8px; color:#FFD700">6</span></div>
+            </div>
+            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
+            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
+            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
+            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
+            <!-- Deuxième ligne -->
+            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
+            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
+            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
+            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
+            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
         </div>
     </div>
 
-    <!-- SHEET CADEAUX -->
-    <div id="gift-sheet">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-            <span style="font-weight: bold; color: var(--gold);">BOUTIQUE CONGO</span>
-            <span style="font-size: 12px;">Solde: 525 pts</span>
+    <!-- NAVIGATION BAS -->
+    <div class="bottom-nav">
+        <button class="nav-btn"><i class="fa-solid fa-comment-dots"></i></button>
+        <button class="nav-btn"><i class="fa-solid fa-microphone"></i></button>
+        <button class="nav-btn"><i class="fa-solid fa-face-smile"></i></button>
+        <div class="gift-trigger" onclick="openGifts()">
+            <i class="fa-solid fa-gift"></i>
         </div>
-        <div class="gift-grid">
-            <div class="gift-card">
-                <img src="https://cdn-icons-png.flaticon.com/512/305/305011.png">
-                <span class="pts">100</span><span class="money">1.5$</span>
-            </div>
-            <div class="gift-card" style="border: 1px solid var(--gold);">
-                <img src="https://cdn-icons-png.flaticon.com/512/2829/2829815.png">
-                <span class="pts">1.0M</span><span class="money">10,000$</span>
-            </div>
-            <div class="gift-card">
-                <img src="https://cdn-icons-png.flaticon.com/512/10300/10300625.png">
-                <span class="pts">50K</span><span class="money">500$</span>
-            </div>
-            <div class="gift-card">
-                <img src="https://cdn-icons-png.flaticon.com/512/10439/10439814.png">
-                <span class="pts">500</span><span class="money">7.5$</span>
-            </div>
+    </div>
+</div>
+
+<!-- MODALE CADEAUX -->
+<div id="gift-sheet">
+    <div class="gift-tabs">
+        <div class="tab-item active">Cadeau</div>
+        <div class="tab-item">Chanceux</div>
+        <div class="tab-item">Fans</div>
+    </div>
+    
+    <div class="gift-container">
+        <!-- Richesse 1 -->
+        <div class="gift-box" style="border:1px solid #FFD700; background:rgba(255,215,0,0.05)">
+            <img src="https://cdn-icons-png.flaticon.com/512/305/305011.png">
+            <span class="g-name">Cuivre de Katanga</span>
+            <span class="g-pts">100 pts</span>
+            <span class="g-fc">1,000 FC</span>
         </div>
-        <button onclick="toggleGiftSheet()" style="width: 100%; margin-top: 15px; padding: 12px; background: #333; border:none; color:white; border-radius:10px;">FERMER</button>
+        <!-- Richesse 2 -->
+        <div class="gift-box">
+            <img src="https://cdn-icons-png.flaticon.com/512/2829/2829815.png">
+            <span class="g-name">Diamant de la RDC</span>
+            <span class="g-pts">10,000 pts</span>
+            <span class="g-fc">100,000 FC</span>
+        </div>
+        <!-- Richesse 3 -->
+        <div class="gift-box">
+            <img src="https://cdn-icons-png.flaticon.com/512/10300/10300625.png">
+            <span class="g-name">Okapi Rare</span>
+            <span class="g-pts">600 pts</span>
+            <span class="g-fc">6,000 FC</span>
+        </div>
+        <!-- Richesse 4 -->
+        <div class="gift-box">
+            <img src="https://cdn-icons-png.flaticon.com/512/10439/10439814.png">
+            <span class="g-name">Léopard d'Afrique</span>
+            <span class="g-pts">800 pts</span>
+            <span class="g-fc">8,000 FC</span>
+        </div>
     </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <div class="gift-footer">
+        <div style="font-size:12px;"><i class="fa-solid fa-coins" style="color:#FFD700"></i> 525 ></div>
+        <div style="display:flex; align-items:center; gap:15px;">
+            <span style="font-size:12px; color:#888;">1 v</span>
+            <button class="btn-send" onclick="closeGifts()">Envoyer</button>
+        </div>
+    </div>
+</div>
 
-    const firebaseConfig = { apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", projectId: "congo-streaming-51333" };
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    // Navigation & UI
-    window.startMyLive = () => {
-        document.getElementById('explore-view').style.display = 'none';
-        document.getElementById('live-room').style.display = 'block';
-        // Logique Firebase pour s'enregistrer comme streamer...
-    };
-
-    window.joinLive = (id) => {
-        document.getElementById('explore-view').style.display = 'none';
-        document.getElementById('live-room').style.display = 'block';
-    };
-
-    window.leaveRoom = () => {
-        document.getElementById('explore-view').style.display = 'block';
-        document.getElementById('live-room').style.display = 'none';
-    };
-
-    window.toggleGiftSheet = () => {
-        document.getElementById('gift-sheet').classList.toggle('active');
-    };
-
-    // Simulation de chargement des lives (Explore)
-    const list = document.getElementById('live-list');
-    for(let i=1; i<=4; i++) {
-        const card = document.createElement('div');
-        card.className = 'live-card';
-        card.onclick = () => joinLive(i);
-        card.innerHTML = `<img src="https://picsum.photos/400/600?random=${i}">
-                         <div class="overlay-info">
-                            <div style="font-weight:bold; font-size:14px;">Live Kivu ${i}</div>
-                            <div style="font-size:11px;"><i class="fa-solid fa-user"></i> ${i*12} spectateurs</div>
-                         </div>`;
-        list.appendChild(card);
-    }
+<script>
+    function openGifts() { document.getElementById('gift-sheet').classList.add('active'); }
+    function closeGifts() { document.getElementById('gift-sheet').classList.remove('active'); }
 </script>
+
 </body>
 </html>
