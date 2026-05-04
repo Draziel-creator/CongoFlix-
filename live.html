@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoLive Pro - Stable</title>
+    <title>CongoLive Pro - Final Fix</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -16,13 +16,13 @@
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #000; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; z-index: 100; }
         .btn-start-live { width: 60px; height: 60px; background: var(--red); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; transform: translateY(-15px); box-shadow: 0 4px 15px rgba(255,59,92,0.4); }
         #live-overlay { position: fixed; inset: 0; background: black; display: none; z-index: 2000; }
-        video { width: 100%; height: 100%; object-fit: cover; background: #000; }
+        video { width: 100%; height: 100%; object-fit: cover; background: #000; pointer-events: auto; }
         .close-btn { position: absolute; top: 25px; right: 20px; width: 45px; height: 45px; background: rgba(0,0,0,0.5); border-radius: 50%; color: white; border: 2px solid white; font-size: 24px; z-index: 2100; }
     </style>
 </head>
 <body>
 
-    <div id="debug-console">Initialisation...</div>
+    <div id="debug-console">Initialisation du système...</div>
     <div id="live-list" class="live-grid"></div>
 
     <div class="bottom-nav">
@@ -31,7 +31,7 @@
 
     <div id="live-overlay">
         <button class="close-btn" onclick="window.stopLive()">×</button>
-        <video id="videoDisplay" autoplay playsinline></video>
+        <video id="videoDisplay" autoplay playsinline webkit-playsinline></video>
     </div>
 
 <script type="module">
@@ -50,7 +50,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     const debug = document.getElementById('debug-console');
-    const video = document.getElementById('videoDisplay');
+    const videoElem = document.getElementById('videoDisplay');
 
     function log(msg) { debug.innerText = "STATUS: " + msg; }
 
@@ -66,15 +66,12 @@
         }
     });
 
-    peer.on('open', (id) => log("Prêt pour la diffusion"));
+    peer.on('open', (id) => log("CongoLive est prêt"));
 
-    // Réponse automatique aux appels
+    // Réception de l'appel côté Streamer
     peer.on('call', (call) => {
-        log("Client connecté !");
+        log("Liaison établie avec un spectateur...");
         call.answer(localStream); 
-        call.on('stream', (remote) => {
-             // C'est le flux vide du spectateur, on ne l'affiche pas
-        });
     });
 
     onAuthStateChanged(auth, (user) => {
@@ -91,7 +88,7 @@
                 const card = document.createElement('div');
                 card.className = 'live-card';
                 card.onclick = () => window.joinLive(live.peerId);
-                card.innerHTML = `<img src="https://via.placeholder.com/300x400/222/ffd700?text=REJOINDRE">`;
+                card.innerHTML = `<img src="https://via.placeholder.com/300x400/222/ffd700?text=VOIR+LE+DIRECT">`;
                 list.appendChild(card);
             });
         });
@@ -100,47 +97,56 @@
     window.startStream = async () => {
         try {
             localStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "user" },
+                video: { 
+                    facingMode: "user",
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                },
                 audio: true
             });
-            video.srcObject = localStream;
-            video.muted = true;
+            videoElem.srcObject = localStream;
+            videoElem.muted = true;
             document.getElementById('live-overlay').style.display = 'block';
             await setDoc(doc(db, "active_lives", auth.currentUser.uid), {
                 peerId: peer.id,
                 time: Date.now()
             });
-            log("DIRECT ACTIF");
-        } catch (e) { log("Erreur Caméra"); }
+            log("VOUS ÊTES EN DIRECT");
+        } catch (e) { log("Erreur d'accès média"); }
     };
 
     window.joinLive = async (peerId) => {
-        log("Liaison en cours...");
+        log("Connexion au flux vidéo...");
         document.getElementById('live-overlay').style.display = 'block';
         
-        // CRITICAL FIX: Créer un flux audio silencieux pour forcer la connexion
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const dst = oscillator.connect(audioCtx.createMediaStreamDestination());
-        oscillator.start();
-        const silentStream = dst.stream;
-
-        const call = peer.call(peerId, silentStream);
+        // On envoie un flux vide technique pour déclencher la vidéo
+        const call = peer.call(peerId, new MediaStream());
         
         call.on('stream', (remoteStream) => {
-            log("FLUX REÇU !");
-            video.srcObject = remoteStream;
-            video.muted = false;
-            video.play();
+            log("Flux reçu ! Initialisation image...");
+            
+            if ("srcObject" in videoElem) {
+                videoElem.srcObject = remoteStream;
+            } else {
+                videoElem.src = window.URL.createObjectURL(remoteStream);
+            }
+
+            videoElem.onloadedmetadata = () => {
+                log("IMAGE ACTIVÉE");
+                videoElem.play().catch(err => {
+                    log("Appuyez pour activer la vidéo");
+                    document.body.addEventListener('click', () => videoElem.play(), {once: true});
+                });
+            };
         });
 
-        // Timeout de sécurité pour relancer si l'écran reste noir
+        // Sécurité : Si après 6s toujours pas d'image
         setTimeout(() => {
-            if (!video.srcObject && document.getElementById('live-overlay').style.display === 'block') {
-                log("Re-connexion...");
+            if (videoElem.readyState < 2) { 
+                log("Optimisation de l'image...");
                 window.joinLive(peerId);
             }
-        }, 4000);
+        }, 6000);
     };
 
     window.stopLive = async () => {
