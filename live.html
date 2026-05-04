@@ -3,157 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoLive Pro - Final Fix</title>
+    <title>CongoLive Audio - L'Excellence de la RDC</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --red: #ff3b5c; --bg: #000; }
-        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; overflow: hidden; }
-        #debug-console { position: fixed; top: 10px; left: 10px; right: 10px; font-size: 10px; background: rgba(0,0,0,0.85); z-index: 3000; color: #00ff00; padding: 10px; border-radius: 8px; border: 1px solid #444; pointer-events: none; }
-        .live-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 70px 4px 80px 4px; }
-        .live-card { height: 260px; background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; }
-        .live-card img { width: 100%; height: 100%; object-fit: cover; }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #000; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; z-index: 100; }
-        .btn-start-live { width: 60px; height: 60px; background: var(--red); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; transform: translateY(-15px); box-shadow: 0 4px 15px rgba(255,59,92,0.4); }
-        #live-overlay { position: fixed; inset: 0; background: black; display: none; z-index: 2000; }
-        video { width: 100%; height: 100%; object-fit: cover; background: #000; pointer-events: auto; }
-        .close-btn { position: absolute; top: 25px; right: 20px; width: 45px; height: 45px; background: rgba(0,0,0,0.5); border-radius: 50%; color: white; border: 2px solid white; font-size: 24px; z-index: 2100; }
+        :root { 
+            --gold: #ffd700; 
+            --congo-blue: #007fff; 
+            --congo-red: #ce1126;
+            --dark-bg: linear-gradient(135deg, #001f3f 0%, #000000 100%);
+        }
+        
+        body { margin: 0; background: var(--dark-bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; height: 100vh; }
+
+        /* --- Interface de Navigation --- */
+        .header-live { position: fixed; top: 0; width: 100%; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .live-badge { background: var(--congo-red); padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; animation: pulse 2s infinite; }
+        
+        /* --- Grille des Podiums (Scène) --- */
+        .stage { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 100px 20px; justify-items: center; }
+        .podium { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--gold); background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
+        .podium.active { border-color: var(--congo-blue); box-shadow: 0 0 20px var(--congo-blue); }
+        .podium i { font-size: 30px; color: rgba(255,255,255,0.3); }
+        .podium .label { position: absolute; bottom: -25px; font-size: 10px; color: var(--gold); font-weight: bold; text-transform: uppercase; }
+
+        /* --- Barre d'outils à DROITE --- */
+        .side-controls { position: fixed; right: 15px; bottom: 100px; display: flex; flex-direction: column; gap: 15px; z-index: 100; }
+        .btn-circle { width: 55px; height: 55px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .btn-gift { background: linear-gradient(to bottom, #ff416c, #ff4b2b); }
+        .btn-mic { background: var(--congo-blue); }
+        .btn-mic.off { background: #555; }
+        .btn-exit { background: var(--congo-red); }
+
+        /* --- Modale Cadeaux --- */
+        #gift-modal { position: fixed; bottom: -100%; left: 0; width: 100%; background: rgba(10, 10, 30, 0.95); border-radius: 25px 25px 0 0; transition: 0.4s; z-index: 2000; padding: 20px; border-top: 2px solid var(--gold); }
+        #gift-modal.open { bottom: 0; }
+        .gift-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center; }
+        .gift-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 15px; border: 1px solid rgba(255,215,0,0.1); }
+        .gift-item img { width: 50px; height: 50px; margin-bottom: 5px; }
+        .gift-name { font-size: 11px; font-weight: bold; display: block; color: var(--gold); }
+        .gift-points { font-size: 10px; color: #00ff00; }
+        .gift-price { font-size: 9px; color: #ccc; display: block; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div id="debug-console">Initialisation du système...</div>
-    <div id="live-list" class="live-grid"></div>
-
-    <div class="bottom-nav">
-        <div class="btn-start-live" onclick="window.startStream()"><i class="fa-solid fa-camera"></i></div>
+    <div class="header-live">
+        <div class="live-badge">DIRECT AUDIO</div>
+        <div id="viewer-count"><i class="fa-solid fa-users"></i> 0</div>
     </div>
 
-    <div id="live-overlay">
-        <button class="close-btn" onclick="window.stopLive()">×</button>
-        <video id="videoDisplay" autoplay playsinline webkit-playsinline></video>
+    <!-- Scène des Intervenants -->
+    <div class="stage">
+        <div class="podium active"><i class="fa-solid fa-crown" style="color: var(--gold)"></i><div class="label">Host</div></div>
+        <div class="podium" onclick="requestMic(1)"><i class="fa-solid fa-microphone-slash"></i><div class="label">Place 1</div></div>
+        <div class="podium" onclick="requestMic(2)"><i class="fa-solid fa-microphone-slash"></i><div class="label">Place 2</div></div>
+        <div class="podium" onclick="requestMic(3)"><i class="fa-solid fa-microphone-slash"></i><div class="label">Place 3</div></div>
+        <div class="podium" onclick="requestMic(4)"><i class="fa-solid fa-microphone-slash"></i><div class="label">Place 4</div></div>
+        <div class="podium" onclick="requestMic(5)"><i class="fa-solid fa-microphone-slash"></i><div class="label">Place 5</div></div>
     </div>
+
+    <!-- Contrôles à Droite -->
+    <div class="side-controls">
+        <button class="btn-circle btn-mic off" id="micBtn" onclick="toggleMic()"><i class="fa-solid fa-microphone-slash"></i></button>
+        <button class="btn-circle btn-gift" onclick="toggleGifts()"><i class="fa-solid fa-gift"></i></button>
+        <button class="btn-circle btn-exit" onclick="exitLive()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Modale Cadeaux -->
+    <div id="gift-modal">
+        <h3 style="text-align: center; color: var(--gold); margin-top: 0;">OFFRIR UNE RICHESSE DU CONGO</h3>
+        <div class="gift-grid">
+            <div class="gift-item">
+                <img src="https://cdn-icons-png.flaticon.com/512/305/305011.png" alt="Or">
+                <span class="gift-name">OR DU KIVU</span>
+                <span class="gift-points">5 000 pts</span>
+                <span class="gift-price">50 USD</span>
+            </div>
+            <div class="gift-item">
+                <img src="https://cdn-icons-png.flaticon.com/512/10300/10300625.png" alt="Gorille">
+                <span class="gift-name">GORILLE VIRUNGA</span>
+                <span class="gift-points">50 000 pts</span>
+                <span class="gift-price">500 USD</span>
+            </div>
+            <div class="gift-item">
+                <img src="https://cdn-icons-png.flaticon.com/512/2829/2829815.png" alt="Diamant">
+                <span class="gift-name">DIAMANT PUR</span>
+                <span class="gift-points">1 000 000 pts</span>
+                <span class="gift-price">10 000 USD</span>
+            </div>
+        </div>
+        <button onclick="toggleGifts()" style="width: 100%; margin-top: 20px; background: none; border: 1px solid white; color: white; padding: 10px; border-radius: 10px;">Fermer</button>
+    </div>
+
+    <audio id="audioPlayback" autoplay></audio>
 
 <script type="module">
+    // Configuration Firebase Simplifiée pour la démo
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", 
-        authDomain: "congo-streaming-51333.firebaseapp.com", 
-        projectId: "congo-streaming-51333", 
-        appId: "1:304286627819:android:36e0b43b8b10508a054bae" 
+        projectId: "congo-streaming-51333" 
     };
-
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getFirestore(app);
-    const debug = document.getElementById('debug-console');
-    const videoElem = document.getElementById('videoDisplay');
-
-    function log(msg) { debug.innerText = "STATUS: " + msg; }
 
     let localStream = null;
-    
-    const peer = new Peer('congolive-' + Math.floor(Math.random() * 1000000), {
-        config: {
-            'iceServers': [
-                { url: 'stun:stun.l.google.com:19302' },
-                { url: 'stun:stun1.l.google.com:19302' },
-                { url: 'stun:stun2.l.google.com:19302' }
-            ]
+    let isMicOn = false;
+
+    // Gestion de l'interface
+    window.toggleGifts = () => {
+        document.getElementById('gift-modal').classList.toggle('open');
+    };
+
+    window.toggleMic = async () => {
+        const btn = document.getElementById('micBtn');
+        if (!isMicOn) {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                btn.classList.remove('off');
+                btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                isMicOn = true;
+                console.log("Micro activé");
+            } catch (e) { alert("Accès micro refusé"); }
+        } else {
+            localStream.getTracks().forEach(t => t.stop());
+            btn.classList.add('off');
+            btn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
+            isMicOn = false;
         }
-    });
-
-    peer.on('open', (id) => log("CongoLive est prêt"));
-
-    // Réception de l'appel côté Streamer
-    peer.on('call', (call) => {
-        log("Liaison établie avec un spectateur...");
-        call.answer(localStream); 
-    });
-
-    onAuthStateChanged(auth, (user) => {
-        if (user) listenToLives();
-    });
-
-    function listenToLives() {
-        onSnapshot(collection(db, "active_lives"), (snapshot) => {
-            const list = document.getElementById('live-list');
-            list.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const live = doc.data();
-                if (auth.currentUser && doc.id === auth.currentUser.uid) return;
-                const card = document.createElement('div');
-                card.className = 'live-card';
-                card.onclick = () => window.joinLive(live.peerId);
-                card.innerHTML = `<img src="https://via.placeholder.com/300x400/222/ffd700?text=VOIR+LE+DIRECT">`;
-                list.appendChild(card);
-            });
-        });
-    }
-
-    window.startStream = async () => {
-        try {
-            localStream = await navigator.mediaDevices.getUserMedia({
-                video: { 
-                    facingMode: "user",
-                    width: { ideal: 640 },
-                    height: { ideal: 480 }
-                },
-                audio: true
-            });
-            videoElem.srcObject = localStream;
-            videoElem.muted = true;
-            document.getElementById('live-overlay').style.display = 'block';
-            await setDoc(doc(db, "active_lives", auth.currentUser.uid), {
-                peerId: peer.id,
-                time: Date.now()
-            });
-            log("VOUS ÊTES EN DIRECT");
-        } catch (e) { log("Erreur d'accès média"); }
     };
 
-    window.joinLive = async (peerId) => {
-        log("Connexion au flux vidéo...");
-        document.getElementById('live-overlay').style.display = 'block';
-        
-        // On envoie un flux vide technique pour déclencher la vidéo
-        const call = peer.call(peerId, new MediaStream());
-        
-        call.on('stream', (remoteStream) => {
-            log("Flux reçu ! Initialisation image...");
-            
-            if ("srcObject" in videoElem) {
-                videoElem.srcObject = remoteStream;
-            } else {
-                videoElem.src = window.URL.createObjectURL(remoteStream);
-            }
-
-            videoElem.onloadedmetadata = () => {
-                log("IMAGE ACTIVÉE");
-                videoElem.play().catch(err => {
-                    log("Appuyez pour activer la vidéo");
-                    document.body.addEventListener('click', () => videoElem.play(), {once: true});
-                });
-            };
-        });
-
-        // Sécurité : Si après 6s toujours pas d'image
-        setTimeout(() => {
-            if (videoElem.readyState < 2) { 
-                log("Optimisation de l'image...");
-                window.joinLive(peerId);
-            }
-        }, 6000);
+    window.requestMic = (id) => {
+        alert("Demande envoyée au streamer pour la Place " + id);
+        // Ici on ajouterait la logique PeerJS pour envoyer le flux audio
     };
 
-    window.stopLive = async () => {
-        if (localStream) localStream.getTracks().forEach(t => t.stop());
-        if (auth.currentUser) await deleteDoc(doc(db, "active_lives", auth.currentUser.uid));
-        window.location.reload();
+    window.exitLive = () => {
+        if(confirm("Quitter le direct ?")) window.location.reload();
     };
+
 </script>
 </body>
 </html>
