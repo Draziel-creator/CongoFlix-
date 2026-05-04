@@ -9,65 +9,24 @@
     <style>
         :root { --gold: #ffd700; --red: #ff3b5c; --bg: #000; }
         body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-
-        .top-tabs {
-            position: fixed; top: 0; width: 100%; display: flex; justify-content: center; 
-            gap: 30px; padding: 15px 0; background: rgba(0,0,0,0.9); z-index: 100;
-        }
+        .top-tabs { position: fixed; top: 0; width: 100%; display: flex; justify-content: center; gap: 30px; padding: 15px 0; background: rgba(0,0,0,0.9); z-index: 100; }
         .tab { font-size: 16px; color: #888; font-weight: bold; cursor: pointer; }
         .tab.active { color: white; border-bottom: 2px solid var(--red); padding-bottom: 5px; }
-
-        .live-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
-            padding: 60px 2px 80px 2px; height: 100vh; overflow-y: auto;
-        }
+        .live-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 60px 2px 80px 2px; height: 100vh; overflow-y: auto; }
         .live-card { position: relative; height: 260px; background: #111; overflow: hidden; cursor: pointer; border: 0.5px solid #222; }
         .live-card img.cover { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-        
-        .live-anim {
-            position: absolute; bottom: 10px; right: 10px;
-            background: var(--red); color: white; padding: 4px 8px;
-            border-radius: 5px; font-size: 9px; font-weight: bold;
-            animation: pulse-red 1.5s infinite; z-index: 5;
-        }
-        @keyframes pulse-red {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 59, 92, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 92, 0); }
-        }
-
-        .live-info {
-            position: absolute; bottom: 0; width: 100%; padding: 30px 10px 10px 10px;
-            background: linear-gradient(transparent, rgba(0,0,0,0.9));
-            font-size: 13px; pointer-events: none;
-        }
-
-        .bottom-nav {
-            position: fixed; bottom: 0; width: 100%; height: 70px;
-            background: #080808; display: flex; justify-content: space-around;
-            align-items: center; border-top: 1px solid #222; z-index: 100;
-        }
+        .live-anim { position: absolute; bottom: 10px; right: 10px; background: var(--red); color: white; padding: 4px 8px; border-radius: 5px; font-size: 9px; font-weight: bold; animation: pulse-red 1.5s infinite; z-index: 5; }
+        @keyframes pulse-red { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 92, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 59, 92, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 92, 0); } }
+        .live-info { position: absolute; bottom: 0; width: 100%; padding: 30px 10px 10px 10px; background: linear-gradient(transparent, rgba(0,0,0,0.9)); font-size: 13px; pointer-events: none; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: #080808; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; z-index: 100; }
         .nav-item { color: #555; text-decoration: none; display: flex; flex-direction: column; align-items: center; }
         .nav-item i { font-size: 22px; }
         .nav-item span { font-size: 10px; margin-top: 4px; }
-
-        .btn-start-live {
-            width: 55px; height: 55px; background: var(--red); 
-            border-radius: 50%; display: flex; align-items: center; 
-            justify-content: center; color: white; font-size: 22px;
-            box-shadow: 0 0 15px rgba(255, 59, 92, 0.4); transform: translateY(-10px); cursor: pointer;
-        }
-
+        .btn-start-live { width: 55px; height: 55px; background: var(--red); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; box-shadow: 0 0 15px rgba(255, 59, 92, 0.4); transform: translateY(-10px); cursor: pointer; }
         #live-overlay { position: fixed; inset: 0; background: black; display: none; z-index: 2000; }
-        video { width: 100%; height: 100%; object-fit: contain; background: #000; cursor: pointer; }
-
-        .live-controls {
-            position: absolute; top: 40px; right: 20px; display: flex; flex-direction: column; gap: 15px;
-        }
-        .control-btn {
-            background: rgba(0,0,0,0.6); border: none; color: white; 
-            width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 18px;
-        }
+        video { width: 100%; height: 100%; object-fit: cover; background: #000; }
+        .live-controls { position: absolute; top: 40px; right: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .control-btn { background: rgba(0,0,0,0.6); border: none; color: white; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 18px; }
     </style>
 </head>
 <body>
@@ -84,23 +43,16 @@
     <div class="bottom-nav">
         <a href="#" class="nav-item"><i class="fa-solid fa-house-ripple"></i><span>Home</span></a>
         <a href="#" class="nav-item"><i class="fa-solid fa-comment-dots"></i><span>Messages</span></a>
-        
-        <div class="btn-start-live" onclick="window.startStream()">
-            <i class="fa-solid fa-play"></i>
-        </div>
-
+        <div class="btn-start-live" onclick="window.startStream()"><i class="fa-solid fa-play"></i></div>
         <a href="#" class="nav-item"><i class="fa-solid fa-bolt"></i><span>Moments</span></a>
         <a href="index.html" class="nav-item"><i class="fa-solid fa-circle-user"></i><span>Compte</span></a>
     </div>
 
     <div id="live-overlay">
-        <video id="videoDisplay" autoplay playsinline onclick="this.play()"></video>
-        
+        <video id="videoDisplay" autoplay playsinline muted></video>
         <div class="live-controls">
             <button class="control-btn" onclick="window.stopLive()"><i class="fa-solid fa-xmark"></i></button>
-            <button id="screen-btn" class="control-btn" onclick="window.shareScreen()" style="display:none;"><i class="fa-solid fa-desktop"></i></button>
         </div>
-
         <div style="position:absolute; bottom:30px; left:20px;">
             <b id="current-streamer-name" style="font-size: 18px; text-shadow: 2px 2px 4px black;">En direct</b>
             <div style="background:var(--red); padding:5px 12px; border-radius:20px; font-size:12px; margin-top:8px; display: inline-block;">CONGOFLIX LIVE</div>
@@ -126,18 +78,17 @@
     let myProfile = null;
     let localStream = null;
 
-    // CONFIGURATION CRITIQUE : Ajout de serveurs STUN pour passer les pare-feux
     const peer = new Peer('congolive-' + Math.floor(Math.random() * 100000), {
         config: {'iceServers': [
             { url: 'stun:stun.l.google.com:19302' },
-            { url: 'stun:stun1.l.google.com:19302' }
+            { url: 'stun:stun1.l.google.com:19302' },
+            { url: 'stun:stun2.l.google.com:19302' }
         ]},
         debug: 1
     });
 
     peer.on('call', (call) => {
         if (localStream) {
-            console.log("Appel entrant : envoi du flux...");
             call.answer(localStream);
         }
     });
@@ -162,11 +113,7 @@
                 const card = document.createElement('div');
                 card.className = 'live-card';
                 card.onclick = () => window.joinLive(live.peerId, live.name);
-                card.innerHTML = `
-                    <div class="live-anim">CONGOFLIX</div>
-                    <img class="cover" src="${live.photo || 'https://via.placeholder.com/200x300/111/ffd700?text=CongoLive'}">
-                    <div class="live-info"><b>${live.name}</b></div>
-                `;
+                card.innerHTML = `<div class="live-anim">CONGOFLIX</div><img class="cover" src="${live.photo || 'https://via.placeholder.com/200x300/111/ffd700?text=CongoLive'}"><div class="live-info"><b>${live.name}</b></div>`;
                 list.appendChild(card);
             });
         });
@@ -175,7 +122,7 @@
     window.startStream = async () => {
         try {
             localStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "user", width: { ideal: 640 } },
+                video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
                 audio: true
             });
             const videoElement = document.getElementById('videoDisplay');
@@ -187,23 +134,33 @@
                 name: myProfile.name,
                 peerId: peer.id
             });
-        } catch (e) { alert("Erreur Caméra."); }
+        } catch (e) { alert("Activez la caméra."); }
     };
 
     window.joinLive = (peerId, name) => {
         document.getElementById('live-overlay').style.display = 'block';
         document.getElementById('current-streamer-name').innerText = name;
         
-        // On crée un petit flux vide pour lancer l'appel
-        const emptyStream = new AudioContext().createMediaStreamDestination().stream;
-        const call = peer.call(peerId, emptyStream);
+        // Correction : On demande un flux pour déclencher l'ouverture
+        const call = peer.call(peerId, new MediaStream());
         
         call.on('stream', (remoteStream) => {
             const video = document.getElementById('videoDisplay');
-            // On s'assure que les pistes vidéo sont bien "active"
+            
+            // On force l'activation des pistes
             remoteStream.getVideoTracks().forEach(t => t.enabled = true);
+            
             video.srcObject = remoteStream;
-            video.onloadedmetadata = () => video.play().catch(e => console.log("Clic requis"));
+            video.muted = false;
+
+            // Petit délai pour forcer le rendu sur mobile
+            setTimeout(() => {
+                video.play().catch(() => {
+                    console.log("Interaction nécessaire");
+                    // Au cas où, on ajoute un clic forcé
+                    document.addEventListener('click', () => video.play(), {once: true});
+                });
+            }, 300);
         });
     };
 
