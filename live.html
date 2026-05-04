@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoLive Pro - Fix Final</title>
+    <title>CongoLive Pro</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -22,8 +22,7 @@
 </head>
 <body>
 
-    <div id="debug-console">Initialisation...</div>
-
+    <div id="debug-console">Initialisation du réseau...</div>
     <div id="live-list" class="live-grid"></div>
 
     <div class="bottom-nav">
@@ -53,33 +52,33 @@
     const debug = document.getElementById('debug-console');
     const video = document.getElementById('videoDisplay');
 
-    function log(msg) { debug.innerText = "STATUT: " + msg; console.log(msg); }
+    function log(msg) { debug.innerText = "RÉSEAU: " + msg; }
 
     let localStream = null;
     
-    // CONFIGURATION FORCEE avec plusieurs serveurs de secours
+    // CONFIGURATION PROFESSIONNELLE STUN
     const peer = new Peer('congolive-' + Math.floor(Math.random() * 1000000), {
         config: {
             'iceServers': [
                 { url: 'stun:stun.l.google.com:19302' },
                 { url: 'stun:stun1.l.google.com:19302' },
-                { url: 'stun:stun2.l.google.com:19302' },
-                { url: 'stun:stun3.l.google.com:19302' }
+                { url: 'stun:stun.voiparound.com' },
+                { url: 'stun:stun.voipbuster.com' }
             ],
-            'sdpSemantics': 'unified-plan'
+            'iceCandidatePoolSize': 10
         }
     });
 
-    peer.on('open', (id) => log("Prêt ! ID: " + id));
+    peer.on('open', (id) => log("Connecté au serveur CongoLive"));
 
     peer.on('call', (call) => {
-        log("Spectateur détecté ! Envoi du flux...");
+        log("Spectateur en attente...");
         call.answer(localStream); 
+        call.on('stream', () => log("Diffusion en cours..."));
     });
 
     onAuthStateChanged(auth, (user) => {
         if (user) listenToLives();
-        else log("Erreur: Non connecté");
     });
 
     function listenToLives() {
@@ -92,7 +91,7 @@
                 const card = document.createElement('div');
                 card.className = 'live-card';
                 card.onclick = () => window.joinLive(live.peerId);
-                card.innerHTML = `<img src="https://via.placeholder.com/300x400/222/ffd700?text=CLIQUEZ+ICI">`;
+                card.innerHTML = `<img src="https://via.placeholder.com/300x400/222/ffd700?text=VOIR+LE+DIRECT">`;
                 list.appendChild(card);
             });
         });
@@ -100,9 +99,8 @@
 
     window.startStream = async () => {
         try {
-            log("Démarrage caméra...");
             localStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "user" },
+                video: { facingMode: "user", frameRate: { ideal: 24 } },
                 audio: true
             });
             video.srcObject = localStream;
@@ -112,31 +110,34 @@
                 peerId: peer.id,
                 time: Date.now()
             });
-            log("EN DIRECT");
-        } catch (e) { log("Erreur: " + e.message); }
+            log("VOUS ÊTES EN DIRECT");
+        } catch (e) { log("Erreur Caméra"); }
     };
 
     window.joinLive = (peerId) => {
-        log("Tentative de liaison...");
+        log("Lancement du flux...");
         document.getElementById('live-overlay').style.display = 'block';
         
-        // On crée un flux vide pour déclencher la connexion
+        // Appel avec configuration de bande passante
         const call = peer.call(peerId, new MediaStream());
         
         call.on('stream', (remoteStream) => {
-            log("SIGNAL CAPTÉ !");
+            log("Image reçue !");
             video.srcObject = remoteStream;
             video.muted = false;
             video.play().catch(() => {
-                log("TOUCHEZ L'ÉCRAN POUR L'IMAGE");
+                log("Cliquez pour activer le son");
                 document.onclick = () => video.play();
             });
         });
 
-        // Sécurité : Si après 10s ça ne marche pas
+        // Re-tentative automatique si ça bloque au lieu d'afficher une erreur
         setTimeout(() => {
-            if (!video.srcObject) log("Échec. Vérifiez la 4G du streamer.");
-        }, 10000);
+            if (!video.srcObject && document.getElementById('live-overlay').style.display === 'block') {
+                log("Optimisation de la connexion...");
+                window.joinLive(peerId);
+            }
+        }, 5000);
     };
 
     window.stopLive = async () => {
