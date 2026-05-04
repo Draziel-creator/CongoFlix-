@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoLive Pro</title>
+    <title>CongoLive Pro - Stable</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -22,7 +22,7 @@
 </head>
 <body>
 
-    <div id="debug-console">Initialisation du réseau...</div>
+    <div id="debug-console">Initialisation...</div>
     <div id="live-list" class="live-grid"></div>
 
     <div class="bottom-nav">
@@ -52,29 +52,29 @@
     const debug = document.getElementById('debug-console');
     const video = document.getElementById('videoDisplay');
 
-    function log(msg) { debug.innerText = "RÉSEAU: " + msg; }
+    function log(msg) { debug.innerText = "STATUS: " + msg; }
 
     let localStream = null;
     
-    // CONFIGURATION PROFESSIONNELLE STUN
     const peer = new Peer('congolive-' + Math.floor(Math.random() * 1000000), {
         config: {
             'iceServers': [
                 { url: 'stun:stun.l.google.com:19302' },
                 { url: 'stun:stun1.l.google.com:19302' },
-                { url: 'stun:stun.voiparound.com' },
-                { url: 'stun:stun.voipbuster.com' }
-            ],
-            'iceCandidatePoolSize': 10
+                { url: 'stun:stun2.l.google.com:19302' }
+            ]
         }
     });
 
-    peer.on('open', (id) => log("Connecté au serveur CongoLive"));
+    peer.on('open', (id) => log("Prêt pour la diffusion"));
 
+    // Réponse automatique aux appels
     peer.on('call', (call) => {
-        log("Spectateur en attente...");
+        log("Client connecté !");
         call.answer(localStream); 
-        call.on('stream', () => log("Diffusion en cours..."));
+        call.on('stream', (remote) => {
+             // C'est le flux vide du spectateur, on ne l'affiche pas
+        });
     });
 
     onAuthStateChanged(auth, (user) => {
@@ -91,7 +91,7 @@
                 const card = document.createElement('div');
                 card.className = 'live-card';
                 card.onclick = () => window.joinLive(live.peerId);
-                card.innerHTML = `<img src="https://via.placeholder.com/300x400/222/ffd700?text=VOIR+LE+DIRECT">`;
+                card.innerHTML = `<img src="https://via.placeholder.com/300x400/222/ffd700?text=REJOINDRE">`;
                 list.appendChild(card);
             });
         });
@@ -100,7 +100,7 @@
     window.startStream = async () => {
         try {
             localStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "user", frameRate: { ideal: 24 } },
+                video: { facingMode: "user" },
                 audio: true
             });
             video.srcObject = localStream;
@@ -110,34 +110,37 @@
                 peerId: peer.id,
                 time: Date.now()
             });
-            log("VOUS ÊTES EN DIRECT");
+            log("DIRECT ACTIF");
         } catch (e) { log("Erreur Caméra"); }
     };
 
-    window.joinLive = (peerId) => {
-        log("Lancement du flux...");
+    window.joinLive = async (peerId) => {
+        log("Liaison en cours...");
         document.getElementById('live-overlay').style.display = 'block';
         
-        // Appel avec configuration de bande passante
-        const call = peer.call(peerId, new MediaStream());
+        // CRITICAL FIX: Créer un flux audio silencieux pour forcer la connexion
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const dst = oscillator.connect(audioCtx.createMediaStreamDestination());
+        oscillator.start();
+        const silentStream = dst.stream;
+
+        const call = peer.call(peerId, silentStream);
         
         call.on('stream', (remoteStream) => {
-            log("Image reçue !");
+            log("FLUX REÇU !");
             video.srcObject = remoteStream;
             video.muted = false;
-            video.play().catch(() => {
-                log("Cliquez pour activer le son");
-                document.onclick = () => video.play();
-            });
+            video.play();
         });
 
-        // Re-tentative automatique si ça bloque au lieu d'afficher une erreur
+        // Timeout de sécurité pour relancer si l'écran reste noir
         setTimeout(() => {
             if (!video.srcObject && document.getElementById('live-overlay').style.display === 'block') {
-                log("Optimisation de la connexion...");
+                log("Re-connexion...");
                 window.joinLive(peerId);
             }
-        }, 5000);
+        }, 4000);
     };
 
     window.stopLive = async () => {
