@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoLive Pro - Final Fix</title>
+    <title>CongoLive Pro - Fix Caméra</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --red: #ff3b5c; --bg: #000; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; overflow: hidden; }
-        #debug-console { position: fixed; top: 10px; left: 10px; right: 10px; font-size: 11px; background: rgba(0,0,0,0.8); z-index: 3000; color: #00ff00; padding: 8px; border-radius: 5px; border: 1px solid #333; pointer-events: none; }
-        .live-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 70px 2px 80px 2px; height: 100vh; overflow-y: auto; }
-        .live-card { position: relative; height: 260px; background: #111; border: 0.5px solid #222; }
+        #debug-console { position: fixed; top: 10px; left: 10px; right: 10px; font-size: 10px; background: rgba(0,0,0,0.85); z-index: 3000; color: #00ff00; padding: 10px; border-radius: 8px; border: 1px solid #444; pointer-events: none; }
+        .live-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 70px 4px 80px 4px; }
+        .live-card { height: 260px; background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; }
         .live-card img { width: 100%; height: 100%; object-fit: cover; }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: #080808; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; z-index: 100; }
-        .btn-start-live { width: 55px; height: 55px; background: var(--red); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; transform: translateY(-10px); }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: #000; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; z-index: 100; }
+        .btn-start-live { width: 60px; height: 60px; background: var(--red); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; transform: translateY(-15px); box-shadow: 0 4px 15px rgba(255,59,92,0.4); }
         #live-overlay { position: fixed; inset: 0; background: black; display: none; z-index: 2000; }
         video { width: 100%; height: 100%; object-fit: cover; background: #000; }
-        .close-btn { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; color: white; border: none; font-size: 20px; z-index: 2100; }
+        .close-btn { position: absolute; top: 25px; right: 20px; width: 45px; height: 45px; background: rgba(0,0,0,0.5); border-radius: 50%; color: white; border: 2px solid white; font-size: 24px; z-index: 2100; }
     </style>
 </head>
 <body>
@@ -27,12 +27,12 @@
     <div id="live-list" class="live-grid"></div>
 
     <div class="bottom-nav">
-        <div class="btn-start-live" onclick="window.startStream()"><i class="fa-solid fa-video"></i></div>
+        <div class="btn-start-live" onclick="window.startStream()"><i class="fa-solid fa-camera"></i></div>
     </div>
 
     <div id="live-overlay">
         <button class="close-btn" onclick="window.stopLive()">×</button>
-        <video id="videoDisplay" autoplay playsinline muted></video>
+        <video id="videoDisplay" autoplay playsinline></video>
     </div>
 
 <script type="module">
@@ -51,42 +51,34 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     const debug = document.getElementById('debug-console');
+    const video = document.getElementById('videoDisplay');
 
-    function log(msg) { debug.innerText = "LOG: " + msg; console.log(msg); }
+    function log(msg) { debug.innerText = "STATUT: " + msg; console.log(msg); }
 
     let localStream = null;
-
-    // CONFIGURATION SERVEURS (STUN + TURN Publics pour traverser la 4G/Wi-Fi)
-    const peer = new Peer('congolive-' + Math.floor(Math.random() * 100000), {
-        config: {
-            'iceServers': [
-                { url: 'stun:stun.l.google.com:19302' },
-                { url: 'stun:stun1.l.google.com:19302' },
-                { url: 'stun:stun.services.mozilla.com' }
-            ],
-            'sdpSemantics': 'unified-plan'
-        }
+    const peerIdGenerated = 'congolive-' + Math.floor(Math.random() * 1000000);
+    const peer = new Peer(peerIdGenerated, {
+        config: { 'iceServers': [{ url: 'stun:stun.l.google.com:19302' }, { url: 'stun:stun1.l.google.com:19302' }] },
+        debug: 1
     });
 
-    peer.on('open', (id) => log("Mon ID PeerJS: " + id));
-    peer.on('error', (err) => log("Erreur PeerJS: " + err.type));
+    peer.on('open', (id) => log("Prêt ! ID: " + id));
 
-    // RÉPONDRE AUTOMATIQUEMENT
+    // LE FIX : Quand le streamer reçoit l'appel du spectateur
     peer.on('call', (call) => {
-        log("Appel entrant reçu !");
-        call.answer(localStream); // On envoie notre flux (si on est streamer) ou rien
+        log("Un spectateur arrive...");
+        // On répond avec le flux caméra, mais SANS toucher à l'affichage du streamer
+        call.answer(localStream); 
         
-        call.on('stream', (remoteStream) => {
-            log("Flux reçu par l'appelant !");
-            const video = document.getElementById('videoDisplay');
-            video.srcObject = remoteStream;
-            video.play().catch(() => log("Touchez l'écran pour le son"));
+        call.on('stream', () => {
+            log("Connexion établie avec succès !");
+            // On ne fait RIEN ici pour le streamer pour ne pas couper sa caméra
         });
     });
 
     onAuthStateChanged(auth, (user) => {
         if (user) listenToLives();
-        else log("Veuillez vous connecter.");
+        else log("Erreur: Non connecté");
     });
 
     function listenToLives() {
@@ -99,7 +91,7 @@
                 const card = document.createElement('div');
                 card.className = 'live-card';
                 card.onclick = () => window.joinLive(live.peerId);
-                card.innerHTML = `<img src="https://via.placeholder.com/200x300/111/ffd700?text=VOIR+LE+LIVE">`;
+                card.innerHTML = `<img src="https://via.placeholder.com/300x400/222/ffd700?text=VOIR+LE+LIVE">`;
                 list.appendChild(card);
             });
         });
@@ -107,53 +99,56 @@
 
     window.startStream = async () => {
         try {
-            log("Demande accès caméra...");
+            log("Démarrage caméra...");
             localStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "user", width: { ideal: 640 } },
+                video: { facingMode: "user" },
                 audio: true
             });
             
-            document.getElementById('videoDisplay').srcObject = localStream;
+            video.srcObject = localStream;
+            video.muted = true; // Streamer ne s'entend pas lui-même
             document.getElementById('live-overlay').style.display = 'block';
             
             await setDoc(doc(db, "active_lives", auth.currentUser.uid), {
                 peerId: peer.id,
-                status: "online"
+                time: Date.now()
             });
-            log("Vous êtes en LIVE !");
-        } catch (e) { log("Erreur caméra: " + e.message); }
+            log("LIVE EN COURS - Les autres peuvent vous voir");
+        } catch (e) { log("Erreur: " + e.message); }
     };
 
     window.joinLive = (peerId) => {
-        log("Appel de: " + peerId + "...");
+        log("Connexion au streamer...");
         document.getElementById('live-overlay').style.display = 'block';
         
-        // On envoie un flux vide technique pour forcer la connexion bidirectionnelle
-        const dummyStream = new AudioContext().createMediaStreamDestination().stream;
-        const call = peer.call(peerId, dummyStream);
+        // On appelle le streamer SANS envoyer de vidéo (juste un signal)
+        const call = peer.call(peerId, new MediaStream());
         
         call.on('stream', (remoteStream) => {
-            log("SIGNAL REÇU ! Affichage...");
-            const video = document.getElementById('videoDisplay');
+            log("IMAGE REÇUE !");
             video.srcObject = remoteStream;
-            video.muted = false; // On active le son
+            video.muted = false;
             
-            video.play().catch(e => {
-                log("Cliquez pour forcer la lecture");
-                document.onclick = () => { video.play(); video.muted = false; };
-            });
+            // Forcer le lancement
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    log("Appuyez sur l'écran pour l'image");
+                    document.body.addEventListener('click', () => video.play(), {once: true});
+                });
+            }
         });
 
-        setTimeout(() => {
-            if (document.getElementById('videoDisplay').paused) {
-                log("Délai dépassé. Vérifiez la connexion du streamer.");
-            }
-        }, 10000);
+        call.on('error', (err) => log("Erreur connexion: " + err));
     };
 
     window.stopLive = async () => {
-        if (localStream) localStream.getTracks().forEach(t => t.stop());
-        if (auth.currentUser) await deleteDoc(doc(db, "active_lives", auth.currentUser.uid));
+        if (localStream) {
+            localStream.getTracks().forEach(t => t.stop());
+        }
+        if (auth.currentUser) {
+            await deleteDoc(doc(db, "active_lives", auth.currentUser.uid));
+        }
         window.location.reload();
     };
 
