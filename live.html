@@ -3,228 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoLive Ultra - Fidélité Totale</title>
+    <title>CongoLive Ultra-Premium</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --gold-gradient: linear-gradient(180deg, #FFD700 0%, #B8860B 100%);
-            --royal-blue: #007fff;
-            --bg-dark: #020205;
-            --sheet-bg: #1c1e26;
+            --gold: #FFD700;
+            --premium-bg: radial-gradient(circle at 50% 30%, #1e1e4a 0%, #05050a 100%);
+            --glass: rgba(255, 255, 255, 0.08);
         }
 
         body { 
-            margin: 0; background: var(--bg-dark); color: white; 
-            font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh;
+            margin: 0; background: #000; color: white; font-family: 'Poppins', sans-serif; 
+            overflow: hidden; height: 100vh;
         }
 
-        /* --- BACKGROUND SCÈNE --- */
-        .main-container {
-            background: radial-gradient(circle at center, #1a1a3a 0%, #020205 100%);
+        .screen {
+            background: var(--premium-bg);
             height: 100vh; width: 100vw; position: relative;
+            display: flex; flex-direction: column;
         }
 
-        /* --- HEADER --- */
-        .room-info {
-            display: flex; justify-content: space-between; padding: 45px 15px 10px; align-items: center;
+        /* --- EFFET DE LUMIÈRE DE SCÈNE --- */
+        .stage-light {
+            position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+            width: 300px; height: 300px; background: var(--royal-blue);
+            filter: blur(120px); opacity: 0.3; pointer-events: none;
         }
-        .host-badge {
-            background: rgba(0,0,0,0.5); border-radius: 30px; padding: 4px 12px 4px 4px;
-            display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .host-img { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #FFD700; }
-        .stats-top { display: flex; gap: 10px; margin-top: 10px; padding: 0 15px; }
-        .stat-pill { background: rgba(255,255,255,0.1); padding: 2px 10px; border-radius: 10px; font-size: 10px; color: #FFD700; }
 
-        /* --- GRILLE DES 15 PLACES --- */
-        .stage-area { padding-top: 20px; text-align: center; }
+        /* --- HEADER IDENTIQUE --- */
+        .header {
+            display: flex; justify-content: space-between; padding: 50px 15px 10px; align-items: center;
+        }
+        .user-pill {
+            background: rgba(0,0,0,0.6); border-radius: 30px; padding: 4px 15px 4px 5px;
+            display: flex; align-items: center; border: 1px solid rgba(255,215,0,0.3);
+        }
+        .pfp-main { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--gold); }
+
+        /* --- SYSTÈME DE SIÈGES "FRAMES" (Image 4) --- */
+        .seats-layout { position: relative; flex: 1; margin-top: 20px; }
         
-        /* Top 5 (Hôte + VIP) */
-        .vip-circle { position: relative; height: 260px; margin-bottom: 20px; }
-        .seat-1 { /* HÔTE */
-            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-            width: 110px; height: 110px; border: 3px solid #FFD700; border-radius: 50%;
-            background: url('https://via.placeholder.com/150') center/cover;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+        .seat-container { position: absolute; display: flex; flex-direction: column; align-items: center; }
+        
+        /* Cadre Doré Premium */
+        .frame-wrapper {
+            position: relative; width: 85px; height: 85px;
+            display: flex; align-items: center; justify-content: center;
         }
-        .seat-1::after { 
-            content: "Hôte"; position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%);
-            background: #ce1126; color: white; font-size: 10px; padding: 2px 10px; border-radius: 10px;
+        .profile-img { 
+            width: 70%; height: 70%; border-radius: 50%; object-fit: cover; 
+            z-index: 1;
+        }
+        .frame-img {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2; pointer-events: none;
+            /* Ici on mettra l'URL de ton PNG de couronne dorée */
+            filter: drop-shadow(0 0 5px rgba(255,215,0,0.5));
         }
 
-        .arc-seats { position: relative; width: 100%; height: 100%; }
-        .seat-vip { position: absolute; width: 65px; height: 65px; border-radius: 50%; border: 2px solid #fff; overflow: hidden; }
-        .s2 { top: 10%; left: 15%; } .s3 { top: 10%; right: 15%; }
-        .s4 { bottom: 10%; left: 10%; } .s5 { bottom: 10%; right: 10%; }
+        /* Positions exactes comme sur ta capture */
+        .pos-1 { top: 30%; left: 50%; transform: translate(-50%, -50%); width: 130px; height: 130px; } /* HÔTE */
+        .pos-2 { top: 15%; left: 10%; } .pos-3 { top: 15%; right: 10%; }
+        .pos-4 { top: 45%; left: 5%; } .pos-5 { top: 45%; right: 5%; }
 
-        /* Grille 6-15 */
-        .audience-grid {
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; padding: 0 20px;
-        }
-        .seat-small {
-            width: 50px; height: 50px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;
-            position: relative; margin: 0 auto;
-        }
-        .seat-small i { color: rgba(255,255,255,0.2); font-size: 18px; }
-        .seat-label { font-size: 9px; color: #aaa; margin-top: 4px; display: block; }
+        .seat-name { font-size: 11px; margin-top: 5px; font-weight: 600; text-shadow: 0 2px 4px #000; }
+        .points-tag { background: rgba(0,0,0,0.5); font-size: 9px; color: var(--gold); padding: 1px 8px; border-radius: 10px; margin-top: 2px; }
 
-        /* --- BARRE D'ACTIONS --- */
-        .bottom-nav {
-            position: fixed; bottom: 0; width: 100%; height: 70px;
-            display: flex; justify-content: space-around; align-items: center;
-            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+        /* --- GRILLE DU BAS (6 à 15) --- */
+        .bottom-grid {
+            position: absolute; bottom: 120px; width: 100%;
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 0 10px;
         }
-        .nav-btn { color: white; font-size: 20px; background: none; border: none; }
-        .gift-trigger { 
+        .mini-seat { display: flex; flex-direction: column; align-items: center; }
+        .mini-circle { 
             width: 45px; height: 45px; border-radius: 50%; 
-            background: linear-gradient(45deg, #ff416c, #ff4b2b); 
+            border: 1.5px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1);
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* --- MODALE CADEAUX (image_aa1cbb.png) --- */
-        #gift-sheet {
-            position: fixed; bottom: -100%; left: 0; width: 100%; height: 75vh;
-            background: var(--sheet-bg); border-radius: 20px 20px 0 0;
-            transition: 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.1); z-index: 1000;
-            padding: 15px; box-sizing: border-box;
+        /* --- MODALE CADEAUX "BOUTIQUE DES MINERAIS" --- */
+        #gift-modal {
+            position: fixed; bottom: -100%; left: 0; width: 100%; height: 70vh;
+            background: #181921; border-radius: 30px 30px 0 0; transition: 0.4s;
+            z-index: 9999; padding: 20px 15px; border-top: 1px solid rgba(255,255,255,0.1);
         }
-        #gift-sheet.active { bottom: 0; }
-        
-        .gift-tabs { display: flex; gap: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
-        .tab-item { font-size: 14px; color: #888; font-weight: bold; }
-        .tab-item.active { color: #FFD700; border-bottom: 2px solid #FFD700; }
+        #gift-modal.open { bottom: 0; }
 
-        .gift-container {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
-            overflow-y: auto; height: calc(100% - 150px);
+        .gift-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+            overflow-y: auto; height: 75%; padding-top: 10px;
         }
-        .gift-box { text-align: center; padding: 5px; border-radius: 10px; }
-        .gift-box img { width: 45px; height: 45px; object-fit: contain; margin-bottom: 5px; }
-        .g-name { font-size: 9px; display: block; height: 24px; overflow: hidden; }
-        .g-pts { font-size: 10px; color: #FFD700; font-weight: bold; }
-        .g-fc { font-size: 8px; color: #888; }
+        .gift-card { text-align: center; position: relative; }
+        .gift-card img { 
+            width: 60px; height: 60px; object-fit: contain; 
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
+        }
+        .gift-card .title { font-size: 9px; color: #eee; display: block; margin-top: 5px; height: 22px; line-height: 1.1; }
+        .gift-card .pts { color: var(--gold); font-size: 10px; font-weight: bold; }
+        .gift-card .fc { color: #777; font-size: 8px; display: block; }
 
-        .gift-footer {
+        .footer-send {
             position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px;
-            background: #15171e; display: flex; justify-content: space-between; align-items: center;
-        }
-        .btn-send {
-            background: #6200ee; color: white; border: none; padding: 10px 30px;
-            border-radius: 25px; font-weight: bold;
+            background: #111218; display: flex; justify-content: space-between; align-items: center;
         }
     </style>
 </head>
 <body>
 
-<div class="main-container">
-    <!-- HEADER -->
-    <div class="room-info">
-        <div class="host-badge">
-            <img src="https://via.placeholder.com/50" class="host-img">
+<div class="screen">
+    <div class="stage-light"></div>
+
+    <div class="header">
+        <div class="user-pill">
+            <img src="https://via.placeholder.com/100" class="pfp-main">
             <div style="margin-left:8px">
                 <div style="font-size:12px; font-weight:bold;">PoupéeNoire👑</div>
-                <div style="font-size:9px; color:#FFD700;"><i class="fa-solid fa-fire"></i> Populaire No.1</div>
+                <div style="font-size:9px; color:var(--gold);"><i class="fa-solid fa-fire"></i> Populaire No.1</div>
             </div>
         </div>
-        <div style="display:flex; gap:15px; align-items:center;">
-            <div style="font-size:14px;"><i class="fa-solid fa-users"></i> 2</div>
-            <i class="fa-solid fa-xmark" style="font-size:20px;"></i>
+        <div style="display:flex; gap:15px; font-size:18px;">
+            <i class="fa-solid fa-users"></i>
+            <i class="fa-solid fa-xmark" onclick="location.reload()"></i>
         </div>
     </div>
 
-    <!-- SCÈNE -->
-    <div class="stage-area">
-        <div class="vip-circle">
-            <div class="seat-1"></div>
-            <div class="arc-seats">
-                <div class="seat-vip s2"><img src="https://via.placeholder.com/100" width="100%"></div>
-                <div class="seat-vip s3"><img src="https://via.placeholder.com/100" width="100%"></div>
-                <div class="seat-vip s4"><img src="https://via.placeholder.com/100" width="100%"></div>
-                <div class="seat-vip s5"><img src="https://via.placeholder.com/100" width="100%"></div>
+    <!-- ZONE DES SIÈGES AVEC FRAMES -->
+    <div class="seats-layout">
+        <!-- HÔTE (Position 1) -->
+        <div class="seat-container pos-1">
+            <div class="frame-wrapper">
+                <img src="https://i.ibb.co/L8N7M9y/gold-frame-circle.png" class="frame-img"> <!-- Exemple de cadre PNG -->
+                <img src="https://via.placeholder.com/150" class="profile-img">
             </div>
+            <span class="seat-name">PoupéeNoire</span>
+            <span class="points-tag">3.45M</span>
         </div>
 
-        <div class="audience-grid">
-            <!-- Boucle de 6 à 15 -->
-            <div class="seat-item">
-                <div class="seat-small"><i class="fa-solid fa-couch"></i><span style="position:absolute; bottom:-3px; font-size:8px; color:#FFD700">6</span></div>
+        <!-- VIPs (2 à 5) -->
+        <div class="seat-container pos-2">
+            <div class="frame-wrapper" style="width:70px; height:70px;">
+                <img src="https://via.placeholder.com/150" class="profile-img" style="border: 2px solid #00f2ff;">
             </div>
-            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
-            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
-            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
-            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
-            <!-- Deuxième ligne -->
-            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
-            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
-            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
-            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
-            <div class="seat-item"><div class="seat-small"><i class="fa-solid fa-couch"></i></div></div>
+            <span class="seat-name">Draziel 🇨🇩</span>
+        </div>
+        <div class="seat-container pos-3">
+            <div class="frame-wrapper" style="width:70px; height:70px;">
+                <img src="https://via.placeholder.com/150" class="profile-img" style="border: 2px solid #ff0055;">
+            </div>
+            <span class="seat-name">NitaK</span>
         </div>
     </div>
 
-    <!-- NAVIGATION BAS -->
-    <div class="bottom-nav">
-        <button class="nav-btn"><i class="fa-solid fa-comment-dots"></i></button>
-        <button class="nav-btn"><i class="fa-solid fa-microphone"></i></button>
-        <button class="nav-btn"><i class="fa-solid fa-face-smile"></i></button>
-        <div class="gift-trigger" onclick="openGifts()">
+    <!-- PETITES PLACES (6-15) -->
+    <div class="bottom-grid">
+        <div class="mini-seat"><div class="mini-circle"><i class="fa-solid fa-couch"></i></div></div>
+        <div class="mini-seat"><div class="mini-circle"><i class="fa-solid fa-couch"></i></div></div>
+        <div class="mini-seat"><div class="mini-circle"><i class="fa-solid fa-couch"></i></div></div>
+        <div class="mini-seat"><div class="mini-circle"><i class="fa-solid fa-couch"></i></div></div>
+        <div class="mini-seat"><div class="mini-circle"><i class="fa-solid fa-couch"></i></div></div>
+    </div>
+
+    <!-- NAV BAS -->
+    <div style="position:fixed; bottom:20px; width:100%; display:flex; justify-content:space-around; align-items:center; z-index:100;">
+        <i class="fa-solid fa-comment-dots"></i>
+        <i class="fa-solid fa-microphone"></i>
+        <i class="fa-solid fa-face-smile" style="font-size:24px; color:var(--gold);"></i>
+        <div onclick="openGifts()" style="width:50px; height:50px; background:linear-gradient(to top, #ff0055, #ff5500); border-radius:50%; display:flex; align-items:center; justify-content:center;">
             <i class="fa-solid fa-gift"></i>
         </div>
     </div>
 </div>
 
-<!-- MODALE CADEAUX -->
-<div id="gift-sheet">
-    <div class="gift-tabs">
-        <div class="tab-item active">Cadeau</div>
-        <div class="tab-item">Chanceux</div>
-        <div class="tab-item">Fans</div>
-    </div>
-    
-    <div class="gift-container">
-        <!-- Richesse 1 -->
-        <div class="gift-box" style="border:1px solid #FFD700; background:rgba(255,215,0,0.05)">
-            <img src="https://cdn-icons-png.flaticon.com/512/305/305011.png">
-            <span class="g-name">Cuivre de Katanga</span>
-            <span class="g-pts">100 pts</span>
-            <span class="g-fc">1,000 FC</span>
+<!-- MODALE CADEAUX MINERAIS -->
+<div id="gift-modal">
+    <div style="color:var(--gold); font-weight:bold; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:10px;">Cadeaux RDC</div>
+    <div class="gift-grid">
+        <!-- ITEM COBALT -->
+        <div class="gift-card">
+            <img src="https://png.pngtree.com/png-vector/20240314/ourmid/pngtree-raw-cobalt-ore-stone-png-image_11956557.png">
+            <span class="title">Cobalt Congolais</span>
+            <span class="pts">200 pts</span>
+            <span class="fc">2,000 FC</span>
         </div>
-        <!-- Richesse 2 -->
-        <div class="gift-box">
-            <img src="https://cdn-icons-png.flaticon.com/512/2829/2829815.png">
-            <span class="g-name">Diamant de la RDC</span>
-            <span class="g-pts">10,000 pts</span>
-            <span class="g-fc">100,000 FC</span>
+        <!-- ITEM DIAMANT -->
+        <div class="gift-card">
+            <img src="https://www.pngarts.com/files/3/Diamond-PNG-Transparent-Image.png">
+            <span class="title">Diamant de la RDC</span>
+            <span class="pts">10,000 pts</span>
+            <span class="fc">100,000 FC</span>
         </div>
-        <!-- Richesse 3 -->
-        <div class="gift-box">
-            <img src="https://cdn-icons-png.flaticon.com/512/10300/10300625.png">
-            <span class="g-name">Okapi Rare</span>
-            <span class="g-pts">600 pts</span>
-            <span class="g-fc">6,000 FC</span>
-        </div>
-        <!-- Richesse 4 -->
-        <div class="gift-box">
-            <img src="https://cdn-icons-png.flaticon.com/512/10439/10439814.png">
-            <span class="g-name">Léopard d'Afrique</span>
-            <span class="g-pts">800 pts</span>
-            <span class="g-fc">8,000 FC</span>
+        <!-- ITEM LÉOPARD -->
+        <div class="gift-card">
+            <img src="https://www.pngplay.com/wp-content/uploads/6/Leopard-Face-PNG-Clipart-Background.png">
+            <span class="title">Léopard d'Afrique</span>
+            <span class="pts">800 pts</span>
+            <span class="fc">8,000 FC</span>
         </div>
     </div>
-
-    <div class="gift-footer">
-        <div style="font-size:12px;"><i class="fa-solid fa-coins" style="color:#FFD700"></i> 525 ></div>
-        <div style="display:flex; align-items:center; gap:15px;">
-            <span style="font-size:12px; color:#888;">1 v</span>
-            <button class="btn-send" onclick="closeGifts()">Envoyer</button>
-        </div>
+    <div class="footer-send">
+        <span style="color:var(--gold); font-size:13px;"><i class="fa-solid fa-coins"></i> 525 ></span>
+        <button onclick="openGifts()" style="background:#6200ee; border:none; color:white; padding:10px 30px; border-radius:25px; font-weight:bold;">Envoyer</button>
     </div>
 </div>
 
 <script>
-    function openGifts() { document.getElementById('gift-sheet').classList.add('active'); }
-    function closeGifts() { document.getElementById('gift-sheet').classList.remove('active'); }
+    function openGifts() { document.getElementById('gift-modal').classList.toggle('open'); }
 </script>
 
 </body>
