@@ -3,150 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoLive Audio - L'Excellence de la RDC</title>
+    <title>CongoLive Pro - Ultra</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { 
-            --gold: #ffd700; 
-            --congo-blue: #007fff; 
-            --congo-red: #ce1126;
-            --dark-bg: linear-gradient(135deg, #001f3f 0%, #000000 100%);
-        }
+        :root { --gold: #FFD700; --neon-blue: #00f2ff; --dark-surface: #121212; }
+        body { margin: 0; background: #050505; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
+
+        /* --- MODE EXPLORER --- */
+        #explore-view { padding: 15px; display: block; height: 100vh; overflow-y: auto; }
+        .explore-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-bottom: 80px; }
+        .live-card { position: relative; height: 250px; border-radius: 15px; overflow: hidden; background: #222; }
+        .live-card img { width: 100%; height: 100%; object-fit: cover; }
+        .live-card .overlay-info { position: absolute; bottom: 0; width: 100%; padding: 10px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); }
+
+        /* --- MODE SALLE DE LIVE (FULL SCREEN) --- */
+        #live-room { display: none; height: 100vh; background: linear-gradient(180deg, #1a1a2e 0%, #000000 100%); position: relative; }
         
-        body { margin: 0; background: var(--dark-bg); color: white; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; height: 100vh; }
+        /* En-tête salle */
+        .room-header { display: flex; justify-content: space-between; padding: 40px 15px 10px; align-items: center; }
+        .host-info { display: flex; align-items: center; background: rgba(0,0,0,0.4); border-radius: 25px; padding: 5px 15px 5px 5px; }
+        .host-avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--gold); margin-right: 8px; }
 
-        /* --- Interface de Navigation --- */
-        .header-live { position: fixed; top: 0; width: 100%; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .live-badge { background: var(--congo-red); padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; animation: pulse 2s infinite; }
+        /* Sièges de la salle (Style Pro) */
+        .seats-container { padding: 10px; display: flex; flex-direction: column; gap: 20px; }
+        .vip-seats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .normal-seats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
         
-        /* --- Grille des Podiums (Scène) --- */
-        .stage { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 100px 20px; justify-items: center; }
-        .podium { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--gold); background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
-        .podium.active { border-color: var(--congo-blue); box-shadow: 0 0 20px var(--congo-blue); }
-        .podium i { font-size: 30px; color: rgba(255,255,255,0.3); }
-        .podium .label { position: absolute; bottom: -25px; font-size: 10px; color: var(--gold); font-weight: bold; text-transform: uppercase; }
+        .seat { position: relative; display: flex; flex-direction: column; align-items: center; }
+        .seat-circle { width: 65px; height: 65px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; position: relative; }
+        .seat.vip .seat-circle { width: 85px; height: 85px; border: 2px solid var(--gold); box-shadow: 0 0 10px rgba(255,215,0,0.2); }
+        .seat-circle i { color: rgba(255,255,255,0.2); font-size: 24px; }
+        .seat-num { position: absolute; bottom: -5px; background: var(--gold); color: black; font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
 
-        /* --- Barre d'outils à DROITE --- */
-        .side-controls { position: fixed; right: 15px; bottom: 100px; display: flex; flex-direction: column; gap: 15px; z-index: 100; }
-        .btn-circle { width: 55px; height: 55px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .btn-gift { background: linear-gradient(to bottom, #ff416c, #ff4b2b); }
-        .btn-mic { background: var(--congo-blue); }
-        .btn-mic.off { background: #555; }
-        .btn-exit { background: var(--congo-red); }
+        /* Chat & Actions */
+        .chat-area { position: absolute; bottom: 80px; left: 15px; right: 80px; max-height: 150px; overflow-y: hidden; mask-image: linear-gradient(transparent, black 20%); }
+        .chat-msg { font-size: 13px; margin-bottom: 5px; text-shadow: 1px 1px 2px black; }
+        .chat-msg span { color: var(--gold); font-weight: bold; }
 
-        /* --- Modale Cadeaux --- */
-        #gift-modal { position: fixed; bottom: -100%; left: 0; width: 100%; background: rgba(10, 10, 30, 0.95); border-radius: 25px 25px 0 0; transition: 0.4s; z-index: 2000; padding: 20px; border-top: 2px solid var(--gold); }
-        #gift-modal.open { bottom: 0; }
-        .gift-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center; }
-        .gift-item { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 15px; border: 1px solid rgba(255,215,0,0.1); }
-        .gift-item img { width: 50px; height: 50px; margin-bottom: 5px; }
-        .gift-name { font-size: 11px; font-weight: bold; display: block; color: var(--gold); }
-        .gift-points { font-size: 10px; color: #00ff00; }
-        .gift-price { font-size: 9px; color: #ccc; display: block; }
+        .bottom-actions { position: absolute; bottom: 20px; right: 15px; display: flex; gap: 12px; }
+        .action-btn { width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2); font-size: 18px; }
+        .gift-btn { background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%); border: none; }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        /* Modal Cadeaux (Style Sheets) */
+        #gift-sheet { position: fixed; bottom: -100%; left: 0; width: 100%; background: #1a1a1a; border-radius: 20px 20px 0 0; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 3000; padding: 20px 10px; }
+        #gift-sheet.active { bottom: 0; }
+        .gift-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .gift-card { background: rgba(255,255,255,0.03); padding: 10px 5px; border-radius: 12px; text-align: center; }
+        .gift-card img { width: 40px; height: 40px; margin-bottom: 5px; }
+        .gift-card .pts { color: var(--gold); font-size: 11px; font-weight: bold; display: block; }
+        .gift-card .money { font-size: 9px; color: #888; }
     </style>
 </head>
 <body>
 
-    <div class="header-live">
-        <div class="live-badge">DIRECT AUDIO</div>
-        <div id="viewer-count"><i class="fa-solid fa-users"></i> 0</div>
+    <!-- VUE EXPLORER -->
+    <div id="explore-view">
+        <h2 style="color: var(--gold)">CongoLive Explore</h2>
+        <div id="live-list" class="explore-grid"></div>
+        
+        <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);">
+            <button onclick="startMyLive()" style="background: var(--gold); border: none; padding: 15px 30px; border-radius: 30px; font-weight: bold; font-size: 16px;">LANCER MON LIVE</button>
+        </div>
     </div>
 
-    <!-- Scène des Intervenants -->
-    <div class="stage">
-        <div class="podium active"><i class="fa-solid fa-crown" style="color: var(--gold)"></i><div class="label">Host</div></div>
-        <div class="podium" onclick="requestMic(1)"><i class="fa-solid fa-microphone-slash"></i><div class="label">Place 1</div></div>
-        <div class="podium" onclick="requestMic(2)"><i class="fa-solid fa-microphone-slash"></i><div class="label">Place 2</div></div>
-        <div class="podium" onclick="requestMic(3)"><i class="fa-solid fa-microphone-slash"></i><div class="label">Place 3</div></div>
-        <div class="podium" onclick="requestMic(4)"><i class="fa-solid fa-microphone-slash"></i><div class="label">Place 4</div></div>
-        <div class="podium" onclick="requestMic(5)"><i class="fa-solid fa-microphone-slash"></i><div class="label">Place 5</div></div>
-    </div>
-
-    <!-- Contrôles à Droite -->
-    <div class="side-controls">
-        <button class="btn-circle btn-mic off" id="micBtn" onclick="toggleMic()"><i class="fa-solid fa-microphone-slash"></i></button>
-        <button class="btn-circle btn-gift" onclick="toggleGifts()"><i class="fa-solid fa-gift"></i></button>
-        <button class="btn-circle btn-exit" onclick="exitLive()"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-
-    <!-- Modale Cadeaux -->
-    <div id="gift-modal">
-        <h3 style="text-align: center; color: var(--gold); margin-top: 0;">OFFRIR UNE RICHESSE DU CONGO</h3>
-        <div class="gift-grid">
-            <div class="gift-item">
-                <img src="https://cdn-icons-png.flaticon.com/512/305/305011.png" alt="Or">
-                <span class="gift-name">OR DU KIVU</span>
-                <span class="gift-points">5 000 pts</span>
-                <span class="gift-price">50 USD</span>
+    <!-- VUE SALLE DE LIVE -->
+    <div id="live-room">
+        <div class="room-header">
+            <div class="host-info">
+                <img src="https://via.placeholder.com/100" class="host-avatar" id="room-host-img">
+                <div>
+                    <div style="font-size: 12px; font-weight: bold;" id="room-host-name">Streamer RDC</div>
+                    <div style="font-size: 10px; color: #ccc;">ID: 54317120</div>
+                </div>
             </div>
-            <div class="gift-item">
-                <img src="https://cdn-icons-png.flaticon.com/512/10300/10300625.png" alt="Gorille">
-                <span class="gift-name">GORILLE VIRUNGA</span>
-                <span class="gift-points">50 000 pts</span>
-                <span class="gift-price">500 USD</span>
+            <button onclick="leaveRoom()" style="background:none; border:none; color:white; font-size:24px;">&times;</button>
+        </div>
+
+        <div class="seats-container">
+            <!-- 6 Grands sièges (VIP) -->
+            <div class="vip-seats">
+                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">1</span></div>
+                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">2</span></div>
+                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">3</span></div>
+                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">4</span></div>
+                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">5</span></div>
+                <div class="seat vip"><div class="seat-circle"><i class="fa-solid fa-crown"></i></div><span class="seat-num">6</span></div>
             </div>
-            <div class="gift-item">
-                <img src="https://cdn-icons-png.flaticon.com/512/2829/2829815.png" alt="Diamant">
-                <span class="gift-name">DIAMANT PUR</span>
-                <span class="gift-points">1 000 000 pts</span>
-                <span class="gift-price">10 000 USD</span>
+            <!-- Petits sièges (Audience) -->
+            <div class="normal-seats">
+                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
+                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
+                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
+                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
+                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
+                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
+                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
+                <div class="seat"><div class="seat-circle"><i class="fa-solid fa-couch"></i></div></div>
             </div>
         </div>
-        <button onclick="toggleGifts()" style="width: 100%; margin-top: 20px; background: none; border: 1px solid white; color: white; padding: 10px; border-radius: 10px;">Fermer</button>
+
+        <div class="chat-area">
+            <div class="chat-msg"><span>Draziel 🇨🇩:</span> a rejoint la salle</div>
+            <div class="chat-msg"><span>Mary:</span> Bonjour tout le monde !</div>
+        </div>
+
+        <div class="bottom-actions">
+            <button class="action-btn" id="mic-toggle" onclick="toggleMic()"><i class="fa-solid fa-microphone-slash"></i></button>
+            <button class="action-btn gift-btn" onclick="toggleGiftSheet()"><i class="fa-solid fa-gift"></i></button>
+        </div>
     </div>
 
-    <audio id="audioPlayback" autoplay></audio>
+    <!-- SHEET CADEAUX -->
+    <div id="gift-sheet">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+            <span style="font-weight: bold; color: var(--gold);">BOUTIQUE CONGO</span>
+            <span style="font-size: 12px;">Solde: 525 pts</span>
+        </div>
+        <div class="gift-grid">
+            <div class="gift-card">
+                <img src="https://cdn-icons-png.flaticon.com/512/305/305011.png">
+                <span class="pts">100</span><span class="money">1.5$</span>
+            </div>
+            <div class="gift-card" style="border: 1px solid var(--gold);">
+                <img src="https://cdn-icons-png.flaticon.com/512/2829/2829815.png">
+                <span class="pts">1.0M</span><span class="money">10,000$</span>
+            </div>
+            <div class="gift-card">
+                <img src="https://cdn-icons-png.flaticon.com/512/10300/10300625.png">
+                <span class="pts">50K</span><span class="money">500$</span>
+            </div>
+            <div class="gift-card">
+                <img src="https://cdn-icons-png.flaticon.com/512/10439/10439814.png">
+                <span class="pts">500</span><span class="money">7.5$</span>
+            </div>
+        </div>
+        <button onclick="toggleGiftSheet()" style="width: 100%; margin-top: 15px; padding: 12px; background: #333; border:none; color:white; border-radius:10px;">FERMER</button>
+    </div>
 
 <script type="module">
-    // Configuration Firebase Simplifiée pour la démo
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, deleteDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const firebaseConfig = { 
-        apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", 
-        projectId: "congo-streaming-51333" 
-    };
+    const firebaseConfig = { apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", projectId: "congo-streaming-51333" };
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let localStream = null;
-    let isMicOn = false;
-
-    // Gestion de l'interface
-    window.toggleGifts = () => {
-        document.getElementById('gift-modal').classList.toggle('open');
+    // Navigation & UI
+    window.startMyLive = () => {
+        document.getElementById('explore-view').style.display = 'none';
+        document.getElementById('live-room').style.display = 'block';
+        // Logique Firebase pour s'enregistrer comme streamer...
     };
 
-    window.toggleMic = async () => {
-        const btn = document.getElementById('micBtn');
-        if (!isMicOn) {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                btn.classList.remove('off');
-                btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
-                isMicOn = true;
-                console.log("Micro activé");
-            } catch (e) { alert("Accès micro refusé"); }
-        } else {
-            localStream.getTracks().forEach(t => t.stop());
-            btn.classList.add('off');
-            btn.innerHTML = '<i class="fa-solid fa-microphone-slash"></i>';
-            isMicOn = false;
-        }
+    window.joinLive = (id) => {
+        document.getElementById('explore-view').style.display = 'none';
+        document.getElementById('live-room').style.display = 'block';
     };
 
-    window.requestMic = (id) => {
-        alert("Demande envoyée au streamer pour la Place " + id);
-        // Ici on ajouterait la logique PeerJS pour envoyer le flux audio
+    window.leaveRoom = () => {
+        document.getElementById('explore-view').style.display = 'block';
+        document.getElementById('live-room').style.display = 'none';
     };
 
-    window.exitLive = () => {
-        if(confirm("Quitter le direct ?")) window.location.reload();
+    window.toggleGiftSheet = () => {
+        document.getElementById('gift-sheet').classList.toggle('active');
     };
 
+    // Simulation de chargement des lives (Explore)
+    const list = document.getElementById('live-list');
+    for(let i=1; i<=4; i++) {
+        const card = document.createElement('div');
+        card.className = 'live-card';
+        card.onclick = () => joinLive(i);
+        card.innerHTML = `<img src="https://picsum.photos/400/600?random=${i}">
+                         <div class="overlay-info">
+                            <div style="font-weight:bold; font-size:14px;">Live Kivu ${i}</div>
+                            <div style="font-size:11px;"><i class="fa-solid fa-user"></i> ${i*12} spectateurs</div>
+                         </div>`;
+        list.appendChild(card);
+    }
 </script>
 </body>
 </html>
