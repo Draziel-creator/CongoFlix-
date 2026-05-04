@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoLive Pro - Fix Caméra</title>
+    <title>CongoLive Pro - Fix Final</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -56,24 +56,25 @@
     function log(msg) { debug.innerText = "STATUT: " + msg; console.log(msg); }
 
     let localStream = null;
-    const peerIdGenerated = 'congolive-' + Math.floor(Math.random() * 1000000);
-    const peer = new Peer(peerIdGenerated, {
-        config: { 'iceServers': [{ url: 'stun:stun.l.google.com:19302' }, { url: 'stun:stun1.l.google.com:19302' }] },
-        debug: 1
+    
+    // CONFIGURATION FORCEE avec plusieurs serveurs de secours
+    const peer = new Peer('congolive-' + Math.floor(Math.random() * 1000000), {
+        config: {
+            'iceServers': [
+                { url: 'stun:stun.l.google.com:19302' },
+                { url: 'stun:stun1.l.google.com:19302' },
+                { url: 'stun:stun2.l.google.com:19302' },
+                { url: 'stun:stun3.l.google.com:19302' }
+            ],
+            'sdpSemantics': 'unified-plan'
+        }
     });
 
     peer.on('open', (id) => log("Prêt ! ID: " + id));
 
-    // LE FIX : Quand le streamer reçoit l'appel du spectateur
     peer.on('call', (call) => {
-        log("Un spectateur arrive...");
-        // On répond avec le flux caméra, mais SANS toucher à l'affichage du streamer
+        log("Spectateur détecté ! Envoi du flux...");
         call.answer(localStream); 
-        
-        call.on('stream', () => {
-            log("Connexion établie avec succès !");
-            // On ne fait RIEN ici pour le streamer pour ne pas couper sa caméra
-        });
     });
 
     onAuthStateChanged(auth, (user) => {
@@ -91,7 +92,7 @@
                 const card = document.createElement('div');
                 card.className = 'live-card';
                 card.onclick = () => window.joinLive(live.peerId);
-                card.innerHTML = `<img src="https://via.placeholder.com/300x400/222/ffd700?text=VOIR+LE+LIVE">`;
+                card.innerHTML = `<img src="https://via.placeholder.com/300x400/222/ffd700?text=CLIQUEZ+ICI">`;
                 list.appendChild(card);
             });
         });
@@ -104,54 +105,45 @@
                 video: { facingMode: "user" },
                 audio: true
             });
-            
             video.srcObject = localStream;
-            video.muted = true; // Streamer ne s'entend pas lui-même
+            video.muted = true;
             document.getElementById('live-overlay').style.display = 'block';
-            
             await setDoc(doc(db, "active_lives", auth.currentUser.uid), {
                 peerId: peer.id,
                 time: Date.now()
             });
-            log("LIVE EN COURS - Les autres peuvent vous voir");
+            log("EN DIRECT");
         } catch (e) { log("Erreur: " + e.message); }
     };
 
     window.joinLive = (peerId) => {
-        log("Connexion au streamer...");
+        log("Tentative de liaison...");
         document.getElementById('live-overlay').style.display = 'block';
         
-        // On appelle le streamer SANS envoyer de vidéo (juste un signal)
+        // On crée un flux vide pour déclencher la connexion
         const call = peer.call(peerId, new MediaStream());
         
         call.on('stream', (remoteStream) => {
-            log("IMAGE REÇUE !");
+            log("SIGNAL CAPTÉ !");
             video.srcObject = remoteStream;
             video.muted = false;
-            
-            // Forcer le lancement
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    log("Appuyez sur l'écran pour l'image");
-                    document.body.addEventListener('click', () => video.play(), {once: true});
-                });
-            }
+            video.play().catch(() => {
+                log("TOUCHEZ L'ÉCRAN POUR L'IMAGE");
+                document.onclick = () => video.play();
+            });
         });
 
-        call.on('error', (err) => log("Erreur connexion: " + err));
+        // Sécurité : Si après 10s ça ne marche pas
+        setTimeout(() => {
+            if (!video.srcObject) log("Échec. Vérifiez la 4G du streamer.");
+        }, 10000);
     };
 
     window.stopLive = async () => {
-        if (localStream) {
-            localStream.getTracks().forEach(t => t.stop());
-        }
-        if (auth.currentUser) {
-            await deleteDoc(doc(db, "active_lives", auth.currentUser.uid));
-        }
+        if (localStream) localStream.getTracks().forEach(t => t.stop());
+        if (auth.currentUser) await deleteDoc(doc(db, "active_lives", auth.currentUser.uid));
         window.location.reload();
     };
-
 </script>
 </body>
 </html>
