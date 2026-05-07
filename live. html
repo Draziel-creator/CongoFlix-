@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CongoLive - Le Trône</title>
+    <style>
+        :root { --rdc-blue: #007FFF; --rdc-yellow: #F7D002; --rdc-red: #CE1021; }
+        body { margin: 0; background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* --- BARRE DE RECHERCHE --- */
+        .search-container { padding: 10px 20px; background: #000; }
+        .search-bar { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #222; background: #111; color: white; box-sizing: border-box; outline: none; }
+        .search-bar:focus { border-color: var(--rdc-blue); }
+
+        /* --- NAVIGATION HAUTE --- */
+        .header-container { display: flex; align-items: center; justify-content: center; padding: 10px 20px; background: #000; }
+        .top-nav { display: flex; gap: 30px; }
+        .nav-item { cursor: pointer; color: #666; font-weight: bold; font-size: 16px; transition: 0.3s; position: relative; padding-bottom: 5px; }
+        .nav-item.active { color: #fff; }
+        .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: var(--rdc-blue); border-radius: 10px; }
+        
+        /* --- GRILLE DE LIVES --- */
+        .live-scroll-area { flex-grow: 1; overflow-y: auto; padding: 10px; padding-bottom: 120px; }
+        .live-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .live-card { background: #0a0a0a; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #1a1a1a; aspect-ratio: 2/3; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .crown-slot { color: var(--rdc-yellow); font-size: 50px; animation: heartBeat 1.5s infinite; }
+        @keyframes heartBeat { 0%, 70%, 100% { transform: scale(1); } 14%, 42% { transform: scale(1.15); } }
+
+        /* --- FOOTER & MICRO --- */
+        .footer-wrapper { position: fixed; bottom: 0; width: 100%; height: 100px; pointer-events: none; }
+        .rdc-curve-svg { position: absolute; bottom: 63px; left: 0; width: 100%; height: 20px; z-index: 15; }
+        .main-footer { background: #000; height: 70px; display: flex; align-items: center; justify-content: space-around; position: absolute; bottom: 0; width: 100%; z-index: 10; pointer-events: auto; border-top: 1px solid #111; }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; color: #555; font-size: 10px; text-decoration: none; width: 20%; cursor: pointer; }
+        .nav-btn.active { color: #fff; }
+        .nav-btn i { font-size: 20px; margin-bottom: 4px; }
+        
+        .mic-container { position: relative; z-index: 25; margin-top: -82px; pointer-events: auto; display: flex; justify-content: center; }
+        .star-mic {
+            width: 82px; height: 82px; background: var(--rdc-yellow);
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            display: flex; justify-content: center; align-items: center; font-size: 26px; cursor: pointer; color: #000;
+        }
+
+        /* --- MODAL --- */
+        #uploadModal { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        .modal-body { width: 100%; max-width: 320px; border: 1px solid #222; padding: 25px; border-radius: 20px; background: #050505; }
+        .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 25px; width: 100%; }
+        .btn-blue { background: var(--rdc-blue); color: white; border: none; padding: 16px; border-radius: 35px; font-weight: bold; cursor: pointer; text-decoration: none; display: block; }
+        .btn-outline { background: none; border: 2px solid #333; color: white; padding: 14px; border-radius: 35px; font-weight: bold; cursor: pointer; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="header-container">
+        <div class="top-nav">
+            <div id="btnSuivi" class="nav-item" onclick="switchTab('suivi')">Suivi</div>
+            <div id="btnExplorer" class="nav-item active" onclick="switchTab('explorer')">Explorer</div>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Rechercher un créateur..." onkeyup="filterLives()">
+    </div>
+
+    <div class="live-scroll-area">
+        <div class="live-grid" id="liveGrid">
+            </div>
+    </div>
+
+    <div id="uploadModal">
+        <div class="modal-body">
+            <div id="modalIcon"></div>
+            <h2 id="modalTitle" style="margin: 10px 0;"></h2>
+            <p id="modalDesc" style="color: #bbb; line-height: 1.6;"></p>
+            <div id="btnGroup" class="btn-group"></div>
+        </div>
+    </div>
+
+    <div class="footer-wrapper">
+        <svg class="rdc-curve-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
+            <path d="M0,10 L163,10" fill="none" stroke="#007FFF" stroke-width="6" />
+            <path d="M237,10 L400,10" fill="none" stroke="#CE1021" stroke-width="6" />
+        </svg>
+        <footer class="main-footer">
+            <div class="nav-btn active"><i class="fas fa-home"></i><span>Accueil</span></div>
+            <div class="nav-btn"><i class="fas fa-comment-dots"></i><span>Messages</span></div>
+            
+            <div class="mic-container" id="micBtn">
+                <div class="star-mic"><i class="fas fa-microphone"></i></div>
+            </div>
+
+            <div class="nav-btn"><i class="fas fa-th-large"></i><span>Activités</span></div>
+            <a href="https://draziel-creator.github.io/CongoFlix-/index.html" class="nav-btn" style="text-decoration:none;"><i class="fas fa-user-circle"></i><span>Compte</span></a>
+        </footer>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
+            authDomain: "congo-streaming-51333.firebaseapp.com",
+            projectId: "congo-streaming-51333",
+            storageBucket: "congo-streaming-51333.firebasestorage.app",
+            messagingSenderId: "304286627819",
+            appId: "1:304286627819:web:ee606adc4f6b4002054bae"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let allLives = []; // Stockage local pour la recherche
+        let currentTab = 'explorer';
+
+        // --- NAVIGATION ONGLETS ---
+        window.switchTab = (tab) => {
+            currentTab = tab;
+            document.getElementById('btnSuivi').classList.toggle('active', tab === 'suivi');
+            document.getElementById('btnExplorer').classList.toggle('active', tab === 'explorer');
+            renderLives(); // On rafraîchit l'affichage
+        };
+
+        // --- RECHERCHE ---
+        window.filterLives = () => {
+            renderLives();
+        };
+
+        // --- MODAL & MICRO ---
+        window.closeModal = () => {
+            document.getElementById('uploadModal').style.display = 'none';
+        };
+
+        window.handleMicLogic = () => {
+            const isConnected = localStorage.getItem('userStatus') === 'connected';
+            const modal = document.getElementById('uploadModal');
+            const title = document.getElementById('modalTitle');
+            const desc = document.getElementById('modalDesc');
+            const icon = document.getElementById('modalIcon');
+            const buttons = document.getElementById('btnGroup');
+
+            modal.style.display = 'flex';
+            buttons.innerHTML = ""; 
+
+            if (isConnected) {
+                icon.innerHTML = '<i class="fas fa-crown" style="color:var(--rdc-yellow); font-size:60px;"></i>';
+                title.innerText = "COURONNE MANQUANTE";
+                title.style.color = "var(--rdc-red)";
+                desc.innerHTML = "Vous êtes connecté ! Mais pour lancer un Live, vous devez <b>débloquer votre couronne</b> sur CongoFlix.";
+                buttons.innerHTML = '<button class="btn-outline" onclick="window.closeModal()">RETOUR</button>';
+            } else {
+                icon.innerHTML = '<i class="fas fa-user-lock" style="color:#666; font-size:60px;"></i>';
+                title.innerText = "ACCÈS REFUSÉ";
+                title.style.color = "#fff";
+                desc.innerText = "Connectez-vous à votre compte CongoFlix pour accéder aux fonctions de streaming.";
+                buttons.innerHTML = `
+                    <a href="https://draziel-creator.github.io/CongoFlix-/index.html" class="btn-blue">SE CONNECTER</a>
+                    <button class="btn-outline" onclick="window.closeModal()">FERMER</button>
+                `;
+            }
+        };
+
+        // --- AFFICHAGE DES LIVES ---
+        function renderLives() {
+            const grid = document.getElementById('liveGrid');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            grid.innerHTML = "";
+
+            // Filtrage par onglet (simulé ici) et par recherche
+            let filtered = allLives.filter(live => {
+                const matchesSearch = live.pseudo.toLowerCase().includes(searchTerm);
+                return matchesSearch; 
+            });
+
+            if (currentTab === 'suivi') {
+                grid.innerHTML = "<p style='grid-column: 1/3; text-align:center; color:#555; padding:20px;'>Aucun live dans vos suivis pour le moment.</p>";
+                return;
+            }
+
+            filtered.forEach(data => {
+                grid.innerHTML += `
+                    <div class="live-card">
+                        <img src="${data.couverture}" style="width:100%; height:100%; object-fit:cover;">
+                        <div style="position:absolute; bottom:10px; left:10px; font-size:10px; font-weight:bold; background:rgba(0,0,0,0.7); padding:4px 8px; border-radius:4px;">
+                            @${data.pseudo}
+                        </div>
+                    </div>`;
+            });
+
+            // Ajouter les slots vides avec couronne
+            for(let i=0; i < Math.max(0, 4 - filtered.length); i++) {
+                grid.innerHTML += `<div class="live-card"><i class="fas fa-crown crown-slot"></i></div>`;
+            }
+        }
+
+        // --- ECOUTE FIREBASE ---
+        onSnapshot(query(collection(db, "lives_en_cours"), orderBy("createdAt", "desc")), (snap) => {
+            allLives = [];
+            snap.forEach(doc => allLives.push(doc.data()));
+            renderLives();
+        });
+
+        // --- INITIALISATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('micBtn').onclick = window.handleMicLogic;
+        });
+    </script>
+</body>
+</html>
