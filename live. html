@@ -48,6 +48,9 @@
         .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 25px; width: 100%; }
         .btn-blue { background: var(--rdc-blue); color: white; border: none; padding: 16px; border-radius: 35px; font-weight: bold; cursor: pointer; text-decoration: none; display: block; }
         .btn-outline { background: none; border: 2px solid #333; color: white; padding: 14px; border-radius: 35px; font-weight: bold; cursor: pointer; }
+        
+        /* Avatar dans le footer */
+        #userFooterImg { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid var(--rdc-yellow); display: none; }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -65,8 +68,7 @@
     </div>
 
     <div class="live-scroll-area">
-        <div class="live-grid" id="liveGrid">
-            </div>
+        <div class="live-grid" id="liveGrid"></div>
     </div>
 
     <div id="uploadModal">
@@ -92,13 +94,18 @@
             </div>
 
             <div class="nav-btn"><i class="fas fa-th-large"></i><span>Activités</span></div>
-            <a href="https://draziel-creator.github.io/CongoFlix-/index.html" class="nav-btn" style="text-decoration:none;"><i class="fas fa-user-circle"></i><span>Compte</span></a>
+            <a href="https://draziel-creator.github.io/CongoFlix-/index.html" class="nav-btn" style="text-decoration:none;">
+                <i class="fas fa-user-circle" id="userIconDefault"></i>
+                <img id="userFooterImg" src="" alt="Profil">
+                <span>Compte</span>
+            </a>
         </footer>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
@@ -111,30 +118,50 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        let allLives = []; // Stockage local pour la recherche
+        let currentUser = null;
+        let allLives = [];
         let currentTab = 'explorer';
+
+        // --- AUTH AUTOMATIQUE (COMME LE LECTEUR) ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                // On récupère les infos dans Firestore
+                const userSnap = await getDoc(doc(db, "users", user.uid));
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    // On affiche la photo dans le footer si elle existe
+                    if (userData.photoURL) {
+                        document.getElementById('userIconDefault').style.display = 'none';
+                        document.getElementById('userFooterImg').src = userData.photoURL;
+                        document.getElementById('userFooterImg').style.display = 'block';
+                    }
+                }
+            } else {
+                currentUser = null;
+                document.getElementById('userIconDefault').style.display = 'block';
+                document.getElementById('userFooterImg').style.display = 'none';
+            }
+        });
 
         // --- NAVIGATION ONGLETS ---
         window.switchTab = (tab) => {
             currentTab = tab;
             document.getElementById('btnSuivi').classList.toggle('active', tab === 'suivi');
             document.getElementById('btnExplorer').classList.toggle('active', tab === 'explorer');
-            renderLives(); // On rafraîchit l'affichage
-        };
-
-        // --- RECHERCHE ---
-        window.filterLives = () => {
             renderLives();
         };
 
-        // --- MODAL & MICRO ---
+        window.filterLives = () => renderLives();
+
         window.closeModal = () => {
             document.getElementById('uploadModal').style.display = 'none';
         };
 
+        // --- LOGIQUE MICRO MODIFIÉE ---
         window.handleMicLogic = () => {
-            const isConnected = localStorage.getItem('userStatus') === 'connected';
             const modal = document.getElementById('uploadModal');
             const title = document.getElementById('modalTitle');
             const desc = document.getElementById('modalDesc');
@@ -144,13 +171,15 @@
             modal.style.display = 'flex';
             buttons.innerHTML = ""; 
 
-            if (isConnected) {
+            if (currentUser) {
+                // L'utilisateur est connecté via Firebase
                 icon.innerHTML = '<i class="fas fa-crown" style="color:var(--rdc-yellow); font-size:60px;"></i>';
                 title.innerText = "COURONNE MANQUANTE";
                 title.style.color = "var(--rdc-red)";
-                desc.innerHTML = "Vous êtes connecté ! Mais pour lancer un Live, vous devez <b>débloquer votre couronne</b> sur CongoFlix.";
+                desc.innerHTML = `Ravi de vous revoir ! Mais pour lancer un Live, vous devez <b>débloquer votre couronne</b> sur CongoFlix.`;
                 buttons.innerHTML = '<button class="btn-outline" onclick="window.closeModal()">RETOUR</button>';
             } else {
+                // Personne n'est connecté
                 icon.innerHTML = '<i class="fas fa-user-lock" style="color:#666; font-size:60px;"></i>';
                 title.innerText = "ACCÈS REFUSÉ";
                 title.style.color = "#fff";
@@ -168,11 +197,7 @@
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             grid.innerHTML = "";
 
-            // Filtrage par onglet (simulé ici) et par recherche
-            let filtered = allLives.filter(live => {
-                const matchesSearch = live.pseudo.toLowerCase().includes(searchTerm);
-                return matchesSearch; 
-            });
+            let filtered = allLives.filter(live => live.pseudo.toLowerCase().includes(searchTerm));
 
             if (currentTab === 'suivi') {
                 grid.innerHTML = "<p style='grid-column: 1/3; text-align:center; color:#555; padding:20px;'>Aucun live dans vos suivis pour le moment.</p>";
@@ -189,7 +214,6 @@
                     </div>`;
             });
 
-            // Ajouter les slots vides avec couronne
             for(let i=0; i < Math.max(0, 4 - filtered.length); i++) {
                 grid.innerHTML += `<div class="live-card"><i class="fas fa-crown crown-slot"></i></div>`;
             }
@@ -202,10 +226,7 @@
             renderLives();
         });
 
-        // --- INITIALISATION ---
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('micBtn').onclick = window.handleMicLogic;
-        });
+        document.getElementById('micBtn').onclick = window.handleMicLogic;
     </script>
 </body>
 </html>
