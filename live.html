@@ -15,7 +15,7 @@
         /* --- NAV --- */
         .header-container { display: flex; align-items: center; justify-content: center; padding: 10px 20px; }
         .top-nav { display: flex; gap: 30px; }
-        .nav-item { cursor: pointer; color: #666; font-weight: bold; position: relative; padding-bottom: 5px; }
+        .nav-item { cursor: pointer; color: #666; font-weight: bold; position: relative; padding-bottom: 5px; transition: 0.3s; }
         .nav-item.active { color: #fff; }
         .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: var(--rdc-blue); border-radius: 10px; }
         
@@ -109,7 +109,6 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, onSnapshot, getDoc, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Configuration identique au lecteur (Correction de l'AppID Android pour match)
         const firebaseConfig = {
             apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
             authDomain: "congo-streaming-51333.firebaseapp.com",
@@ -124,14 +123,29 @@
         let currentUser = null;
         let allLives = [];
 
-        // --- 1. CONNEXION DES BOUTONS (MÊME MÉTHODE QUE LECTEUR) ---
+        // --- NAVIGATION HAUTE (SUIVI / EXPLORER) ---
+        window.switchTab = (tab) => {
+            const btnSuivi = document.getElementById('btnSuivi');
+            const btnExplorer = document.getElementById('btnExplorer');
+            
+            if(tab === 'suivi') {
+                btnSuivi.classList.add('active');
+                btnExplorer.classList.remove('active');
+                // Ici tu pourras filtrer allLives pour n'afficher que les suivis
+            } else {
+                btnExplorer.classList.add('active');
+                btnSuivi.classList.remove('active');
+            }
+            renderLives(); // Rafraîchit la grille
+        };
+
+        // --- AUTH TRACKING ---
         onAuthStateChanged(auth, async (user) => {
             const imgEl = document.getElementById('userFooterImg');
             const iconEl = document.getElementById('userIconDefault');
 
             if (user) {
                 currentUser = user;
-                // On va chercher l'image dans l'espace compte (Firestore)
                 const userSnap = await getDoc(doc(db, "users", user.uid));
                 if (userSnap.exists()) {
                     const userData = userSnap.data();
@@ -148,25 +162,22 @@
             }
         });
 
-        // --- 2. LOGIQUE DU BOUTON MICRO ---
+        // --- LOGIQUE MICRO ---
         window.handleMicAction = () => {
             const modal = document.getElementById('uploadModal');
             const title = document.getElementById('modalTitle');
             const desc = document.getElementById('modalDesc');
             const icon = document.getElementById('modalIcon');
             const group = document.getElementById('btnGroup');
-
             modal.style.display = 'flex';
 
             if (currentUser) {
-                // RECONNAIT LA CONNEXION : ENLÈVE LE BOUTON SE CONNECTER
                 icon.innerHTML = '<i class="fas fa-crown" style="color:var(--rdc-yellow); font-size:60px;"></i>';
                 title.innerText = "ACCÈS AU TRÔNE";
                 title.style.color = "var(--rdc-yellow)";
                 desc.innerHTML = "Désolé, vous devez <b>gagner votre couronne</b> avant de régner ici.";
                 group.innerHTML = '<button class="btn-outline" onclick="closeModal()">RETOUR</button>';
             } else {
-                // PAS DE CONNEXION
                 icon.innerHTML = '<i class="fas fa-user-lock" style="color:#555; font-size:60px;"></i>';
                 title.innerText = "CONNEXION REQUISE";
                 title.style.color = "#fff";
@@ -180,12 +191,10 @@
 
         window.closeModal = () => document.getElementById('uploadModal').style.display = 'none';
 
-        // --- 3. AFFICHAGE DES CARTES LIVES ---
+        // --- AFFICHAGE GRILLE ---
         function renderLives() {
             const grid = document.getElementById('liveGrid');
             grid.innerHTML = "";
-            
-            // On affiche les vrais lives si ils existent
             allLives.forEach(live => {
                 grid.innerHTML += `
                     <div class="live-card">
@@ -193,23 +202,18 @@
                         <div style="position:absolute; bottom:8px; left:8px; font-size:10px; background:rgba(0,0,0,0.8); padding:3px 8px; border-radius:5px;">@${live.pseudo}</div>
                     </div>`;
             });
-
-            // On complète avec les slots "Couronne" vides
             for(let i=0; i < (4 - allLives.length); i++) {
                 grid.innerHTML += `<div class="live-card"><i class="fas fa-crown crown-slot"></i></div>`;
             }
         }
 
-        // Ecoute des lives en temps réel
         onSnapshot(query(collection(db, "lives_en_cours"), orderBy("createdAt", "desc")), (snap) => {
             allLives = [];
             snap.forEach(doc => allLives.push(doc.data()));
             renderLives();
         });
 
-        // Liaison du bouton micro
         document.getElementById('micBtn').onclick = window.handleMicAction;
-
     </script>
 </body>
 </html>
