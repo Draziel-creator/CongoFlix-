@@ -8,30 +8,29 @@
         :root { --rdc-blue: #007FFF; --rdc-yellow: #F7D002; --rdc-red: #CE1021; }
         body { margin: 0; background: #000; color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* --- BARRE DE RECHERCHE --- */
+        /* --- RECHERCHE --- */
         .search-container { padding: 10px 20px; background: #000; }
         .search-bar { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #222; background: #111; color: white; box-sizing: border-box; outline: none; }
-        .search-bar:focus { border-color: var(--rdc-blue); }
 
-        /* --- NAVIGATION --- */
-        .header-container { display: flex; align-items: center; justify-content: center; padding: 10px 20px; background: #000; }
+        /* --- NAV --- */
+        .header-container { display: flex; align-items: center; justify-content: center; padding: 10px 20px; }
         .top-nav { display: flex; gap: 30px; }
-        .nav-item { cursor: pointer; color: #666; font-weight: bold; font-size: 16px; transition: 0.3s; position: relative; padding-bottom: 5px; }
+        .nav-item { cursor: pointer; color: #666; font-weight: bold; position: relative; padding-bottom: 5px; }
         .nav-item.active { color: #fff; }
         .nav-item.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: var(--rdc-blue); border-radius: 10px; }
         
         /* --- GRILLE --- */
         .live-scroll-area { flex-grow: 1; overflow-y: auto; padding: 10px; padding-bottom: 120px; }
         .live-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .live-card { background: #0a0a0a; border-radius: 15px; position: relative; overflow: hidden; border: 1px solid #1a1a1a; aspect-ratio: 2/3; display: flex; align-items: center; justify-content: center; }
+        .live-card { background: #0a0a0a; border-radius: 15px; border: 1px solid #1a1a1a; aspect-ratio: 2/3; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
         .crown-slot { color: var(--rdc-yellow); font-size: 50px; animation: heartBeat 1.5s infinite; }
         @keyframes heartBeat { 0%, 70%, 100% { transform: scale(1); } 14%, 42% { transform: scale(1.15); } }
 
-        /* --- FOOTER --- */
+        /* --- FOOTER & MICRO --- */
         .footer-wrapper { position: fixed; bottom: 0; width: 100%; height: 100px; pointer-events: none; }
         .rdc-curve-svg { position: absolute; bottom: 63px; left: 0; width: 100%; height: 20px; z-index: 15; }
         .main-footer { background: #000; height: 70px; display: flex; align-items: center; justify-content: space-around; position: absolute; bottom: 0; width: 100%; z-index: 10; pointer-events: auto; border-top: 1px solid #111; }
-        .nav-btn { display: flex; flex-direction: column; align-items: center; color: #555; font-size: 10px; text-decoration: none; width: 20%; }
+        .nav-btn { display: flex; flex-direction: column; align-items: center; color: #555; font-size: 10px; text-decoration: none; width: 20%; text-align: center; }
         
         .mic-container { position: relative; z-index: 25; margin-top: -82px; pointer-events: auto; display: flex; justify-content: center; }
         .star-mic {
@@ -41,13 +40,16 @@
         }
 
         /* --- MODAL --- */
-        #uploadModal { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        #uploadModal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .modal-body { width: 100%; max-width: 320px; border: 1px solid #222; padding: 25px; border-radius: 20px; background: #050505; text-align: center; }
         .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 25px; }
-        .btn-blue { background: var(--rdc-blue); color: white; border: none; padding: 16px; border-radius: 35px; font-weight: bold; cursor: pointer; text-decoration: none; }
+        .btn-blue { background: var(--rdc-blue); color: white; border: none; padding: 16px; border-radius: 35px; font-weight: bold; cursor: pointer; text-decoration: none; display: block; }
         .btn-outline { background: none; border: 2px solid #333; color: white; padding: 14px; border-radius: 35px; font-weight: bold; cursor: pointer; }
         
-        #userFooterImg { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2px solid var(--rdc-blue); display: none; }
+        /* Avatar Dynamique */
+        .profile-box { width: 28px; height: 28px; position: relative; display: flex; align-items: center; justify-content: center; }
+        #userFooterImg { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--rdc-yellow); display: none; }
+        #userIconDefault { font-size: 24px; }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -83,7 +85,7 @@
             <path d="M237,10 L400,10" fill="none" stroke="#CE1021" stroke-width="6" />
         </svg>
         <footer class="main-footer">
-            <div class="nav-btn"><i class="fas fa-home"></i><span>Accueil</span></div>
+            <div class="nav-btn active"><i class="fas fa-home"></i><span>Accueil</span></div>
             <div class="nav-btn"><i class="fas fa-comment-dots"></i><span>Messages</span></div>
             
             <div class="mic-container" id="micBtn">
@@ -91,9 +93,12 @@
             </div>
 
             <div class="nav-btn"><i class="fas fa-th-large"></i><span>Activités</span></div>
+            
             <a href="https://draziel-creator.github.io/CongoFlix-/index.html" class="nav-btn" style="text-decoration:none;">
-                <i class="fas fa-user-circle" id="userIconDefault"></i>
-                <img id="userFooterImg" src="" alt="">
+                <div class="profile-box">
+                    <i class="fas fa-user-circle" id="userIconDefault"></i>
+                    <img id="userFooterImg" src="" alt="">
+                </div>
                 <span>Compte</span>
             </a>
         </footer>
@@ -102,15 +107,14 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, query, orderBy, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, getDoc, collection, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // Configuration identique au lecteur (Correction de l'AppID Android pour match)
         const firebaseConfig = {
-            apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
+            apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
             authDomain: "congo-streaming-51333.firebaseapp.com",
             projectId: "congo-streaming-51333",
-            storageBucket: "congo-streaming-51333.firebasestorage.app",
-            messagingSenderId: "304286627819",
-            appId: "1:304286627819:web:ee606adc4f6b4002054bae"
+            appId: "1:304286627819:android:36e0b43b8b10508a054bae"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -120,19 +124,19 @@
         let currentUser = null;
         let allLives = [];
 
-        // --- SYNCHRONISATION FORCEE ---
+        // --- 1. CONNEXION DES BOUTONS (MÊME MÉTHODE QUE LECTEUR) ---
         onAuthStateChanged(auth, async (user) => {
             const imgEl = document.getElementById('userFooterImg');
             const iconEl = document.getElementById('userIconDefault');
 
             if (user) {
                 currentUser = user;
-                // Aller chercher les infos dans la collection "users"
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    const data = userDoc.data();
-                    if (data.photoURL) {
-                        imgEl.src = data.photoURL;
+                // On va chercher l'image dans l'espace compte (Firestore)
+                const userSnap = await getDoc(doc(db, "users", user.uid));
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    if (userData.photoURL) {
+                        imgEl.src = userData.photoURL;
                         imgEl.style.display = "block";
                         iconEl.style.display = "none";
                     }
@@ -144,55 +148,68 @@
             }
         });
 
-        // --- LOGIQUE DU MICRO (TON MESSAGE PERSO) ---
-        window.handleMicLogic = () => {
+        // --- 2. LOGIQUE DU BOUTON MICRO ---
+        window.handleMicAction = () => {
             const modal = document.getElementById('uploadModal');
             const title = document.getElementById('modalTitle');
             const desc = document.getElementById('modalDesc');
             const icon = document.getElementById('modalIcon');
-            const btnGroup = document.getElementById('btnGroup');
+            const group = document.getElementById('btnGroup');
 
             modal.style.display = 'flex';
-            
+
             if (currentUser) {
-                // CONNECTÉ : ON ENLÈVE LE BOUTON SE CONNECTER
+                // RECONNAIT LA CONNEXION : ENLÈVE LE BOUTON SE CONNECTER
                 icon.innerHTML = '<i class="fas fa-crown" style="color:var(--rdc-yellow); font-size:60px;"></i>';
-                title.innerText = "ACCÈS RESTREINT";
+                title.innerText = "ACCÈS AU TRÔNE";
                 title.style.color = "var(--rdc-yellow)";
                 desc.innerHTML = "Désolé, vous devez <b>gagner votre couronne</b> avant de régner ici.";
-                btnGroup.innerHTML = '<button class="btn-outline" onclick="closeModal()">J\'AI COMPRIS</button>';
+                group.innerHTML = '<button class="btn-outline" onclick="closeModal()">RETOUR</button>';
             } else {
-                // PAS CONNECTÉ
-                icon.innerHTML = '<i class="fas fa-user-lock" style="color:#666; font-size:60px;"></i>';
-                title.innerText = "IDENTIFICATION";
+                // PAS DE CONNEXION
+                icon.innerHTML = '<i class="fas fa-user-lock" style="color:#555; font-size:60px;"></i>';
+                title.innerText = "CONNEXION REQUISE";
                 title.style.color = "#fff";
-                desc.innerText = "Connectez-vous pour accéder au trône de CongoLive.";
-                btnGroup.innerHTML = `
+                desc.innerText = "Vous devez être connecté à votre compte CongoFlix pour lancer un live.";
+                group.innerHTML = `
                     <a href="https://draziel-creator.github.io/CongoFlix-/index.html" class="btn-blue">SE CONNECTER</a>
-                    <button class="btn-outline" onclick="closeModal()">RETOUR</button>
+                    <button class="btn-outline" onclick="closeModal()">ANNULER</button>
                 `;
             }
         };
 
         window.closeModal = () => document.getElementById('uploadModal').style.display = 'none';
 
-        // --- LE RESTE DU CODE (LIVES) ---
+        // --- 3. AFFICHAGE DES CARTES LIVES ---
         function renderLives() {
             const grid = document.getElementById('liveGrid');
             grid.innerHTML = "";
-            allLives.forEach(data => {
-                grid.innerHTML += `<div class="live-card"><img src="${data.couverture}" style="width:100%;height:100%;object-fit:cover;"><div style="position:absolute;bottom:10px;left:10px;font-size:10px;background:rgba(0,0,0,0.7);padding:4px;border-radius:4px;">@${data.pseudo}</div></div>`;
+            
+            // On affiche les vrais lives si ils existent
+            allLives.forEach(live => {
+                grid.innerHTML += `
+                    <div class="live-card">
+                        <img src="${live.couverture}" style="width:100%; height:100%; object-fit:cover;">
+                        <div style="position:absolute; bottom:8px; left:8px; font-size:10px; background:rgba(0,0,0,0.8); padding:3px 8px; border-radius:5px;">@${live.pseudo}</div>
+                    </div>`;
             });
-            for(let i=0; i < 4; i++) grid.innerHTML += `<div class="live-card"><i class="fas fa-crown crown-slot"></i></div>`;
+
+            // On complète avec les slots "Couronne" vides
+            for(let i=0; i < (4 - allLives.length); i++) {
+                grid.innerHTML += `<div class="live-card"><i class="fas fa-crown crown-slot"></i></div>`;
+            }
         }
 
+        // Ecoute des lives en temps réel
         onSnapshot(query(collection(db, "lives_en_cours"), orderBy("createdAt", "desc")), (snap) => {
             allLives = [];
             snap.forEach(doc => allLives.push(doc.data()));
             renderLives();
         });
 
-        document.getElementById('micBtn').onclick = window.handleMicLogic;
+        // Liaison du bouton micro
+        document.getElementById('micBtn').onclick = window.handleMicAction;
+
     </script>
 </body>
 </html>
