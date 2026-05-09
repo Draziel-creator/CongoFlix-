@@ -8,9 +8,9 @@
     <style>
         :root {
             --primary-gold: #ffcc00;
-            --bg-dark: #0a0a0c;
-            --card-bg: #16161a;
-            --text-gray: #b0b0b0;
+            --bg-dark: #060608;
+            --card-bg: #111115;
+            --glow-color: rgba(255, 204, 0, 0.6);
         }
 
         body {
@@ -19,14 +19,13 @@
             font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
+            overflow-x: hidden;
         }
 
-        /* --- HEADER NAVIGATION --- */
+        /* --- HEADER & NAVIGATION REFAITE --- */
         header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
+            padding: 20px;
+            text-align: center;
             background: linear-gradient(to bottom, #1a1a1e, transparent);
             position: sticky;
             top: 0;
@@ -37,29 +36,36 @@
             font-family: 'Orbitron', sans-serif;
             font-weight: 700;
             color: var(--primary-gold);
-            font-size: 1.2rem;
+            font-size: 1.8rem;
             text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px var(--glow-color);
+            margin-bottom: 15px;
         }
 
-        .nav-center a {
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
             font-family: 'Orbitron', sans-serif;
-            color: white;
             text-decoration: none;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            border-bottom: 2px solid var(--primary-gold);
-            padding-bottom: 3px;
+            color: white;
+            font-size: 0.75rem;
+            padding: 8px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            transition: 0.3s;
+            background: rgba(255, 255, 255, 0.05);
         }
 
-        .nav-right a {
-            background: rgba(255, 204, 0, 0.1);
+        nav a:hover, nav a.active {
+            border-color: var(--primary-gold);
             color: var(--primary-gold);
-            text-decoration: none;
-            padding: 8px 12px;
-            border-radius: 5px;
-            border: 1px solid var(--primary-gold);
-            font-size: 0.8rem;
-            font-weight: 500;
+            box-shadow: 0 0 10px var(--glow-color);
         }
 
         /* --- GRID DES JEUX --- */
@@ -67,68 +73,97 @@
             padding: 20px;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+            gap: 30px;
         }
 
+        /* --- EFFET MIROIR ET BORDURE GLOW --- */
         .game-card {
             background: var(--card-bg);
-            border-radius: 12px;
+            border-radius: 15px;
             overflow: hidden;
-            border: 1px solid #2a2a2e;
-            transition: transform 0.3s ease, border-color 0.3s ease;
+            border: 2px solid transparent;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
+            /* Effet Miroir / Réflexion sous la carte */
+            -webkit-box-reflect: below 5px linear-gradient(transparent, rgba(0,0,0,0.2));
         }
 
         .game-card:hover {
-            transform: translateY(-5px);
+            transform: scale(1.03);
             border-color: var(--primary-gold);
+            box-shadow: 0 0 25px var(--glow-color);
+        }
+
+        .img-container {
+            position: relative;
+            height: 180px;
+            overflow: hidden;
         }
 
         .game-img {
             width: 100%;
-            height: 180px;
+            height: 100%;
             object-fit: cover;
-            display: block;
+            transition: 0.5s;
+        }
+
+        /* Effet de balayage brillant au survol */
+        .game-card:after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
+            transform: skewX(-25deg);
+            transition: 0.5s;
+        }
+
+        .game-card:hover:after {
+            left: 150%;
         }
 
         .game-info {
             padding: 15px;
-            background: linear-gradient(to top, #000, transparent);
+            background: #111115;
+            text-align: center;
         }
 
         .game-title {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
-            margin: 0 0 10px 0;
-            color: white;
+            font-size: 1.2rem;
+            margin: 0 0 15px 0;
+            color: #fff;
+            letter-spacing: 1px;
         }
 
         .btn-play {
-            display: inline-block;
-            width: 100%;
-            padding: 10px;
-            background: var(--primary-gold);
+            display: block;
+            padding: 12px;
+            background: linear-gradient(45deg, var(--primary-gold), #ffaa00);
             color: black;
-            text-align: center;
             text-decoration: none;
             font-weight: bold;
-            border-radius: 6px;
+            border-radius: 8px;
             text-transform: uppercase;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.3);
         }
 
-        /* --- EFFET BADGE --- */
         .badge {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: var(--primary-gold);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            border: 1px solid var(--primary-gold);
+            top: 15px;
+            left: 15px;
+            z-index: 2;
+            background: var(--primary-gold);
+            color: black;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            font-family: 'Orbitron', sans-serif;
+            box-shadow: 0 0 10px black;
         }
     </style>
 </head>
@@ -136,8 +171,11 @@
 
 <header>
     <div class="logo">CongoGames</div>
-    <div class="nav-center"><a href="#">CongoChat</a></div>
-    <div class="nav-right"><a href="#">Tâches Sociales</a></div>
+    <nav>
+        <a href="#" class="active">Jeux</a>
+        <a href="#">Tâches Sociales</a>
+        <a href="#">CongoChat</a>
+    </nav>
 </header>
 
 <div class="games-container">
@@ -145,7 +183,9 @@
     <!-- PAYBACK 2 -->
     <div class="game-card">
         <span class="badge">Guerre de Gang</span>
-        <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjuF2nzJMTFjabz76aMMfPu1_ZN6l8s0DOdadovXFBa50aSaZ5IsjJtN0M1YTFtgruqzfxNceD1-0sTLVBeBy375memZj9K7Ye7DOx3OnGjKN2ukMIwOjxZE7yUvAj1w0YqKv-7cBWDcciay30fDmP8Iy-Lm7o1HtPooXrPifA_S9ZdRQwOIMVM98W5w79M/s320/1000010890.jpg" alt="Payback 2">
+        <div class="img-container">
+            <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjuF2nzJMTFjabz76aMMfPu1_ZN6l8s0DOdadovXFBa50aSaZ5IsjJtN0M1YTFtgruqzfxNceD1-0sTLVBeBy375memZj9K7Ye7DOx3OnGjKN2ukMIwOjxZE7yUvAj1w0YqKv-7cBWDcciay30fDmP8Iy-Lm7o1HtPooXrPifA_S9ZdRQwOIMVM98W5w79M/s320/1000010890.jpg">
+        </div>
         <div class="game-info">
             <h3 class="game-title">Payback 2</h3>
             <a href="#" class="btn-play">Rejoindre l'Arène</a>
@@ -155,7 +195,9 @@
     <!-- MODERN COMBAT 5 -->
     <div class="game-card">
         <span class="badge">Élite FPS</span>
-        <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiZ_bepLw6zKYzXBQsURINxUvvzUX_pMYSpFCVuELN54bbFUoG1qaOKD7W300yJ_vMd0wNOJy-KGXDWlew0jbCP_tMAaza60Daqs6v-guoRjBo31uos1rcZnOb-9yGHqEM3s85S7__TC-_WJ2ItEz5Qj-Awf1H7nc2FtiuSf8DYF-0bEp80dI1BFiulHErf/s320/1000010899.jpg" alt="Modern Combat 5">
+        <div class="img-container">
+            <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiZ_bepLw6zKYzXBQsURINxUvvzUX_pMYSpFCVuELN54bbFUoG1qaOKD7W300yJ_vMd0wNOJy-KGXDWlew0jbCP_tMAaza60Daqs6v-guoRjBo31uos1rcZnOb-9yGHqEM3s85S7__TC-_WJ2ItEz5Qj-Awf1H7nc2FtiuSf8DYF-0bEp80dI1BFiulHErf/s320/1000010899.jpg">
+        </div>
         <div class="game-info">
             <h3 class="game-title">Modern Combat 5</h3>
             <a href="#" class="btn-play">Combat d'Élite</a>
@@ -165,7 +207,9 @@
     <!-- DLS 2026 -->
     <div class="game-card">
         <span class="badge">Football</span>
-        <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj3sDdL02Xt-eFzs8Z3D1FZroFK6Mb5Ny8rj4yTk_H9uCr8auPmKZWbtNrt76EKi6r0bPpzuaLywm9oTA_pFx8srX6pcT7X3oSlWJMTyly6eoEGBSvL5Be6lWaxYDo7Sc4OgLz7YJv1WWt7QjCQZPmZ3ZoPWK79DidmU3_U_qlWlDuTlwKLgn8VtqvplGEa/s320/1000010894.jpg" alt="DLS 2026">
+        <div class="img-container">
+            <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj3sDdL02Xt-eFzs8Z3D1FZroFK6Mb5Ny8rj4yTk_H9uCr8auPmKZWbtNrt76EKi6r0bPpzuaLywm9oTA_pFx8srX6pcT7X3oSlWJMTyly6eoEGBSvL5Be6lWaxYDo7Sc4OgLz7YJv1WWt7QjCQZPmZ3ZoPWK79DidmU3_U_qlWlDuTlwKLgn8VtqvplGEa/s320/1000010894.jpg">
+        </div>
         <div class="game-info">
             <h3 class="game-title">DLS 2026</h3>
             <a href="#" class="btn-play">Lancer le Match</a>
@@ -175,7 +219,9 @@
     <!-- LUDO -->
     <div class="game-card">
         <span class="badge">Classique</span>
-        <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEja-pKu1m5yDqAW2apfruRIWoKGZX-Si7PSwtkMUyeQM-CYtQHmI0_jv-1GMVN-VXTwFVlg7bnsjWLhPFUoUuOa5dyr6BGWh0lr9IoESSyD-Tu_zuc_oY4WHxFulUF9Vkjlw4Lnfv5yPFoRcMWXA1_tFbEoBuDKos3Isu5iFHqxCZhFgh_QMbk7H-Ps9ugc/s320/1000010896.jpg" alt="Ludo">
+        <div class="img-container">
+            <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEja-pKu1m5yDqAW2apfruRIWoKGZX-Si7PSwtkMUyeQM-CYtQHmI0_jv-1GMVN-VXTwFVlg7bnsjWLhPFUoUuOa5dyr6BGWh0lr9IoESSyD-Tu_zuc_oY4WHxFulUF9Vkjlw4Lnfv5yPFoRcMWXA1_tFbEoBuDKos3Isu5iFHqxCZhFgh_QMbk7H-Ps9ugc/s320/1000010896.jpg">
+        </div>
         <div class="game-info">
             <h3 class="game-title">Ludo Star</h3>
             <a href="#" class="btn-play">Défier un Ami</a>
@@ -185,7 +231,9 @@
     <!-- CASINO -->
     <div class="game-card">
         <span class="badge">Stratégie</span>
-        <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjcdEp-BhjUo83IrsGp5ECBIQtE1kww9dvOFtbk5mZKBjd3aUJm4JDIUqnpYV4Es6rNzROupnYdi7CbQ4ezrKnaP006s1V9P6FqBAjS_sm2EKImrwERQsaNzDpjBvKCvO6R4lYyT1QyxHLJixMac06B2gHlR0sfwE_fHWE-Mph0QVs23okPmMX-bfe-ttAc/s320/1000010897.jpg" alt="Casino">
+        <div class="img-container">
+            <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjcdEp-BhjUo83IrsGp5ECBIQtE1kww9dvOFtbk5mZKBjd3aUJm4JDIUqnpYV4Es6rNzROupnYdi7CbQ4ezrKnaP006s1V9P6FqBAjS_sm2EKImrwERQsaNzDpjBvKCvO6R4lYyT1QyxHLJixMac06B2gHlR0sfwE_fHWE-Mph0QVs23okPmMX-bfe-ttAc/s320/1000010897.jpg">
+        </div>
         <div class="game-info">
             <h3 class="game-title">Espace Poker</h3>
             <a href="#" class="btn-play">Miser des Points</a>
