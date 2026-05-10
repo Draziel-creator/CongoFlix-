@@ -87,101 +87,115 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
-            authDomain: "congo-streaming-51333.firebaseapp.com",
-            projectId: "congo-streaming-51333",
-            appId: "1:304286627819:web:ee606adc4f6b4002054bae"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
+        authDomain: "congo-streaming-51333.firebaseapp.com",
+        projectId: "congo-streaming-51333",
+        appId: "1:304286627819:web:ee606adc4f6b4002054bae"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-        let currentUser = null;
-        let currentRoom = 'live';
+    let currentUser = null;
+    let userData = null;
 
-        // --- LA MÉTHODE "LIVE" QUI DÉTECTE TOUT ---
-        onAuthStateChanged(auth, async (user) => {
-            const userImg = document.getElementById('userChatImg');
-            if (user) {
-                currentUser = user;
-                console.log("Connecté en tant que:", user.uid);
+    // --- CETTE FONCTION EST LA SEULE QUI DOIT TOUT LANCER ---
+    onAuthStateChanged(auth, async (user) => {
+        const userImg = document.getElementById('userChatImg');
+        const authModal = document.getElementById('authModal');
 
-                // 1. On essaie de récupérer ta photo dans Firestore
+        if (user) {
+            console.log("✅ Connexion détectée !");
+            currentUser = user;
+            authModal.style.display = 'none';
+
+            // 1. On récupère le profil (maintenant que request.auth n'est plus nul, la règle 4 te laisse passer)
+            try {
                 const userSnap = await getDoc(doc(db, "users", user.uid));
                 if (userSnap.exists()) {
-                    const data = userSnap.data();
-                    if (data.photoURL) {
-                        userImg.src = data.photoURL;
-                        userImg.style.display = "block"; // Affiche le rond
+                    userData = userSnap.data();
+                    if (userData.photoURL) {
+                        userImg.src = userData.photoURL;
+                        userImg.style.display = "block"; // TON ROND APPARAÎT ENFIN
                     }
-                } else if (user.photoURL) {
-                    // Si pas dans Firestore, on prend la photo Google/Firebase Auth
-                    userImg.src = user.photoURL;
-                    userImg.style.display = "block";
                 }
+            } catch (e) { console.log("Erreur profil:", e); }
 
-                // 2. Presence
-                setDoc(doc(db, "online_users", user.uid), { uid: user.uid, lastSeen: serverTimestamp() });
-                document.getElementById('authModal').style.display = 'none';
-            } else {
-                currentUser = null;
-                userImg.style.display = "none";
-            }
-        });
-
-        // --- MESSAGERIE ---
-        window.sendMessage = async () => {
-            const input = document.getElementById('msgInput');
-            if(!input.value || !currentUser) return;
+            // 2. On lance les messages SEULEMENT après la connexion
+            listenMessages('live');
             
-            await addDoc(collection(db, currentRoom), {
-                text: input.value,
-                timestamp: serverTimestamp(),
-                userId: currentUser.uid,
-                userName: currentUser.displayName || "Membre Congo",
-                userPhoto: currentUser.photoURL || ""
+            // 3. On active le compteur
+            startPresence(user.uid);
+
+        } else {
+            console.log("❌ Non connecté");
+            currentUser = null;
+            userImg.style.display = "none";
+            authModal.style.display = 'flex'; // On affiche le bouton Se Connecter
+        }
+    });
+
+    // --- FONCTION PRÉSENCE CORRIGÉE ---
+    async function startPresence(uid) {
+        const presenceRef = doc(db, "online_users", uid);
+        await setDoc(presenceRef, { uid: uid, timestamp: serverTimestamp() });
+        
+        // On écoute le compteur global
+        onSnapshot(collection(db, "online_users"), (snap) => {
+            document.getElementById('onlineDisplay').innerText = `${snap.size} en ligne`;
+        });
+    }
+
+    // --- FONCTION MESSAGES ---
+    window.listenMessages = (room) => {
+        // Important: La règle 4 bloque la lecture si pas connecté, 
+        // donc on s'assure d'avoir l'UID avant de lancer le snapshot
+        if(!currentUser) return;
+
+        const q = query(collection(db, room), orderBy("timestamp", "asc"));
+        onSnapshot(q, (snapshot) => {
+            const container = document.getElementById(room);
+            if(!container) return;
+            container.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const isMe = data.userId === currentUser.uid;
+                const div = document.createElement('div');
+                div.className = `message ${isMe ? 'sent' : 'received'}`;
+                div.innerHTML = `<small style="font-size:0.6rem; color:#888;">${data.userName}</small><br>${data.text}`;
+                container.appendChild(div);
             });
-            input.value = "";
-        };
+            container.scrollTop = container.scrollHeight;
+        }, (error) => {
+            console.log("Erreur snapshot (souvent règle 4):", error);
+        });
+    };
 
-        window.listenMessages = (room) => {
-            const q = query(collection(db, room), orderBy("timestamp", "asc"));
-            onSnapshot(q, (snapshot) => {
-                const container = document.getElementById(room);
-                if(!container) return;
-                container.innerHTML = "";
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const isMe = data.userId === currentUser?.uid;
-                    const div = document.createElement('div');
-                    div.className = `message ${isMe ? 'sent' : 'received'}`;
-                    div.innerHTML = `<small style="font-size:0.6rem; opacity:0.6">${data.userName}</small><br>${data.text}`;
-                    container.appendChild(div);
-                });
-                container.scrollTop = container.scrollHeight;
-            });
-        };
+    window.sendMessage = async () => {
+        const input = document.getElementById('msgInput');
+        if(!input.value || !currentUser) return;
+        
+        await addDoc(collection(db, 'live'), {
+            text: input.value,
+            timestamp: serverTimestamp(),
+            userId: currentUser.uid,
+            userName: userData?.pseudo || "Membre Congo",
+            userPhoto: userData?.photoURL || ""
+        });
+        input.value = "";
+    };
 
-        window.checkAuthAndAction = (action) => {
-            if (currentUser) action();
-            else document.getElementById('authModal').style.display = 'flex';
-        };
+    window.checkAuthAndAction = (action) => {
+        if (currentUser) action();
+        else document.getElementById('authModal').style.display = 'flex';
+    };
 
-        window.switchTab = (tab) => {
-            currentRoom = tab;
-            document.querySelectorAll('.chat-container').forEach(c => c.classList.remove('active'));
-            document.getElementById(tab).classList.add('active');
-            listenMessages(tab);
-        };
-
-        listenMessages('live');
-        onSnapshot(collection(db, "online_users"), (s) => document.getElementById('onlineDisplay').innerText = s.size);
-    </script>
+</script>
 </body>
 </html>
