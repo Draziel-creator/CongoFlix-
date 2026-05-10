@@ -13,12 +13,11 @@
             --bg-body: #050507;
             --rdc-blue: #007fff;
             --rdc-red: #ce1021;
-            --wa-green: #25D366;
         }
 
         body { margin: 0; font-family: 'Rajdhani', sans-serif; background: var(--bg-body); color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* --- HEADER IMMUABLE --- */
+        /* --- HEADER --- */
         header { background: var(--whatsapp-yellow); color: black; padding-top: 10px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
         .header-top { display: flex; justify-content: space-between; align-items: center; padding: 5px 20px; font-weight: 900; font-size: 1.4rem; text-transform: uppercase; }
         .online-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; animation: rdc-blink 1.5s infinite; }
@@ -30,37 +29,39 @@
         .tab.active { color: black; border-bottom: 4px solid black; }
         .badge { position: absolute; top: 5px; right: 5px; background: var(--rdc-red); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 10px; border: 1px solid white; display: none; }
 
-        /* --- SEARCH BAR --- */
+        /* --- SEARCH --- */
         .search-container { background: #f0f0f0; padding: 8px 15px; }
         .search-bar { width: 100%; border: none; padding: 8px 15px; border-radius: 20px; outline: none; font-family: 'Rajdhani'; box-sizing: border-box; }
 
-        /* --- HEADER PRIVÉ (WhatsApp Style) --- */
+        /* --- PRIVATE HEADER --- */
         #privateChatHeader { background: #ededed; color: black; padding: 10px 15px; display: none; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; }
         .user-info { display: flex; align-items: center; gap: 10px; }
         .user-info img { width: 40px; height: 40px; border-radius: 50%; background: #ccc; }
         .call-actions { display: flex; gap: 20px; color: #54656f; font-size: 1.2rem; }
         .call-actions i { cursor: pointer; }
-        .call-actions i:hover { color: var(--rdc-blue); }
 
         /* --- CHAT AREA --- */
         .chat-container { flex: 1; background: var(--chat-bg) url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); overflow-y: auto; padding: 15px; display: none; flex-direction: column; }
         .chat-container.active { display: flex; }
-
-        .message { max-width: 80%; padding: 8px 12px; margin-bottom: 8px; border-radius: 12px; color: black; font-size: 0.95rem; position: relative; }
+        .message { max-width: 80%; padding: 8px 12px; margin-bottom: 8px; border-radius: 12px; color: black; font-size: 0.95rem; }
         .received { background: white; align-self: flex-start; border-top-left-radius: 2px; }
         .sent { background: #dcf8c6; align-self: flex-end; border-top-right-radius: 2px; }
 
-        /* --- INPUT AREA --- */
+        /* --- INPUT --- */
         .input-area { background: #f0f0f0; padding: 10px; display: none; align-items: center; gap: 8px; }
         .input-wrapper { flex: 1; background: white; border-radius: 25px; padding: 5px 15px; }
         .input-wrapper input { width: 100%; border: none; padding: 10px 0; outline: none; font-size: 1rem; }
         .btn-action { background: var(--whatsapp-yellow); width: 48px; height: 48px; min-width: 48px; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.3rem; }
 
-        /* --- PRIVATE LIST --- */
-        .contact-item { background: white; margin-bottom: 1px; padding: 12px; display: flex; align-items: center; color: black; gap: 12px; cursor: pointer; }
-        .contact-info { flex: 1; }
-        .contact-info strong { display: block; font-size: 1rem; }
-        .contact-info small { color: #666; }
+        /* --- MODAL CONNEXION --- */
+        #authModal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #111; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #333; max-width: 300px; }
+        .btn-link { display: block; background: var(--rdc-blue); color: white; padding: 15px; border-radius: 30px; text-decoration: none; font-weight: bold; margin-top: 20px; }
+        .btn-close { color: #888; background: none; border: none; margin-top: 15px; cursor: pointer; }
+
+        /* --- LISTE PRIVÉE --- */
+        .contact-item { background: white; padding: 12px; display: flex; align-items: center; color: black; gap: 12px; border-bottom: 1px solid #eee; }
+        .empty-state { text-align: center; padding: 40px; color: #888; font-style: italic; }
     </style>
 </head>
 <body>
@@ -69,7 +70,7 @@
         <div class="header-top">
             <span>CongoChat</span>
             <div style="font-size: 0.9rem; display: flex; align-items: center;">
-                <span class="online-dot"></span> <span id="onlineCount">0</span> live
+                <span class="online-dot"></span> <span id="onlineDisplay">0 en ligne</span>
             </div>
         </div>
         <div class="tabs">
@@ -86,39 +87,46 @@
     <div id="privateChatHeader">
         <div class="user-info">
             <i class="fas fa-arrow-left" onclick="backToContacts()"></i>
-            <img src="https://via.placeholder.com/40" id="chatAvatar" alt="User">
-            <div>
-                <strong id="chatName">Nom</strong><br>
-                <small style="color: green;">En ligne</small>
-            </div>
+            <img src="https://via.placeholder.com/40" id="chatAvatar">
+            <div><strong id="chatName">Nom</strong><br><small style="color:green">En ligne</small></div>
         </div>
         <div class="call-actions">
-            <i class="fas fa-video" onclick="startCall('video')"></i>
-            <i class="fas fa-phone-alt" onclick="startCall('audio')"></i>
+            <i class="fas fa-video" onclick="checkAuthAndAction(() => startCall('video'))"></i>
+            <i class="fas fa-phone-alt" onclick="checkAuthAndAction(() => startCall('audio'))"></i>
         </div>
     </div>
 
     <div id="live" class="chat-container active"></div>
     <div id="games" class="chat-container"></div>
     <div id="market" class="chat-container"></div>
-    
     <div id="private" class="chat-container" style="background:#eee; padding:0;">
-        </div>
-
+        <div class="empty-state">Aucun correspondant pour le moment</div>
+    </div>
     <div id="privateChatWindow" class="chat-container" style="display:none;"></div>
 
     <div class="input-area" id="inputBar" style="display: flex;">
         <div class="input-wrapper">
             <input type="text" id="msgInput" placeholder="Tapez un message...">
         </div>
-        <button class="btn-action" id="mainBtn" onclick="sendMessage()">
+        <button class="btn-action" id="mainBtn" onclick="checkAuthAndAction(sendMessage)">
             <span id="btnIcon">🎤</span>
         </button>
     </div>
 
+    <div id="authModal">
+        <div class="modal-content">
+            <i class="fas fa-user-lock" style="font-size: 3rem; color: var(--rdc-blue);"></i>
+            <h3>Connexion requise</h3>
+            <p style="color: #ccc;">Connectez-vous avant d'interagir avec la communauté.</p>
+            <a href="index.html" class="btn-link">SE CONNECTER / CRÉER COMPTE</a>
+            <button class="btn-close" onclick="closeAuthModal()">Plus tard</button>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
@@ -132,10 +140,34 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const AGORA_APP_ID = "395bf61671f44c9284be2f8f49daa884";
+        const auth = getAuth(app);
+        let currentUser = null;
         let currentRoom = 'live';
 
-        // ÉCOUTER LES MESSAGES
+        // --- DÉTECTION CONNEXION & EN LIGNE ---
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                const presenceRef = doc(db, "online_users", user.uid);
+                setDoc(presenceRef, { timestamp: serverTimestamp() });
+                window.addEventListener('beforeunload', () => deleteDoc(presenceRef));
+            }
+        });
+
+        // COMPTEUR EN LIGNE TEMPS RÉEL
+        onSnapshot(collection(db, "online_users"), (snap) => {
+            const count = snap.size;
+            document.getElementById('onlineDisplay').innerText = `${count} en ligne`;
+        });
+
+        // --- LOGIQUE SÉCURITÉ ---
+        window.checkAuthAndAction = (action) => {
+            if (currentUser) { action(); } 
+            else { document.getElementById('authModal').style.display = 'flex'; }
+        };
+        window.closeAuthModal = () => document.getElementById('authModal').style.display = 'none';
+
+        // --- MESSAGERIE ---
         window.listenMessages = (room) => {
             const q = query(collection(db, room), orderBy("timestamp", "asc"));
             onSnapshot(q, (snapshot) => {
@@ -145,46 +177,41 @@
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     const div = document.createElement('div');
-                    div.className = `message ${data.user === "Moi" ? 'sent' : 'received'}`;
-                    div.innerHTML = data.text;
+                    div.className = `message ${data.userId === currentUser?.uid ? 'sent' : 'received'}`;
+                    div.innerHTML = `<strong>${data.userName || 'Anonyme'}:</strong><br>${data.text}`;
                     container.appendChild(div);
                 });
                 container.scrollTop = container.scrollHeight;
             });
         };
 
-        // ENVOYER UN MESSAGE
         window.sendMessage = async () => {
-            const text = document.getElementById('msgInput').value;
-            if(!text) return;
-            const targetCollection = (currentRoom === 'private') ? 'private_active' : currentRoom;
-            await addDoc(collection(db, targetCollection), {
-                text: text,
+            const input = document.getElementById('msgInput');
+            if(!input.value) return;
+            const target = (currentRoom === 'private') ? 'private_active' : currentRoom;
+            await addDoc(collection(db, target), {
+                text: input.value,
                 timestamp: serverTimestamp(),
-                user: "Moi"
+                userId: currentUser.uid,
+                userName: currentUser.displayName || "Utilisateur Congo"
             });
-            document.getElementById('msgInput').value = "";
+            input.value = "";
         };
 
-        // GESTIONNAIRE D'ONGLETS
+        // NAVIGATION
         window.switchTab = (tab) => {
             currentRoom = tab;
             document.querySelectorAll('.chat-container').forEach(c => c.style.display = 'none');
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById('privateChatHeader').style.display = 'none';
             document.getElementById('mainHeader').style.display = 'block';
-            
-            const target = document.getElementById(tab);
-            target.style.display = (tab === 'private') ? 'block' : 'flex';
+            document.getElementById(tab).style.display = (tab === 'private') ? 'block' : 'flex';
             event.currentTarget.classList.add('active');
-            
             document.getElementById('inputBar').style.display = (tab === 'private') ? 'none' : 'flex';
             if(tab !== 'private') listenMessages(tab);
         };
 
-        // OUVRIR UNE DISCUSSION PRIVÉE
         window.openPrivate = (name) => {
-            currentRoom = 'private';
             document.getElementById('mainHeader').style.display = 'none';
             document.getElementById('private').style.display = 'none';
             document.getElementById('privateChatHeader').style.display = 'flex';
@@ -194,50 +221,35 @@
             listenMessages('private_active');
         };
 
-        window.backToContacts = () => {
-            switchTab('private');
-        };
-
-        // APPELS AGORA
-        window.startCall = (type) => {
-            alert(`Démarrage appel ${type} via Agora ID: ${AGORA_APP_ID}... (Connexion en cours)`);
-            // Ici on intégrera le SDK Agora pour ouvrir la caméra
-        };
+        window.backToContacts = () => switchTab('private');
+        window.startCall = (type) => alert(`Appel ${type} Agora ID: 395bf61671f44c9284be2f8f49daa884`);
 
         listenMessages('live');
+
+        // SIMULATION CONTACT PAR DÉFAUT POUR TEST
+        setTimeout(() => {
+            const privateDiv = document.getElementById('private');
+            privateDiv.innerHTML = `
+                <div class="contact-item" onclick="openPrivate('Brazza_Boy')">
+                    <img src="https://via.placeholder.com/45" style="border-radius:50%">
+                    <div class="contact-info"><strong>Brazza_Boy</strong><small>Test appel Agora disponible</small></div>
+                </div>`;
+        }, 2000);
     </script>
 
     <script>
         function filterContent(val) {
             const active = document.querySelector('.chat-container[style*="display: flex"], .chat-container[style*="display: block"]');
-            const items = active.querySelectorAll('.message, .contact-item');
-            items.forEach(item => {
+            active.querySelectorAll('.message, .contact-item').forEach(item => {
                 item.style.display = item.innerText.toLowerCase().includes(val.toLowerCase()) ? "" : "none";
             });
         }
-
         document.getElementById('msgInput').addEventListener('input', (e) => {
-            const icon = document.getElementById('btnIcon');
             const btn = document.getElementById('mainBtn');
-            if(e.target.value.length > 0) {
-                icon.innerText = "➡️"; btn.style.background = "#0088cc";
-            } else {
-                icon.innerText = "🎤"; btn.style.background = "var(--whatsapp-yellow)";
-            }
+            const icon = document.getElementById('btnIcon');
+            icon.innerText = e.target.value.length > 0 ? "➡️" : "🎤";
+            btn.style.background = e.target.value.length > 0 ? "#0088cc" : "var(--whatsapp-yellow)";
         });
-
-        // Simuler un contact pour tester l'entrée en discussion
-        setTimeout(() => {
-            document.getElementById('private').innerHTML = `
-                <div class="contact-item" onclick="openPrivate('Brazza_Boy')">
-                    <img src="https://via.placeholder.com/45" class="avatar">
-                    <div class="contact-info">
-                        <strong>Brazza_Boy</strong>
-                        <small>Cliquer pour discuter...</small>
-                    </div>
-                </div>
-            `;
-        }, 1000);
     </script>
 </body>
 </html>
