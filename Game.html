@@ -4,183 +4,154 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CongoGames - L'Arène des Élites</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Exo+2:wght@300;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-gold: #ffcc00;
-            --bg-dark: #060608;
-            --card-bg: #111115;
-            --glow-color: rgba(255, 204, 0, 0.6);
+            --chrome: linear-gradient(180deg, #fff 0%, #ffcc00 50%, #997a00 100%);
+            --bg-dark: #020203;
+            --glow-color: rgba(255, 204, 0, 0.5);
         }
 
         body {
             background-color: var(--bg-dark);
             color: white;
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Exo 2', sans-serif;
             margin: 0;
             padding: 0;
             overflow-x: hidden;
         }
 
-        /* --- HEADER & NAVIGATION REFAITE --- */
+        /* --- HEADER & TITRE HAUTE QUALITÉ --- */
         header {
-            padding: 20px;
+            padding: 30px 10px;
             text-align: center;
-            background: linear-gradient(to bottom, #1a1a1e, transparent);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+            background: radial-gradient(circle at top, #1a1a1e 0%, transparent 70%);
         }
 
         .logo {
             font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            color: var(--primary-gold);
-            font-size: 1.8rem;
+            font-weight: 900;
+            font-size: 2.5rem;
             text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px var(--glow-color);
-            margin-bottom: 15px;
+            background: var(--chrome);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px var(--glow-color));
+            letter-spacing: -1px;
+            margin: 0;
+            line-height: 1;
         }
 
-        nav {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        nav a {
-            font-family: 'Orbitron', sans-serif;
-            text-decoration: none;
-            color: white;
-            font-size: 0.75rem;
-            padding: 8px 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            transition: 0.3s;
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        nav a:hover, nav a.active {
-            border-color: var(--primary-gold);
+        .description {
+            font-size: 0.9rem;
             color: var(--primary-gold);
-            box-shadow: 0 0 10px var(--glow-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 10px;
+            opacity: 0.8;
+            font-weight: 600;
         }
 
-        /* --- GRID DES JEUX --- */
+        /* --- LAYOUT PLEIN ÉCRAN (SANS BORDURES) --- */
         .games-container {
-            padding: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 0; /* Les cartes se touchent presque */
+            padding: 0;
         }
 
-        /* --- EFFET MIROIR ET BORDURE GLOW --- */
+        /* --- EFFET MIROIR RALENTI ET DESIGN SANS BORDURES --- */
         .game-card {
-            background: var(--card-bg);
-            border-radius: 15px;
+            width: 100%;
+            background: #000;
             overflow: hidden;
-            border: 2px solid transparent;
-            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-bottom: 1px solid rgba(255, 204, 0, 0.1);
+            transition: 0.8s cubic-bezier(0.2, 1, 0.3, 1); /* RALENTI */
             position: relative;
-            /* Effet Miroir / Réflexion sous la carte */
-            -webkit-box-reflect: below 5px linear-gradient(transparent, rgba(0,0,0,0.2));
-        }
-
-        .game-card:hover {
-            transform: scale(1.03);
-            border-color: var(--primary-gold);
-            box-shadow: 0 0 25px var(--glow-color);
+            /* Effet Miroir très doux */
+            -webkit-box-reflect: below 2px linear-gradient(transparent 70%, rgba(0,0,0,0.1));
+            margin-bottom: 40px; /* Espace pour le reflet */
         }
 
         .img-container {
             position: relative;
-            height: 180px;
-            overflow: hidden;
+            width: 100vw; /* Touche les bords */
+            height: 220px;
         }
 
         .game-img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: 0.5s;
+            filter: grayscale(30%) contrast(1.1);
+            transition: 1.2s ease-in-out;
         }
 
-        /* Effet de balayage brillant au survol */
-        .game-card:after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
-            transform: skewX(-25deg);
-            transition: 0.5s;
+        .game-card:hover .game-img {
+            filter: grayscale(0%) scale(1.1);
         }
 
-        .game-card:hover:after {
-            left: 150%;
+        /* Bordure lumineuse dynamique au toucher */
+        .game-card:active, .game-card:hover {
+            box-shadow: inset 0 0 50px rgba(255, 204, 0, 0.4);
         }
 
         .game-info {
-            padding: 15px;
-            background: #111115;
-            text-align: center;
+            padding: 20px;
+            background: linear-gradient(to top, #000 80%, transparent);
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .game-title {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
-            margin: 0 0 15px 0;
+            font-size: 1.4rem;
+            margin: 0;
             color: #fff;
-            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px #000;
         }
 
         .btn-play {
-            display: block;
-            padding: 12px;
-            background: linear-gradient(45deg, var(--primary-gold), #ffaa00);
+            padding: 10px 20px;
+            background: var(--primary-gold);
             color: black;
             text-decoration: none;
-            font-weight: bold;
-            border-radius: 8px;
+            font-weight: 900;
+            border-radius: 4px;
             text-transform: uppercase;
-            font-size: 0.85rem;
-            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.3);
+            font-size: 0.75rem;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); /* Look futuriste */
         }
 
         .badge {
             position: absolute;
-            top: 15px;
-            left: 15px;
-            z-index: 2;
-            background: var(--primary-gold);
+            top: 20px;
+            right: 0;
+            background: rgba(255, 204, 0, 0.9);
             color: black;
-            padding: 5px 12px;
-            border-radius: 5px;
-            font-size: 0.65rem;
-            font-weight: 800;
-            font-family: 'Orbitron', sans-serif;
-            box-shadow: 0 0 10px black;
+            padding: 5px 15px;
+            font-size: 0.7rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%);
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">CongoGames</div>
-    <nav>
-        <a href="#" class="active">Jeux</a>
-        <a href="#">Tâches Sociales</a>
-        <a href="#">CongoChat</a>
-    </nav>
+    <h1 class="logo">CongoGames</h1>
+    <div class="description">Affrontez des rivaux et doublez vos gains</div>
 </header>
 
 <div class="games-container">
 
-    <!-- PAYBACK 2 -->
     <div class="game-card">
         <span class="badge">Guerre de Gang</span>
         <div class="img-container">
@@ -188,23 +159,21 @@
         </div>
         <div class="game-info">
             <h3 class="game-title">Payback 2</h3>
-            <a href="#" class="btn-play">Rejoindre l'Arène</a>
+            <a href="#" class="btn-play">Défier</a>
         </div>
     </div>
 
-    <!-- MODERN COMBAT 5 -->
     <div class="game-card">
         <span class="badge">Élite FPS</span>
         <div class="img-container">
             <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiZ_bepLw6zKYzXBQsURINxUvvzUX_pMYSpFCVuELN54bbFUoG1qaOKD7W300yJ_vMd0wNOJy-KGXDWlew0jbCP_tMAaza60Daqs6v-guoRjBo31uos1rcZnOb-9yGHqEM3s85S7__TC-_WJ2ItEz5Qj-Awf1H7nc2FtiuSf8DYF-0bEp80dI1BFiulHErf/s320/1000010899.jpg">
         </div>
         <div class="game-info">
-            <h3 class="game-title">Modern Combat 5</h3>
-            <a href="#" class="btn-play">Combat d'Élite</a>
+            <h3 class="game-title">MC5</h3>
+            <a href="#" class="btn-play">Défier</a>
         </div>
     </div>
 
-    <!-- DLS 2026 -->
     <div class="game-card">
         <span class="badge">Football</span>
         <div class="img-container">
@@ -212,31 +181,7 @@
         </div>
         <div class="game-info">
             <h3 class="game-title">DLS 2026</h3>
-            <a href="#" class="btn-play">Lancer le Match</a>
-        </div>
-    </div>
-
-    <!-- LUDO -->
-    <div class="game-card">
-        <span class="badge">Classique</span>
-        <div class="img-container">
-            <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEja-pKu1m5yDqAW2apfruRIWoKGZX-Si7PSwtkMUyeQM-CYtQHmI0_jv-1GMVN-VXTwFVlg7bnsjWLhPFUoUuOa5dyr6BGWh0lr9IoESSyD-Tu_zuc_oY4WHxFulUF9Vkjlw4Lnfv5yPFoRcMWXA1_tFbEoBuDKos3Isu5iFHqxCZhFgh_QMbk7H-Ps9ugc/s320/1000010896.jpg">
-        </div>
-        <div class="game-info">
-            <h3 class="game-title">Ludo Star</h3>
-            <a href="#" class="btn-play">Défier un Ami</a>
-        </div>
-    </div>
-
-    <!-- CASINO -->
-    <div class="game-card">
-        <span class="badge">Stratégie</span>
-        <div class="img-container">
-            <img class="game-img" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjcdEp-BhjUo83IrsGp5ECBIQtE1kww9dvOFtbk5mZKBjd3aUJm4JDIUqnpYV4Es6rNzROupnYdi7CbQ4ezrKnaP006s1V9P6FqBAjS_sm2EKImrwERQsaNzDpjBvKCvO6R4lYyT1QyxHLJixMac06B2gHlR0sfwE_fHWE-Mph0QVs23okPmMX-bfe-ttAc/s320/1000010897.jpg">
-        </div>
-        <div class="game-info">
-            <h3 class="game-title">Espace Poker</h3>
-            <a href="#" class="btn-play">Miser des Points</a>
+            <a href="#" class="btn-play">Défier</a>
         </div>
     </div>
 
