@@ -3,149 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CongoChat - La Communauté</title>
+    <title>CongoChat - Elite</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --whatsapp-yellow: #ffcc00;
-            --chat-bg: #ece5dd; /* Couleur papier peint WhatsApp */
-            --header-dark: #075e54; /* On garde un peu de foncé pour le contraste */
-            --bg-body: #101015;
+            --chat-bg: #ece5dd;
+            --bg-body: #050507;
+            --rdc-blue: #007fff;
+            --rdc-red: #ce1021;
         }
 
         body {
             margin: 0;
             font-family: 'Rajdhani', sans-serif;
             background-color: var(--bg-body);
-            color: white;
             display: flex;
             flex-direction: column;
             height: 100vh;
+            overflow: hidden;
         }
 
         /* --- HEADER --- */
         header {
             background-color: var(--whatsapp-yellow);
             color: black;
-            padding: 10px 0 0 0;
-            position: sticky;
-            top: 0;
+            padding-top: 10px;
             z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
 
         .header-top {
             display: flex;
             justify-content: space-between;
-            padding: 10px 20px;
-            font-weight: bold;
-            font-size: 1.5rem;
+            align-items: center;
+            padding: 5px 20px;
+            font-weight: 900;
+            font-size: 1.4rem;
+            text-transform: uppercase;
         }
 
-        /* --- ONGLET NAVIGATION --- */
-        .tabs {
-            display: flex;
-            justify-content: space-around;
-            border-bottom: 3px solid black;
+        /* POINT CLIGNOTANT RDC */
+        .online-dot {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            animation: rdc-blink 1.5s infinite;
         }
 
+        @keyframes rdc-blink {
+            0% { background-color: var(--whatsapp-yellow); box-shadow: 0 0 5px var(--whatsapp-yellow); }
+            33% { background-color: var(--rdc-blue); box-shadow: 0 0 5px var(--rdc-blue); }
+            66% { background-color: var(--rdc-red); box-shadow: 0 0 5px var(--rdc-red); }
+            100% { background-color: var(--whatsapp-yellow); box-shadow: 0 0 5px var(--whatsapp-yellow); }
+        }
+
+        /* --- TABS AVEC COMPTEURS --- */
+        .tabs { display: flex; justify-content: space-around; position: relative; }
         .tab {
             padding: 15px 0;
             flex: 1;
             text-align: center;
             cursor: pointer;
             font-weight: bold;
-            text-transform: uppercase;
-            transition: 0.3s;
+            position: relative;
+            color: rgba(0,0,0,0.6);
+        }
+        .tab.active { color: black; border-bottom: 4px solid black; }
+
+        .badge {
+            position: absolute;
+            top: 5px;
+            right: 15%;
+            background: var(--rdc-red);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-family: Arial, sans-serif;
+            border: 1px solid white;
         }
 
-        .tab.active {
-            border-bottom: 4px solid black;
-            background: rgba(0,0,0,0.1);
-        }
-
-        /* --- ZONE DE CHAT --- */
+        /* --- CHAT AREA --- */
         .chat-container {
             flex: 1;
-            background-color: var(--chat-bg);
-            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); /* Papier peint officiel */
-            background-repeat: repeat;
+            background: var(--chat-bg) url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
             overflow-y: auto;
             padding: 15px;
-            display: none; /* Caché par défaut */
+            display: none;
         }
-
         .chat-container.active { display: block; }
 
-        .info-bar {
-            background: rgba(0, 0, 0, 0.05);
-            color: #555;
-            padding: 5px;
-            text-align: center;
-            font-size: 0.8rem;
-            border-radius: 20px;
-            margin-bottom: 15px;
-        }
-
-        /* --- BULLES DE MESSAGE --- */
         .message {
-            max-width: 80%;
+            max-width: 75%;
             padding: 8px 12px;
             margin-bottom: 10px;
-            border-radius: 10px;
-            position: relative;
-            font-size: 1rem;
+            border-radius: 12px;
             color: black;
+            font-size: 0.95rem;
+            line-height: 1.3;
         }
+        .received { background: white; border-top-left-radius: 2px; box-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        .sent { background: #dcf8c6; margin-left: auto; border-top-right-radius: 2px; box-shadow: -1px 1px 2px rgba(0,0,0,0.1); }
 
-        .received { background: white; align-self: flex-start; border-top-left-radius: 0; }
-        .sent { background: #dcf8c6; align-self: flex-end; margin-left: auto; border-top-right-radius: 0; }
-
-        .typing { color: var(--header-dark); font-style: italic; font-size: 0.8rem; }
-
-        /* --- INPUT BAR --- */
+        /* --- BARRE D'ENTRÉE MODERNE --- */
         .input-area {
             background: #f0f0f0;
-            padding: 10px;
+            padding: 10px 15px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .input-area input {
+        .input-wrapper {
             flex: 1;
-            padding: 12px;
+            background: white;
             border-radius: 25px;
-            border: none;
-            outline: none;
+            display: flex;
+            align-items: center;
+            padding: 5px 15px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        .btn-audio, .btn-send {
-            background: var(--whatsapp-yellow);
+        .input-wrapper input {
+            flex: 1;
             border: none;
+            padding: 10px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.3rem;
+            color: #777;
+            padding: 5px;
+        }
+
+        .btn-send-main {
+            background: #0088cc; /* Couleur Telegram */
+            color: white;
             width: 45px;
             height: 45px;
             border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
             display: flex;
             justify-content: center;
             align-items: center;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
 
-        /* --- ESPACE MARCHE --- */
-        .market-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            padding: 10px;
-        }
-        .market-item {
+        /* --- MODAL CLIP --- */
+        .modal-clip {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
             background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            color: black;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
+            z-index: 2000;
         }
-        .market-item img { width: 100%; height: 120px; object-fit: cover; }
+        .clip-option {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            color: #333;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* MARKET DESIGN */
+        .market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .item-card { background: white; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .item-img { width: 100%; height: 100px; background: #eee; }
     </style>
 </head>
 <body>
@@ -153,69 +191,86 @@
     <header>
         <div class="header-top">
             <span>CongoChat</span>
-            <span style="font-size: 0.8rem;">342 en ligne</span>
+            <div style="font-size: 0.9rem; display: flex; align-items: center;">
+                <span class="online-dot"></span> 342 live
+            </div>
         </div>
         <div class="tabs">
-            <div class="tab active" onclick="switchTab('live')">Live</div>
-            <div class="tab" onclick="switchTab('games')">Games</div>
-            <div class="tab" onclick="switchTab('souk')">Souk</div>
+            <div class="tab active" onclick="switchTab('live')">Live <span class="badge">5</span></div>
+            <div class="tab" onclick="switchTab('games')">Games <span class="badge" style="display:none">0</span></div>
+            <div class="tab" onclick="switchTab('market')">Market <span class="badge">12</span></div>
         </div>
     </header>
 
+    <div id="clipModal" class="modal-clip">
+        <div class="clip-option">🖼️ Image / Vidéo (Vue unique)</div>
+        <div class="clip-option">📁 Fichier Document</div>
+        <div class="clip-option">📍 Localisation</div>
+    </div>
+
     <div id="live" class="chat-container active">
-        <div class="info-bar">Bienvenue dans le salon Live. Discutez de tout !</div>
-        <div class="message received">
-            <strong>Guerrier243:</strong> Quelqu'un est chaud pour un tournoi ?
-        </div>
-        <p class="typing">Prince est en train d'écrire...</p>
+        <div class="message received"><strong>Brazza_Boy:</strong> On est ensemble la famille ! 🇨🇬🇨🇩</div>
+        <div class="message sent">Moi: Direct ! On lâche rien.</div>
     </div>
 
     <div id="games" class="chat-container">
-        <div class="info-bar">Salon Gaming - Organisez vos matchs ici.</div>
-        <div class="message received">
-            <strong>Leader_Kin:</strong> Match Payback 2 dans 10 min. Soyez prêts.
-        </div>
-        <div class="message sent">
-            Moi: Je suis là, j'ai mes points !
-        </div>
+        <div class="message received"><strong>System:</strong> Nouveau tournoi Payback 2 créé par Leader_Kin.</div>
     </div>
 
-    <div id="souk" class="chat-container">
-        <div class="info-bar">CongoMarket - Achetez et vendez.</div>
+    <div id="market" class="chat-container">
         <div class="market-grid">
-            <div class="market-item">
-                <img src="https://via.placeholder.com/150" alt="item">
-                <div style="padding:5px"><strong>Manette PS4</strong><br>45.000 FC</div>
-            </div>
-            <div class="market-item">
-                <img src="https://via.placeholder.com/150" alt="item">
-                <div style="padding:5px"><strong>Compte Payback</strong><br>10.000 FC</div>
+            <div class="item-card">
+                <div class="item-img"></div>
+                <div style="padding:5px; color: black; font-size: 0.8rem;">Vends Compte LVL 50<br><strong>15.000 FC</strong></div>
             </div>
         </div>
     </div>
 
     <div class="input-area">
-        <button class="btn-audio">🎤</button>
-        <input type="text" placeholder="Taper un message...">
-        <button class="btn-send">➡️</button>
+        <div class="input-wrapper">
+            <button class="icon-btn" onclick="toggleClip()">📎</button>
+            <input type="text" placeholder="Message...">
+            <button class="icon-btn">😊</button>
+        </div>
+        <button class="btn-send-main" id="actionBtn" onclick="handleAction()">
+            <span id="btnIcon">🎤</span>
+        </button>
     </div>
 
     <script>
         function switchTab(tabName) {
-            // Cacher tous les containers
-            document.querySelectorAll('.chat-container').forEach(container => {
-                container.classList.remove('active');
-            });
-            // Désactiver tous les onglets
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Activer l'onglet et le container cliqué
+            document.querySelectorAll('.chat-container').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
             event.currentTarget.classList.add('active');
         }
-    </script>
 
+        function toggleClip() {
+            const m = document.getElementById('clipModal');
+            m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function handleAction() {
+            const icon = document.getElementById('btnIcon').innerText;
+            if(icon === '🎤') {
+                alert("🎤 Note Vocale : Votre audio sera en écoute unique et effacé dans 24H.");
+            } else {
+                // Logique d'envoi de texte
+            }
+        }
+
+        // Change l'icône micro en flèche quand on tape
+        document.querySelector('input').addEventListener('input', function(e) {
+            const btn = document.getElementById('btnIcon');
+            const parent = document.getElementById('actionBtn');
+            if(e.target.value.length > 0) {
+                btn.innerText = "🚀";
+                parent.style.background = "#0088cc";
+            } else {
+                btn.innerText = "🎤";
+                parent.style.background = "#ffcc00";
+            }
+        });
+    </script>
 </body>
 </html>
