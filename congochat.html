@@ -69,7 +69,7 @@
             font-weight: bold;
             font-size: 0.85rem;
             position: relative;
-            color: rgba(0,0,0,0.6);
+            color: rgba(0,0,0,0.5);
             text-transform: uppercase;
         }
         .tab.active { color: black; border-bottom: 4px solid black; }
@@ -94,41 +94,54 @@
             padding: 15px;
             display: none;
         }
-        .chat-container.active { display: block; }
+        .chat-container.active { display: flex; flex-direction: column; }
 
-        /* Styles Messages */
         .message {
-            max-width: 75%;
+            max-width: 80%;
             padding: 8px 12px;
             margin-bottom: 10px;
             border-radius: 12px;
             color: black;
             font-size: 0.95rem;
+            position: relative;
         }
-        .received { background: white; border-top-left-radius: 2px; }
-        .sent { background: #dcf8c6; margin-left: auto; border-top-right-radius: 2px; }
-        .user-name { color: var(--rdc-blue); font-weight: bold; cursor: pointer; display: block; margin-bottom: 3px; }
+        .received { background: white; align-self: flex-start; border-top-left-radius: 2px; }
+        .sent { background: #dcf8c6; align-self: flex-end; border-top-right-radius: 2px; }
+        
+        .tag-vendeur {
+            color: var(--rdc-blue);
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        .price-tag {
+            color: var(--rdc-red);
+            font-weight: bold;
+            display: block;
+            margin-top: 5px;
+        }
 
-        /* --- ESPACE PRIVÉ (Liste de contacts) --- */
+        /* --- PRIVÉ LIST --- */
         .contact-item {
             background: white;
-            margin-bottom: 2px;
-            padding: 15px;
+            margin-bottom: 1px;
+            padding: 12px 15px;
             display: flex;
             align-items: center;
             color: black;
-            gap: 15px;
+            gap: 12px;
+            cursor: pointer;
         }
-        .avatar { width: 45px; height: 45px; background: #ddd; border-radius: 50%; }
+        .avatar { width: 50px; height: 50px; background: #ccc; border-radius: 50%; flex-shrink: 0; }
 
-        /* --- INPUT BAR FIXE --- */
-        .input-area {
+        /* --- INPUT AREA --- */
+        #inputBar {
             background: #f0f0f0;
-            padding: 10px;
+            padding: 10px 15px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            box-sizing: border-box;
+            gap: 10px;
         }
 
         .input-wrapper {
@@ -136,8 +149,6 @@
             background: white;
             border-radius: 25px;
             padding: 5px 15px;
-            display: flex;
-            align-items: center;
         }
 
         .input-wrapper input {
@@ -146,29 +157,22 @@
             padding: 10px 0;
             outline: none;
             font-size: 1rem;
-            background: transparent;
         }
 
         .btn-action {
             background: var(--whatsapp-yellow);
-            color: black;
-            width: 45px;
-            height: 45px;
-            min-width: 45px; /* Empêche l'écrasement */
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
             border-radius: 50%;
+            border: none;
+            cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
-            border: none;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: 0.2s;
+            font-size: 1.3rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
-
-        /* MARKET DESIGN */
-        .market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .item-card { background: white; border-radius: 8px; overflow: hidden; color: black; border: 1px solid #ddd; }
-        .item-img { width: 100%; height: 100px; background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #666; }
     </style>
 </head>
 <body>
@@ -181,55 +185,40 @@
             </div>
         </div>
         <div class="tabs">
-            <div class="tab active" onclick="switchTab('live')">Live <span class="badge">5</span></div>
+            <div class="tab active" onclick="switchTab('live')">Live <span class="badge">2</span></div>
             <div class="tab" onclick="switchTab('games')">Games</div>
-            <div class="tab" onclick="switchTab('market')">Market <span class="badge">12</span></div>
-            <div class="tab" onclick="switchTab('private')">Privé</div>
+            <div class="tab" onclick="switchTab('market')">Market</div>
+            <div class="tab" onclick="switchTab('private')">Privé <span class="badge">1</span></div>
         </div>
     </header>
 
     <div id="live" class="chat-container active">
-        <div class="message received">
-            <span class="user-name" onclick="goToPrivate('Brazza_Boy')">Brazza_Boy</span>
-            On est ensemble la famille ! 🇨🇬🇨🇩
-        </div>
+        <div class="message received"><strong>Kin_Boy:</strong> Quelqu'un vend des crédits ?</div>
     </div>
 
     <div id="games" class="chat-container">
-        <div class="message received"><strong>Système:</strong> Leader_Kin attend un adversaire.</div>
+        <div class="message received"><strong>Pro_Gamer:</strong> Match Payback 2 lancé !</div>
     </div>
 
     <div id="market" class="chat-container">
-        <div class="market-grid">
-            <div class="item-card" onclick="goToPrivate('Vendeur_Elite')">
-                <div class="item-img">IMAGE PRODUIT</div>
-                <div style="padding:8px">
-                    <span style="font-size:0.7rem; color:var(--rdc-blue)">@Vendeur_Elite</span><br>
-                    <strong>Manette PS5</strong><br>
-                    <span style="color:var(--rdc-red)">120.000 FC</span>
-                </div>
+        <div class="message received">
+            <span class="tag-vendeur" onclick="goToPrivate('Vendeur243')">@Vendeur243</span><br>
+            Je vends ma PS4 Pro avec 2 manettes originale. Propre !
+            <span class="price-tag">350.000 FC</span>
+        </div>
+    </div>
+
+    <div id="private" class="chat-container" style="background: #e5ddd5; padding: 0;">
+        <div class="contact-item" onclick="openPrivateChat('Vendeur243')">
+            <div class="avatar"></div>
+            <div style="flex:1">
+                <strong>Vendeur243</strong><br>
+                <small style="color: #666;">Je suis OK pour 320.000 FC</small>
             </div>
         </div>
     </div>
 
-    <div id="private" class="chat-container" style="background: #eee; padding: 0;">
-        <div class="contact-item" onclick="alert('Ouverture chat privé...')">
-            <div class="avatar"></div>
-            <div>
-                <strong>Brazza_Boy</strong><br>
-                <small style="color: #666;">Dernier message : Salut bro...</small>
-            </div>
-        </div>
-        <div class="contact-item">
-            <div class="avatar"></div>
-            <div>
-                <strong>Vendeur_Elite</strong><br>
-                <small style="color: #666;">Produit : Manette PS5</small>
-            </div>
-        </div>
-    </div>
-
-    <div class="input-area">
+    <div id="inputBar" class="input-area">
         <div class="input-wrapper">
             <input type="text" id="msgInput" placeholder="Message...">
         </div>
@@ -242,28 +231,51 @@
         const msgInput = document.getElementById('msgInput');
         const btnIcon = document.getElementById('btnIcon');
         const mainBtn = document.getElementById('mainBtn');
+        const inputBar = document.getElementById('inputBar');
 
         function switchTab(tabName) {
             document.querySelectorAll('.chat-container').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabName).classList.add('active');
+            
+            const target = document.getElementById(tabName);
+            target.classList.add('active');
             event.currentTarget.classList.add('active');
+
+            // Masquer la barre si on est sur la liste des contacts privés
+            if(tabName === 'private') {
+                inputBar.style.display = 'none';
+            } else {
+                inputBar.style.display = 'flex';
+            }
         }
 
         function goToPrivate(name) {
-            alert("Redirection vers le chat privé avec " + name);
+            alert("Discussion avec " + name);
             switchTab('private');
+            // Simulation : On pourrait ici ouvrir directement le chat de la personne
+        }
+
+        function openPrivateChat(name) {
+            inputBar.style.display = 'flex';
+            document.getElementById('private').innerHTML = `
+                <div style="background:var(--whatsapp-yellow); color:black; padding:10px; text-align:center; font-weight:bold;">
+                    Discussion avec ${name}
+                </div>
+                <div class="message received">Salut, je t'écoute pour la PS4.</div>
+            `;
         }
 
         function handleSend() {
             if(btnIcon.innerText === '🎤') {
-                alert("🎤 Note Vocale : Ce message sera supprimé après écoute (24h max).");
+                alert("🎤 Note vocale unique lancée...");
             } else {
-                alert("Message envoyé : " + msgInput.value);
+                alert("Message envoyé");
                 msgInput.value = "";
                 updateIcon();
             }
         }
+
+        msgInput.addEventListener('input', updateIcon);
 
         function updateIcon() {
             if(msgInput.value.length > 0) {
@@ -276,8 +288,6 @@
                 mainBtn.style.color = "black";
             }
         }
-
-        msgInput.addEventListener('input', updateIcon);
     </script>
 </body>
 </html>
