@@ -11,56 +11,53 @@
             --whatsapp-yellow: #ffcc00;
             --chat-bg: #ece5dd;
             --bg-body: #050507;
-            --rdc-blue: #0088cc; /* Style Telegram Blue */
+            --rdc-blue: #0088cc;
             --rdc-red: #ce1021;
         }
 
         body { margin: 0; font-family: 'Rajdhani', sans-serif; background: var(--bg-body); color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* --- HEADER --- */
+        /* --- HEADER & TABS --- */
         header { background: var(--whatsapp-yellow); color: black; padding-top: 10px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
         .header-top { display: flex; justify-content: space-between; align-items: center; padding: 5px 20px; font-weight: 900; font-size: 1.4rem; text-transform: uppercase; }
-        .online-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; animation: rdc-blink 1.5s infinite; }
-        @keyframes rdc-blink { 0% { background: #00ff00; } 50% { background: #008800; } 100% { background: #00ff00; } }
-
-        /* --- TABS --- */
         .tabs { display: flex; justify-content: space-around; }
-        .tab { padding: 15px 5px; flex: 1; text-align: center; cursor: pointer; font-weight: bold; font-size: 0.8rem; position: relative; color: rgba(0,0,0,0.5); text-transform: uppercase; }
+        .tab { padding: 15px 5px; flex: 1; text-align: center; cursor: pointer; font-weight: bold; font-size: 0.7rem; position: relative; color: rgba(0,0,0,0.5); text-transform: uppercase; }
         .tab.active { color: black; border-bottom: 4px solid black; }
+        
+        .badge { position: absolute; top: 5px; right: 8px; background: var(--rdc-red); color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; border: 1px solid white; display: none; }
 
-        /* --- CHAT AREA --- */
+        /* --- WHATSAPP PRIVATE HEADER --- */
+        #privateHeader { background: #ededed; color: black; padding: 10px 15px; display: none; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; }
+        .user-info { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; }
+        .user-info img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; }
+        .call-icons { display: flex; gap: 18px; color: #54656f; font-size: 1.1rem; }
+
+        /* --- CHAT CONTAINERS --- */
         .chat-container { flex: 1; background: var(--chat-bg) url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); overflow-y: auto; padding: 15px; display: none; flex-direction: column; }
         .chat-container.active { display: flex; }
 
-        /* --- MESSAGES WITH AVATARS --- */
+        /* --- MESSAGES --- */
         .msg-wrapper { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 12px; max-width: 85%; }
         .msg-wrapper.sent { align-self: flex-end; flex-direction: row-reverse; }
-        .msg-wrapper.received { align-self: flex-start; }
-        
-        .msg-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid white; flex-shrink: 0; }
-        
-        .message { padding: 8px 12px; border-radius: 15px; color: black; font-size: 0.95rem; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .message { padding: 6px 10px; border-radius: 12px; color: black; font-size: 0.9rem; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
         .received .message { background: white; border-bottom-left-radius: 2px; }
         .sent .message { background: #dcf8c6; border-bottom-right-radius: 2px; }
-        
-        .msg-name { display: block; font-weight: bold; font-size: 0.75rem; margin-bottom: 2px; color: #555; }
+        .msg-time { font-size: 0.65rem; color: #888; float: right; margin-top: 4px; margin-left: 10px; }
+        .new-msg-separator { width: 100%; text-align: center; border-bottom: 1px solid #ccc; line-height: 0.1em; margin: 20px 0; background: none; color: #666; font-size: 0.7rem; text-transform: uppercase; }
+        .new-msg-separator span { background: var(--chat-bg); padding: 0 10px; }
 
-        /* --- TYPING INDICATOR --- */
-        #typingArea { padding: 5px 20px; font-size: 0.8rem; color: #666; background: var(--chat-bg); min-height: 20px; font-style: italic; }
+        /* --- CONTACT LIST (PRIVÉ) --- */
+        .contact-item { background: white; padding: 12px; display: flex; align-items: center; gap: 12px; color: black; border-bottom: 1px solid #eee; cursor: pointer; }
+        .contact-item img { width: 45px; height: 45px; border-radius: 50%; }
 
-        /* --- INPUT BAR --- */
+        /* --- INPUT --- */
         .input-area { background: #f0f0f0; padding: 10px; display: flex; align-items: center; gap: 8px; border-top: 1px solid #ddd; }
-        .profile-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--whatsapp-yellow); }
         .input-wrapper { flex: 1; background: white; border-radius: 25px; padding: 5px 15px; display: flex; align-items: center; }
-        .input-wrapper input { flex: 1; border: none; padding: 10px 0; outline: none; font-size: 1rem; font-family: 'Rajdhani'; }
-        
-        .btn-action { background: var(--whatsapp-yellow); width: 48px; height: 48px; min-width: 48px; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; color: white; transition: 0.3s ease; }
-        .btn-action i { font-size: 1.2rem; }
+        .input-wrapper input { flex: 1; border: none; padding: 10px 0; outline: none; font-size: 1rem; }
+        .btn-action { background: var(--whatsapp-yellow); width: 48px; height: 48px; min-width: 48px; border-radius: 50%; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; color: white; }
 
-        /* --- MODAL --- */
         #authModal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; display: none; align-items: center; justify-content: center; }
-        .modal-content { background: #111; padding: 30px; border-radius: 20px; text-align: center; border: 1px solid #333; }
-        .btn-link { display: block; background: var(--rdc-blue); color: white; padding: 15px; border-radius: 30px; text-decoration: none; margin-top: 20px; font-weight: bold; }
+        .modal-content { background: #111; padding: 30px; border-radius: 20px; text-align: center; }
     </style>
 </head>
 <body>
@@ -68,28 +65,48 @@
     <header id="mainHeader">
         <div class="header-top">
             <span>CongoChat</span>
-            <div style="font-size: 0.9rem; display: flex; align-items: center;">
-                <span class="online-dot"></span> <span id="onlineDisplay">0 en ligne</span>
+            <div style="font-size: 0.8rem; display: flex; align-items: center;">
+                <span id="onlineDisplay">0 en ligne</span>
             </div>
         </div>
         <div class="tabs">
-            <div class="tab active" onclick="switchTab('live')">Live</div>
-            <div class="tab" onclick="switchTab('private')">Privé</div>
+            <div class="tab active" onclick="switchTab('live')">Live <span class="badge" id="badge-live">0</span></div>
+            <div class="tab" onclick="switchTab('games')">Games <span class="badge" id="badge-games">0</span></div>
+            <div class="tab" onclick="switchTab('market')">Market <span class="badge" id="badge-market">0</span></div>
+            <div class="tab" onclick="switchTab('private')">Privé <span class="badge" id="badge-private">0</span></div>
         </div>
     </header>
 
-    <div id="live" class="chat-container active"></div>
-    <div id="private" class="chat-container">
-        <div style="color:black; text-align:center; padding:40px;">Sélectionnez un contact pour discuter en privé.</div>
+    <div id="privateHeader">
+        <div class="user-info">
+            <i class="fas fa-arrow-left" onclick="exitPrivateChat()"></i>
+            <img id="privateAvatar" src="">
+            <div><strong id="privateName">Nom</strong><br><small style="color:green">En ligne</small></div>
+        </div>
+        <div class="call-icons">
+            <i class="fas fa-video"></i>
+            <i class="fas fa-phone-alt"></i>
+        </div>
     </div>
 
-    <div id="typingArea"></div>
+    <div id="live" class="chat-container active"></div>
+    <div id="games" class="chat-container"></div>
+    <div id="market" class="chat-container"></div>
+    <div id="private" class="chat-container" style="background:#fff; padding:0;">
+        <div class="contact-item" onclick="enterPrivateChat('CongoFlix', 'https://via.placeholder.com/45')">
+            <img src="https://via.placeholder.com/45">
+            <div style="flex:1"><strong>CongoFlix (Test Agora)</strong><br><small>Compte de test pour appels</small></div>
+            <span class="badge" style="display:block; position:static">1</span>
+        </div>
+    </div>
+    <div id="privateWindow" class="chat-container"></div>
 
-    <div class="input-area">
-        <img id="myAvatar" src="https://via.placeholder.com/40" class="profile-small">
+    <div id="typingArea" style="background:var(--chat-bg); color:#666; font-size:0.8rem; padding:2px 20px; font-style:italic"></div>
+
+    <div class="input-area" id="inputBar">
+        <img id="myAvatar" src="https://via.placeholder.com/40" style="width:35px; height:35px; border-radius:50%">
         <div class="input-wrapper">
             <input type="text" id="msgInput" placeholder="Message..." autocomplete="off">
-            <i class="far fa-smile" style="color: #888; font-size: 1.2rem; cursor: pointer;"></i>
         </div>
         <button class="btn-action" id="mainBtn" onclick="checkAuthAndAction(sendMessage)">
             <i id="btnIcon" class="fas fa-microphone"></i>
@@ -97,20 +114,14 @@
     </div>
 
     <div id="authModal">
-        <div class="modal-content">
-            <i class="fas fa-user-lock" style="font-size: 3rem; color: var(--rdc-blue);"></i>
-            <h3>Connexion requise</h3>
-            <a href="index.html" class="btn-link">SE CONNECTER</a>
-            <button onclick="closeAuthModal()" style="background:none; border:none; color:gray; margin-top:15px;">Fermer</button>
-        </div>
+        <div class="modal-content"><h3>Connexion requise</h3><a href="index.html" style="color:var(--whatsapp-yellow)">SE CONNECTER</a></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // CONFIGURATION STABLE (MÊME QUE CONGOLIVE)
         const firebaseConfig = {
             apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
             authDomain: "congo-streaming-51333.firebaseapp.com",
@@ -123,117 +134,119 @@
         const auth = getAuth(app);
         let currentUser = null;
         let currentRoom = 'live';
+        let msgCounters = { live: 0, games: 0, market: 0, private: 0 };
 
-        // --- AUTH & PROFILE ---
-        onAuthStateChanged(auth, async (user) => {
+        onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if (user) {
-                const userRef = doc(db, "users", user.uid);
-                const userSnap = await getDoc(userRef);
-                const photoURL = userSnap.exists() ? userSnap.data().photoURL : user.photoURL;
-                if(photoURL) document.getElementById('myAvatar').src = photoURL;
-
-                // Presence
-                setDoc(doc(db, "online_users", user.uid), { name: user.displayName || "Anonyme", photo: photoURL || "" });
+                setDoc(doc(db, "online_users", user.uid), { name: user.displayName || "Membre", photo: user.photoURL || "" });
+                document.getElementById('myAvatar').src = user.photoURL || "https://via.placeholder.com/40";
             }
         });
 
-        // --- COMPTEUR EN LIGNE ---
-        onSnapshot(collection(db, "online_users"), (snap) => {
-            document.getElementById('onlineDisplay').innerText = `${snap.size} en ligne`;
+        // --- COMPTEURS TEMPS RÉEL (BADGES) ---
+        ['live', 'games', 'market', 'private_messages'].forEach(room => {
+            const q = query(collection(db, room), orderBy("timestamp", "desc"));
+            onSnapshot(q, (snap) => {
+                if (snap.metadata.hasPendingWrites) return; 
+                let tabName = room === 'private_messages' ? 'private' : room;
+                if (currentRoom !== tabName) {
+                    msgCounters[tabName]++;
+                    const badge = document.getElementById(`badge-${tabName}`);
+                    if(badge) { badge.innerText = msgCounters[tabName]; badge.style.display = 'block'; }
+                }
+            });
         });
 
-        // --- ENVOI DE MESSAGE ---
+        // --- GESTION DES MESSAGES ---
         window.sendMessage = async () => {
             const input = document.getElementById('msgInput');
             if(!input.value.trim()) return;
-
-            const userRef = doc(db, "users", currentUser.uid);
-            const userSnap = await getDoc(userRef);
-            const photoURL = userSnap.exists() ? userSnap.data().photoURL : (currentUser.photoURL || "https://via.placeholder.com/40");
-
-            await addDoc(collection(db, currentRoom), {
+            const target = currentRoom === 'private_active' ? 'private_messages' : currentRoom;
+            
+            await addDoc(collection(db, target), {
                 text: input.value,
                 timestamp: serverTimestamp(),
                 userId: currentUser.uid,
-                userName: currentUser.displayName || "Utilisateur Congo",
-                userPhoto: photoURL
+                userName: currentUser.displayName || "Anonyme",
+                userPhoto: currentUser.photoURL || ""
             });
             input.value = "";
-            stopTyping();
         };
 
-        // --- LECTURE EN DIRECT (WHATSAPP STYLE) ---
         window.listenMessages = (room) => {
-            const q = query(collection(db, room), orderBy("timestamp", "asc"));
-            onSnapshot(q, (snapshot) => {
-                const container = document.getElementById(room);
+            const q = query(collection(db, room === 'private_active' ? 'private_messages' : room), orderBy("timestamp", "asc"));
+            onSnapshot(q, (snap) => {
+                const container = room === 'private_active' ? document.getElementById('privateWindow') : document.getElementById(room);
                 if(!container) return;
                 container.innerHTML = "";
-                snapshot.forEach((d) => {
+                let lastDate = "";
+
+                snap.forEach((d) => {
                     const data = d.data();
-                    const isMe = data.userId === currentUser?.uid;
-                    const wrapper = document.createElement('div');
-                    wrapper.className = `msg-wrapper ${isMe ? 'sent' : 'received'}`;
+                    const dateStr = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "--:--";
                     
+                    const wrapper = document.createElement('div');
+                    wrapper.className = `msg-wrapper ${data.userId === currentUser?.uid ? 'sent' : 'received'}`;
                     wrapper.innerHTML = `
-                        <img src="${data.userPhoto || 'https://via.placeholder.com/40'}" class="msg-avatar">
+                        <img src="${data.userPhoto || 'https://via.placeholder.com/40'}" style="width:28px; height:28px; border-radius:50%">
                         <div class="message">
-                            <span class="msg-name">${isMe ? 'Moi' : data.userName}</span>
-                            ${data.text}
-                        </div>
-                    `;
+                            <span style="font-size:0.7rem; font-weight:bold; color:orange">${data.userName}</span><br>
+                            ${data.text} <span class="msg-time">${dateStr}</span>
+                        </div>`;
                     container.appendChild(wrapper);
                 });
                 container.scrollTop = container.scrollHeight;
             });
         };
 
-        // --- DÉTECTION "EN TRAIN D'ÉCRIRE" ---
-        const typingRef = collection(db, "typing_status");
-        document.getElementById('msgInput').addEventListener('input', (e) => {
-            if(!currentUser) return;
-            if(e.target.value.length > 0) {
-                setDoc(doc(db, "typing_status", currentUser.uid), { name: currentUser.displayName || "Quelqu'un", room: currentRoom });
-            } else {
-                deleteDoc(doc(db, "typing_status", currentUser.uid));
-            }
-        });
-
-        function stopTyping() { if(currentUser) deleteDoc(doc(db, "typing_status", currentUser.uid)); }
-
-        onSnapshot(collection(db, "typing_status"), (snap) => {
-            const typingArea = document.getElementById('typingArea');
-            let typers = [];
-            snap.forEach(d => {
-                if(d.id !== currentUser?.uid && d.data().room === currentRoom) typers.push(d.data().name);
-            });
-            typingArea.innerText = typers.length > 0 ? typers.join(', ') + " écrit..." : "";
-        });
-
-        // --- INITIALISATION ---
-        listenMessages('live');
-        window.checkAuthAndAction = (action) => currentUser ? action() : document.getElementById('authModal').style.display='flex';
-        window.closeAuthModal = () => document.getElementById('authModal').style.display='none';
+        // --- NAVIGATION ---
         window.switchTab = (tab) => {
             currentRoom = tab;
-            document.querySelectorAll('.chat-container').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.chat-container').forEach(c => c.style.display = 'none');
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(tab).classList.add('active');
+            document.getElementById(tab).style.display = tab === 'private' ? 'block' : 'flex';
             event.currentTarget.classList.add('active');
-            listenMessages(tab);
+            
+            // Reset Badge
+            msgCounters[tab] = 0;
+            const badge = document.getElementById(`badge-${tab}`);
+            if(badge) badge.style.display = 'none';
+            
+            if(tab !== 'private') listenMessages(tab);
+            document.getElementById('inputBar').style.display = tab === 'private' ? 'none' : 'flex';
         };
+
+        window.enterPrivateChat = (name, img) => {
+            currentRoom = 'private_active';
+            document.getElementById('mainHeader').style.display = 'none';
+            document.getElementById('private').style.display = 'none';
+            document.getElementById('privateHeader').style.display = 'flex';
+            document.getElementById('privateWindow').style.display = 'flex';
+            document.getElementById('inputBar').style.display = 'flex';
+            document.getElementById('privateName').innerText = name;
+            document.getElementById('privateAvatar').src = img;
+            listenMessages('private_active');
+        };
+
+        window.exitPrivateChat = () => {
+            document.getElementById('privateHeader').style.display = 'none';
+            document.getElementById('privateWindow').style.display = 'none';
+            document.getElementById('mainHeader').style.display = 'block';
+            switchTab('private');
+        };
+
+        listenMessages('live');
+        window.checkAuthAndAction = (action) => currentUser ? action() : document.getElementById('authModal').style.display='flex';
     </script>
 
     <script>
-        // Changement d'icône Micro -> Envoi (Style Telegram)
         document.getElementById('msgInput').addEventListener('input', (e) => {
-            const btn = document.getElementById('mainBtn');
             const icon = document.getElementById('btnIcon');
+            const btn = document.getElementById('mainBtn');
             if(e.target.value.length > 0) {
                 icon.className = "fas fa-paper-plane";
                 btn.style.background = "#0088cc";
-                btn.style.transform = "rotate(0deg)";
             } else {
                 icon.className = "fas fa-microphone";
                 btn.style.background = "#ffcc00";
