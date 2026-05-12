@@ -168,7 +168,6 @@
         let userCache = {};
         let activeCallData = null;
 
-        // Aide à générer un UID numérique pour Agora
         function getNumericUid(uidString) {
             let hash = 0;
             for (let i = 0; i < uidString.length; i++) {
@@ -203,43 +202,37 @@
             }
         });
 
-        // --- LOGIQUE D'APPEL ULTRA-STABILISÉE ---
+        // --- LOGIQUE D'APPEL CORRIGÉE ---
 
         window.initiateCall = async (type) => {
             if (!targetUser) return;
-            
-            await resetAgoraResources(); // Nettoyage total avant de commencer
-
             const channelName = [currentUser.uid, targetUser.id].sort().join('_');
             const callRef = doc(db, "calls", targetUser.id);
 
-            // On crée l'appel
+            // Nettoyage avant l'appel
+            await deleteDoc(callRef).catch(()=>{});
+
             await setDoc(callRef, {
                 callerId: currentUser.uid,
                 callerName: userCache[currentUser.uid].name,
                 callerPhoto: userCache[currentUser.uid].photo,
                 type: type,
                 channel: channelName,
-                status: 'ringing',
-                timestamp: Date.now()
+                status: 'ringing'
             });
 
             showCallScreen(targetUser.name, targetUser.photo, 'Appel en cours...');
 
-            // On écoute la réponse
             const unsub = onSnapshot(callRef, (snap) => {
                 if (snap.exists()) {
                     const data = snap.data();
                     if (data.status === 'accepted') {
                         unsub();
                         startAgoraSession(channelName, type);
-                    } else if (data.status === 'ended') {
-                        unsub();
-                        closeCallInterface();
                     }
                 } else {
                     unsub();
-                    closeCallInterface();
+                    endAgoraCall();
                 }
             });
         };
@@ -250,12 +243,10 @@
                     activeCallData = snap.data();
                     if (activeCallData.status === 'ringing') {
                         showCallScreen(activeCallData.callerName, activeCallData.callerPhoto, 'Appel entrant...', true);
-                    } else if (activeCallData.status === 'ended') {
-                        closeCallInterface();
                     }
                 } else {
-                    if (document.getElementById('callScreen').style.display === 'flex') {
-                        closeCallInterface();
+                    if (document.getElementById('callScreen').style.display === 'flex' && !localTracks.audioTrack) {
+                         document.getElementById('callScreen').style.display = 'none';
                     }
                 }
             });
@@ -270,27 +261,22 @@
 
         async function startAgoraSession(channel, type) {
             try {
-                document.getElementById('callStatusText').innerText = "Connexion...";
+                document.getElementById('callStatusText').innerText = "Connexion Agora...";
                 
+                await agoraClient.leave().catch(()=>{});
+
                 const numericUid = getNumericUid(currentUser.uid);
                 await agoraClient.join(AGORA_APP_ID, channel, null, numericUid);
                 
-                // Configuration Audio avec suppression d'écho et bruit
-                localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack({
-                    AEC: true, ANS: true, AGC: true 
-                });
-                
+                localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
                 let tracksToPublish = [localTracks.audioTrack];
 
                 if (type === 'video') {
-                    document.getElementById('muteCamBtn').style.display = 'flex';
                     localTracks.videoTrack = await AgoraRTC.createCameraVideoTrack();
                     const localPlayer = document.getElementById("local-video");
                     localPlayer.innerHTML = ""; 
                     localTracks.videoTrack.play(localPlayer);
                     tracksToPublish.push(localTracks.videoTrack);
-                } else {
-                    document.getElementById('muteCamBtn').style.display = 'none';
                 }
 
                 await agoraClient.publish(tracksToPublish);
@@ -311,45 +297,10 @@
                 agoraClient.on("user-left", () => endAgoraCall());
 
             } catch (e) {
-                console.error("Agora Error:", e);
+                console.error("Erreur Agora:", e);
+                alert("Erreur média : Vérifiez vos permissions.");
                 endAgoraCall();
             }
-        }
-
-        async function resetAgoraResources() {
-            if (localTracks.audioTrack) {
-                localTracks.audioTrack.stop();
-                localTracks.audioTrack.close();
-                localTracks.audioTrack = null;
-            }
-            if (localTracks.videoTrack) {
-                localTracks.videoTrack.stop();
-                localTracks.videoTrack.close();
-                localTracks.videoTrack = null;
-            }
-            await agoraClient.leave().catch(()=>{});
-            agoraClient.removeAllListeners();
-        }
-
-        window.endAgoraCall = async () => {
-            // Signal de fin
-            if (currentUser) {
-                await updateDoc(doc(db, "calls", currentUser.uid), { status: 'ended' }).catch(()=>{});
-                setTimeout(() => deleteDoc(doc(db, "calls", currentUser.uid)).catch(()=>{}), 500);
-            }
-            if (targetUser) {
-                await updateDoc(doc(db, "calls", targetUser.id), { status: 'ended' }).catch(()=>{});
-                setTimeout(() => deleteDoc(doc(db, "calls", targetUser.id)).catch(()=>{}), 500);
-            }
-            closeCallInterface();
-        };
-
-        async function closeCallInterface() {
-            await resetAgoraResources();
-            document.getElementById('callScreen').style.display = 'none';
-            document.getElementById('remote-video').innerHTML = "";
-            document.getElementById('local-video').innerHTML = "";
-            activeCallData = null;
         }
 
         window.toggleMic = async () => {
@@ -368,6 +319,21 @@
             }
         };
 
+        window.endAgoraCall = async () => {
+            if (currentUser) await deleteDoc(doc(db, "calls", currentUser.uid)).catch(()=>{});
+            if (targetUser) await deleteDoc(doc(db, "calls", targetUser.id)).catch(()=>{});
+            
+            if(localTracks.audioTrack) { localTracks.audioTrack.stop(); localTracks.audioTrack.close(); localTracks.audioTrack = null; }
+            if(localTracks.videoTrack) { localTracks.videoTrack.stop(); localTracks.videoTrack.close(); localTracks.videoTrack = null; }
+            
+            await agoraClient.leave().catch(()=>{});
+            
+            document.getElementById('callScreen').style.display = 'none';
+            document.getElementById('remote-video').innerHTML = "";
+            document.getElementById('local-video').innerHTML = "";
+            activeCallData = null;
+        };
+
         function showCallScreen(name, photo, status, isIncoming = false) {
             document.getElementById('callScreen').style.display = 'flex';
             document.getElementById('callName').innerText = name;
@@ -376,7 +342,7 @@
             document.getElementById('acceptBtn').style.display = isIncoming ? 'flex' : 'none';
         }
 
-        // --- GESTION DES MESSAGES (Identique au précédent) ---
+        // --- GESTION DES MESSAGES ---
 
         window.handleSendAction = async () => {
             const input = document.getElementById('msgInput');
@@ -431,8 +397,11 @@
             if(tab !== 'private') listenMessages(tab);
             document.getElementById('inputBar').style.display = (tab === 'private') ? 'none' : 'flex';
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            // Gestion visuelle de l'onglet actif
             const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(t => { if(t.innerText.toLowerCase() === tab) t.classList.add('active'); });
+            tabs.forEach(t => {
+                if(t.innerText.toLowerCase() === tab) t.classList.add('active');
+            });
         };
 
         window.enterPrivateChat = (id, name, photo) => {
