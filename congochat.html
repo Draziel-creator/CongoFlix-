@@ -209,6 +209,9 @@
             const channelName = [currentUser.uid, targetUser.id].sort().join('_');
             const callRef = doc(db, "calls", targetUser.id);
 
+            // Nettoyage avant l'appel
+            await deleteDoc(callRef).catch(()=>{});
+
             await setDoc(callRef, {
                 callerId: currentUser.uid,
                 callerName: userCache[currentUser.uid].name,
@@ -221,10 +224,13 @@
             showCallScreen(targetUser.name, targetUser.photo, 'Appel en cours...');
 
             const unsub = onSnapshot(callRef, (snap) => {
-                if (snap.exists() && snap.data().status === 'accepted') {
-                    unsub();
-                    startAgoraSession(channelName, type);
-                } else if (!snap.exists()) {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if (data.status === 'accepted') {
+                        unsub();
+                        startAgoraSession(channelName, type);
+                    }
+                } else {
                     unsub();
                     endAgoraCall();
                 }
@@ -237,8 +243,6 @@
                     activeCallData = snap.data();
                     if (activeCallData.status === 'ringing') {
                         showCallScreen(activeCallData.callerName, activeCallData.callerPhoto, 'Appel entrant...', true);
-                    } else if (activeCallData.status === 'accepted') {
-                        // Déjà géré par answerCall
                     }
                 } else {
                     if (document.getElementById('callScreen').style.display === 'flex' && !localTracks.audioTrack) {
@@ -250,21 +254,20 @@
 
         window.answerCall = async () => {
             if (!activeCallData) return;
-            // On informe l'appelant qu'on a accepté
             await updateDoc(doc(db, "calls", currentUser.uid), { status: 'accepted' });
             document.getElementById('acceptBtn').style.display = 'none';
-            // On lance la session Agora
             startAgoraSession(activeCallData.channel, activeCallData.type);
         };
 
         async function startAgoraSession(channel, type) {
             try {
-                document.getElementById('callStatusText').innerText = "Connexion...";
+                document.getElementById('callStatusText').innerText = "Connexion Agora...";
                 
+                await agoraClient.leave().catch(()=>{});
+
                 const numericUid = getNumericUid(currentUser.uid);
                 await agoraClient.join(AGORA_APP_ID, channel, null, numericUid);
                 
-                // Création des pistes
                 localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
                 let tracksToPublish = [localTracks.audioTrack];
 
@@ -294,8 +297,8 @@
                 agoraClient.on("user-left", () => endAgoraCall());
 
             } catch (e) {
-                console.error("Erreur Agora détaillée:", e);
-                alert("Erreur de connexion : Vérifiez vos permissions micro/caméra.");
+                console.error("Erreur Agora:", e);
+                alert("Erreur média : Vérifiez vos permissions.");
                 endAgoraCall();
             }
         }
@@ -317,18 +320,14 @@
         };
 
         window.endAgoraCall = async () => {
-            // Supprimer l'entrée dans Firestore
             if (currentUser) await deleteDoc(doc(db, "calls", currentUser.uid)).catch(()=>{});
             if (targetUser) await deleteDoc(doc(db, "calls", targetUser.id)).catch(()=>{});
             
-            // Arrêter les pistes locales
             if(localTracks.audioTrack) { localTracks.audioTrack.stop(); localTracks.audioTrack.close(); localTracks.audioTrack = null; }
             if(localTracks.videoTrack) { localTracks.videoTrack.stop(); localTracks.videoTrack.close(); localTracks.videoTrack = null; }
             
-            // Quitter Agora
             await agoraClient.leave().catch(()=>{});
             
-            // UI Reset
             document.getElementById('callScreen').style.display = 'none';
             document.getElementById('remote-video').innerHTML = "";
             document.getElementById('local-video').innerHTML = "";
@@ -343,7 +342,7 @@
             document.getElementById('acceptBtn').style.display = isIncoming ? 'flex' : 'none';
         }
 
-        // --- CHAT & UI ---
+        // --- GESTION DES MESSAGES ---
 
         window.handleSendAction = async () => {
             const input = document.getElementById('msgInput');
@@ -398,7 +397,11 @@
             if(tab !== 'private') listenMessages(tab);
             document.getElementById('inputBar').style.display = (tab === 'private') ? 'none' : 'flex';
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            if(window.event && window.event.target.classList.contains('tab')) window.event.target.classList.add('active');
+            // Gestion visuelle de l'onglet actif
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => {
+                if(t.innerText.toLowerCase() === tab) t.classList.add('active');
+            });
         };
 
         window.enterPrivateChat = (id, name, photo) => {
