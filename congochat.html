@@ -107,7 +107,7 @@
         <div id="remote-video"></div>
         <div id="local-video"></div>
         <div class="call-info">
-            <img id="callAvatar" src="" class="calling-animation">
+            <img id="callAvatar" src="">
             <h2 id="callName">Nom</h2>
             <p id="callStatusText">Appel en cours...</p>
         </div>
@@ -125,15 +125,13 @@
     <div id="private" class="chat-container" style="background:#fff; padding:0;"></div>
     <div id="privateWindow" class="chat-container"></div>
 
-    <div id="typing-status"></div>
-
     <div class="input-area" id="inputBar">
         <img id="myAvatar" src="https://via.placeholder.com/40" class="profile-me">
         <div class="input-wrapper">
             <input type="text" id="msgInput" placeholder="Message..." autocomplete="off">
         </div>
         <button class="btn-action" id="mainBtn" onclick="handleSendAction()">
-            <i id="btnIcon" class="fas fa-microphone"></i>
+            <i id="btnIcon" class="fas fa-paper-plane"></i>
         </button>
     </div>
 
@@ -172,6 +170,7 @@
         let targetUser = null; 
         let userCache = {};
         let activeCall = null;
+        let unsubscribeCallListener = null;
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -192,16 +191,20 @@
                     document.getElementById('onlineDisplay').innerText = `${snap.size} en ligne`;
                 });
 
-                listenForIncommingCalls();
+                listenForIncomingCalls();
                 loadContacts();
                 listenMessages('live');
             }
         });
 
-        // --- LOGIQUE APPEL ---
+        // --- LOGIQUE D'APPEL ---
+
         window.initiateCall = async (type) => {
             const channelName = [currentUser.uid, targetUser.id].sort().join('_');
-            await setDoc(doc(db, "calls", targetUser.id), {
+            const callRef = doc(db, "calls", targetUser.id);
+
+            // 1. On crée l'appel dans Firebase
+            await setDoc(callRef, {
                 callerId: currentUser.uid,
                 callerName: userCache[currentUser.uid].name,
                 callerPhoto: userCache[currentUser.uid].photo,
@@ -209,16 +212,33 @@
                 channel: channelName,
                 status: 'ringing'
             });
-            startAgoraSession(channelName, type, 'outgoing');
+
+            // 2. On affiche notre écran d'appel
+            showCallScreen(targetUser.name, targetUser.photo, 'Appel en cours...');
+
+            // 3. On attend que l'autre accepte pour rejoindre Agora
+            const unsub = onSnapshot(callRef, (snap) => {
+                if (snap.exists() && snap.data().status === 'accepted') {
+                    unsub();
+                    startAgoraSession(channelName, type, 'outgoing');
+                } else if (!snap.exists()) {
+                    unsub();
+                    endAgoraCall();
+                }
+            });
         };
 
-        function listenForIncommingCalls() {
+        function listenForIncomingCalls() {
             onSnapshot(doc(db, "calls", currentUser.uid), (snap) => {
-                if (snap.exists() && snap.data().status === 'ringing') {
+                if (snap.exists()) {
                     activeCall = snap.data();
-                    showCallScreen(activeCall.callerName, activeCall.callerPhoto, 'Appel entrant...', true);
-                } else if (!snap.exists() && document.getElementById('callScreen').style.display === 'flex') {
-                    endAgoraCall();
+                    if (activeCall.status === 'ringing') {
+                        showCallScreen(activeCall.callerName, activeCall.callerPhoto, 'Appel entrant...', true);
+                    }
+                } else {
+                    if (document.getElementById('callScreen').style.display === 'flex') {
+                        endAgoraCall();
+                    }
                 }
             });
         }
@@ -229,14 +249,14 @@
         };
 
         async function startAgoraSession(channel, type, direction) {
-            showCallScreen(
-                direction === 'outgoing' ? targetUser.name : activeCall.callerName,
-                direction === 'outgoing' ? targetUser.photo : activeCall.callerPhoto,
-                'Connexion...'
-            );
+            document.getElementById('callStatusText').innerText = 'Connexion Agora...';
 
             try {
+                // Nettoyage de sécurité
+                if (agoraClient) await agoraClient.leave();
+
                 await agoraClient.join(AGORA_APP_ID, channel, null, currentUser.uid);
+                
                 localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
                 
                 if(type === 'video') {
@@ -251,19 +271,15 @@
                     await agoraClient.subscribe(user, mediaType);
                     if (mediaType === "video") user.videoTrack.play("remote-video");
                     if (mediaType === "audio") user.audioTrack.play();
-                    document.getElementById('callStatusText').innerText = "En communication";
+                    document.getElementById('callStatusText').innerText = "En ligne";
                 });
 
                 agoraClient.on("user-left", () => endAgoraCall());
-            } catch (e) { endAgoraCall(); }
-        }
 
-        function showCallScreen(name, photo, status, isIncoming = false) {
-            document.getElementById('callScreen').style.display = 'flex';
-            document.getElementById('callName').innerText = name;
-            document.getElementById('callAvatar').src = photo;
-            document.getElementById('callStatusText').innerText = status;
-            document.getElementById('acceptBtn').style.display = isIncoming ? 'flex' : 'none';
+            } catch (e) {
+                console.error("Erreur Agora:", e);
+                endAgoraCall();
+            }
         }
 
         window.endAgoraCall = async () => {
@@ -277,11 +293,20 @@
                     localTracks[track] = null;
                 }
             }
-            await agoraClient.leave();
+            if(agoraClient) await agoraClient.leave();
             document.getElementById('callScreen').style.display = 'none';
         };
 
-        // --- MESSAGERIE ---
+        function showCallScreen(name, photo, status, isIncoming = false) {
+            document.getElementById('callScreen').style.display = 'flex';
+            document.getElementById('callName').innerText = name;
+            document.getElementById('callAvatar').src = photo;
+            document.getElementById('callStatusText').innerText = status;
+            document.getElementById('acceptBtn').style.display = isIncoming ? 'flex' : 'none';
+        }
+
+        // --- FONCTIONS UI ---
+
         window.handleSendAction = async () => {
             const input = document.getElementById('msgInput');
             const text = input.value.trim();
@@ -305,7 +330,7 @@
                 snap.forEach(d => {
                     const data = d.data();
                     const isMe = data.userId === currentUser.uid;
-                    const info = userCache[data.userId] || {name: "Utilisateur", photo: ""};
+                    const info = userCache[data.userId] || {name: "Utilisateur", photo: "https://via.placeholder.com/40"};
                     html += `
                         <div class="msg-wrapper ${isMe ? 'sent' : 'received'}">
                             <img src="${info.photo}" class="msg-avatar">
