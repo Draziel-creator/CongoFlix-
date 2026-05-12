@@ -106,7 +106,7 @@
         <div class="call-info">
             <img id="callAvatar" src="">
             <h2 id="callName">Nom</h2>
-            <p id="callStatusText">Appel en cours...</p>
+            <p id="callStatusText">Connexion...</p>
         </div>
         <div class="call-controls">
             <button class="btn-call accept" id="acceptBtn" style="display:none;" onclick="answerCall()"><i class="fas fa-phone"></i></button>
@@ -168,7 +168,6 @@
         let userCache = {};
         let activeCallData = null;
 
-        // Fonction pour transformer l'UID Firebase en Nombre pour Agora
         function getNumericUid(uidString) {
             let hash = 0;
             for (let i = 0; i < uidString.length; i++) {
@@ -203,7 +202,7 @@
             }
         });
 
-        // --- LOGIQUE D'APPEL ---
+        // --- LOGIQUE D'APPEL CORRIGÉE ---
 
         window.initiateCall = async (type) => {
             if (!targetUser) return;
@@ -238,25 +237,34 @@
                     activeCallData = snap.data();
                     if (activeCallData.status === 'ringing') {
                         showCallScreen(activeCallData.callerName, activeCallData.callerPhoto, 'Appel entrant...', true);
+                    } else if (activeCallData.status === 'accepted') {
+                        // Déjà géré par answerCall
                     }
                 } else {
-                    document.getElementById('callScreen').style.display = 'none';
+                    if (document.getElementById('callScreen').style.display === 'flex' && !localTracks.audioTrack) {
+                         document.getElementById('callScreen').style.display = 'none';
+                    }
                 }
             });
         }
 
         window.answerCall = async () => {
             if (!activeCallData) return;
+            // On informe l'appelant qu'on a accepté
             await updateDoc(doc(db, "calls", currentUser.uid), { status: 'accepted' });
             document.getElementById('acceptBtn').style.display = 'none';
+            // On lance la session Agora
             startAgoraSession(activeCallData.channel, activeCallData.type);
         };
 
         async function startAgoraSession(channel, type) {
             try {
+                document.getElementById('callStatusText').innerText = "Connexion...";
+                
                 const numericUid = getNumericUid(currentUser.uid);
                 await agoraClient.join(AGORA_APP_ID, channel, null, numericUid);
                 
+                // Création des pistes
                 localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
                 let tracksToPublish = [localTracks.audioTrack];
 
@@ -286,38 +294,45 @@
                 agoraClient.on("user-left", () => endAgoraCall());
 
             } catch (e) {
-                console.error("Agora Error:", e);
+                console.error("Erreur Agora détaillée:", e);
+                alert("Erreur de connexion : Vérifiez vos permissions micro/caméra.");
                 endAgoraCall();
             }
         }
 
         window.toggleMic = async () => {
             if (localTracks.audioTrack) {
-                const isMuted = localTracks.audioTrack.muted;
-                await localTracks.audioTrack.setMuted(!isMuted);
-                document.getElementById('muteMicBtn').innerHTML = !isMuted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
+                const isMuted = !localTracks.audioTrack.muted;
+                await localTracks.audioTrack.setMuted(isMuted);
+                document.getElementById('muteMicBtn').innerHTML = isMuted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
             }
         };
 
         window.toggleCam = async () => {
             if (localTracks.videoTrack) {
-                const isMuted = localTracks.videoTrack.muted;
-                await localTracks.videoTrack.setMuted(!isMuted);
-                document.getElementById('muteCamBtn').innerHTML = !isMuted ? '<i class="fas fa-video-slash"></i>' : '<i class="fas fa-video"></i>';
+                const isMuted = !localTracks.videoTrack.muted;
+                await localTracks.videoTrack.setMuted(isMuted);
+                document.getElementById('muteCamBtn').innerHTML = isMuted ? '<i class="fas fa-video-slash"></i>' : '<i class="fas fa-video"></i>';
             }
         };
 
         window.endAgoraCall = async () => {
+            // Supprimer l'entrée dans Firestore
             if (currentUser) await deleteDoc(doc(db, "calls", currentUser.uid)).catch(()=>{});
             if (targetUser) await deleteDoc(doc(db, "calls", targetUser.id)).catch(()=>{});
             
+            // Arrêter les pistes locales
             if(localTracks.audioTrack) { localTracks.audioTrack.stop(); localTracks.audioTrack.close(); localTracks.audioTrack = null; }
             if(localTracks.videoTrack) { localTracks.videoTrack.stop(); localTracks.videoTrack.close(); localTracks.videoTrack = null; }
             
+            // Quitter Agora
             await agoraClient.leave().catch(()=>{});
+            
+            // UI Reset
             document.getElementById('callScreen').style.display = 'none';
             document.getElementById('remote-video').innerHTML = "";
             document.getElementById('local-video').innerHTML = "";
+            activeCallData = null;
         };
 
         function showCallScreen(name, photo, status, isIncoming = false) {
