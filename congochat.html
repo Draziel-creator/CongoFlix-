@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CongoChat - Elite Pro Hybrid</title>
+    <title>CongoChat - Elite Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root {
             --whatsapp-yellow: #ffcc00;
@@ -31,6 +30,7 @@
         .chat-container.active { display: flex; }
 
         .msg-wrapper { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 12px; max-width: 85%; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         .msg-wrapper.sent { align-self: flex-end; flex-direction: row-reverse; }
         .message { padding: 8px 12px; border-radius: 15px; color: black; font-size: 0.95rem; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background: white; word-break: break-word; }
         .sent .message { background: #dcf8c6; border-bottom-right-radius: 2px; }
@@ -55,6 +55,7 @@
 
         #privateHeader { background: #ededed; color: black; padding: 10px 15px; display: none; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; flex-shrink: 0; }
 
+        /* --- INTERFACE APPEL --- */
         #callScreen { position: fixed; inset: 0; background: #0f172a; z-index: 30000; display: none; flex-direction: column; align-items: center; justify-content: space-between; padding: 60px 0; }
         #remote-video { position: absolute; inset: 0; background: #000; }
         #local-video { position: absolute; bottom: 120px; right: 20px; width: 100px; height: 150px; border-radius: 10px; overflow: hidden; border: 2px solid white; z-index: 30001; background: #222; }
@@ -65,7 +66,6 @@
         .hangup { background: #ff3b30; }
         .accept { background: #4cd964; }
         .control-btn { background: rgba(255,255,255,0.2); }
-        .points-badge { position: absolute; top: 20px; left: 20px; background: var(--rdc-red); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; z-index: 30005; display: none; }
     </style>
 </head>
 <body>
@@ -101,7 +101,6 @@
     </div>
 
     <div id="callScreen">
-        <div id="pointsDisplay" class="points-badge">Points: <span id="livePoints">0</span></div>
         <div id="remote-video"></div>
         <div id="local-video"></div>
         <div class="call-info">
@@ -112,7 +111,7 @@
         <div class="call-controls">
             <button class="btn-call accept" id="acceptBtn" style="display:none;" onclick="answerCall()"><i class="fas fa-phone"></i></button>
             <button class="btn-call control-btn" id="muteMicBtn" onclick="toggleMic()"><i class="fas fa-microphone"></i></button>
-            <button class="btn-call hangup" onclick="endCall()"><i class="fas fa-phone-slash"></i></button>
+            <button class="btn-call hangup" onclick="endAgoraCall()"><i class="fas fa-phone-slash"></i></button>
             <button class="btn-call control-btn" id="muteCamBtn" onclick="toggleCam()"><i class="fas fa-video"></i></button>
         </div>
     </div>
@@ -163,16 +162,11 @@
         let agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
         let localTracks = { videoTrack: null, audioTrack: null };
         
-        let peerInstance = null;
-        let currentPeerCall = null;
-        let localAudioStream = null; // Correction: stockage du flux local PeerJS
-        
         let currentUser = null;
         let currentRoom = 'live';
         let targetUser = null; 
         let userCache = {};
         let activeCallData = null;
-        let pointsTimer = null;
 
         function getNumericUid(uidString) {
             let hash = 0;
@@ -186,15 +180,6 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                
-                // Initialisation PeerJS stable
-                peerInstance = new Peer(user.uid, { debug: 1 });
-
-                peerInstance.on('call', (call) => {
-                    currentPeerCall = call;
-                    // L'UI est gérée par le listener Firestore 'listenForIncomingCalls'
-                });
-
                 const userRef = doc(db, "users", user.uid);
                 const snap = await getDoc(userRef);
                 const photo = snap.exists() ? snap.data().photoURL : (user.photoURL || "https://via.placeholder.com/40");
@@ -203,7 +188,7 @@
                 document.getElementById('myAvatar').src = photo;
                 
                 await setDoc(doc(db, "online_users", user.uid), { 
-                    name, photo, lastSeen: serverTimestamp(), status: 'online', points: 100 
+                    name, photo, lastSeen: serverTimestamp(), status: 'online' 
                 }, { merge: true });
 
                 onSnapshot(collection(db, "online_users"), (snap) => {
@@ -221,16 +206,10 @@
 
         window.initiateCall = async (type) => {
             if (!targetUser) return;
-            const userSnap = await getDoc(doc(db, "online_users", currentUser.uid));
-            const points = userSnap.data().points || 0;
-
-            if (type === 'video' && points <= 0) {
-                alert("Points insuffisants.");
-                return;
-            }
-
             const channelName = [currentUser.uid, targetUser.id].sort().join('_');
             const callRef = doc(db, "calls", targetUser.id);
+
+            await deleteDoc(callRef).catch(()=>{});
 
             await setDoc(callRef, {
                 callerId: currentUser.uid,
@@ -241,18 +220,18 @@
                 status: 'ringing'
             });
 
-            showCallScreen(targetUser.name, targetUser.photo, "Appel en cours...");
+            showCallScreen(targetUser.name, targetUser.photo, 'Appel en cours...');
 
             const unsub = onSnapshot(callRef, (snap) => {
                 if (snap.exists()) {
-                    if (snap.data().status === 'accepted') {
+                    const data = snap.data();
+                    if (data.status === 'accepted') {
                         unsub();
-                        if (type === 'video') startAgoraSession(channelName, points);
-                        else startPeerAudioSession(targetUser.id, false);
+                        startAgoraSession(channelName, type);
                     }
                 } else {
                     unsub();
-                    endCall();
+                    endAgoraCall();
                 }
             });
         };
@@ -262,12 +241,11 @@
                 if (snap.exists()) {
                     activeCallData = snap.data();
                     if (activeCallData.status === 'ringing') {
-                        showCallScreen(activeCallData.callerName, activeCallData.callerPhoto, "Appel entrant...", true);
+                        showCallScreen(activeCallData.callerName, activeCallData.callerPhoto, 'Appel entrant...', true);
                     }
                 } else {
-                    // Si on n'est pas en train de parler, on ferme l'écran
-                    if (!localAudioStream && !localTracks.audioTrack) {
-                        document.getElementById('callScreen').style.display = 'none';
+                    if (document.getElementById('callScreen').style.display === 'flex' && !localTracks.audioTrack) {
+                         document.getElementById('callScreen').style.display = 'none';
                     }
                 }
             });
@@ -277,115 +255,107 @@
             if (!activeCallData) return;
             await updateDoc(doc(db, "calls", currentUser.uid), { status: 'accepted' });
             document.getElementById('acceptBtn').style.display = 'none';
-            
-            if (activeCallData.type === 'video') {
-                const userSnap = await getDoc(doc(db, "online_users", currentUser.uid));
-                startAgoraSession(activeCallData.channel, userSnap.data().points);
-            } else {
-                startPeerAudioSession(activeCallData.callerId, true);
-            }
+            startAgoraSession(activeCallData.channel, activeCallData.type);
         };
 
-        // --- AUDIO PEERJS (GRATUIT) ---
-        async function startPeerAudioSession(targetId, isIncoming) {
+        async function startAgoraSession(channel, type) {
             try {
-                document.getElementById('callStatusText').innerText = "Connexion Audio...";
-                localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                document.getElementById('callStatusText').innerText = "Connexion Agora...";
+                await agoraClient.leave().catch(()=>{});
 
-                if (isIncoming && currentPeerCall) {
-                    currentPeerCall.answer(localAudioStream);
-                    currentPeerCall.on('stream', (remoteStream) => {
-                        playRemoteStream(remoteStream);
-                        document.getElementById('callStatusText').innerText = "Appel Audio (Gratuit)";
-                    });
-                } else {
-                    const call = peerInstance.call(targetId, localAudioStream);
-                    currentPeerCall = call;
-                    call.on('stream', (remoteStream) => {
-                        playRemoteStream(remoteStream);
-                        document.getElementById('callStatusText').innerText = "Appel Audio (Gratuit)";
-                    });
-                }
-            } catch (e) { endCall(); }
-        }
-
-        function playRemoteStream(stream) {
-            const audio = new Audio();
-            audio.srcObject = stream;
-            audio.play();
-        }
-
-        // --- VIDEO AGORA (PAYANT) ---
-        async function startAgoraSession(channel, points) {
-            try {
-                document.getElementById('callStatusText').innerText = "Vidéo Premium...";
-                document.getElementById('pointsDisplay').style.display = 'block';
-
-                await agoraClient.join(AGORA_APP_ID, channel, null, getNumericUid(currentUser.uid));
-                localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-                localTracks.videoTrack = await AgoraRTC.createCameraVideoTrack();
+                const numericUid = getNumericUid(currentUser.uid);
+                await agoraClient.join(AGORA_APP_ID, channel, null, numericUid);
                 
-                localTracks.videoTrack.play("local-video");
-                await agoraClient.publish([localTracks.audioTrack, localTracks.videoTrack]);
+                // Toujours créer l'audio, quel que soit le type d'appel
+                localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+                let tracksToPublish = [localTracks.audioTrack];
+
+                if (type === 'video') {
+                    document.getElementById('muteCamBtn').style.display = 'flex';
+                    localTracks.videoTrack = await AgoraRTC.createCameraVideoTrack();
+                    const localPlayer = document.getElementById("local-video");
+                    localPlayer.innerHTML = ""; 
+                    localTracks.videoTrack.play(localPlayer);
+                    tracksToPublish.push(localTracks.videoTrack);
+                } else {
+                    document.getElementById('muteCamBtn').style.display = 'none';
+                    document.getElementById('local-video').innerHTML = "";
+                }
+
+                await agoraClient.publish(tracksToPublish);
+                document.getElementById('callStatusText').innerText = "En ligne";
 
                 agoraClient.on("user-published", async (user, mediaType) => {
                     await agoraClient.subscribe(user, mediaType);
-                    if (mediaType === "video") user.videoTrack.play("remote-video");
-                    if (mediaType === "audio") user.audioTrack.play();
+                    if (mediaType === "video") {
+                        const remotePlayer = document.getElementById("remote-video");
+                        remotePlayer.innerHTML = "";
+                        user.videoTrack.play(remotePlayer);
+                    }
+                    if (mediaType === "audio") {
+                        user.audioTrack.play();
+                    }
                 });
 
-                let p = points;
-                pointsTimer = setInterval(async () => {
-                    p--;
-                    document.getElementById('livePoints').innerText = p;
-                    if (p <= 0) endCall();
-                    if (p % 5 === 0) await updateDoc(doc(db, "online_users", currentUser.uid), { points: p });
-                }, 1000);
-            } catch (e) { endCall(); }
+                agoraClient.on("user-left", () => endAgoraCall());
+
+            } catch (e) {
+                console.error("Erreur Agora:", e);
+                alert("Erreur média : Vérifiez vos permissions.");
+                endAgoraCall();
+            }
         }
 
-        window.endCall = async () => {
-            clearInterval(pointsTimer);
+        window.toggleMic = async () => {
+            if (localTracks.audioTrack) {
+                const isMuted = !localTracks.audioTrack.muted;
+                await localTracks.audioTrack.setMuted(isMuted);
+                document.getElementById('muteMicBtn').innerHTML = isMuted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
+            }
+        };
+
+        window.toggleCam = async () => {
+            if (localTracks.videoTrack) {
+                const isMuted = !localTracks.videoTrack.muted;
+                await localTracks.videoTrack.setMuted(isMuted);
+                document.getElementById('muteCamBtn').innerHTML = isMuted ? '<i class="fas fa-video-slash"></i>' : '<i class="fas fa-video"></i>';
+            }
+        };
+
+        window.endAgoraCall = async () => {
             if (currentUser) await deleteDoc(doc(db, "calls", currentUser.uid)).catch(()=>{});
             if (targetUser) await deleteDoc(doc(db, "calls", targetUser.id)).catch(()=>{});
-
-            // Stop PeerJS
-            if (currentPeerCall) currentPeerCall.close();
-            if (localAudioStream) {
-                localAudioStream.getTracks().forEach(t => t.stop());
-                localAudioStream = null;
-            }
-
-            // Stop Agora
-            if (localTracks.audioTrack) { localTracks.audioTrack.stop(); localTracks.audioTrack.close(); localTracks.audioTrack = null; }
-            if (localTracks.videoTrack) { localTracks.videoTrack.stop(); localTracks.videoTrack.close(); localTracks.videoTrack = null; }
+            
+            if(localTracks.audioTrack) { localTracks.audioTrack.stop(); localTracks.audioTrack.close(); localTracks.audioTrack = null; }
+            if(localTracks.videoTrack) { localTracks.videoTrack.stop(); localTracks.videoTrack.close(); localTracks.videoTrack = null; }
+            
             await agoraClient.leave().catch(()=>{});
-
+            
             document.getElementById('callScreen').style.display = 'none';
             document.getElementById('remote-video').innerHTML = "";
             document.getElementById('local-video').innerHTML = "";
             activeCallData = null;
         };
 
-        // --- INTERFACE ---
+        function showCallScreen(name, photo, status, isIncoming = false) {
+            document.getElementById('callScreen').style.display = 'flex';
+            document.getElementById('callName').innerText = name;
+            document.getElementById('callAvatar').src = photo;
+            document.getElementById('callStatusText').innerText = status;
+            document.getElementById('acceptBtn').style.display = isIncoming ? 'flex' : 'none';
+        }
 
-        window.switchTab = (tab) => {
-            currentRoom = tab;
-            document.querySelectorAll('.chat-container').forEach(c => { c.classList.remove('active'); c.style.display = 'none'; });
-            const target = document.getElementById(tab);
-            if(target) { target.style.display = (tab === 'private') ? 'block' : 'flex'; target.classList.add('active'); }
-            if(tab !== 'private') listenMessages(tab);
-            document.getElementById('inputBar').style.display = (tab === 'private') ? 'none' : 'flex';
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-        };
+        // --- GESTION DES MESSAGES ---
 
         window.handleSendAction = async () => {
             const input = document.getElementById('msgInput');
             const text = input.value.trim();
             if(!text) return;
+
             let path = currentRoom === 'private_active' ? `private_chats/${[currentUser.uid, targetUser.id].sort().join('_')}/messages` : currentRoom;
-            await addDoc(collection(db, path), { text, userId: currentUser.uid, timestamp: serverTimestamp() });
+            await addDoc(collection(db, path), {
+                text, userId: currentUser.uid, timestamp: serverTimestamp()
+            });
             input.value = "";
         };
 
@@ -393,6 +363,7 @@
             const isPrivate = room === 'private_active';
             let path = isPrivate ? `private_chats/${[currentUser.uid, targetUser.id].sort().join('_')}/messages` : room;
             const q = query(collection(db, path), orderBy("timestamp", "asc"));
+            
             onSnapshot(q, (snap) => {
                 const container = isPrivate ? document.getElementById('privateWindow') : document.getElementById(room);
                 if(!container) return;
@@ -401,10 +372,38 @@
                     const data = d.data();
                     const isMe = data.userId === currentUser.uid;
                     const info = userCache[data.userId] || {name: "Utilisateur", photo: "https://via.placeholder.com/40"};
-                    html += `<div class="msg-wrapper ${isMe ? 'sent' : 'received'}"><img src="${info.photo}" class="msg-avatar"><div class="message"><span class="msg-name" onclick="openAddModal('${data.userId}')">${isMe ? 'Moi' : info.name}</span>${data.text}</div></div>`;
+                    html += `
+                        <div class="msg-wrapper ${isMe ? 'sent' : 'received'}">
+                            <img src="${info.photo}" class="msg-avatar">
+                            <div class="message">
+                                <span class="msg-name" onclick="openAddModal('${data.userId}')">${isMe ? 'Moi' : info.name}</span>
+                                ${data.text}
+                            </div>
+                        </div>`;
                 });
                 container.innerHTML = html;
                 container.scrollTop = container.scrollHeight;
+            });
+        };
+
+        window.switchTab = (tab) => {
+            currentRoom = tab;
+            document.querySelectorAll('.chat-container').forEach(c => {
+                c.classList.remove('active');
+                c.style.display = 'none';
+            });
+            const target = document.getElementById(tab);
+            if(target) {
+                target.style.display = (tab === 'private') ? 'block' : 'flex';
+                target.classList.add('active');
+            }
+            if(tab !== 'private') listenMessages(tab);
+            document.getElementById('inputBar').style.display = (tab === 'private') ? 'none' : 'flex';
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => {
+                if(t.innerText.toLowerCase() === tab) t.classList.add('active');
             });
         };
 
@@ -456,22 +455,6 @@
                     container.appendChild(item);
                 });
             });
-        }
-
-        window.toggleMic = async () => {
-            if (localTracks.audioTrack) {
-                const muted = !localTracks.audioTrack.muted;
-                await localTracks.audioTrack.setMuted(muted);
-                document.getElementById('muteMicBtn').innerHTML = muted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
-            }
-        };
-
-        function showCallScreen(name, photo, status, isIncoming = false) {
-            document.getElementById('callScreen').style.display = 'flex';
-            document.getElementById('callName').innerText = name;
-            document.getElementById('callAvatar').src = photo;
-            document.getElementById('callStatusText').innerText = status;
-            document.getElementById('acceptBtn').style.display = isIncoming ? 'flex' : 'none';
         }
     </script>
 </body>
