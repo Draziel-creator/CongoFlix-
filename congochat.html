@@ -66,7 +66,6 @@
         #typing-status { font-size: 0.75rem; color: #25d366; font-weight: bold; padding: 5px 20px; height: 20px; font-style: italic; background: transparent; position: absolute; bottom: 70px; z-index: 5; }
         #privateHeader { background: #ededed; color: black; padding: 10px 15px; display: none; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; flex-shrink: 0; }
         
-        /* Styles Appels */
         .call-btn { cursor: pointer; transition: color 0.3s; }
         .call-btn:hover { color: var(--rdc-blue); }
     </style>
@@ -122,7 +121,6 @@
         </button>
     </div>
 
-    <!-- Modals -->
     <div id="msgModal" class="custom-modal"><div class="modal-card"><h3>Option Message</h3><button class="btn-delete" id="delMsgBtn">SUPPRIMER POUR TOUS</button><button class="btn-cancel" onclick="closeModals()">ANNULER</button></div></div>
     <div id="contactOptionsModal" class="custom-modal"><div class="modal-card"><h3>Options Contact</h3><button class="btn-delete" id="blockBtn" onclick="toggleBlock()">BLOQUER</button><button class="btn-cancel" style="background:#f1c40f; color:white;" onclick="removeContactAction()">RETIRER LE CONTACT</button><button class="btn-cancel" onclick="closeModals()">ANNULER</button></div></div>
     <div id="addContactModal" class="custom-modal"><div class="modal-card"><h3 id="targetNameDisplay">Utilisateur</h3><p>Nouveau message de cette personne. Ajouter aux contacts ?</p><button class="btn-confirm" id="confirmAddBtn">AJOUTER</button><button class="btn-cancel" onclick="closeModals()">ANNULER</button></div></div>
@@ -136,7 +134,7 @@
             apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
             authDomain: "congo-streaming-51333.firebaseapp.com",
             projectId: "congo-streaming-51333",
-            appId: "395bf61671f44c9284be2f8f49daa884" // TON NOUVEL ID MIS À JOUR ICI
+            appId: "395bf61671f44c9284be2f8f49daa884"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -151,7 +149,9 @@
         let userCache = {}; 
         let privateBadges = {};
 
-        // --- AUTH & INITIALISATION ---
+        // Helper crucial pour l'ID unique des appels
+        const getChatId = (u1, u2) => [u1, u2].sort().join('_');
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
@@ -188,15 +188,25 @@
             }
         });
 
-        // --- FONCTION APPELS (INTÉGRÉE) ---
+        // --- FONCTION APPELS RÉPARÉE ---
         window.startCall = (type) => {
-            if(!targetUser) return;
-            const mode = type === 'video' ? 'Vidéo' : 'Audio';
-            alert(`Lancement de l'appel ${mode} vers ${targetUser.name}...\n(ID: ${targetUser.id})`);
-            // Ici tu peux intégrer ta logique WebRTC ou Agora.io
+            if(!targetUser || !currentUser) {
+                alert("Erreur: Utilisateur non identifié.");
+                return;
+            }
+
+            // Création d'une salle unique basée sur vos deux IDs
+            const roomName = "CongoChat_" + getChatId(currentUser.uid, targetUser.id);
+            const callUrl = "https://meet.jit.si/" + roomName + (type === 'audio' ? "#config.startWithVideoMuted=true" : "");
+
+            console.log(`Lancement de l'appel vers ${targetUser.name}`);
+            
+            // Ouvre l'interface d'appel WebRTC
+            const win = window.open(callUrl, '_blank');
+            if (!win) alert("Veuillez autoriser les pop-ups pour passer l'appel.");
         };
 
-        // --- PRÉSENCE ---
+        // --- RESTE DU SCRIPT ---
         function updatePresenceDisplay(targetId) {
             if(activeListeners['presence']) activeListeners['presence']();
             activeListeners['presence'] = onSnapshot(doc(db, "online_users", targetId), (snap) => {
@@ -220,7 +230,6 @@
             });
         }
 
-        // --- TYPING ---
         const setTyping = (isTyping) => {
             if (!currentUser) return;
             const roomId = (currentRoom === 'private_active') ? getChatId(currentUser.uid, targetUser.id) : currentRoom;
@@ -245,7 +254,6 @@
             });
         };
 
-        // --- MESSAGES ---
         window.handleSendAction = async () => {
             const input = document.getElementById('msgInput');
             const text = input.value.trim();
@@ -292,7 +300,6 @@
             listenTyping(room);
         };
 
-        // --- NOTIFS ---
         function setupGlobalNotifications() {
             ['live', 'games', 'market'].forEach(room => {
                 let initialLoad = true;
@@ -349,7 +356,6 @@
             });
         }
 
-        // --- NAVIGATION & UI ---
         window.switchTab = (tab) => {
             currentRoom = tab;
             const b = document.getElementById(`badge-${tab}`);
@@ -362,9 +368,8 @@
             const targetEl = document.getElementById(tab);
             targetEl.classList.add('active');
             targetEl.style.display = (tab === 'private') ? 'block' : 'flex';
-            const tabs = document.querySelectorAll('.tab');
             const idx = ['live', 'games', 'market', 'private'].indexOf(tab);
-            if(idx !== -1) tabs[idx].classList.add('active');
+            if(idx !== -1) document.querySelectorAll('.tab')[idx].classList.add('active');
             if(tab !== 'private') {
                 listenMessages(tab);
                 document.getElementById('inputBar').style.display = 'flex';
@@ -384,6 +389,7 @@
             document.getElementById('inputBar').style.display = 'flex';
             document.getElementById('pHeadName').innerText = userCache[id]?.name || name;
             document.getElementById('pHeadImg').src = userCache[id]?.photo || photo;
+            
             const ub = document.getElementById(`badge-u-${id}`);
             if(ub) {
                 const count = parseInt(ub.innerText) || 0;
@@ -406,7 +412,6 @@
             switchTab('private');
         };
 
-        const getChatId = (u1, u2) => [u1, u2].sort().join('_');
         window.closeModals = () => document.querySelectorAll('.custom-modal').forEach(m => m.style.display='none');
         window.openContactOptions = () => document.getElementById('contactOptionsModal').style.display = 'flex';
         
