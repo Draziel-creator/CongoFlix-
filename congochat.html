@@ -65,6 +65,10 @@
 
         #typing-status { font-size: 0.75rem; color: #25d366; font-weight: bold; padding: 5px 20px; height: 20px; font-style: italic; background: transparent; position: absolute; bottom: 70px; z-index: 5; }
         #privateHeader { background: #ededed; color: black; padding: 10px 15px; display: none; align-items: center; justify-content: space-between; border-bottom: 1px solid #ddd; flex-shrink: 0; }
+        
+        /* Styles Appels */
+        .call-btn { cursor: pointer; transition: color 0.3s; }
+        .call-btn:hover { color: var(--rdc-blue); }
     </style>
 </head>
 <body>
@@ -94,8 +98,8 @@
             </div>
         </div>
         <div style="display:flex; gap:18px; font-size:1.1rem; color:#555">
-            <i class="fas fa-video"></i>
-            <i class="fas fa-phone"></i>
+            <i class="fas fa-video call-btn" onclick="startCall('video')"></i>
+            <i class="fas fa-phone call-btn" onclick="startCall('audio')"></i>
             <i class="fas fa-ellipsis-v" onclick="openContactOptions()"></i>
         </div>
     </div>
@@ -118,6 +122,7 @@
         </button>
     </div>
 
+    <!-- Modals -->
     <div id="msgModal" class="custom-modal"><div class="modal-card"><h3>Option Message</h3><button class="btn-delete" id="delMsgBtn">SUPPRIMER POUR TOUS</button><button class="btn-cancel" onclick="closeModals()">ANNULER</button></div></div>
     <div id="contactOptionsModal" class="custom-modal"><div class="modal-card"><h3>Options Contact</h3><button class="btn-delete" id="blockBtn" onclick="toggleBlock()">BLOQUER</button><button class="btn-cancel" style="background:#f1c40f; color:white;" onclick="removeContactAction()">RETIRER LE CONTACT</button><button class="btn-cancel" onclick="closeModals()">ANNULER</button></div></div>
     <div id="addContactModal" class="custom-modal"><div class="modal-card"><h3 id="targetNameDisplay">Utilisateur</h3><p>Nouveau message de cette personne. Ajouter aux contacts ?</p><button class="btn-confirm" id="confirmAddBtn">AJOUTER</button><button class="btn-cancel" onclick="closeModals()">ANNULER</button></div></div>
@@ -131,7 +136,7 @@
             apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
             authDomain: "congo-streaming-51333.firebaseapp.com",
             projectId: "congo-streaming-51333",
-            appId: "1:304286627819:android:36e0b43b8b10508a054bae"
+            appId: "395bf61671f44c9284be2f8f49daa884" // TON NOUVEL ID MIS À JOUR ICI
         };
 
         const app = initializeApp(firebaseConfig);
@@ -158,13 +163,11 @@
 
                 document.getElementById('myAvatar').src = photo;
                 
-                // Presence Online
                 const presenceRef = doc(db, "online_users", user.uid);
                 await setDoc(presenceRef, { 
                     name: name, photo: photo, lastSeen: serverTimestamp(), status: 'online'
                 }, { merge: true });
 
-                // Update lastSeen on disconnect (via window event since we don't have Functions here)
                 window.addEventListener('beforeunload', () => {
                     updateDoc(presenceRef, { lastSeen: serverTimestamp(), status: 'offline' });
                 });
@@ -185,7 +188,15 @@
             }
         });
 
-        // --- GESTION DU STATUT EN LIGNE (WHATSAPP STYLE) ---
+        // --- FONCTION APPELS (INTÉGRÉE) ---
+        window.startCall = (type) => {
+            if(!targetUser) return;
+            const mode = type === 'video' ? 'Vidéo' : 'Audio';
+            alert(`Lancement de l'appel ${mode} vers ${targetUser.name}...\n(ID: ${targetUser.id})`);
+            // Ici tu peux intégrer ta logique WebRTC ou Agora.io
+        };
+
+        // --- PRÉSENCE ---
         function updatePresenceDisplay(targetId) {
             if(activeListeners['presence']) activeListeners['presence']();
             activeListeners['presence'] = onSnapshot(doc(db, "online_users", targetId), (snap) => {
@@ -209,7 +220,7 @@
             });
         }
 
-        // --- TYPING STATUS ---
+        // --- TYPING ---
         const setTyping = (isTyping) => {
             if (!currentUser) return;
             const roomId = (currentRoom === 'private_active') ? getChatId(currentUser.uid, targetUser.id) : currentRoom;
@@ -239,15 +250,12 @@
             const input = document.getElementById('msgInput');
             const text = input.value.trim();
             if(!text || !currentUser) return;
-
             let path = currentRoom === 'private_active' ? `private_chats/${getChatId(currentUser.uid, targetUser.id)}/messages` : currentRoom;
-            
             await addDoc(collection(db, path), {
                 text: text,
                 timestamp: serverTimestamp(),
                 userId: currentUser.uid
             });
-
             input.value = "";
             setTyping(false);
             updateBtnIcon("");
@@ -257,22 +265,17 @@
             const isPrivate = room === 'private_active';
             let path = isPrivate ? `private_chats/${getChatId(currentUser.uid, targetUser.id)}/messages` : room;
             const q = query(collection(db, path), orderBy("timestamp", "asc"));
-            
             if(activeListeners['messages']) activeListeners['messages']();
-            
             activeListeners['messages'] = onSnapshot(q, (snap) => {
                 const container = isPrivate ? document.getElementById('privateWindow') : document.getElementById(room);
                 if(!container) return;
-                
                 let html = "";
                 snap.forEach(d => {
                     const data = d.data();
                     if (myBlocks.includes(data.userId)) return;
-
                     const isMe = data.userId === currentUser.uid;
                     const uInfo = userCache[data.userId] || { name: "Utilisateur", photo: "https://via.placeholder.com/40" };
                     const time = data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '--:--';
-                    
                     html += `
                         <div class="msg-wrapper ${isMe ? 'sent' : 'received'}" data-uid="${data.userId}" onclick="${isMe ? `openMsgOptions('${d.id}', '${path}')` : ''}">
                             <img src="${uInfo.photo}" class="msg-avatar user-photo-${data.userId}">
@@ -289,7 +292,7 @@
             listenTyping(room);
         };
 
-        // --- COMPTEURS & NOTIFICATIONS ---
+        // --- NOTIFS ---
         function setupGlobalNotifications() {
             ['live', 'games', 'market'].forEach(room => {
                 let initialLoad = true;
@@ -325,7 +328,6 @@
                     item.onclick = () => enterPrivateChat(d.id, c.name, c.photo);
                     container.appendChild(item);
 
-                    // Compteur individuel par contact
                     let firstLoad = true;
                     if(activeListeners[`badge_${d.id}`]) activeListeners[`badge_${d.id}`]();
                     activeListeners[`badge_${d.id}`] = onSnapshot(query(collection(db, `private_chats/${chatId}/messages`), orderBy("timestamp", "desc"), limit(1)), (mSnap) => {
@@ -333,14 +335,10 @@
                         if(!mSnap.empty) {
                             const lastM = mSnap.docs[0].data();
                             document.getElementById(`last-msg-${d.id}`).innerText = lastM.text.substring(0,25) + "...";
-                            
-                            // Si on ne discute pas avec lui ET que c'est lui qui envoie
                             if((currentRoom !== 'private_active' || targetUser?.id !== d.id) && lastM.userId !== currentUser.uid) {
                                 const ub = document.getElementById(`badge-u-${d.id}`);
                                 ub.innerText = (parseInt(ub.innerText) || 0) + 1;
                                 ub.style.display = "flex";
-                                
-                                // Badge General "Privé"
                                 const pb = document.getElementById('badge-private');
                                 pb.innerText = (parseInt(pb.innerText) || 0) + 1;
                                 pb.style.display = "block";
@@ -351,26 +349,22 @@
             });
         }
 
-        // --- NAVIGATION ---
+        // --- NAVIGATION & UI ---
         window.switchTab = (tab) => {
             currentRoom = tab;
             const b = document.getElementById(`badge-${tab}`);
             if(b && tab !== 'private') { b.innerText = "0"; b.style.display = "none"; }
-            
             document.querySelectorAll('.chat-container').forEach(c => {
                 c.classList.remove('active');
                 c.style.display = 'none';
             });
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            
             const targetEl = document.getElementById(tab);
             targetEl.classList.add('active');
             targetEl.style.display = (tab === 'private') ? 'block' : 'flex';
-
             const tabs = document.querySelectorAll('.tab');
             const idx = ['live', 'games', 'market', 'private'].indexOf(tab);
             if(idx !== -1) tabs[idx].classList.add('active');
-
             if(tab !== 'private') {
                 listenMessages(tab);
                 document.getElementById('inputBar').style.display = 'flex';
@@ -382,19 +376,14 @@
         window.enterPrivateChat = async (id, name, photo) => {
             targetUser = { id, name, photo };
             currentRoom = 'private_active';
-            
-            // UI Switch
             document.getElementById('mainHeader').style.display = 'none';
             document.getElementById('privateHeader').style.display = 'flex';
             document.getElementById('privateWindow').style.display = 'flex';
             document.getElementById('privateWindow').classList.add('active');
             document.getElementById('private').style.display = 'none';
             document.getElementById('inputBar').style.display = 'flex';
-            
             document.getElementById('pHeadName').innerText = userCache[id]?.name || name;
             document.getElementById('pHeadImg').src = userCache[id]?.photo || photo;
-            
-            // Reset Badges
             const ub = document.getElementById(`badge-u-${id}`);
             if(ub) {
                 const count = parseInt(ub.innerText) || 0;
@@ -405,7 +394,6 @@
                 pb.innerText = totalP > 0 ? totalP : 0;
                 if(totalP <= 0) pb.style.display = "none";
             }
-
             updatePresenceDisplay(id);
             listenMessages('private_active');
         };
@@ -418,7 +406,6 @@
             switchTab('private');
         };
 
-        // --- UTILS ---
         const getChatId = (u1, u2) => [u1, u2].sort().join('_');
         window.closeModals = () => document.querySelectorAll('.custom-modal').forEach(m => m.style.display='none');
         window.openContactOptions = () => document.getElementById('contactOptionsModal').style.display = 'flex';
