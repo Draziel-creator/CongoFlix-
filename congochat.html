@@ -38,6 +38,10 @@
         .chat-container { flex: 1; background: var(--chat-bg) url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); overflow-y: auto; padding: 10px; display: none; flex-direction: column; scroll-behavior: smooth; }
         .chat-container.active { display: flex; }
 
+        /* --- NOUVEAU MESSAGE BANNER --- */
+        .new-msg-banner { width: 100%; text-align: center; margin: 20px 0; position: relative; display: flex; align-items: center; justify-content: center; }
+        .new-msg-banner span { background: #e1f3fb; color: #555; padding: 5px 15px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; box-shadow: 0 1px 1px rgba(0,0,0,0.1); border: 1px solid #c9e3ef; }
+
         /* --- MESSAGES --- */
         .msg-wrapper { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 15px; max-width: 85%; animation: fadeIn 0.3s; position: relative; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -160,7 +164,7 @@
     <div id="contactOptionsModal" class="custom-modal">
         <div class="modal-card">
             <h3>Options Contact</h3>
-            <button style="background:var(--rdc-red); color:white;" onclick="toggleBlockUser()">BLOQUER / DÉBLOQUER</button>
+            <button id="blockBtnAction" style="background:var(--rdc-red); color:white;" onclick="toggleBlockUser()">BLOQUER</button>
             <button style="background:#ff9800; color:white;" onclick="removeContact()">RETIRER DES CONTACTS</button>
             <button style="background:#eee; color:#000;" onclick="closeAllModals()">ANNULER</button>
         </div>
@@ -180,141 +184,108 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDoc, updateDoc, deleteDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
-            authDomain: "congo-streaming-51333.firebaseapp.com",
-            projectId: "congo-streaming-51333",
-            appId: "1:304286627819:android:36e0b43b8b10508a054bae"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", authDomain: "congo-streaming-51333.firebaseapp.com", projectId: "congo-streaming-51333", appId: "1:304286627819:android:36e0b43b8b10508a054bae" };
         const AGORA_APP_ID = "395bf61671f44c9284be2f8f49daa884";
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
         let agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
-        let currentUser = null;
-        let currentRoom = 'live';
-        let targetUser = null; 
-        let userCache = {};
-        let activeListeners = {};
-        let localTracks = { videoTrack: null, audioTrack: null };
-        let badges = { live: 0, games: 0, market: 0, private: 0 };
+        let currentUser, currentRoom = 'live', targetUser = null, userCache = {}, activeListeners = {}, localTracks = { v: null, a: null }, lastReadMsgId = "";
 
-        // --- AUTH & INITIALISATION ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                const userRef = doc(db, "users", user.uid);
-                const snap = await getDoc(userRef);
-                const data = snap.exists() ? snap.data() : {};
-                
-                document.getElementById('myAvatar').src = data.photoURL || user.photoURL || "https://via.placeholder.com/40";
-                
-                // Presence
-                setDoc(doc(db, "online_users", user.uid), {
-                    name: data.name || user.displayName || "Anonyme",
-                    photo: data.photoURL || user.photoURL || "https://via.placeholder.com/40",
-                    status: 'online',
-                    lastSeen: serverTimestamp()
-                }, { merge: true });
-
-                // Ecoute des utilisateurs
-                onSnapshot(collection(db, "online_users"), (snap) => {
-                    snap.forEach(d => userCache[d.id] = d.data());
-                    document.getElementById('onlineDisplay').innerText = `${snap.size} en ligne`;
+        // --- AUTH ---
+        onAuthStateChanged(auth, async (u) => {
+            if (u) {
+                currentUser = u;
+                document.getElementById('myAvatar').src = u.photoURL || "https://via.placeholder.com/40";
+                setDoc(doc(db, "online_users", u.uid), { name: u.displayName || "Elite", photo: u.photoURL, last: serverTimestamp() }, { merge: true });
+                onSnapshot(collection(db, "online_users"), s => {
+                    s.forEach(d => userCache[d.id] = d.data());
+                    document.getElementById('onlineDisplay').innerText = s.size + " en ligne";
                 });
-
                 listenMessages('live');
                 loadContacts();
-                setupGlobalNotifications();
                 listenIncomingCalls();
             }
         });
 
         // --- NAVIGATION ---
-        window.switchTab = (tab) => {
-            currentRoom = tab;
-            document.querySelectorAll('.chat-container').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            
-            document.getElementById(tab).classList.add('active');
-            document.getElementById(`tab-${tab}`).classList.add('active');
-            
-            // Reset Badge
-            badges[tab] = 0;
-            const b = document.getElementById(`badge-${tab}`);
-            b.innerText = "0"; b.style.display = "none";
-
-            if(tab === 'private') {
-                document.getElementById('inputBar').style.display = 'none';
-            } else {
-                document.getElementById('inputBar').style.display = 'flex';
-                listenMessages(tab);
-            }
+        window.switchTab = (t) => {
+            currentRoom = t;
+            document.querySelectorAll('.chat-container, .tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(t).classList.add('active');
+            document.getElementById(`tab-${t}`).classList.add('active');
+            document.getElementById(`badge-${t}`).style.display = 'none';
+            document.getElementById('inputBar').style.display = (t === 'private') ? 'none' : 'flex';
+            if(t !== 'private') listenMessages(t);
         };
 
-        window.enterPrivateChat = (id, name, photo) => {
+        window.enterPrivateChat = async (id, name, photo) => {
             targetUser = { id, name, photo };
-            currentRoom = 'private_active';
+            currentRoom = 'p_active';
             document.getElementById('mainHeader').style.display = 'none';
             document.getElementById('privateHeader').style.display = 'flex';
             document.getElementById('privateWindow').classList.add('active');
-            document.getElementById('private').classList.remove('active');
             document.getElementById('inputBar').style.display = 'flex';
             document.getElementById('pHeadName').innerText = name;
             document.getElementById('pHeadImg').src = photo;
-            listenMessages('private_active');
+            
+            const chatId = getChatId(currentUser.uid, id);
+            const rd = await getDoc(doc(db, `users/${currentUser.uid}/last_read`, chatId));
+            lastReadMsgId = rd.exists() ? rd.data().lastId : "";
+            
+            listenMessages('p_active');
         };
 
         window.exitPrivateChat = () => {
             document.getElementById('privateHeader').style.display = 'none';
             document.getElementById('mainHeader').style.display = 'block';
             document.getElementById('privateWindow').classList.remove('active');
+            updateTyping(false);
             switchTab('private');
         };
 
-        // --- MESSAGES ---
+        // --- MESSAGES & HEURE ---
+        function formatTime(ts) {
+            if(!ts) return "...";
+            const d = ts.toDate();
+            return d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0');
+        }
+
         window.handleSendAction = async () => {
             const input = document.getElementById('msgInput');
-            const text = input.value.trim();
-            if(!text) return;
+            const txt = input.value.trim();
+            if(!txt) return;
 
-            const path = (currentRoom === 'private_active') 
-                ? `private_chats/${getChatId(currentUser.uid, targetUser.id)}/messages` 
-                : currentRoom;
+            if(currentRoom === 'p_active') {
+                const block = await getDoc(doc(db, `blocks/${targetUser.id}/user_blocks`, currentUser.uid));
+                if(block.exists()) { alert("Envoi impossible : Vous êtes bloqué."); return; }
+            }
 
-            await addDoc(collection(db, path), {
-                text,
-                userId: currentUser.uid,
-                timestamp: serverTimestamp(),
-                reactions: {}
-            });
-
-            input.value = "";
-            updateTyping(false);
+            const path = (currentRoom === 'p_active') ? `private_chats/${getChatId(currentUser.uid, targetUser.id)}/messages` : currentRoom;
+            await addDoc(collection(db, path), { userId: currentUser.uid, text: txt, timestamp: serverTimestamp(), reactions: {} });
+            input.value = ""; updateTyping(false);
         };
 
         function listenMessages(room) {
             if(activeListeners.msgs) activeListeners.msgs();
-            const path = (room === 'private_active') 
-                ? `private_chats/${getChatId(currentUser.uid, targetUser.id)}/messages` 
-                : room;
-
+            const path = (room === 'p_active') ? `private_chats/${getChatId(currentUser.uid, targetUser.id)}/messages` : room;
             const q = query(collection(db, path), orderBy("timestamp", "asc"));
+            
             activeListeners.msgs = onSnapshot(q, (snap) => {
-                const container = (room === 'private_active') ? document.getElementById('privateWindow') : document.getElementById(room);
+                const cont = (room === 'p_active') ? document.getElementById('privateWindow') : document.getElementById(room);
                 let html = "";
+                let hasShownBanner = false;
+
                 snap.forEach(d => {
                     const m = d.data();
                     const isMe = m.userId === currentUser.uid;
-                    const info = userCache[m.userId] || { name: "Utilisateur", photo: "https://via.placeholder.com/40" };
+                    const info = userCache[m.userId] || { name: "Elite", photo: "" };
                     
-                    let reactHtml = '<div class="reactions-container">';
-                    for(let emoji in (m.reactions || {})) {
-                        reactHtml += `<div class="reaction-pill">${emoji} ${m.reactions[emoji].count}</div>`;
+                    if(!isMe && d.id !== lastReadMsgId && lastReadMsgId !== "" && !hasShownBanner) {
+                        html += `<div class="new-msg-banner"><span>NOUVEAUX MESSAGES</span></div>`;
+                        hasShownBanner = true;
                     }
-                    reactHtml += '</div>';
 
                     html += `
                         <div class="msg-wrapper ${isMe ? 'sent' : 'received'}">
@@ -322,166 +293,127 @@
                             <div class="message">
                                 <span class="msg-name" onclick="openAddModal('${m.userId}', '${info.name}')">${isMe ? 'Moi' : info.name}</span>
                                 ${m.text}
-                                ${reactHtml}
-                                <span class="msg-time">juste à l'instant</span>
-                            </div>
-                            <div class="reaction-trigger" onclick="toggleStickers('${d.id}')"><i class="fas fa-heart"></i></div>
-                            <div class="sticker-modal" id="stickers-${d.id}">
-                                <span onclick="addReaction('${d.id}', '${path}', '❤️')">❤️</span>
-                                <span onclick="addReaction('${d.id}', '${path}', '😂')">😂</span>
-                                <span onclick="addReaction('${d.id}', '${path}', '🔥')">🔥</span>
-                                <span onclick="addReaction('${d.id}', '${path}', '👍')">👍</span>
+                                <span class="msg-time">${formatTime(m.timestamp)}</span>
                             </div>
                         </div>`;
+                    if(room === 'p_active' && !isMe) {
+                        setDoc(doc(db, `users/${currentUser.uid}/last_read`, getChatId(currentUser.uid, targetUser.id)), { lastId: d.id });
+                    }
                 });
-                container.innerHTML = html;
-                container.scrollTop = container.scrollHeight;
+                cont.innerHTML = html;
+                cont.scrollTop = cont.scrollHeight;
             });
             listenTyping(room);
         }
 
-        // --- AGORA LOGIC (RÉPARÉ) ---
+        // --- AGORA (SYNCHRONISÉ) ---
         window.initiateCall = async (type) => {
-            const channel = getChatId(currentUser.uid, targetUser.id);
-            await setDoc(doc(db, "calls", targetUser.id), {
-                callerId: currentUser.uid,
-                callerName: userCache[currentUser.uid].name,
-                callerPhoto: userCache[currentUser.uid].photo,
-                type, channel, status: 'ringing'
+            const chan = getChatId(currentUser.uid, targetUser.id);
+            await setDoc(doc(db, "calls", targetUser.id), { 
+                callerId: currentUser.uid, callerName: currentUser.displayName, callerPhoto: currentUser.photoURL,
+                type, chan, status: 'ringing' 
             });
-            showCallScreen(targetUser.name, targetUser.photo, "Appel...");
+            showCallScreen(targetUser.name, targetUser.photo, "Appel en cours...");
             
-            // Attendre réponse
-            onSnapshot(doc(db, "calls", targetUser.id), (snap) => {
-                if(snap.exists() && snap.data().status === 'accepted') {
-                    startAgoraSession(channel, type);
-                }
+            onSnapshot(doc(db, "calls", targetUser.id), (s) => {
+                if(!s.exists()) endAgoraCall();
+                else if(s.data().status === 'accepted') startAgora(chan, type);
             });
         };
 
         function listenIncomingCalls() {
-            onSnapshot(doc(db, "calls", currentUser.uid), (snap) => {
-                if(snap.exists() && snap.data().status === 'ringing') {
-                    const data = snap.data();
-                    showCallScreen(data.callerName, data.callerPhoto, "Appel entrant...", true);
+            onSnapshot(doc(db, "calls", currentUser.uid), (s) => {
+                if(s.exists() && s.data().status === 'ringing') {
+                    showCallScreen(s.data().callerName, s.data().callerPhoto, "Appel entrant...", true);
+                } else if(!s.exists() && document.getElementById('callScreen').style.display === 'flex') {
+                    endAgoraCall();
                 }
             });
         }
 
-        window.answerCall = async () => {
-            const callRef = doc(db, "calls", currentUser.uid);
-            const snap = await getDoc(callRef);
-            if(snap.exists()) {
-                await updateDoc(callRef, { status: 'accepted' });
-                startAgoraSession(snap.data().channel, snap.data().type);
-            }
-        };
-
-        async function startAgoraSession(channel, type) {
-            document.getElementById('acceptBtn').style.display = 'none';
+        async function startAgora(chan, type) {
             document.getElementById('callStatusText').innerText = "En ligne";
-            
-            const uid = Math.floor(Math.random() * 10000);
-            await agoraClient.join(AGORA_APP_ID, channel, null, uid);
-
-            localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-            let toPublish = [localTracks.audioTrack];
-
+            document.getElementById('acceptBtn').style.display = 'none';
+            await agoraClient.join(AGORA_APP_ID, chan, null, Math.floor(Math.random()*1000));
+            localTracks.a = await AgoraRTC.createMicrophoneAudioTrack();
+            let pubs = [localTracks.a];
             if(type === 'video') {
-                localTracks.videoTrack = await AgoraRTC.createCameraVideoTrack();
-                localTracks.videoTrack.play("local-video");
-                toPublish.push(localTracks.videoTrack);
+                localTracks.v = await AgoraRTC.createCameraVideoTrack();
+                localTracks.v.play("local-video");
+                pubs.push(localTracks.v);
             }
-
-            await agoraClient.publish(toPublish);
-
-            agoraClient.on("user-published", async (user, mediaType) => {
-                await agoraClient.subscribe(user, mediaType);
-                if (mediaType === "video") user.videoTrack.play("remote-video");
-                if (mediaType === "audio") user.audioTrack.play();
+            await agoraClient.publish(pubs);
+            agoraClient.on("user-published", async (u, mt) => {
+                await agoraClient.subscribe(u, mt);
+                if(mt === 'video') u.videoTrack.play("remote-video");
+                if(mt === 'audio') u.audioTrack.play();
             });
         }
 
+        window.answerCall = async () => {
+            const ref = doc(db, "calls", currentUser.uid);
+            const s = await getDoc(ref);
+            await updateDoc(ref, { status: 'accepted' });
+            startAgora(s.data().chan, s.data().type);
+        };
+
         window.endAgoraCall = async () => {
-            if(localTracks.audioTrack) { localTracks.audioTrack.stop(); localTracks.audioTrack.close(); }
-            if(localTracks.videoTrack) { localTracks.videoTrack.stop(); localTracks.videoTrack.close(); }
+            if(localTracks.a) localTracks.a.close(); if(localTracks.v) localTracks.v.close();
             await agoraClient.leave();
             await deleteDoc(doc(db, "calls", currentUser.uid)).catch(()=>{});
+            await deleteDoc(doc(db, "calls", targetUser?.id || "")).catch(()=>{});
             document.getElementById('callScreen').style.display = 'none';
         };
 
-        // --- UTILS ---
-        window.zoomImg = (url) => {
-            document.getElementById('zoomedImg').src = url;
-            document.getElementById('zoomModal').style.display = 'flex';
+        // --- TYPING & OPTIONS ---
+        window.openContactOptions = () => document.getElementById('contactOptionsModal').style.display = 'flex';
+        
+        window.toggleBlockUser = async () => {
+            await setDoc(doc(db, `blocks/${currentUser.uid}/user_blocks`, targetUser.id), { blocked: true });
+            alert("Contact bloqué."); closeAllModals();
         };
 
-        window.toggleStickers = (id) => {
-            const m = document.getElementById(`stickers-${id}`);
-            m.style.display = (m.style.display === 'grid') ? 'none' : 'grid';
-        };
-
-        window.addReaction = async (msgId, path, emoji) => {
-            const ref = doc(db, path, msgId);
-            await runTransaction(db, async (transaction) => {
-                const snap = await transaction.get(ref);
-                const reacts = snap.data().reactions || {};
-                if(!reacts[emoji]) reacts[emoji] = { count: 0 };
-                reacts[emoji].count += 1;
-                transaction.update(ref, { reactions: reacts });
-            });
+        window.removeContact = async () => {
+            await deleteDoc(doc(db, `users/${currentUser.uid}/contacts`, targetUser.id));
+            exitPrivateChat(); closeAllModals();
         };
 
         const getChatId = (u1, u2) => [u1, u2].sort().join('_');
+        window.zoomImg = (url) => { document.getElementById('zoomedImg').src = url; document.getElementById('zoomModal').style.display = 'flex'; };
+        window.closeAllModals = () => document.querySelectorAll('.custom-modal').forEach(m => m.style.display = 'none');
 
-        function updateTyping(isTyping) {
-            const roomId = (currentRoom === 'private_active') ? getChatId(currentUser.uid, targetUser.id) : currentRoom;
-            setDoc(doc(db, "typing", roomId), {
-                [currentUser.uid]: { typing: isTyping, name: userCache[currentUser.uid].name }
-            }, { merge: true });
+        function updateTyping(is) {
+            const id = (currentRoom === 'p_active') ? getChatId(currentUser.uid, targetUser.id) : currentRoom;
+            setDoc(doc(db, "typing", id), { [currentUser.uid]: { typing: is, name: currentUser.displayName } }, { merge: true });
         }
 
         function listenTyping(room) {
-            const roomId = (room === 'private_active') ? getChatId(currentUser.uid, targetUser.id) : room;
-            onSnapshot(doc(db, "typing", roomId), (snap) => {
-                if(!snap.exists()) return;
-                const data = snap.data();
+            const id = (room === 'p_active') ? getChatId(currentUser.uid, targetUser.id) : room;
+            onSnapshot(doc(db, "typing", id), (s) => {
+                if(!s.exists()) return;
                 let text = "";
-                for(let id in data) if(id !== currentUser.uid && data[id].typing) text = `${data[id].name} écrit...`;
+                const data = s.data();
+                for(let uid in data) if(uid !== currentUser.uid && data[uid].typing) text = data[uid].name + " écrit...";
                 document.getElementById('typing-status').innerText = text;
             });
         }
 
-        function showCallScreen(name, photo, status, incoming = false) {
+        function showCallScreen(name, photo, status, inc = false) {
             document.getElementById('callScreen').style.display = 'flex';
             document.getElementById('callName').innerText = name;
             document.getElementById('callAvatar').src = photo;
             document.getElementById('callStatusText').innerText = status;
-            document.getElementById('acceptBtn').style.display = incoming ? 'flex' : 'none';
-        }
-
-        function setupGlobalNotifications() {
-            ['live', 'games', 'market'].forEach(room => {
-                onSnapshot(collection(db, room), (snap) => {
-                    if(currentRoom !== room && !snap.metadata.hasPendingWrites) {
-                        badges[room]++;
-                        const b = document.getElementById(`badge-${room}`);
-                        b.innerText = badges[room];
-                        b.style.display = "block";
-                    }
-                });
-            });
+            document.getElementById('acceptBtn').style.display = inc ? 'flex' : 'none';
         }
 
         async function loadContacts() {
-            onSnapshot(collection(db, `users/${currentUser.uid}/contacts`), (snap) => {
-                const cont = document.getElementById('private');
-                cont.innerHTML = "";
-                snap.forEach(d => {
+            onSnapshot(collection(db, `users/${currentUser.uid}/contacts`), s => {
+                const cont = document.getElementById('private'); cont.innerHTML = "";
+                s.forEach(d => {
                     const c = d.data();
                     const div = document.createElement('div');
                     div.className = 'contact-item';
-                    div.innerHTML = `<img src="${c.photo}"> <div><strong>${c.name}</strong><br><small>cliquez pour parler</small></div>`;
+                    div.innerHTML = `<img src="${c.photo}"> <div><strong>${c.name}</strong><br><small>En ligne</small></div>`;
                     div.onclick = () => enterPrivateChat(d.id, c.name, c.photo);
                     cont.appendChild(div);
                 });
@@ -497,28 +429,14 @@
 
         window.confirmAddContact = async () => {
             const info = userCache[targetUser.id];
-            await setDoc(doc(db, `users/${currentUser.uid}/contacts`, targetUser.id), {
-                name: info.name, photo: info.photo, addedAt: serverTimestamp()
-            });
+            await setDoc(doc(db, `users/${currentUser.uid}/contacts`, targetUser.id), { name: info.name, photo: info.photo });
             closeAllModals();
         };
 
-        window.closeAllModals = () => {
-            document.querySelectorAll('.custom-modal').forEach(m => m.style.display = 'none');
-        };
-
         document.getElementById('msgInput').oninput = (e) => {
-            const val = e.target.value;
-            updateTyping(val.length > 0);
-            const icon = document.getElementById('btnIcon');
-            const btn = document.getElementById('sendBtn');
-            if(val.length > 0) {
-                icon.className = "fas fa-paper-plane";
-                btn.style.background = "var(--rdc-blue)";
-            } else {
-                icon.className = "fas fa-microphone";
-                btn.style.background = "var(--whatsapp-yellow)";
-            }
+            const val = e.target.value; updateTyping(val.length > 0);
+            document.getElementById('btnIcon').className = val.length > 0 ? "fas fa-paper-plane" : "fas fa-microphone";
+            document.getElementById('sendBtn').style.background = val.length > 0 ? "var(--rdc-blue)" : "var(--whatsapp-yellow)";
         };
     </script>
 </body>
