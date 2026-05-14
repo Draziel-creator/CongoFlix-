@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, landscape">
-    <title>Génie Congo - Studio HD</title>
+    <title>Génie Congo - Studio TV Live</title>
     
     <style>
         :root {
-            /* Passage en s1600 pour la clarté HD */
             --overlay-img: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgv3Xb1xi808ij28d3b0nFah5mYidUcRD06nUga1R9L9d2JgQt-LAoQ0DNVZ7-6O8v4IkTc-hIrcLcvFwjUAz9LPJvjKqBPGzwwV6Byu57IWdU9BFUZfWCPk-2kCWMh1d5Naitqy1qugZ6iYGNl35-qVVqXt6GRajtV-cUpo-oqREvmUE9ORU752-J0AAEg/s1600/genie%20congo.png');
             --blue-rdc: #007bff;
             --yellow-rdc: #ffcc00;
@@ -18,195 +17,158 @@
             background: #000; overflow: hidden; font-family: 'Arial', sans-serif;
         }
 
-        .studio-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
+        /* --- ANIMATION ZOOM ENTRÉE --- */
+        .camera-zoom {
+            animation: cameraEntry 5s forwards ease-out;
+            width: 100vw; height: 100vh;
+            display: flex; justify-content: center;
         }
 
-        /* --- FOND ET LUMIÈRES --- */
-        .background-fx {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 50% 50%, #001a33, #000);
-            z-index: 1;
+        @keyframes cameraEntry {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
-        .light-sweep {
-            position: absolute;
-            width: 200px; height: 100%;
-            background: linear-gradient(to right, transparent, rgba(0, 123, 255, 0.15), transparent);
-            transform: skewX(-25deg);
-            animation: moveLight 6s infinite alternate ease-in-out;
+        .studio-container { position: relative; width: 100%; height: 100%; }
+
+        /* --- EFFET MIROIR GLOBAL --- */
+        .mirror-sheen::after {
+            content: ""; position: absolute; top: -150%; left: -50%;
+            width: 20%; height: 400%; background: rgba(255,255,255,0.1);
+            transform: rotate(35deg); animation: mirrorSweep 10s infinite;
+            z-index: 30; pointer-events: none;
         }
 
-        @keyframes moveLight {
-            from { left: -20%; } to { left: 110%; }
+        @keyframes mirrorSweep {
+            0% { left: -50%; } 20% { left: 150%; } 100% { left: 150%; }
         }
 
-        /* --- L'IMAGE MASQUE (STUDIO) --- */
         .studio-mask {
-            position: absolute;
-            inset: 0;
-            background-image: var(--overlay-img);
-            background-size: 100% 100%; /* S'adapte parfaitement à l'écran paysage */
-            background-repeat: no-repeat;
-            z-index: 10;
-            pointer-events: none;
-            /* Force la clarté */
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: high-quality;
+            position: absolute; inset: 0;
+            background: var(--overlay-img) no-repeat center;
+            background-size: 100% 100%; z-index: 10;
+            pointer-events: none; image-rendering: high-quality;
         }
 
-        /* --- NAVIGATION HAUTE (Dans tes cadres noirs) --- */
+        /* --- ZONE CANDIDATS --- */
+        .candidates-display {
+            position: absolute; top: 32%; width: 38%; height: 25%;
+            left: 50%; transform: translateX(-50%);
+            z-index: 5; display: flex; flex-direction: column; align-items: center;
+        }
+
+        .candidates-title {
+            color: var(--yellow-rdc); font-size: 0.6rem; font-weight: bold;
+            text-shadow: 0 0 8px var(--yellow-rdc); margin-bottom: 5px;
+        }
+
+        .candidates-grid {
+            display: flex; justify-content: space-between; width: 100%; height: 100%;
+        }
+
+        .side { display: flex; flex-direction: column; gap: 5px; width: 40%; }
+
+        .player-card {
+            display: flex; align-items: center; gap: 5px;
+            background: rgba(0,0,0,0.5); border-radius: 5px; padding: 2px;
+        }
+
+        .p-img { width: 25px; height: 25px; border-radius: 50%; border: 1px solid white; }
+        .p-name { color: white; font-size: 0.5rem; white-space: nowrap; overflow: hidden; }
+
+        /* --- NAVIGATION & CONNEXION --- */
         .top-menu {
-            position: absolute;
-            top: 4%; /* Ajusté pour Screenshot_20260514-154433.jpg */
-            width: 58%;
-            height: 8%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 20;
-            left: 50%;
-            transform: translateX(-50.5%);
+            position: absolute; top: 4%; width: 58%; height: 8%;
+            display: flex; justify-content: space-around; align-items: center;
+            z-index: 20; left: 50%; transform: translateX(-50.5%);
         }
 
-        .menu-item {
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 0.7rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            cursor: pointer;
-            width: 23%; /* Correspond à tes 4 cadres */
-            text-align: center;
-        }
+        .menu-item { background: transparent; border: none; color: white; font-size: 0.7rem; font-weight: bold; }
 
-        /* --- ZONE CONNEXION --- */
         .auth-zone {
-            position: absolute;
-            top: 4%;
-            right: 4.5%;
-            z-index: 20;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: white;
-            font-size: 0.7rem;
-            font-weight: bold;
+            position: absolute; top: 4%; right: 4.5%; z-index: 20;
+            display: flex; flex-direction: row-reverse; align-items: center; gap: 8px;
         }
 
-        .user-avatar {
-            width: 28px; height: 28px;
-            border-radius: 50%;
-            border: 2px solid var(--yellow-rdc);
-            background: #222;
-        }
+        .auth-label { color: white; font-size: 0.7rem; font-weight: bold; margin-top: 2px; }
+        .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--yellow-rdc); }
 
-        /* --- ÉCRAN CENTRAL (SCORE) --- */
-        .center-display {
-            position: absolute;
-            top: 38%;
-            z-index: 5;
-            text-align: center;
-        }
-
-        #score-val {
-            font-size: 3.5rem;
-            color: var(--yellow-rdc);
-            margin: 0;
-            text-shadow: 0 0 15px rgba(255, 204, 0, 0.6);
-        }
-
-        /* --- MODALE QUESTION (BAS) --- */
+        /* --- MODALE VITRINE --- */
         .question-box {
-            position: absolute;
-            bottom: -300px;
-            width: 55%;
-            background: rgba(0, 10, 30, 0.9);
-            border: 2px solid var(--blue-rdc);
-            border-bottom: none;
-            border-radius: 15px 15px 0 0;
-            padding: 15px;
-            z-index: 25;
-            transition: bottom 0.6s cubic-bezier(0.17, 0.84, 0.44, 1);
-            text-align: center;
+            position: absolute; bottom: -300px; width: 55%;
+            background: rgba(0, 30, 60, 0.9); border: 2px solid var(--blue-rdc);
+            border-radius: 15px 15px 0 0; padding: 15px; z-index: 25;
+            transition: bottom 0.8s cubic-bezier(0.17, 0.84, 0.44, 1);
+            box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
         }
 
         .question-box.active { bottom: 0; }
 
-        .options-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
+        .timer-badge {
+            position: absolute; top: 10px; right: 10px;
+            background: var(--yellow-rdc); color: black;
+            padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.8rem;
         }
 
-        .btn-opt {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(0, 123, 255, 0.5);
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            cursor: pointer;
-        }
-        .btn-opt:hover { background: var(--blue-rdc); }
-
+        .options-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .btn-opt { background: rgba(255,255,255,0.05); border: 1px solid var(--blue-rdc); color: white; padding: 10px; border-radius: 8px; font-size: 0.8rem; }
     </style>
 </head>
-<body>
+<body class="mirror-sheen">
 
-    <div class="studio-container">
-        <!-- Effets de fond -->
-        <div class="background-fx">
-            <div class="light-sweep"></div>
-        </div>
+    <div class="camera-zoom">
+        <div class="studio-container">
+            <div class="background-fx"></div>
 
-        <!-- Navigation (Placée dans tes cadres) -->
-        <nav class="top-menu">
-            <button class="menu-item">Accueil</button>
-            <button class="menu-item">Directs</button>
-            <button class="menu-item">Classement</button>
-            <button class="menu-item">À Propos</button>
-        </nav>
+            <nav class="top-menu">
+                <button class="menu-item">Accueil</button>
+                <button class="menu-item">Directs</button>
+                <button class="menu-item">Classement</button>
+                <button class="menu-item">À Propos</button>
+            </nav>
 
-        <!-- Login -->
-        <div class="auth-zone">
-            <span id="login-text">CONNEXION</span>
-            <div class="user-avatar"></div>
-        </div>
+            <div class="auth-zone">
+                <span class="auth-label">CONNEXION</span>
+                <div class="user-avatar"></div>
+            </div>
 
-        <!-- Score Central -->
-        <div class="center-display">
-            <h2 id="score-val">0</h2>
-        </div>
+            <!-- ZONE CANDIDATS -->
+            <div class="candidates-display">
+                <span class="candidates-title">CANDIDATS</span>
+                <div class="candidates-grid">
+                    <div class="side">
+                        <div class="player-card"><div class="p-img"></div><span class="p-name">Joueur 1</span></div>
+                        <div class="player-card"><div class="p-img"></div><span class="p-name">Joueur 2</span></div>
+                    </div>
+                    <div class="side" style="align-items: flex-end;">
+                        <div class="player-card" style="flex-direction: row-reverse;"><div class="p-img"></div><span class="p-name">Joueur 3</span></div>
+                        <div class="player-card" style="flex-direction: row-reverse;"><div class="p-img"></div><span class="p-name">Joueur 4</span></div>
+                    </div>
+                </div>
+            </div>
 
-        <!-- Ton Image de Studio (Le Masque) -->
-        <div class="studio-mask"></div>
+            <div class="studio-mask"></div>
 
-        <!-- La Question -->
-        <div class="question-box" id="q-box">
-            <p id="q-text" style="color: white; font-weight: bold; margin: 0;">Chargement du défi...</p>
-            <div class="options-container">
-                <button class="btn-opt">Option A</button>
-                <button class="btn-opt">Option B</button>
-                <button class="btn-opt">Option C</button>
-                <button class="btn-opt">Option D</button>
+            <!-- MODALE -->
+            <div class="question-box" id="q-box">
+                <div class="timer-badge" id="timer">10s</div>
+                <p id="q-text" style="color: white; font-weight: bold; margin-top: 10px;">En attente du match...</p>
+                <div class="options-container">
+                    <button class="btn-opt">Option A</button>
+                    <button class="btn-opt">Option B</button>
+                    <button class="btn-opt">Option C</button>
+                    <button class="btn-opt">Option D</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Animation : La question monte après 1.5 seconde
+        // Simulation de détection de question (monte après 6s pour laisser le zoom finir)
         setTimeout(() => {
             document.getElementById('q-box').classList.add('active');
-        }, 1500);
+            document.getElementById('q-text').innerText = "Quelle est la capitale de la RDC ?";
+        }, 6000);
     </script>
-
 </body>
 </html>
