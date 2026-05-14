@@ -766,30 +766,17 @@
         // 1. Demande de permission initiée par l'utilisateur (Crucial pour PWA)
         async function requestHardwarePermissions() {
             try {
-                // Remplacez votre bloc de demande de permission actuel par celui-ci
-async function requestAppPermissions() {
-    try {
-        // 1. Vérification de l'état actuel (Permissions API)
-        const status = await navigator.permissions.query({ name: 'notifications' }); // ou 'camera'/'microphone'
-        
-        if (status.state === 'denied') {
-            alert("Les permissions ont été bloquées au niveau du navigateur. Veuillez réinitialiser les paramètres du site (l'icône de cadenas dans la barre d'adresse).");
-            return;
+                // On force le navigateur à demander l'autorisation ici
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                // Une fois obtenu, on arrête les pistes pour laisser Agora les reprendre
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (err) {
+                console.error("Permission refusée ou erreur:", err);
+                alert("Erreur de permission : Allez dans les réglages de votre téléphone pour autoriser le micro/caméra pour ce site.");
+                return false;
+            }
         }
-
-        // 2. Demande active
-        const permission = await Notification.requestPermission();
-        
-        if (permission === 'granted') {
-            console.log('Permission accordée ! Prêt pour CongoChat.');
-            // Initialisez votre logique de chat ici
-        } else {
-            throw new Error('Permission refusée par l\'utilisateur');
-        }
-    } catch (error) {
-        console.error("Erreur lors de l'activation :", error);
-    }
-}
 
         window.initiateCall = async (type) => {
             const hasPermission = await requestHardwarePermissions();
