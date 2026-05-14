@@ -51,7 +51,7 @@
         .msg-time { font-size: 0.6rem; color: #888; float: right; margin-top: 5px; margin-left: 10px; }
 
         /* --- NOUVEAU MESSAGE DIVIDER --- */
-        .new-msg-line { width: 100%; text-align: center; margin: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.1); line-height: 0.1em; background: transparent; color: #ce1021; font-weight: bold; font-size: 0.7rem; }
+        .new-msg-line { width: 100%; text-align: center; margin: 15px 0; border-bottom: 1px solid rgba(206, 16, 33, 0.3); line-height: 0.1em; background: transparent; color: #ce1021; font-weight: bold; font-size: 0.75rem; }
         .new-msg-line span { background: #ece5dd; padding: 0 10px; }
 
         /* --- REACTIONS --- */
@@ -92,12 +92,10 @@
 </head>
 <body>
 
-    <!-- MODAL ZOOM IMAGE -->
     <div id="zoomModal" class="custom-modal" onclick="this.style.display='none'">
         <img id="zoomedImg" src="">
     </div>
 
-    <!-- AGORA CALL UI -->
     <div id="callScreen">
         <div id="remote-video"></div>
         <div id="local-video"></div>
@@ -160,7 +158,6 @@
         </button>
     </div>
 
-    <!-- MODALS -->
     <div id="contactOptionsModal" class="custom-modal">
         <div class="modal-card">
             <h3>Options Contact</h3>
@@ -204,8 +201,8 @@
         let activeListeners = {};
         let localTracks = { videoTrack: null, audioTrack: null };
         let badges = { live: 0, games: 0, market: 0, private: 0 };
+        let callUnsub = null;
 
-        // --- AUTH & INITIALISATION ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
@@ -234,7 +231,6 @@
             }
         });
 
-        // --- NAVIGATION ---
         window.switchTab = (tab) => {
             currentRoom = tab;
             document.querySelectorAll('.chat-container').forEach(c => c.classList.remove('active'));
@@ -265,7 +261,7 @@
             document.getElementById('pHeadName').innerText = name;
             document.getElementById('pHeadImg').src = photo;
             listenMessages('private_active');
-            // Marquer comme lu
+            
             const chatId = getChatId(currentUser.uid, targetUser.id);
             setDoc(doc(db, `private_chats/${chatId}/read_status`, currentUser.uid), { lastRead: serverTimestamp() });
         };
@@ -277,13 +273,11 @@
             switchTab('private');
         };
 
-        // --- MESSAGES ---
         window.handleSendAction = async () => {
             const input = document.getElementById('msgInput');
             const text = input.value.trim();
             if(!text) return;
 
-            // Vérifier si bloqué
             if(currentRoom === 'private_active') {
                 const targetRef = await getDoc(doc(db, `users/${targetUser.id}/blocked`, currentUser.uid));
                 if(targetRef.exists()) {
@@ -307,8 +301,19 @@
             updateTyping(false);
         };
 
-        function formatTime(ts) {
+        function formatFullDate(ts) {
             if(!ts) return "...";
+            const date = ts.toDate();
+            const d = date.getDate().toString().padStart(2, '0');
+            const m = (date.getMonth() + 1).toString().padStart(2, '0');
+            const y = date.getFullYear();
+            const h = date.getHours().toString().padStart(2, '0');
+            const min = date.getMinutes().toString().padStart(2, '0');
+            return `${d}/${m}/${y} à ${h}:${min}`;
+        }
+
+        function formatTime(ts) {
+            if(!ts) return "..:..";
             const date = ts.toDate();
             return date.getHours().toString().padStart(2, '0') + ":" + date.getMinutes().toString().padStart(2, '0');
         }
@@ -335,10 +340,10 @@
                     const isMe = m.userId === currentUser.uid;
                     const info = userCache[m.userId] || { name: "Utilisateur", photo: "https://via.placeholder.com/40" };
                     const time = formatTime(m.timestamp);
+                    const fullDate = formatFullDate(m.timestamp);
 
-                    // Ligne "Nouveau Message"
                     if(chatId && !isMe && lastRead && m.timestamp && m.timestamp.toMillis() > lastRead.toMillis() && !newMsgLineShown) {
-                        html += `<div class="new-msg-line"><span>Nouveau message - ${time}</span></div>`;
+                        html += `<div class="new-msg-line"><span>Nouveau message - ${fullDate}</span></div>`;
                         newMsgLineShown = true;
                     }
 
@@ -372,24 +377,25 @@
             listenTyping(room);
         }
 
-        // --- AGORA LOGIC (CORRIGÉ & AUTOMATISÉ) ---
+        // --- AGORA LOGIC CORRIGÉ ---
         let currentCallDocId = null;
 
         window.initiateCall = async (type) => {
             const channel = getChatId(currentUser.uid, targetUser.id);
-            currentCallDocId = targetUser.id;
+            currentCallDocId = targetUser.id; 
+            
             await setDoc(doc(db, "calls", targetUser.id), {
                 callerId: currentUser.uid,
                 callerName: userCache[currentUser.uid].name,
                 callerPhoto: userCache[currentUser.uid].photo,
                 type, channel, status: 'ringing'
             });
-            showCallScreen(targetUser.name, targetUser.photo, "Appel...");
+
+            showCallScreen(targetUser.name, targetUser.photo, "Appel sortant...");
             
-            const unsubCall = onSnapshot(doc(db, "calls", targetUser.id), (snap) => {
+            callUnsub = onSnapshot(doc(db, "calls", targetUser.id), (snap) => {
                 if(!snap.exists()) { 
                     cleanupAgora(); 
-                    unsubCall(); 
                 } else if(snap.data().status === 'accepted') {
                     startAgoraSession(channel, type);
                 }
@@ -399,9 +405,12 @@
         function listenIncomingCalls() {
             onSnapshot(doc(db, "calls", currentUser.uid), (snap) => {
                 if(snap.exists()) {
+                    const data = snap.data();
                     currentCallDocId = currentUser.uid;
-                    if(snap.data().status === 'ringing') {
-                        showCallScreen(snap.data().callerName, snap.data().callerPhoto, "Appel entrant...", true);
+                    if(data.status === 'ringing') {
+                        showCallScreen(data.callerName, data.callerPhoto, "Appel entrant...", true);
+                    } else if(data.status === 'accepted') {
+                        startAgoraSession(data.channel, data.type);
                     }
                 } else {
                     cleanupAgora();
@@ -417,16 +426,22 @@
         async function startAgoraSession(channel, type) {
             document.getElementById('acceptBtn').style.display = 'none';
             document.getElementById('callStatusText').innerText = "En ligne";
-            const uid = Math.floor(Math.random() * 10000);
-            await agoraClient.join(AGORA_APP_ID, channel, null, uid);
-            localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-            let tracks = [localTracks.audioTrack];
-            if(type === 'video') {
-                localTracks.videoTrack = await AgoraRTC.createCameraVideoTrack();
-                localTracks.videoTrack.play("local-video");
-                tracks.push(localTracks.videoTrack);
+            
+            if (agoraClient.connectionState === "DISCONNECTED") {
+                const uid = Math.floor(Math.random() * 10000);
+                await agoraClient.join(AGORA_APP_ID, channel, null, uid);
+                
+                localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+                let tracks = [localTracks.audioTrack];
+                
+                if(type === 'video') {
+                    localTracks.videoTrack = await AgoraRTC.createCameraVideoTrack();
+                    localTracks.videoTrack.play("local-video");
+                    tracks.push(localTracks.videoTrack);
+                }
+                await agoraClient.publish(tracks);
             }
-            await agoraClient.publish(tracks);
+
             agoraClient.on("user-published", async (user, mediaType) => {
                 await agoraClient.subscribe(user, mediaType);
                 if (mediaType === "video") user.videoTrack.play("remote-video");
@@ -440,14 +455,15 @@
         };
 
         function cleanupAgora() {
+            if(callUnsub) { callUnsub(); callUnsub = null; }
             if(localTracks.audioTrack) { localTracks.audioTrack.stop(); localTracks.audioTrack.close(); localTracks.audioTrack = null; }
             if(localTracks.videoTrack) { localTracks.videoTrack.stop(); localTracks.videoTrack.close(); localTracks.videoTrack = null; }
             agoraClient.leave();
             document.getElementById('callScreen').style.display = 'none';
             document.getElementById('remote-video').innerHTML = "";
+            currentCallDocId = null;
         }
 
-        // --- OPTIONS CONTACT ---
         window.toggleBlockUser = async () => {
             const blockRef = doc(db, `users/${currentUser.uid}/blocked`, targetUser.id);
             const snap = await getDoc(blockRef);
@@ -468,7 +484,6 @@
             exitPrivateChat();
         };
 
-        // --- STICKERS & REACTIONS ---
         window.toggleStickers = (id) => {
             const m = document.getElementById(`stickers-${id}`);
             m.style.display = (m.style.display === 'grid') ? 'none' : 'grid';
@@ -486,7 +501,6 @@
             document.getElementById(`stickers-${msgId}`).style.display = 'none';
         };
 
-        // --- UTILS ---
         window.zoomImg = (url) => {
             document.getElementById('zoomedImg').src = url;
             document.getElementById('zoomModal').style.display = 'flex';
