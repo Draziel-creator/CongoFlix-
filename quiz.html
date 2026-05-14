@@ -2,179 +2,211 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Génie Congo - Studio Live</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, landscape">
+    <title>Génie Congo - Studio HD</title>
     
     <style>
         :root {
+            /* Passage en s1600 pour la clarté HD */
+            --overlay-img: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgv3Xb1xi808ij28d3b0nFah5mYidUcRD06nUga1R9L9d2JgQt-LAoQ0DNVZ7-6O8v4IkTc-hIrcLcvFwjUAz9LPJvjKqBPGzwwV6Byu57IWdU9BFUZfWCPk-2kCWMh1d5Naitqy1qugZ6iYGNl35-qVVqXt6GRajtV-cUpo-oqREvmUE9ORU752-J0AAEg/s1600/genie%20congo.png');
             --blue-rdc: #007bff;
             --yellow-rdc: #ffcc00;
-            --overlay-img: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgv3Xb1xi808ij28d3b0nFah5mYidUcRD06nUga1R9L9d2JgQt-LAoQ0DNVZ7-6O8v4IkTc-hIrcLcvFwjUAz9LPJvjKqBPGzwwV6Byu57IWdU9BFUZfWCPk-2kCWMh1d5Naitqy1qugZ6iYGNl35-qVVqXt6GRajtV-cUpo-oqREvmUE9ORU752-J0AAEg/s320/genie%20congo.png');
         }
 
-        body, html { margin: 0; padding: 0; height: 100%; background: #000; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: #000; overflow: hidden; font-family: 'Arial', sans-serif;
+        }
 
-        /* --- LE CONTENEUR PRINCIPAL --- */
-        .studio-viewport {
+        .studio-container {
             position: relative;
             width: 100vw;
             height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
         }
 
-        /* --- COUCHE 1 : LES LUMIÈRES ANIMÉES (DERRIÈRE TOUT) --- */
-        .lighting-layer {
+        /* --- FOND ET LUMIÈRES --- */
+        .background-fx {
             position: absolute;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
+            inset: 0;
             background: radial-gradient(circle at 50% 50%, #001a33, #000);
+            z-index: 1;
         }
 
-        .beam {
+        .light-sweep {
             position: absolute;
-            width: 300px;
-            height: 100%;
-            background: linear-gradient(to right, transparent, rgba(0, 123, 255, 0.2), transparent);
-            transform: skewX(-20deg);
-            animation: sweep 8s infinite alternate ease-in-out;
+            width: 200px; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(0, 123, 255, 0.15), transparent);
+            transform: skewX(-25deg);
+            animation: moveLight 6s infinite alternate ease-in-out;
         }
 
-        @keyframes sweep {
-            from { left: -20%; opacity: 0.3; }
-            to { left: 110%; opacity: 0.6; }
+        @keyframes moveLight {
+            from { left: -20%; } to { left: 110%; }
         }
 
-        /* --- COUCHE 2 : L'ÉCRAN GÉANT (SCORE) --- */
-        .giant-screen-content {
-            position: absolute;
-            top: 35%; 
-            z-index: 2;
-            text-align: center;
-        }
-        #live-score { font-size: 80px; color: var(--yellow-rdc); text-shadow: 0 0 20px rgba(255,204,0,0.7); margin: 0; }
-
-        /* --- COUCHE 3 : TON PNG TRANSPARENT (LE MASQUE) --- */
+        /* --- L'IMAGE MASQUE (STUDIO) --- */
         .studio-mask {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             background-image: var(--overlay-img);
-            background-size: contain;
+            background-size: 100% 100%; /* S'adapte parfaitement à l'écran paysage */
             background-repeat: no-repeat;
-            background-position: center;
-            z-index: 5;
-            pointer-events: none; /* Laisse passer les clics vers les boutons */
+            z-index: 10;
+            pointer-events: none;
+            /* Force la clarté */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: high-quality;
         }
 
-        /* --- COUCHE 4 : NAVIGATION HAUTE --- */
-        .top-nav {
+        /* --- NAVIGATION HAUTE (Dans tes cadres noirs) --- */
+        .top-menu {
             position: absolute;
-            top: 20px;
-            width: 80%;
+            top: 4%; /* Ajusté pour Screenshot_20260514-154433.jpg */
+            width: 58%;
+            height: 8%;
             display: flex;
-            justify-content: center;
-            gap: 20px;
-            z-index: 10;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+            left: 50%;
+            transform: translateX(-50.5%);
         }
 
-        .nav-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid var(--blue-rdc);
+        .menu-item {
+            background: transparent;
+            border: none;
             color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
             cursor: pointer;
-            transition: 0.3s;
+            width: 23%; /* Correspond à tes 4 cadres */
+            text-align: center;
         }
-        .nav-btn:hover { background: var(--blue-rdc); }
 
-        .user-profile {
+        /* --- ZONE CONNEXION --- */
+        .auth-zone {
             position: absolute;
-            top: 20px;
-            right: 50px;
-            z-index: 10;
+            top: 4%;
+            right: 4.5%;
+            z-index: 20;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
         }
-        .avatar-circle { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--yellow-rdc); overflow: hidden; }
 
-        /* --- COUCHE 5 : MODALE QUESTION (MONTE DU BAS) --- */
-        .question-modal {
+        .user-avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--yellow-rdc);
+            background: #222;
+        }
+
+        /* --- ÉCRAN CENTRAL (SCORE) --- */
+        .center-display {
             position: absolute;
-            bottom: -300px; /* Caché au début */
-            width: 60%;
-            background: rgba(0, 20, 40, 0.95);
-            border: 2px solid var(--blue-rdc);
-            border-radius: 20px 20px 0 0;
-            padding: 20px;
-            z-index: 10;
-            transition: bottom 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+            top: 38%;
+            z-index: 5;
+            text-align: center;
         }
 
-        .question-modal.active { bottom: 0; }
+        #score-val {
+            font-size: 3.5rem;
+            color: var(--yellow-rdc);
+            margin: 0;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.6);
+        }
 
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .opt-btn { background: #111; border: 1px solid #333; color: white; padding: 10px; cursor: pointer; border-radius: 10px; }
-        .opt-btn:hover { background: var(--blue-rdc); }
+        /* --- MODALE QUESTION (BAS) --- */
+        .question-box {
+            position: absolute;
+            bottom: -300px;
+            width: 55%;
+            background: rgba(0, 10, 30, 0.9);
+            border: 2px solid var(--blue-rdc);
+            border-bottom: none;
+            border-radius: 15px 15px 0 0;
+            padding: 15px;
+            z-index: 25;
+            transition: bottom 0.6s cubic-bezier(0.17, 0.84, 0.44, 1);
+            text-align: center;
+        }
+
+        .question-box.active { bottom: 0; }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-opt {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(0, 123, 255, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .btn-opt:hover { background: var(--blue-rdc); }
+
     </style>
 </head>
 <body>
 
-<div class="studio-viewport">
-    <!-- Lumières -->
-    <div class="lighting-layer">
-        <div class="beam" style="animation-delay: 0s;"></div>
-        <div class="beam" style="animation-delay: 4s; background: rgba(255,204,0,0.1);"></div>
-    </div>
+    <div class="studio-container">
+        <!-- Effets de fond -->
+        <div class="background-fx">
+            <div class="light-sweep"></div>
+        </div>
 
-    <!-- Navigation -->
-    <div class="top-nav">
-        <button class="nav-btn">Accueil</button>
-        <button class="nav-btn">Matchs en Direct</button>
-        <button class="nav-btn">Classement</button>
-        <button class="nav-btn">À Propos</button>
-    </div>
+        <!-- Navigation (Placée dans tes cadres) -->
+        <nav class="top-menu">
+            <button class="menu-item">Accueil</button>
+            <button class="menu-item">Directs</button>
+            <button class="menu-item">Classement</button>
+            <button class="menu-item">À Propos</button>
+        </nav>
 
-    <!-- Profil -->
-    <div class="user-profile">
-        <span id="user-status">Connexion</span>
-        <div class="avatar-circle">
-            <img src="https://via.placeholder.com/35" alt="user" id="user-img">
+        <!-- Login -->
+        <div class="auth-zone">
+            <span id="login-text">CONNEXION</span>
+            <div class="user-avatar"></div>
+        </div>
+
+        <!-- Score Central -->
+        <div class="center-display">
+            <h2 id="score-val">0</h2>
+        </div>
+
+        <!-- Ton Image de Studio (Le Masque) -->
+        <div class="studio-mask"></div>
+
+        <!-- La Question -->
+        <div class="question-box" id="q-box">
+            <p id="q-text" style="color: white; font-weight: bold; margin: 0;">Chargement du défi...</p>
+            <div class="options-container">
+                <button class="btn-opt">Option A</button>
+                <button class="btn-opt">Option B</button>
+                <button class="btn-opt">Option C</button>
+                <button class="btn-opt">Option D</button>
+            </div>
         </div>
     </div>
 
-    <!-- Score sur l'écran central -->
-    <div class="giant-screen-content">
-        <p style="margin:0; font-weight:bold; color:white;">SCORE ACTUEL</p>
-        <h1 id="live-score">0</h1>
-    </div>
-
-    <!-- LE MASQUE PNG (Ton image) -->
-    <div class="studio-mask"></div>
-
-    <!-- MODALE QUESTION -->
-    <div class="question-modal" id="q-modal">
-        <h3 id="q-text" style="color:white; text-align:center;">Chargement de la question...</h3>
-        <div class="options-grid" id="opt-container">
-            <!-- Boutons générés par JS -->
-        </div>
-    </div>
-</div>
-
-<script>
-    // Fonction pour faire apparaître la question après 2 secondes
-    setTimeout(() => {
-        document.getElementById('q-modal').classList.add('active');
-    }, 2000);
-
-    // Ta logique Firebase ici pour remplir q-text et live-score
-</script>
+    <script>
+        // Animation : La question monte après 1.5 seconde
+        setTimeout(() => {
+            document.getElementById('q-box').classList.add('active');
+        }, 1500);
+    </script>
 
 </body>
 </html>
