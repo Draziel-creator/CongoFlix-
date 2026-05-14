@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, landscape">
-    <title>Génie Congo - Studio TV Live</title>
+    <title>Génie Congo - Studio TV Ultra-Live</title>
     
     <style>
         :root {
@@ -13,113 +13,124 @@
         }
 
         body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            background: #000; overflow: hidden; font-family: 'Arial', sans-serif;
+            margin: 0; padding: 0; width: 100vw; height: 100vh; 
+            background: #000; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* --- ANIMATION ZOOM ENTRÉE --- */
+        /* --- INTRODUCTION ZOOM BLOQUÉE --- */
         .camera-zoom {
             animation: cameraEntry 5s forwards ease-out;
-            width: 100vw; height: 100vh;
-            display: flex; justify-content: center;
+            width: 100%; height: 100%;
+            position: relative;
         }
 
         @keyframes cameraEntry {
-            from { transform: scale(0.5); opacity: 0; }
+            from { transform: scale(1.8); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
         }
 
-        .studio-container { position: relative; width: 100%; height: 100%; }
-
-        /* --- EFFET MIROIR GLOBAL --- */
-        .mirror-sheen::after {
-            content: ""; position: absolute; top: -150%; left: -50%;
-            width: 20%; height: 400%; background: rgba(255,255,255,0.1);
-            transform: rotate(35deg); animation: mirrorSweep 10s infinite;
-            z-index: 30; pointer-events: none;
+        .studio-container { 
+            position: relative; width: 100%; height: 100%; 
+            display: flex; justify-content: center;
         }
 
-        @keyframes mirrorSweep {
-            0% { left: -50%; } 20% { left: 150%; } 100% { left: 150%; }
-        }
-
+        /* --- STUDIO MASK (FIXE APRÈS ZOOM) --- */
         .studio-mask {
             position: absolute; inset: 0;
             background: var(--overlay-img) no-repeat center;
             background-size: 100% 100%; z-index: 10;
-            pointer-events: none; image-rendering: high-quality;
+            pointer-events: none;
         }
 
-        /* --- ZONE CANDIDATS --- */
-        .candidates-display {
-            position: absolute; top: 32%; width: 38%; height: 25%;
-            left: 50%; transform: translateX(-50%);
+        /* --- BALAYAGE LASER STUDIO --- */
+        .laser-line {
+            position: absolute; top: 0; width: 2px; height: 100%;
+            background: linear-gradient(to bottom, transparent, var(--blue-rdc), var(--yellow-rdc), transparent);
+            z-index: 11; opacity: 0.6;
+            animation: laserMove 8s infinite linear;
+        }
+
+        @keyframes laserMove {
+            0% { left: 0%; opacity: 0; }
+            50% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        /* --- ZONE CANDIDATS (4 CARRÉS) --- */
+        .candidates-area {
+            position: absolute; top: 35%; width: 40%; height: 20%;
             z-index: 5; display: flex; flex-direction: column; align-items: center;
         }
 
         .candidates-title {
-            color: var(--yellow-rdc); font-size: 0.6rem; font-weight: bold;
-            text-shadow: 0 0 8px var(--yellow-rdc); margin-bottom: 5px;
+            color: var(--yellow-rdc); font-size: 0.8rem; font-weight: bold;
+            text-shadow: 0 0 10px var(--yellow-rdc); margin-bottom: 8px;
+            letter-spacing: 2px;
         }
 
-        .candidates-grid {
-            display: flex; justify-content: space-between; width: 100%; height: 100%;
+        .grid-candidats {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+            width: 90%; height: 60px;
         }
 
-        .side { display: flex; flex-direction: column; gap: 5px; width: 40%; }
-
-        .player-card {
-            display: flex; align-items: center; gap: 5px;
-            background: rgba(0,0,0,0.5); border-radius: 5px; padding: 2px;
+        .c-slot {
+            border: 2px solid rgba(255, 204, 0, 0.3);
+            background: rgba(0,0,0,0.6); position: relative;
+            border-radius: 4px; overflow: hidden;
         }
 
-        .p-img { width: 25px; height: 25px; border-radius: 50%; border: 1px solid white; }
-        .p-name { color: white; font-size: 0.5rem; white-space: nowrap; overflow: hidden; }
+        .c-slot::after { content: "Libre"; color: #333; font-size: 0.5rem; position: absolute; bottom: 2px; width: 100%; text-align: center; }
 
-        /* --- NAVIGATION & CONNEXION --- */
-        .top-menu {
-            position: absolute; top: 4%; width: 58%; height: 8%;
-            display: flex; justify-content: space-around; align-items: center;
-            z-index: 20; left: 50%; transform: translateX(-50.5%);
+        /* --- CHAT LIVE (À DROITE DU MODALE) --- */
+        .live-chat {
+            position: absolute; bottom: 20px; right: 2%;
+            width: 250px; height: 180px; z-index: 30;
+            display: flex; flex-direction: column-reverse;
+            mask-image: linear-gradient(to top, black 70%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to top, black 70%, transparent 100%);
+            overflow: hidden; pointer-events: none;
         }
 
-        .menu-item { background: transparent; border: none; color: white; font-size: 0.7rem; font-weight: bold; }
+        .chat-msg {
+            color: white; font-size: 0.7rem; padding: 4px 8px;
+            animation: msgIn 0.4s ease-out; background: rgba(0,0,0,0.2);
+            margin-bottom: 4px; border-radius: 4px;
+        }
+
+        .chat-msg b { color: var(--yellow-rdc); }
+        .chat-msg i { color: #00ffcc; font-style: normal; }
+
+        @keyframes msgIn { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* --- MODALE ET CONNEXION --- */
+        .top-menu { position: absolute; top: 4%; width: 58%; height: 8%; display: flex; justify-content: space-around; z-index: 20; left: 50%; transform: translateX(-50.5%); }
+        .menu-item { background: transparent; border: none; color: white; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; cursor: pointer; }
 
         .auth-zone {
-            position: absolute; top: 4%; right: 4.5%; z-index: 20;
-            display: flex; flex-direction: row-reverse; align-items: center; gap: 8px;
+            position: absolute; top: 4.5%; right: 4.5%; z-index: 20;
+            display: flex; align-items: center; gap: 10px;
         }
+        .user-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--yellow-rdc); background: #111; order: 1; }
+        .auth-label { color: white; font-size: 0.75rem; font-weight: bold; order: 2; }
 
-        .auth-label { color: white; font-size: 0.7rem; font-weight: bold; margin-top: 2px; }
-        .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--yellow-rdc); }
-
-        /* --- MODALE VITRINE --- */
         .question-box {
-            position: absolute; bottom: -300px; width: 55%;
-            background: rgba(0, 30, 60, 0.9); border: 2px solid var(--blue-rdc);
+            position: absolute; bottom: -300px; left: 5%; width: 55%;
+            background: rgba(0, 20, 50, 0.95); border: 2px solid var(--blue-rdc);
             border-radius: 15px 15px 0 0; padding: 15px; z-index: 25;
             transition: bottom 0.8s cubic-bezier(0.17, 0.84, 0.44, 1);
-            box-shadow: 0 0 20px rgba(0, 123, 255, 0.5);
+            box-shadow: 0 -5px 25px rgba(0, 123, 255, 0.3);
         }
-
         .question-box.active { bottom: 0; }
 
-        .timer-badge {
-            position: absolute; top: 10px; right: 10px;
-            background: var(--yellow-rdc); color: black;
-            padding: 2px 8px; border-radius: 10px; font-weight: bold; font-size: 0.8rem;
-        }
-
-        .options-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn-opt { background: rgba(255,255,255,0.05); border: 1px solid var(--blue-rdc); color: white; padding: 10px; border-radius: 8px; font-size: 0.8rem; }
+        .btn-opt { background: rgba(255,255,255,0.05); border: 1px solid var(--blue-rdc); color: white; padding: 10px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
-<body class="mirror-sheen">
+<body>
 
     <div class="camera-zoom">
         <div class="studio-container">
-            <div class="background-fx"></div>
-
+            <div class="laser-line"></div>
+            
             <nav class="top-menu">
                 <button class="menu-item">Accueil</button>
                 <button class="menu-item">Directs</button>
@@ -128,32 +139,32 @@
             </nav>
 
             <div class="auth-zone">
-                <span class="auth-label">CONNEXION</span>
                 <div class="user-avatar"></div>
+                <span class="auth-label">CONNEXION</span>
             </div>
 
-            <!-- ZONE CANDIDATS -->
-            <div class="candidates-display">
-                <span class="candidates-title">CANDIDATS</span>
-                <div class="candidates-grid">
-                    <div class="side">
-                        <div class="player-card"><div class="p-img"></div><span class="p-name">Joueur 1</span></div>
-                        <div class="player-card"><div class="p-img"></div><span class="p-name">Joueur 2</span></div>
-                    </div>
-                    <div class="side" style="align-items: flex-end;">
-                        <div class="player-card" style="flex-direction: row-reverse;"><div class="p-img"></div><span class="p-name">Joueur 3</span></div>
-                        <div class="player-card" style="flex-direction: row-reverse;"><div class="p-img"></div><span class="p-name">Joueur 4</span></div>
-                    </div>
+            <!-- RÉSERVE POUR 4 CANDIDATS -->
+            <div class="candidates-area">
+                <div class="candidates-title">CANDIDATS</div>
+                <div class="grid-candidats">
+                    <div class="c-slot" id="p1"></div>
+                    <div class="c-slot" id="p2"></div>
+                    <div class="c-slot" id="p3"></div>
+                    <div class="c-slot" id="p4"></div>
                 </div>
             </div>
 
             <div class="studio-mask"></div>
 
-            <!-- MODALE -->
+            <!-- CHAT LIVE -->
+            <div class="live-chat" id="chat-box">
+                <!-- Les messages s'insèrent ici -->
+            </div>
+
+            <!-- MODALE QUESTION -->
             <div class="question-box" id="q-box">
-                <div class="timer-badge" id="timer">10s</div>
-                <p id="q-text" style="color: white; font-weight: bold; margin-top: 10px;">En attente du match...</p>
-                <div class="options-container">
+                <p id="q-text" style="color: white; font-weight: bold; margin: 0;">Analyse de la question en cours...</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
                     <button class="btn-opt">Option A</button>
                     <button class="btn-opt">Option B</button>
                     <button class="btn-opt">Option C</button>
@@ -164,10 +175,28 @@
     </div>
 
     <script>
-        // Simulation de détection de question (monte après 6s pour laisser le zoom finir)
+        // Simulation du Chat
+        const chatBox = document.getElementById('chat-box');
+        const events = [
+            "<b>Djo</b> a rejoint la salle",
+            "<b>Sarah</b> a offert <i>50 points</i> à Joueur 1",
+            "<b>Admin</b>: Bonne chance aux candidats !",
+            "<b>Moussa</b> a rejoint le live"
+        ];
+
+        function addChatMsg() {
+            const msg = document.createElement('div');
+            msg.className = 'chat-msg';
+            msg.innerHTML = events[Math.floor(Math.random() * events.length)];
+            chatBox.prepend(msg);
+            if(chatBox.childNodes.length > 6) chatBox.lastChild.remove();
+        }
+
+        // Lancement du chat après le zoom
         setTimeout(() => {
+            setInterval(addChatMsg, 3000);
             document.getElementById('q-box').classList.add('active');
-            document.getElementById('q-text').innerText = "Quelle est la capitale de la RDC ?";
+            document.getElementById('q-text').innerText = "Quel est le plus grand fleuve d'Afrique ?";
         }, 6000);
     </script>
 </body>
