@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Congo Champion - La Vitrine de la RDC</title>
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // Ta configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
+            authDomain: "congo-streaming-51333.firebaseapp.com",
+            databaseURL: "https://congo-streaming-51333-default-rtdb.firebaseio.com",
+            projectId: "congo-streaming-51333",
+            storageBucket: "congo-streaming-51333.firebasestorage.app",
+            messagingSenderId: "304286627819",
+            appId: "1:304286627819:web:ee606adc4f6b4002054bae"
+        };
+
+        // Initialisation
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // --- VARIABLES DE JEU ---
+        let currentQuestion = null;
+        let timerInterval = null;
+        let timeLeft = 10;
+        let score = 0;
+        let usedQuestions = JSON.parse(localStorage.getItem('congo_quiz_used')) || [];
+
+        // --- DOM ELEMENTS ---
+        const questionEl = document.getElementById('question-text');
+        const optionsEl = document.getElementById('options-container');
+        const timerText = document.getElementById('timer-seconds');
+        const timerCircle = document.querySelector('.timer-circle circle');
+        const scoreEl = document.getElementById('user-score');
+
+        // --- LOGIQUE DU JEU ---
+
+        async function loadNewQuestion() {
+            resetUI();
+            
+            // Récupération des questions depuis Firebase (Branche 'questions_congo')
+            const dbRef = ref(db);
+            try {
+                const snapshot = await get(child(dbRef, 'questions_congo'));
+                if (snapshot.exists()) {
+                    const allQuestions = snapshot.val();
+                    
+                    // Filtrer pour ne pas reprendre les anciennes questions (pendant 3 mois)
+                    let available = allQuestions.filter(q => !usedQuestions.includes(q.id));
+                    
+                    // Si on a tout fini, on réinitialise la mémoire
+                    if (available.length === 0) {
+                        usedQuestions = [];
+                        available = allQuestions;
+                    }
+
+                    // Sélection aléatoire
+                    currentQuestion = available[Math.floor(Math.random() * available.length)];
+                    displayQuestion(currentQuestion);
+                    startTimer();
+                }
+            } catch (error) {
+                console.error("Erreur Firebase:", error);
+                questionEl.innerText = "Erreur de connexion au studio...";
+            }
+        }
+
+        function displayQuestion(q) {
+            questionEl.innerText = q.question;
+            optionsEl.innerHTML = '';
+            
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, q.correct);
+                optionsEl.appendChild(btn);
+            });
+        }
+
+        function startTimer() {
+            timeLeft = 10;
+            timerText.innerText = timeLeft;
+            const offsetInitial = 188;
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerText.innerText = timeLeft;
+                
+                // Animation du cercle
+                let offset = (timeLeft / 10) * 188;
+                timerCircle.style.strokeDashoffset = 188 - offset;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        function checkAnswer(selected, correct) {
+            clearInterval(timerInterval);
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(b => b.style.pointerEvents = 'none'); // Bloquer les clics
+
+            if (selected === correct) {
+                score += 10;
+                scoreEl.innerText = score;
+                showFeedback("Gagné ! +10 pts", "correct");
+            } else {
+                showFeedback(`Faux ! C'était: ${correct}`, "wrong");
+            }
+
+            // Mémoriser la question comme "utilisée"
+            usedQuestions.push(currentQuestion.id);
+            localStorage.setItem('congo_quiz_used', JSON.stringify(usedQuestions));
+
+            setTimeout(loadNewQuestion, 3000); // Prochaine question après 3s
+        }
+
+        function handleTimeout() {
+            showFeedback("Temps écoulé !", "wrong");
+            setTimeout(loadNewQuestion, 3000);
+        }
+
+        function resetUI() {
+            timerCircle.style.strokeDashoffset = 0;
+            document.getElementById('feedback-msg').className = 'hidden';
+        }
+
+        function showFeedback(msg, type) {
+            const f = document.getElementById('feedback-msg');
+            f.innerText = msg;
+            f.className = `feedback ${type}`;
+        }
+
+        // Lancement initial
+        loadNewQuestion();
+
+    </script>
+
+    <style>
+        :root {
+            --blue-rdc: #007bff;
+            --yellow-rdc: #ffcc00;
+        }
+
+        body, html { margin: 0; padding: 0; overflow: hidden; }
+
+        .studio-bg {
+            height: 100vh;
+            background: #0a0a1a; /* Couleur de secours si l'image Pinterest manque */
+            background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1920');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            user-select: none;
+        }
+
+        .quiz-card {
+            width: 90%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .timer-circle {
+            width: 80px; height: 80px;
+            margin: 0 auto 20px;
+            position: relative;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        .timer-circle svg { width: 80px; height: 80px; transform: rotate(-90deg); position: absolute; }
+        .timer-circle circle { fill: none; stroke: var(--yellow-rdc); stroke-width: 6; stroke-dasharray: 188; stroke-dashoffset: 0; transition: 1s linear; }
+
+        .question-box h2 { font-size: 1.5rem; margin-bottom: 30px; min-height: 80px; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        .option-btn {
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(255,255,255,0.1);
+            padding: 15px; border-radius: 12px; color: white;
+            font-size: 1rem; cursor: pointer; transition: 0.2s;
+        }
+
+        .option-btn:hover { background: var(--blue-rdc); border-color: white; }
+
+        .feedback { margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 8px; }
+        .correct { background: rgba(40, 167, 69, 0.3); color: #28a745; }
+        .wrong { background: rgba(220, 53, 69, 0.3); color: #dc3545; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="studio-bg">
+        <div class="quiz-card">
+            <div class="timer-circle">
+                <span id="timer-seconds">10</span>
+                <svg><circle r="30" cx="40" cy="40"></circle></svg>
+            </div>
+            
+            <div class="score-board">SCORE: <span id="user-score">0</span></div>
+
+            <div class="question-box">
+                <h2 id="question-text">Chargement de l'histoire du Congo...</h2>
+            </div>
+
+            <div id="options-container" class="options-grid"></div>
+
+            <div id="feedback-msg" class="hidden"></div>
+        </div>
+    </div>
+
+</body>
+</html>
