@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, landscape">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Génie Congo - Studio TV Ultra-Live</title>
     
     <style>
@@ -14,189 +14,182 @@
 
         body, html { 
             margin: 0; padding: 0; width: 100vw; height: 100vh; 
-            background: #000; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000; overflow: hidden; font-family: 'Arial', sans-serif;
         }
 
-        /* --- INTRODUCTION ZOOM BLOQUÉE --- */
-        .camera-zoom {
-            animation: cameraEntry 5s forwards ease-out;
-            width: 100%; height: 100%;
-            position: relative;
+        /* --- BLOCAGE ROTATION --- */
+        #rotate-device {
+            position: fixed; inset: 0; background: #000; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; text-align: center; visibility: hidden;
         }
-
-        @keyframes cameraEntry {
-            from { transform: scale(1.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        @media (orientation: portrait) { #rotate-device { visibility: visible; } }
+        
+        .phone-icon {
+            width: 50px; height: 80px; border: 3px solid white; border-radius: 5px;
+            animation: rotateAnim 2s infinite; position: relative; margin-bottom: 20px;
         }
+        @keyframes rotateAnim { 0% { transform: rotate(0deg); } 50% { transform: rotate(90deg); } 100% { transform: rotate(90deg); } }
 
-        .studio-container { 
-            position: relative; width: 100%; height: 100%; 
-            display: flex; justify-content: center;
+        /* --- EFFET MIROIR GLOBAL (Toutes les 5s) --- */
+        .mirror-sweep {
+            position: absolute; inset: 0; z-index: 40; pointer-events: none;
+            background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+            background-size: 200% 100%; animation: sweepMove 5s infinite linear;
         }
+        @keyframes sweepMove { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
-        /* --- STUDIO MASK (FIXE APRÈS ZOOM) --- */
-        .studio-mask {
-            position: absolute; inset: 0;
-            background: var(--overlay-img) no-repeat center;
-            background-size: 100% 100%; z-index: 10;
-            pointer-events: none;
+        /* --- ZOOM ENTRÉE --- */
+        .camera-zoom { animation: cameraEntry 5s forwards ease-out; width: 100%; height: 100%; position: relative; }
+        @keyframes cameraEntry { from { transform: scale(1.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .studio-mask { position: absolute; inset: 0; background: var(--overlay-img) no-repeat center; background-size: 100% 100%; z-index: 10; pointer-events: none; }
+
+        /* --- MENU DU HAUT RÉALIGNÉ --- */
+        .top-menu {
+            position: absolute; top: 4%; left: 50%; transform: translateX(-50%);
+            width: 60%; display: flex; justify-content: space-between; z-index: 20;
         }
+        .menu-item { background: transparent; border: none; color: white; font-size: 0.65rem; font-weight: bold; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; }
 
-        /* --- BALAYAGE LASER STUDIO --- */
-        .laser-line {
-            position: absolute; top: 0; width: 2px; height: 100%;
-            background: linear-gradient(to bottom, transparent, var(--blue-rdc), var(--yellow-rdc), transparent);
-            z-index: 11; opacity: 0.6;
-            animation: laserMove 8s infinite linear;
+        .auth-zone { position: absolute; top: 3.5%; right: 4%; z-index: 20; display: flex; align-items: center; gap: 8px; }
+        .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--yellow-rdc); background: #222; }
+        .auth-label { color: white; font-size: 0.7rem; font-weight: bold; }
+
+        /* --- ZONE CANDIDATS 2X2 --- */
+        .candidates-container {
+            position: absolute; top: 32%; left: 50%; transform: translateX(-50%);
+            z-index: 5; display: flex; flex-direction: column; align-items: center; width: 220px;
         }
-
-        @keyframes laserMove {
-            0% { left: 0%; opacity: 0; }
-            50% { opacity: 1; }
-            100% { left: 100%; opacity: 0; }
-        }
-
-        /* --- ZONE CANDIDATS (4 CARRÉS) --- */
-        .candidates-area {
-            position: absolute; top: 35%; width: 40%; height: 20%;
-            z-index: 5; display: flex; flex-direction: column; align-items: center;
-        }
-
         .candidates-title {
-            color: var(--yellow-rdc); font-size: 0.8rem; font-weight: bold;
-            text-shadow: 0 0 10px var(--yellow-rdc); margin-bottom: 8px;
-            letter-spacing: 2px;
+            color: var(--yellow-rdc); font-size: 0.7rem; font-weight: bold;
+            text-shadow: 0 0 10px var(--yellow-rdc); margin-bottom: 5px;
+            animation: pulseText 2s infinite;
+        }
+        @keyframes pulseText { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+        .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+        .c-slot { 
+            height: 45px; background: rgba(0,0,0,0.7); border: 1.5px solid rgba(255,255,255,0.2); 
+            border-radius: 4px; position: relative; cursor: pointer;
         }
 
-        .grid-candidats {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
-            width: 90%; height: 60px;
+        /* --- MINI MODALES JOUEURS --- */
+        .p-info {
+            position: absolute; top: 0; width: 80px; height: 100%;
+            background: var(--blue-rdc); color: white; font-size: 0.5rem;
+            display: flex; flex-direction: column; justify-content: center; padding: 0 5px;
+            transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; z-index: -1;
         }
+        .left-p .p-info { right: 100%; border-radius: 4px 0 0 4px; transform: translateX(10px); }
+        .right-p .p-info { left: 100%; border-radius: 0 4px 4px 0; transform: translateX(-10px); }
+        
+        .c-slot.show-info .p-info { opacity: 1; transform: translateX(0); z-index: 15; }
 
-        .c-slot {
-            border: 2px solid rgba(255, 204, 0, 0.3);
-            background: rgba(0,0,0,0.6); position: relative;
-            border-radius: 4px; overflow: hidden;
-        }
-
-        .c-slot::after { content: "Libre"; color: #333; font-size: 0.5rem; position: absolute; bottom: 2px; width: 100%; text-align: center; }
-
-        /* --- CHAT LIVE (À DROITE DU MODALE) --- */
+        /* --- CHAT ET MODALE QUESTION --- */
         .live-chat {
-            position: absolute; bottom: 20px; right: 2%;
-            width: 250px; height: 180px; z-index: 30;
-            display: flex; flex-direction: column-reverse;
-            mask-image: linear-gradient(to top, black 70%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to top, black 70%, transparent 100%);
+            position: absolute; bottom: 20px; right: 3%; width: 220px; height: 150px;
+            z-index: 30; display: flex; flex-direction: column-reverse;
+            mask-image: linear-gradient(to top, black 60%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to top, black 60%, transparent 100%);
             overflow: hidden; pointer-events: none;
         }
-
-        .chat-msg {
-            color: white; font-size: 0.7rem; padding: 4px 8px;
-            animation: msgIn 0.4s ease-out; background: rgba(0,0,0,0.2);
-            margin-bottom: 4px; border-radius: 4px;
-        }
-
-        .chat-msg b { color: var(--yellow-rdc); }
-        .chat-msg i { color: #00ffcc; font-style: normal; }
-
-        @keyframes msgIn { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-        /* --- MODALE ET CONNEXION --- */
-        .top-menu { position: absolute; top: 4%; width: 58%; height: 8%; display: flex; justify-content: space-around; z-index: 20; left: 50%; transform: translateX(-50.5%); }
-        .menu-item { background: transparent; border: none; color: white; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; cursor: pointer; }
-
-        .auth-zone {
-            position: absolute; top: 4.5%; right: 4.5%; z-index: 20;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .user-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--yellow-rdc); background: #111; order: 1; }
-        .auth-label { color: white; font-size: 0.75rem; font-weight: bold; order: 2; }
+        .chat-msg { color: white; font-size: 0.65rem; background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 4px; margin-bottom: 3px; animation: msgIn 0.3s forwards; }
+        @keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .question-box {
-            position: absolute; bottom: -300px; left: 5%; width: 55%;
-            background: rgba(0, 20, 50, 0.95); border: 2px solid var(--blue-rdc);
-            border-radius: 15px 15px 0 0; padding: 15px; z-index: 25;
-            transition: bottom 0.8s cubic-bezier(0.17, 0.84, 0.44, 1);
-            box-shadow: 0 -5px 25px rgba(0, 123, 255, 0.3);
+            position: absolute; bottom: -300px; left: 4%; width: 52%;
+            background: rgba(0, 15, 40, 0.98); border: 2px solid var(--blue-rdc);
+            border-radius: 12px 12px 0 0; padding: 12px; z-index: 25;
+            transition: bottom 0.8s; box-shadow: 0 -5px 20px rgba(0, 123, 255, 0.4);
         }
         .question-box.active { bottom: 0; }
-
-        .btn-opt { background: rgba(255,255,255,0.05); border: 1px solid var(--blue-rdc); color: white; padding: 10px; border-radius: 8px; cursor: pointer; }
+        .btn-opt { background: rgba(255,255,255,0.05); border: 1px solid var(--blue-rdc); color: white; padding: 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; }
     </style>
 </head>
 <body>
 
+    <div id="rotate-device">
+        <div class="phone-icon"></div>
+        <p>Veuillez tourner votre téléphone</p>
+        <small>Le studio nécessite le mode paysage</small>
+    </div>
+
     <div class="camera-zoom">
-        <div class="studio-container">
-            <div class="laser-line"></div>
-            
-            <nav class="top-menu">
-                <button class="menu-item">Accueil</button>
-                <button class="menu-item">Directs</button>
-                <button class="menu-item">Classement</button>
-                <button class="menu-item">À Propos</button>
-            </nav>
+        <div class="mirror-sweep"></div>
+        <div class="studio-mask"></div>
 
-            <div class="auth-zone">
-                <div class="user-avatar"></div>
-                <span class="auth-label">CONNEXION</span>
-            </div>
+        <nav class="top-menu">
+            <button class="menu-item">Accueil</button>
+            <button class="menu-item">Directs</button>
+            <button class="menu-item">Classement</button>
+            <button class="menu-item">À Propos</button>
+        </nav>
 
-            <!-- RÉSERVE POUR 4 CANDIDATS -->
-            <div class="candidates-area">
-                <div class="candidates-title">CANDIDATS</div>
-                <div class="grid-candidats">
-                    <div class="c-slot" id="p1"></div>
-                    <div class="c-slot" id="p2"></div>
-                    <div class="c-slot" id="p3"></div>
-                    <div class="c-slot" id="p4"></div>
+        <div class="auth-zone">
+            <span class="auth-label">CONNEXION</span>
+            <div class="user-avatar"></div>
+        </div>
+
+        <div class="candidates-container">
+            <div class="candidates-title">CANDIDATS</div>
+            <div class="grid-2x2">
+                <div class="c-slot left-p" onclick="toggleInfo(this)">
+                    <div class="p-info"><b>Joueur 1</b><br>Score: 250<br>Niv: 5</div>
+                </div>
+                <div class="c-slot right-p" onclick="toggleInfo(this)">
+                    <div class="p-info"><b>Joueur 2</b><br>Score: 180<br>Niv: 3</div>
+                </div>
+                <div class="c-slot left-p" onclick="toggleInfo(this)">
+                    <div class="p-info"><b>Joueur 3</b><br>Score: 400<br>Niv: 8</div>
+                </div>
+                <div class="c-slot right-p" onclick="toggleInfo(this)">
+                    <div class="p-info"><b>Joueur 4</b><br>Score: 90<br>Niv: 2</div>
                 </div>
             </div>
+        </div>
 
-            <div class="studio-mask"></div>
+        <div class="live-chat" id="chat-box"></div>
 
-            <!-- CHAT LIVE -->
-            <div class="live-chat" id="chat-box">
-                <!-- Les messages s'insèrent ici -->
-            </div>
-
-            <!-- MODALE QUESTION -->
-            <div class="question-box" id="q-box">
-                <p id="q-text" style="color: white; font-weight: bold; margin: 0;">Analyse de la question en cours...</p>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-                    <button class="btn-opt">Option A</button>
-                    <button class="btn-opt">Option B</button>
-                    <button class="btn-opt">Option C</button>
-                    <button class="btn-opt">Option D</button>
-                </div>
+        <div class="question-box" id="q-box">
+            <p id="q-text" style="color: white; font-weight: bold; margin: 0; font-size: 0.9rem;">Chargement...</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                <button class="btn-opt">Option A</button>
+                <button class="btn-opt">Option B</button>
+                <button class="btn-opt">Option C</button>
+                <button class="btn-opt">Option D</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Simulation du Chat
-        const chatBox = document.getElementById('chat-box');
-        const events = [
-            "<b>Djo</b> a rejoint la salle",
-            "<b>Sarah</b> a offert <i>50 points</i> à Joueur 1",
-            "<b>Admin</b>: Bonne chance aux candidats !",
-            "<b>Moussa</b> a rejoint le live"
-        ];
-
-        function addChatMsg() {
-            const msg = document.createElement('div');
-            msg.className = 'chat-msg';
-            msg.innerHTML = events[Math.floor(Math.random() * events.length)];
-            chatBox.prepend(msg);
-            if(chatBox.childNodes.length > 6) chatBox.lastChild.remove();
+        function toggleInfo(el) {
+            el.classList.toggle('show-info');
+            setTimeout(() => el.classList.remove('show-info'), 4000);
         }
 
-        // Lancement du chat après le zoom
+        // Auto-show infos toutes les 5min (ici 10s pour tester)
+        setInterval(() => {
+            const slots = document.querySelectorAll('.c-slot');
+            slots.forEach(s => s.classList.add('show-info'));
+            setTimeout(() => slots.forEach(s => s.classList.remove('show-info')), 5000);
+        }, 15000);
+
+        const chatBox = document.getElementById('chat-box');
+        const msgs = ["<b>Ali</b> a rejoint", "<b>Kev</b> a offert 10pts", "<b>Maman</b>: Bonne chance !", "<b>Jules</b> a rejoint"];
+        
+        function addChat() {
+            const d = document.createElement('div');
+            d.className = 'chat-msg';
+            d.innerHTML = msgs[Math.floor(Math.random()*msgs.length)];
+            chatBox.prepend(d);
+            if(chatBox.childNodes.length > 5) chatBox.lastChild.remove();
+        }
+
         setTimeout(() => {
-            setInterval(addChatMsg, 3000);
+            setInterval(addChat, 3500);
             document.getElementById('q-box').classList.add('active');
-            document.getElementById('q-text').innerText = "Quel est le plus grand fleuve d'Afrique ?";
+            document.getElementById('q-text').innerText = "Quelle est la monnaie de la RDC ?";
         }, 6000);
     </script>
 </body>
