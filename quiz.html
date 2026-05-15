@@ -25,103 +25,107 @@
             color: white; text-align: center;
         }
         @media (orientation: landscape) { #rotate-device { display: none; } }
-        
-        .phone-icon {
-            width: 50px; height: 80px; border: 3px solid white; border-radius: 5px;
-            animation: rotateAnim 2s infinite; margin-bottom: 20px;
-        }
-        @keyframes rotateAnim { 0% { transform: rotate(0deg); } 50% { transform: rotate(90deg); } 100% { transform: rotate(90deg); } }
 
         /* --- STUDIO PLEIN ÉCRAN --- */
         .studio-container {
             position: relative;
             width: 100vw; height: 100vh;
             background: var(--overlay-img) no-repeat center;
-            background-size: 100% 100%; /* Remplit tout l'écran */
+            background-size: 100% 100%;
             visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         @media (orientation: landscape) { .studio-container { visibility: visible; } }
 
-        /* --- ZOOM POST-ROTATION --- */
-        .camera-zoom { 
-            width: 100%; height: 100%; position: relative;
-        }
+        /* --- ANIMATION ZOOM SUR L'IMAGE SEULEMENT --- */
         .animate-zoom {
             animation: cameraEntry 4s forwards cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         @keyframes cameraEntry { 
-            from { transform: scale(1.5); opacity: 0; } 
-            to { transform: scale(1); opacity: 1; } 
+            from { background-size: 150% 150%; } 
+            to { background-size: 100% 100%; } 
         }
 
-        /* --- MENU HAUT --- */
+        /* --- INTERFACE FIXE (NE ZOOM PAS) --- */
+        .ui-layer {
+            position: absolute; inset: 0; width: 100%; height: 100%; z-index: 50;
+            pointer-events: none; /* Laisse cliquer à travers si besoin */
+        }
+        .ui-layer * { pointer-events: auto; }
+
+        /* --- MENU HAUT REPLACÉ --- */
         .top-menu {
-            position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
-            width: 45%; display: flex; justify-content: space-between; z-index: 100;
+            position: absolute; top: 12%; left: 50%; transform: translateX(-50%);
+            width: 42%; display: flex; justify-content: space-between;
         }
-        .menu-item { color: white; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .menu-item { color: white; font-size: 0.55rem; font-weight: 800; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
 
-        .auth-zone { position: absolute; top: 10%; right: 8%; z-index: 100; display: flex; align-items: center; gap: 5px; }
-        .user-avatar { width: 25px; height: 25px; border-radius: 50%; border: 1.5px solid var(--yellow-rdc); background: #333; }
+        .auth-zone { position: absolute; top: 12%; right: 9%; display: flex; align-items: center; gap: 5px; }
 
-        /* --- ZONE CANDIDATS (Écran Central Noir) --- */
+        /* --- ZONE CANDIDATS (Ajustée à l'écran central) --- */
         .candidates-screen {
-            position: absolute; top: 32%; left: 50%; transform: translateX(-50%);
-            width: 22%; height: 22%; z-index: 15;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: absolute; top: 29.5%; left: 50%; transform: translateX(-50%);
+            width: 20%; height: 20%;
+            display: flex; flex-direction: column; align-items: center;
         }
         .candidates-title {
-            color: var(--yellow-rdc); font-size: 0.5rem; font-weight: bold; margin-bottom: 5px;
+            color: var(--yellow-rdc); font-size: 0.45rem; font-weight: bold;
+            margin-bottom: 2px; /* Collé à l'étoile du décor */
         }
-        .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 90%; height: 60%; }
-        .c-slot { background: rgba(255,255,255,0.1); border: 0.5px solid rgba(255,255,255,0.3); border-radius: 2px; }
+        .grid-2x2 { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 4px; 
+            width: 85%; height: 80%; 
+        }
+        .c-slot { 
+            background: rgba(255,255,255,0.05); 
+            border: 0.5px solid rgba(255,255,255,0.2); 
+            aspect-ratio: 1 / 1; /* Carré parfait */
+            border-radius: 2px;
+        }
 
-        /* --- MODALE QUESTION (Coins gauche) --- */
+        /* --- MODALE QUESTION --- */
         .question-box {
-            position: absolute; bottom: 5%; left: 5%; width: 35%;
-            background: rgba(0, 10, 30, 0.85); border-left: 4px solid var(--tiktok-blue);
-            padding: 12px; border-radius: 8px; z-index: 200;
-            transform: translateY(20px); opacity: 0; transition: 0.8s;
+            position: absolute; bottom: 8%; left: 8%; width: 32%;
+            background: rgba(0, 10, 30, 0.9); border-left: 4px solid var(--tiktok-blue);
+            padding: 10px; border-radius: 6px; opacity: 0; transition: 1s;
         }
-        .question-box.active { transform: translateY(0); opacity: 1; }
-        .q-text { color: white; font-size: 0.75rem; font-weight: bold; margin-bottom: 8px; }
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .question-box.active { opacity: 1; }
+        .q-text { color: white; font-size: 0.7rem; font-weight: bold; margin-bottom: 6px; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
         .btn-opt { 
             background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: white; padding: 5px; border-radius: 4px; font-size: 0.55rem; text-align: center;
+            color: white; padding: 4px; border-radius: 3px; font-size: 0.5rem; text-align: center;
         }
 
-        /* --- CHAT STYLE TIKTOK (Droite) --- */
+        /* --- CHAT --- */
         .live-chat {
-            position: absolute; bottom: 5%; right: 5%; width: 200px; height: 150px;
-            display: flex; flex-direction: column-reverse; overflow: hidden; z-index: 200;
+            position: absolute; bottom: 5%; right: 8%; width: 180px; height: 120px;
+            display: flex; flex-direction: column-reverse; overflow: hidden;
         }
         .chat-msg { 
-            animation: slideIn 0.3s ease-out;
-            margin-bottom: 6px; padding: 4px 10px; border-radius: 15px;
-            background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
-            font-size: 0.65rem; line-height: 1.2; max-width: 90%;
+            animation: slideIn 0.3s ease-out; margin-bottom: 4px; padding: 3px 8px; border-radius: 10px;
+            background: rgba(0, 0, 0, 0.4); font-size: 0.6rem;
         }
-        @keyframes slideIn { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         
-        .chat-user { font-weight: 800; margin-right: 5px; }
+        .chat-user { font-weight: 800; margin-right: 4px; }
         .user-pink { color: var(--tiktok-pink); }
         .user-blue { color: var(--tiktok-blue); }
         .user-gold { color: var(--yellow-rdc); }
-        .chat-text { color: #fff; }
 
     </style>
 </head>
 <body>
 
     <div id="rotate-device">
-        <div class="phone-icon"></div>
-        <p style="font-weight: bold;">CONNEXION AU STUDIO...</p>
-        <small>Basculez votre écran pour le direct</small>
+        <div style="width: 40px; height: 70px; border: 3px solid white; border-radius: 5px; animation: rotate 2s infinite;"></div>
+        <p>BASCULEZ L'ÉCRAN</p>
     </div>
 
     <div class="studio-container" id="main-studio">
-        <div class="camera-zoom" id="zoom-layer">
+        <div class="ui-layer">
             
             <nav class="top-menu">
                 <span class="menu-item">Accueil</span>
@@ -131,12 +135,12 @@
             </nav>
 
             <div class="auth-zone">
-                <span style="color:white; font-size:0.55rem; font-weight:800;">CONNEXION</span>
-                <div class="user-avatar"></div>
+                <span style="color:white; font-size:0.5rem; font-weight:800;">CONNEXION</span>
+                <div style="width:20px; height:20px; border-radius:50%; border:1px solid gold; background:#222;"></div>
             </div>
 
             <div class="candidates-screen">
-                <div class="candidates-title">CANDIDATS EN LIGNE</div>
+                <div class="candidates-title">CANDIDATS</div>
                 <div class="grid-2x2">
                     <div class="c-slot"></div>
                     <div class="c-slot"></div>
@@ -146,7 +150,7 @@
             </div>
 
             <div class="question-box" id="q-box">
-                <div class="q-text">Chargement du défi...</div>
+                <div class="q-text">Préparation du plateau...</div>
                 <div class="options-grid">
                     <div class="btn-opt">Option A</div>
                     <div class="btn-opt">Option B</div>
@@ -156,53 +160,41 @@
             </div>
 
             <div class="live-chat" id="chat-box"></div>
-
         </div>
     </div>
 
     <script>
-        const zoomLayer = document.getElementById('zoom-layer');
+        const studio = document.getElementById('main-studio');
         const qBox = document.getElementById('q-box');
         const chatBox = document.getElementById('chat-box');
 
-        // Détecter le passage en paysage pour lancer le zoom
-        function checkOrientation() {
+        function initStudio() {
             if (window.innerWidth > window.innerHeight) {
-                zoomLayer.classList.add('animate-zoom');
-                startLiveSimulation();
+                // On applique le zoom uniquement sur le container (image de fond)
+                studio.classList.add('animate-zoom');
+                
+                setTimeout(() => {
+                    qBox.querySelector('.q-text').innerText = "Quelle est la capitale de la RDC ?";
+                    qBox.classList.add('active');
+                }, 3500);
+
+                startChat();
             }
         }
 
-        window.addEventListener('resize', checkOrientation);
-        window.addEventListener('load', checkOrientation);
+        window.addEventListener('resize', initStudio);
+        window.addEventListener('load', initStudio);
 
-        function startLiveSimulation() {
-            // Afficher la question après 3s
-            setTimeout(() => {
-                qBox.querySelector('.q-text').innerText = "Quelle est la capitale de la RDC ?";
-                qBox.classList.add('active');
-            }, 3000);
-
-            // Simulation Chat TikTok
-            const users = [
-                {n: "Maman", c: "user-pink"},
-                {n: "Ali_Kin", c: "user-blue"},
-                {n: "Kev243", c: "user-gold"},
-                {n: "Admin", c: "user-gold"}
-            ];
-            const texts = ["Bonne chance !", "Je connais la réponse !", "C'est Kinshasa !", "Go go go !", "Offre 10 pts 🎁"];
-
+        function startChat() {
+            const users = [{n:"Maman", c:"user-pink"}, {n:"Kev", c:"user-gold"}, {n:"Ali", c:"user-blue"}];
             setInterval(() => {
-                const user = users[Math.floor(Math.random()*users.length)];
-                const text = texts[Math.floor(Math.random()*texts.length)];
-                
+                const u = users[Math.floor(Math.random()*users.length)];
                 const msg = document.createElement('div');
                 msg.className = 'chat-msg';
-                msg.innerHTML = `<span class="chat-user ${user.c}">${user.n}</span><span class="chat-text">${text}</span>`;
-                
+                msg.innerHTML = `<span class="chat-user ${u.c}">${u.n}:</span><span style="color:white">Go go go !</span>`;
                 chatBox.prepend(msg);
-                if(chatBox.childNodes.length > 5) chatBox.lastChild.remove();
-            }, 2500);
+                if(chatBox.childNodes.length > 4) chatBox.lastChild.remove();
+            }, 3000);
         }
     </script>
 </body>
