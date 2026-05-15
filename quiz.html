@@ -40,7 +40,7 @@
         }
         @media (orientation: landscape) { .studio-container { display: flex; } }
 
-        /* --- EFFET MIROIR PENCHÉ --- */
+        /* --- EFFET MIROIR --- */
         #mirror-overlay {
             position: absolute; inset: 0; pointer-events: none; z-index: 1000;
             background: linear-gradient(135deg, transparent, var(--tiktok-blue), var(--tiktok-pink), transparent);
@@ -59,20 +59,23 @@
         .ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 50; opacity: 0; transition: opacity 1s ease-in; }
         .ui-layer.show { opacity: 1; pointer-events: auto; }
 
-        /* --- SPECTATEURS DANS LES CADRES NOIRS PRÈS DES JOUEURS --- */
+        /* --- SPECTATEURS EN LIGNE HORIZONTALE DANS LES CADRES NOIRS --- */
         .side-zone {
-            position: absolute; width: 11%; height: 16%;
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+            position: absolute; 
+            width: 32%; /* Largeur pour couvrir les cadres noirs latéraux */
+            height: 10%; 
+            display: grid; 
+            grid-template-columns: repeat(9, 1fr); /* 9 cercles en horizontal */
+            gap: 2px;
+            align-items: center;
         }
-        /* Ajustés pour être exactement dans les cadres noirs à côté du centre */
-        .pos-1 { top: 30%; left: 11%; }   /* Cadre noir haut gauche interne */
-        .pos-2 { top: 30%; right: 11%; }  /* Cadre noir haut droite interne */
-        .pos-3 { bottom: 25%; left: 11%; } /* Cadre noir bas gauche interne */
-        .pos-4 { bottom: 25%; right: 11%; }/* Cadre noir bas droite interne */
+        /* Positionnés exactement sur les cadres noirs à côté du bloc central */
+        .pos-left { top: 38%; left: 6%; }  
+        .pos-right { top: 38%; right: 6%; }
 
         .v-box { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .v-circ { width: 16px; height: 16px; border-radius: 50%; border: 1.2px solid var(--yellow-rdc); background: #222; }
-        .v-txt { color: white; font-size: 0.22rem; font-weight: bold; line-height: 0.8; margin-top: 1px; text-align: center; transform: scale(0.95); }
+        .v-circ { width: 14px; height: 14px; border-radius: 50%; border: 1.2px solid var(--yellow-rdc); background: #222; }
+        .v-txt { color: white; font-size: 0.22rem; font-weight: bold; margin-top: 1px; text-align: center; }
 
         /* --- ZONE JOUEURS CENTRE --- */
         .candidates-screen {
@@ -82,7 +85,7 @@
         .grid-5x2 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%; }
         .c-slot { position: relative; aspect-ratio: 1/1; background: rgba(0,0,0,0.85); border: 0.5px solid rgba(255,255,255,0.2); }
 
-        /* --- MODALES QUESTIONS --- */
+        /* --- UI & CHAT --- */
         .question-box {
             position: absolute; bottom: 8.5%; left: 8.5%; width: 31%;
             background: rgba(0, 5, 20, 0.85); border-left: 3px solid var(--tiktok-blue);
@@ -93,15 +96,12 @@
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
         .btn-opt { background: rgba(255,255,255,0.15); border: 0.5px solid rgba(255,255,255,0.3); color: white; padding: 4px; font-size: 0.4rem; text-align: center; border-radius: 2px; }
 
-        /* --- CHAT COLORÉ --- */
         #chat-box { position: absolute; bottom: 5%; right: 8.5%; width: 150px; height: 90px; display: flex; flex-direction: column-reverse; overflow: hidden; }
         .chat-msg { margin-bottom: 4px; padding: 3px 6px; background: rgba(0,0,0,0.7); font-size: 0.55rem; border-radius: 3px; }
         .chat-name { color: var(--tiktok-blue); font-weight: bold; }
         .chat-text { color: white; }
         .chat-gift { color: var(--yellow-rdc); font-weight: bold; }
 
-        /* --- MENU ET UI --- */
-        .auth-zone { position: absolute; top: 4%; right: 3.5%; display: flex; align-items: center; gap: 8px; }
         .top-menu { position: absolute; top: 4%; left: 50%; transform: translateX(-50.5%); width: 58%; height: 8%; display: flex; justify-content: space-around; align-items: center; }
         .menu-item { color: white; font-size: 0.6rem; font-weight: bold; text-transform: uppercase; }
 
@@ -116,26 +116,19 @@
 
     <div id="rotate-device">
         <div class="phone-icon"></div>
-        <p>VEUILLEZ PIVOTER VOTRE TÉLÉPHONE</p>
+        <p>MODE PAYSAGE REQUIS</p>
     </div>
 
     <div id="mirror-overlay"></div>
 
     <div class="studio-container" id="main-studio">
         <div class="ui-layer" id="ui-layer">
-            <div class="side-zone pos-1" id="sz1"></div>
-            <div class="side-zone pos-2" id="sz2"></div>
-            <div class="side-zone pos-3" id="sz3"></div>
-            <div class="side-zone pos-4" id="sz4"></div>
+            <div class="side-zone pos-left" id="sz-left"></div>
+            <div class="side-zone pos-right" id="sz-right"></div>
 
             <nav class="top-menu">
                 <div class="menu-item">Accueil</div><div class="menu-item">Directs</div><div class="menu-item">Classement</div><div class="menu-item">Aide</div>
             </nav>
-
-            <div class="auth-zone">
-                <span style="color:white; font-size:0.55rem; font-weight:bold;">CONNEXION</span>
-                <div style="width:20px; height:20px; border-radius:50%; border:1.5px solid gold; background: #222;"></div>
-            </div>
 
             <div class="candidates-screen">
                 <div class="label-joueurs">JOUEURS</div>
@@ -143,10 +136,10 @@
             </div>
 
             <div class="question-box" id="q-box">
-                <div class="q-text">QUELLE EST LA CAPITALE DE LA RDC ?</div>
+                <div class="q-text">QUI EST LE PÈRE DE L'INDÉPENDANCE DU CONGO ?</div>
                 <div class="options-grid">
-                    <div class="btn-opt">A: Goma</div><div class="btn-opt">B: Kinshasa</div>
-                    <div class="btn-opt">C: Lubumbashi</div><div class="btn-opt">D: Matadi</div>
+                    <div class="btn-opt">A: Mobutu</div><div class="btn-opt">B: Lumumba</div>
+                    <div class="btn-opt">C: Kasa-Vubu</div><div class="btn-opt">D: Tshombe</div>
                 </div>
             </div>
 
@@ -161,14 +154,17 @@
         const chat = document.getElementById('chat-box');
         let currentModal = 1;
 
+        // Générer 10 joueurs
         for(let i=1; i<=10; i++) {
             document.getElementById('player-grid').innerHTML += `<div class="c-slot" onclick="showPlayer(${i})"><div class="player-modal" id="m${i}"><b>J${i}</b><br>Score: 0</div></div>`;
         }
 
+        // Générer 18 spectateurs (9 par côté horizontal)
         const provs = ["Kin", "Goma", "L'shi", "Bukavu"];
-        document.querySelectorAll('.side-zone').forEach(z => {
+        ['sz-left', 'sz-right'].forEach(id => {
+            const container = document.getElementById(id);
             for(let i=0; i<9; i++) {
-                z.innerHTML += `<div class="v-box"><div class="v-circ"></div><div class="v-txt">Fan ${provs[Math.floor(Math.random()*4)]}</div></div>`;
+                container.innerHTML += `<div class="v-box"><div class="v-circ"></div><div class="v-txt">Fan</div></div>`;
             }
         });
 
@@ -191,17 +187,12 @@
         }
 
         function startChat() {
-            const msgs = [
-                {n: "Moussa", m: "Force à vous !"},
-                {n: "Sarah", m: "C'est la base !", g: "+100 PTS"},
-                {n: "Gloire", m: "Magnifique !"},
-                {n: "Dora", m: "J3 va gagner", g: "CADEAU 🎁"}
-            ];
+            const msgs = [{n: "Moussa", m: "Force !"}, {n: "Sarah", m: "Go !", g: "+100 PTS"}, {n: "Gloire", m: "Vrai génie !"}];
             setInterval(() => {
                 const data = msgs[Math.floor(Math.random()*msgs.length)];
                 const div = document.createElement('div');
                 div.className = 'chat-msg';
-                div.innerHTML = `<span class="chat-name">${data.n}</span>: <span class="chat-text">${data.m}</span> ${data.g ? `<br><span class="chat-gift">${data.g}</span>` : ''}`;
+                div.innerHTML = `<span class="chat-name">${data.n}</span>: ${data.m} ${data.g ? `<br><small class="chat-gift">${data.g}</small>` : ''}`;
                 chat.prepend(div);
                 if(chat.childNodes.length > 5) chat.lastChild.remove();
             }, 3000);
