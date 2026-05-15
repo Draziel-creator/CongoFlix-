@@ -59,57 +59,54 @@
         }
         .ui-layer.show { opacity: 1; pointer-events: auto; }
 
-        /* --- MENU (Inchangé) --- */
+        /* --- MENU (Inchangé, comme demandé) --- */
         .top-menu {
             position: absolute; top: 4%; left: 50%; transform: translateX(-50.5%);
             width: 58%; height: 8%; display: flex; justify-content: space-around; align-items: center;
         }
-        .menu-item { color: white; font-size: 0.6rem; font-weight: bold; text-transform: uppercase; }
+        .menu-item { color: white; font-size: 0.6rem; font-weight: bold; text-transform: uppercase; text-shadow: 0 1px 3px #000; }
         .menu-item.offset-left { margin-right: 8px; }
         .auth-zone { position: absolute; top: 4%; right: 3.5%; display: flex; align-items: center; gap: 8px; }
 
-        /* --- ZONE CANDIDATS : GRILLE 5x2 --- */
+        /* --- ZONE CANDIDATS : 5 COLONNES x 2 LIGNES --- */
         .candidates-screen {
-            position: absolute; top: 25%; left: 50%; transform: translateX(-50%);
-            width: 25%; display: flex; flex-direction: column; align-items: center;
+            position: absolute; top: 31%; left: 50%; transform: translateX(-50%);
+            width: 22%; /* Un peu plus large pour les 5 colonnes */
+            display: flex; flex-direction: column; align-items: center;
         }
-        .candidates-label { color: var(--yellow-rdc); font-size: 0.5rem; font-weight: bold; margin-bottom: 5px; letter-spacing: 2px; }
+        .candidates-title { color: var(--yellow-rdc); font-size: 0.45rem; font-weight: bold; margin-bottom: 5px; letter-spacing: 1px; }
         
         .grid-5x2 { 
-            display: grid; grid-template-columns: repeat(2, 1fr); 
-            grid-template-rows: repeat(5, 1fr);
-            gap: 8px; width: 100%;
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); /* 5 colonnes */
+            gap: 6px; width: 100%;
         }
         .c-slot { 
             position: relative; aspect-ratio: 1/1; 
-            background: rgba(0,0,0,0.9);
-            border: 0.5px solid rgba(255,255,255,0.3); border-radius: 2px;
+            background: rgba(0,0,0,0.85);
+            border: 0.5px solid rgba(255,255,255,0.2); border-radius: 1px;
             cursor: pointer;
         }
 
         /* --- MODALES DIRECTIONNELLES --- */
         .player-modal {
-            position: absolute; width: 60px; background: rgba(0, 5, 15, 0.95);
-            border-radius: 3px; padding: 4px; color: white; font-size: 0.35rem; 
-            opacity: 0; transform: scale(0.5); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            z-index: 100; pointer-events: none; border: 1px solid rgba(255,255,255,0.2);
-            line-height: 1.2;
+            position: absolute; width: 48px; background: rgba(0, 10, 25, 0.98);
+            border-radius: 2px; padding: 3px; color: white; font-size: 0.28rem; 
+            opacity: 0; transform: scale(0.5); transition: 0.3s; z-index: 100;
+            pointer-events: none; border: 0.5px solid white;
         }
         .player-modal.show { opacity: 1; transform: scale(1); }
 
-        /* Colonne de GAUCHE (Impairs: 1, 3, 5, 7, 9) -> Sort vers la GAUCHE */
-        .c-slot:nth-child(odd) .player-modal {
-            right: 110%; top: 0; border-right: 3px solid var(--tiktok-pink);
-        }
+        /* Direction selon la colonne pour ne pas boucher la vue */
+        /* Colonnes 1 & 2 -> Vers la gauche */
+        .c-slot:nth-child(5n+1) .player-modal, .c-slot:nth-child(5n+2) .player-modal { right: 115%; top: 0; border-right: 2px solid var(--tiktok-pink); }
+        /* Colonne 3 (Milieu) -> Vers le haut */
+        .c-slot:nth-child(5n+3) .player-modal { bottom: 115%; left: 50%; transform: translateX(-50%) scale(0.5); border-bottom: 2px solid var(--yellow-rdc); }
+        .c-slot:nth-child(5n+3) .player-modal.show { transform: translateX(-50%) scale(1); }
+        /* Colonnes 4 & 5 -> Vers la droite */
+        .c-slot:nth-child(5n+4) .player-modal, .c-slot:nth-child(5n+5) .player-modal { left: 115%; top: 0; border-left: 2px solid var(--tiktok-blue); }
 
-        /* Colonne de DROITE (Pairs: 2, 4, 6, 8, 10) -> Sort vers la DROITE */
-        .c-slot:nth-child(even) .player-modal {
-            left: 110%; top: 0; border-left: 3px solid var(--tiktok-blue);
-        }
-
-        .m-name { color: var(--yellow-rdc); font-weight: bold; display: block; margin-bottom: 2px; font-size: 0.4rem; }
-
-        /* --- BOX QUESTION & CHAT (Inchangé) --- */
+        /* --- BOX QUESTION & CHAT --- */
         .question-box {
             position: absolute; bottom: 8.5%; left: 8.5%; width: 31%;
             background: rgba(0, 5, 20, 0.95); border-left: 3px solid var(--tiktok-blue);
@@ -128,7 +125,7 @@
 
     <div id="rotate-device">
         <div class="phone-icon"></div>
-        <p style="font-size: 0.8rem; margin-top: 15px; font-weight: bold;">TOURNEZ LE TÉLÉPHONE</p>
+        <p style="font-size: 0.8rem; margin-top: 15px; font-weight: bold;">MODE PAYSAGE REQUIS</p>
     </div>
 
     <div class="studio-container" id="main-studio">
@@ -147,13 +144,13 @@
             </div>
 
             <div class="candidates-screen">
-                <div class="candidates-label">CANDIDATS</div>
-                <div class="grid-5x2" id="grid-players">
+                <div class="candidates-title">CANDIDATS</div>
+                <div class="grid-5x2" id="player-grid">
                     </div>
             </div>
 
             <div class="question-box" id="q-box">
-                <div class="q-text">STUDIO EN DIRECT - 10 CANDIDATS</div>
+                <div class="q-text">STUDIO ULTRA-LIVE : 10 JOUEURS</div>
                 <div class="options-grid">
                     <div class="btn-opt">A</div><div class="btn-opt">B</div>
                     <div class="btn-opt">C</div><div class="btn-opt">D</div>
@@ -167,21 +164,15 @@
     <script>
         const studio = document.getElementById('main-studio');
         const uiLayer = document.getElementById('ui-layer');
-        const grid = document.getElementById('grid-players');
+        const grid = document.getElementById('player-grid');
         let hasStarted = false;
 
-        // Création des 10 places de candidats
+        // Création des 10 candidats
         for(let i=1; i<=10; i++) {
             const slot = document.createElement('div');
             slot.className = 'c-slot';
             slot.onclick = () => showPlayer(i);
-            slot.innerHTML = `
-                <div class="player-modal" id="m${i}">
-                    <span class="m-name">JOUEUR ${i}</span>
-                    Score: ${Math.floor(Math.random()*100)}<br>
-                    Niveau: Pro
-                </div>
-            `;
+            slot.innerHTML = `<div class="player-modal" id="m${i}"><b>J${i}</b><br>Score: ${Math.floor(Math.random()*50)}<br>Nv. ${Math.floor(Math.random()*5)+1}</div>`;
             grid.appendChild(slot);
         }
 
@@ -193,7 +184,7 @@
                     uiLayer.classList.add('show');
                     document.getElementById('q-box').classList.add('active');
                     startChat();
-                    startAutoModal();
+                    setInterval(autoShowModal, 5000); // Modale auto toutes les 5s (test)
                 }, 8000);
             }
         }
@@ -202,25 +193,19 @@
         window.addEventListener('resize', checkOrientation);
 
         function showPlayer(id) {
-            const modal = document.getElementById('m' + id);
-            modal.classList.toggle('show');
-            // Ferme après 3 secondes si cliqué
-            setTimeout(() => modal.classList.remove('show'), 3000);
+            const m = document.getElementById('m' + id);
+            m.classList.toggle('show');
+            setTimeout(() => m.classList.remove('show'), 4000);
         }
 
-        // Fait sortir une modale automatiquement toutes les 5 secondes
-        function startAutoModal() {
-            setInterval(() => {
-                const randomId = Math.floor(Math.random() * 10) + 1;
-                const modal = document.getElementById('m' + randomId);
-                modal.classList.add('show');
-                setTimeout(() => modal.classList.remove('show'), 3000);
-            }, 5000);
+        function autoShowModal() {
+            const id = Math.floor(Math.random() * 10) + 1;
+            showPlayer(id);
         }
 
         function startChat() {
             const chat = document.getElementById('chat-box');
-            const msgs = ["Incroyable le plateau !", "Génie Congo en force", "Qui va gagner ?", "Le zoom est stylé"];
+            const msgs = ["Génie Congo !", "Le zoom est top", "Allez J3 !", "Magnifique plateau"];
             setInterval(() => {
                 const div = document.createElement('div');
                 div.className = 'chat-msg';
