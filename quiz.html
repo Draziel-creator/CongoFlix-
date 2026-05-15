@@ -2,178 +2,205 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, landscape">
     <title>Génie Congo - Studio TV Ultra-Live</title>
+    
     <style>
         :root {
             --overlay-img: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgv3Xb1xi808ij28d3b0nFah5mYidUcRD06nUga1R9L9d2JgQt-LAoQ0DNVZ7-6O8v4IkTc-hIrcLcvFwjUAz9LPJvjKqBPGzwwV6Byu57IWdU9BFUZfWCPk-2kCWMh1d5Naitqy1qugZ6iYGNl35-qVVqXt6GRajtV-cUpo-oqREvmUE9ORU752-J0AAEg/s1600/genie%20congo.png');
             --blue-rdc: #007bff;
             --yellow-rdc: #ffcc00;
-            --neon-glow: 0 0 15px var(--blue-rdc);
         }
 
-        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
-
-        /* --- BLOCAGE ET FORCE LANDSCAPE --- */
-        #rotate-screen {
-            position: fixed; inset: 0; background: radial-gradient(circle, #111, #000); z-index: 10000;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: #000; overflow: hidden; font-family: 'Arial', sans-serif;
+            display: flex; justify-content: center; align-items: center;
         }
-        @media (orientation: landscape) { #rotate-screen { display: none; } }
+
+        /* --- BLOCAGE ROTATION --- */
+        #rotate-device {
+            position: fixed; inset: 0; background: #000; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; text-align: center; visibility: hidden;
+        }
+        @media (orientation: portrait) { #rotate-device { visibility: visible; } }
         
-        .rotate-icon { width: 60px; height: 60px; border: 3px solid var(--yellow-rdc); border-radius: 10px; animation: rotateMe 2s infinite; }
-        @keyframes rotateMe { 0% { transform: rotate(0deg); } 70%, 100% { transform: rotate(90deg); } }
-
-        /* --- ANIMATION ZOOM (Lancée par JS après rotation) --- */
-        .camera-zoom-init { transform: scale(1.6); opacity: 0; }
-        .start-zoom { animation: studioIntro 4s forwards cubic-bezier(0.15, 0, 0.15, 1); }
-        @keyframes studioIntro { to { transform: scale(1); opacity: 1; } }
-
-        .studio-container { position: relative; width: 100%; height: 100%; }
-        .studio-mask { position: absolute; inset: 0; background: var(--overlay-img) no-repeat center; background-size: 100% 100%; z-index: 10; pointer-events: none; }
-
-        /* --- MENU DU HAUT CADRÉ --- */
-        .top-nav {
-            position: absolute; top: 4%; left: 50%; transform: translateX(-50%);
-            width: 55%; height: 30px; z-index: 25;
-            display: grid; grid-template-columns: repeat(4, 1fr); align-items: center;
+        .phone-icon {
+            width: 50px; height: 80px; border: 3px solid white; border-radius: 5px;
+            animation: rotateAnim 2s infinite; position: relative; margin-bottom: 20px;
         }
-        .nav-btn { background: none; border: none; color: white; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; cursor: pointer; text-shadow: 0 0 5px #000; }
+        @keyframes rotateAnim { 0% { transform: rotate(0deg); } 50% { transform: rotate(90deg); } 100% { transform: rotate(90deg); } }
 
-        /* --- ZONE CANDIDATS RÉDUITE ET MONTÉE --- */
-        .candidates-stage {
-            position: absolute; top: 28%; left: 50%; transform: translateX(-50%);
-            z-index: 20; text-align: center; width: 180px;
+        /* --- CONTENEUR RATIO FIXE (Évite le bazar de l'image 10) --- */
+        .studio-container {
+            position: relative;
+            width: 100vw;
+            height: 56.25vw; /* Ratio 16:9 strict */
+            max-height: 100vh;
+            max-width: 177.78vh;
+            background: var(--overlay-img) no-repeat center;
+            background-size: contain;
+            overflow: hidden;
         }
-        .cand-title { color: var(--yellow-rdc); font-size: 0.7rem; font-weight: bold; margin-bottom: 5px; text-shadow: var(--neon-glow); animation: blink 1.5s infinite; }
-        @keyframes blink { 50% { opacity: 0.4; } }
 
-        .grid-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        /* --- ZOOM ENTRÉE --- */
+        .camera-zoom { 
+            animation: cameraEntry 5s forwards ease-out; 
+            width: 100%; height: 100%; position: relative; 
+        }
+        @keyframes cameraEntry { 
+            from { transform: scale(1.5); opacity: 0; } 
+            to { transform: scale(1); opacity: 1; } 
+        }
+
+        /* --- MENU RÉALIGNÉ DANS LES CADRES --- */
+        .top-menu {
+            position: absolute; top: 12%; left: 50%; transform: translateX(-50%);
+            width: 55%; display: flex; justify-content: space-between; z-index: 20;
+        }
+        .menu-item { background: transparent; border: none; color: white; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; cursor: pointer; opacity: 0.8; }
+
+        .auth-zone { position: absolute; top: 11.5%; right: 7.5%; z-index: 20; display: flex; align-items: center; gap: 8px; }
+        .user-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--yellow-rdc); background: #222; }
+
+        /* --- ZONE CANDIDATS (Fixée sur l'écran central de l'image) --- */
+        .candidates-screen {
+            position: absolute; top: 31%; left: 50%; transform: translateX(-50%);
+            width: 24%; height: 25%; z-index: 15;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .candidates-title {
+            color: var(--yellow-rdc); font-size: 0.7rem; font-weight: bold;
+            text-shadow: 0 0 10px rgba(255,204,0,0.5); margin-bottom: 8%;
+            animation: pulseText 2s infinite;
+        }
+        @keyframes pulseText { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+        .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5%; width: 100%; height: 70%; }
         .c-slot { 
-            height: 38px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); 
-            border-radius: 3px; position: relative; 
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); 
+            border-radius: 4px; position: relative; display: flex; align-items: center; justify-content: center;
         }
 
-        /* --- MODALES NÉON AU-DESSUS --- */
-        .player-modal {
-            position: absolute; width: 90px; background: rgba(0, 30, 80, 0.95);
-            border: 1px solid var(--blue-rdc); box-shadow: var(--neon-glow);
-            padding: 5px; color: white; font-size: 0.55rem; z-index: 50;
-            opacity: 0; transition: 0.4s; pointer-events: none; border-radius: 5px;
+        /* --- INFOS JOUEURS (Sortie Latérale) --- */
+        .p-info {
+            position: absolute; width: 120%; height: 100%;
+            background: var(--blue-rdc); color: white; font-size: 0.55rem;
+            display: flex; flex-direction: column; justify-content: center; padding: 0 5px;
+            transition: 0.4s ease-out; opacity: 0; pointer-events: none;
         }
-        .left-p .player-modal { right: 105%; }
-        .right-p .player-modal { left: 105%; }
-        .c-slot.active .player-modal { opacity: 1; transform: scale(1.1); }
+        .left-p .p-info { right: 105%; transform: translateX(10px); border-radius: 4px 0 0 4px; }
+        .right-p .p-info { left: 105%; transform: translateX(-10px); border-radius: 0 4px 4px 0; }
+        
+        .show-info .p-info { opacity: 1; transform: translateX(0); }
 
-        /* --- CHAT STYLE GAMING --- */
-        .chat-live {
-            position: absolute; bottom: 15px; right: 5%; width: 220px; height: 120px;
-            z-index: 30; display: flex; flex-direction: column-reverse; overflow: hidden;
+        /* --- QUESTION BOX (Bas de l'écran) --- */
+        .question-box {
+            position: absolute; bottom: 8%; left: 32%; width: 36%;
+            padding: 15px; z-index: 25; text-align: center;
+            opacity: 0; transition: 1s;
         }
-        .chat-line {
-            background: linear-gradient(90deg, rgba(0,123,255,0.2), transparent);
-            border-left: 3px solid var(--blue-rdc); margin-bottom: 5px;
-            padding: 4px 10px; color: #fff; font-size: 0.65rem;
-            animation: slideChat 0.4s ease-out; box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-        .chat-line b { color: var(--yellow-rdc); text-shadow: 0 0 5px var(--yellow-rdc); }
-        @keyframes slideChat { from { transform: translateX(30px); opacity: 0; } }
+        .question-box.active { opacity: 1; }
+        .q-text { color: white; font-weight: bold; font-size: 0.85rem; margin-bottom: 10px; }
 
-        /* --- EFFET MIROIR --- */
-        .mirror { position: absolute; inset: 0; z-index: 35; pointer-events: none; background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%); background-size: 200% 100%; animation: sweep 6s infinite; }
-        @keyframes sweep { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-        .q-box {
-            position: absolute; bottom: -200px; left: 4%; width: 50%;
-            background: rgba(0,5,20,0.95); border-top: 3px solid var(--blue-rdc);
-            padding: 15px; z-index: 40; border-radius: 15px 15px 0 0;
-            transition: 1s cubic-bezier(0.17, 0.84, 0.44, 1);
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-opt { 
+            background: rgba(0, 40, 100, 0.6); border: 1px solid var(--blue-rdc); 
+            color: white; padding: 6px; border-radius: 4px; font-size: 0.65rem; 
         }
-        .q-box.active { bottom: 0; }
+
+        /* --- CHAT --- */
+        .live-chat {
+            position: absolute; bottom: 10%; right: 5%; width: 180px; height: 100px;
+            display: flex; flex-direction: column-reverse; overflow: hidden;
+        }
+        .chat-msg { color: white; font-size: 0.6rem; margin-bottom: 3px; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 3px; }
+
     </style>
 </head>
 <body>
 
-    <div id="rotate-screen">
-        <div class="rotate-icon"></div>
-        <h2 style="margin-top:20px">TOURNEZ VOTRE ÉCRAN</h2>
-        <p>Le studio TV s'active en mode paysage</p>
+    <div id="rotate-device">
+        <div class="phone-icon"></div>
+        <p>Studio TV en cours...</p>
+        <small>Passez en mode Paysage</small>
     </div>
 
-    <div class="camera-zoom-init" id="main-view">
-        <div class="studio-container">
-            <div class="mirror"></div>
-            <div class="studio-mask"></div>
-
-            <nav class="top-nav">
-                <button class="nav-btn">Accueil</button>
-                <button class="nav-btn">Directs</button>
-                <button class="nav-btn">Classement</button>
-                <button class="nav-btn">Aide</button>
+    <div class="studio-container">
+        <div class="camera-zoom">
+            
+            <nav class="top-menu">
+                <span class="menu-item">ACCUEIL</span>
+                <span class="menu-item">DIRECTS</span>
+                <span class="menu-item">CLASSEMENT</span>
+                <span class="menu-item">AIDE</span>
             </nav>
 
-            <div class="candidates-stage">
-                <div class="cand-title">CANDIDATS</div>
-                <div class="grid-mini">
-                    <div class="c-slot left-p" id="c1"><div class="player-modal"><b>JOUEUR 1</b><br>Score: 2450<br>Rang: #1</div></div>
-                    <div class="c-slot right-p" id="c2"><div class="player-modal"><b>JOUEUR 2</b><br>Score: 1900<br>Rang: #4</div></div>
-                    <div class="c-slot left-p" id="c3"><div class="player-modal"><b>JOUEUR 3</b><br>Score: 2100<br>Rang: #2</div></div>
-                    <div class="c-slot right-p" id="c4"><div class="player-modal"><b>JOUEUR 4</b><br>Score: 1200<br>Rang: #10</div></div>
+            <div class="auth-zone">
+                <span style="color:white; font-size:0.6rem; font-weight:bold;">CONNEXION</span>
+                <div class="user-avatar"></div>
+            </div>
+
+            <div class="candidates-screen">
+                <div class="candidates-title">CANDIDATS</div>
+                <div class="grid-2x2">
+                    <div class="c-slot left-p" id="p1">
+                        <div class="p-info"><b>JOUEUR 1</b><br>Score: 2450<br>Rang: #1</div>
+                    </div>
+                    <div class="c-slot right-p" id="p2">
+                        <div class="p-info"><b>JOUEUR 2</b><br>Score: 1900<br>Rang: #4</div>
+                    </div>
+                    <div class="c-slot left-p" id="p3">
+                        <div class="p-info"><b>JOUEUR 3</b><br>Score: 2100<br>Rang: #2</div>
+                    </div>
+                    <div class="c-slot right-p" id="p4">
+                        <div class="p-info"><b>JOUEUR 4</b><br>Score: 1200<br>Rang: #10</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="chat-live" id="chat"></div>
-
-            <div class="q-box" id="q-box">
-                <p id="q-txt" style="color:white; margin:0; font-size:0.8rem; font-weight:bold"></p>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px">
-                    <button style="background:rgba(255,255,255,0.1); border:1px solid var(--blue-rdc); color:white; padding:8px; border-radius:5px; font-size:0.7rem">Option A</button>
-                    <button style="background:rgba(255,255,255,0.1); border:1px solid var(--blue-rdc); color:white; padding:8px; border-radius:5px; font-size:0.7rem">Option B</button>
+            <div class="question-box" id="q-box">
+                <div class="q-text">Quelle est la monnaie de la RDC ?</div>
+                <div class="options-grid">
+                    <div class="btn-opt">Option A</div>
+                    <div class="btn-opt">Option B</div>
+                    <div class="btn-opt">Option C</div>
+                    <div class="btn-opt">Option D</div>
                 </div>
             </div>
+
+            <div class="live-chat" id="chat-box"></div>
+
         </div>
     </div>
 
     <script>
-        // Lancer le zoom UNIQUEMENT quand on passe en paysage
-        function checkOrientation() {
-            if (window.innerWidth > window.innerHeight) {
-                const view = document.getElementById('main-view');
-                if (!view.classList.contains('start-zoom')) {
-                    view.classList.add('start-zoom');
-                    startStudio();
-                }
-            }
-        }
-
-        window.addEventListener('resize', checkOrientation);
-        window.addEventListener('load', checkOrientation);
-
-        function startStudio() {
+        // Gestion des infos joueurs
+        function showPlayers() {
+            document.querySelectorAll('.c-slot').forEach(s => s.classList.add('show-info'));
             setTimeout(() => {
-                document.getElementById('q-box').classList.add('active');
-                document.getElementById('q-txt').innerText = "Quel pays partage sa frontière Est avec la RDC ?";
-                setInterval(simulateChat, 3000);
-                setInterval(showModals, 10000); // Modales auto toutes les 10s
+                document.querySelectorAll('.c-slot').forEach(s => s.classList.remove('show-info'));
+            }, 6000);
+        }
+
+        // Cycle de vie du live
+        setTimeout(() => {
+            showPlayers();
+            document.getElementById('q-box').classList.add('active');
+            
+            // Simulation Chat
+            const chat = document.getElementById('chat-box');
+            const msgs = ["Ali a rejoint", "Maman: Bonne chance !", "Kev a offert 10pts", "Jules a rejoint"];
+            setInterval(() => {
+                const d = document.createElement('div');
+                d.className = 'chat-msg';
+                d.innerHTML = msgs[Math.floor(Math.random()*msgs.length)];
+                chat.prepend(d);
+                if(chat.childNodes.length > 4) chat.lastChild.remove();
             }, 4000);
-        }
 
-        function simulateChat() {
-            const users = ["Bot_Kin", "Fans_Congo", "Expert_VFX", "Gaming_DRC"];
-            const msg = ["Force au joueur 1 !", "La question est dure", "Génie Congo en live !", "Wouah le studio !"];
-            const div = document.createElement('div');
-            div.className = 'chat-line';
-            div.innerHTML = `<b>${users[Math.floor(Math.random()*users.length)]}</b>: ${msg[Math.floor(Math.random()*msg.length)]}`;
-            const chat = document.getElementById('chat');
-            chat.prepend(div);
-            if(chat.childNodes.length > 4) chat.lastChild.remove();
-        }
-
-        function showModals() {
-            const slots = document.querySelectorAll('.c-slot');
-            slots.forEach(s => s.classList.add('active'));
-            setTimeout(() => slots.forEach(s => s.classList.remove('active')), 4000);
-        }
+        }, 5000);
     </script>
 </body>
 </html>
