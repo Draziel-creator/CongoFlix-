@@ -72,11 +72,11 @@
             gap: 2px; align-items: center; justify-items: center;
         }
 
-        /* Placement précis pour chaque cadre noir */
-        .pos-l1 { top: 21%; left: 6.5%; }  /* BORD GAUCHE (Tiré vers l'extérieur et plus haut) */
+        /* Placement des cercles : l1 et r2 sont au bord du téléphone et rabaissés */
+        .pos-l1 { top: 41%; left: 3.5%; }  /* BORD GAUCHE (Tiré vers le bord et plus bas) */
         .pos-l2 { top: 23%; left: 19.5%; } /* PRÈS DES JOUEURS GAUCHE */
         .pos-r1 { top: 23%; right: 19.5%; } /* PRÈS DES JOUEURS DROITE */
-        .pos-r2 { top: 21%; right: 6.5%; }  /* BORD DROITE (Tiré vers l'extérieur et plus haut) */
+        .pos-r2 { top: 41%; right: 3.5%; }  /* BORD DROITE (Tiré vers le bord et plus bas) */
 
         .v-box { display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .v-circ { 
@@ -106,15 +106,21 @@
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
         .btn-opt { background: rgba(255,255,255,0.15); border: 0.5px solid rgba(255,255,255,0.3); color: white; padding: 4px; font-size: 0.4rem; text-align: center; border-radius: 2px; }
 
-        #chat-box { position: absolute; bottom: 5%; right: 8.5%; width: 150px; height: 90px; display: flex; flex-direction: column-reverse; overflow: hidden; }
-        .chat-msg { margin-bottom: 4px; padding: 3px 6px; background: rgba(0,0,0,0.7); font-size: 0.55rem; border-radius: 3px; }
+        #chat-box { position: absolute; bottom: 5%; right: 8.5%; width: 150px; height: 90px; display: flex; flex-direction: column-reverse; overflow: hidden; pointer-events: none; }
+        .chat-msg { margin-bottom: 4px; padding: 3px 6px; background: rgba(0,0,0,0.7); font-size: 0.55rem; border-radius: 3px; animation: chatFade 0.5s ease-out; }
+        @keyframes chatFade { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
         .chat-name { color: var(--tiktok-blue); font-weight: bold; }
+        .chat-text { color: white; }
+        .chat-gift { color: var(--yellow-rdc); font-weight: bold; font-size: 0.45rem; }
         
-        .top-menu { position: absolute; top: 4%; left: 50%; transform: translateX(-50.5%); width: 50%; height: 8%; display: flex; justify-content: space-around; align-items: center; }
+        .top-menu { position: absolute; top: 4%; left: 50%; transform: translateX(-50.5%); width: 58%; height: 8%; display: flex; justify-content: space-around; align-items: center; }
         .menu-item { color: white; font-size: 0.6rem; font-weight: bold; text-transform: uppercase; }
 
         .player-modal { position: absolute; width: 48px; background: rgba(0, 10, 25, 0.98); border-radius: 2px; padding: 3px; color: white; font-size: 0.28rem; opacity: 0; transform: scale(0.5); transition: 0.3s; z-index: 100; border: 0.5px solid white; pointer-events: none; }
         .player-modal.show { opacity: 1; transform: scale(1); }
+        .c-slot:nth-child(5n+1) .player-modal, .c-slot:nth-child(5n+2) .player-modal { right: 115%; top: 0; border-right: 2px solid var(--tiktok-pink); }
+        .c-slot:nth-child(5n+3) .player-modal { bottom: 115%; left: 50%; transform: translateX(-50%) scale(0.5); border-bottom: 2px solid var(--yellow-rdc); }
+        .c-slot:nth-child(5n+4) .player-modal, .c-slot:nth-child(5n+5) .player-modal { left: 115%; top: 0; border-left: 2px solid var(--tiktok-blue); }
     </style>
 </head>
 <body>
@@ -139,7 +145,10 @@
             <div class="side-zone pos-r2" id="sz-r2"></div>
 
             <nav class="top-menu">
-                <div class="menu-item">Directs</div><div class="menu-item">Classement</div><div class="menu-item">Aide</div>
+                <div class="menu-item">Accueil</div>
+                <div class="menu-item">Directs</div>
+                <div class="menu-item">Classement</div>
+                <div class="menu-item">Aide</div>
             </nav>
 
             <div class="candidates-screen">
@@ -171,7 +180,7 @@
             document.getElementById('player-grid').innerHTML += `<div class="c-slot" onclick="showPlayer(${i})"><div class="player-modal" id="m${i}"><b>J${i}</b><br>Score: 0</div></div>`;
         }
 
-        // Générer 36 spectateurs (9 par zone x 4 zones) avec Noms et Provinces
+        // Générer 36 spectateurs (9 par zone)
         const names = ["Fan", "Rex", "Luz", "Dan", "Eve", "Madi", "Papy", "Toto", "Lia"];
         const provs = ["Kin", "Goma", "Lub", "Kng"];
 
@@ -206,11 +215,30 @@
             }
         }
 
+        function startChat() {
+            const msgs = [
+                {n: "Moussa", m: "Force au candidat !"}, 
+                {n: "Sarah", m: "C'est Lumumba sûr !", g: "+100 PTS"}, 
+                {n: "Gloire", m: "Vrai génie ce J4"},
+                {n: "Kevin", m: "Incroyable le studio", g: "DIAMANT"},
+                {n: "Julie", m: "Génie Congo !!!"}
+            ];
+            setInterval(() => {
+                const data = msgs[Math.floor(Math.random()*msgs.length)];
+                const div = document.createElement('div');
+                div.className = 'chat-msg';
+                div.innerHTML = `<span class="chat-name">${data.n}</span>: <span class="chat-text">${data.m}</span> ${data.g ? `<br><span class="chat-gift">${data.g}</span>` : ''}`;
+                chat.prepend(div);
+                if(chat.childNodes.length > 5) chat.lastChild.remove();
+            }, 2500);
+        }
+
         function checkOrientation() {
             if (window.innerWidth > window.innerHeight) {
                 studio.classList.add('animate-zoom');
                 setTimeout(() => {
                     uiLayer.classList.add('show');
+                    startChat();
                     setInterval(triggerSequence, 7500);
                 }, 8000);
             }
