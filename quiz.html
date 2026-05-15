@@ -4,193 +4,176 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Génie Congo - Studio TV Ultra-Live</title>
-    
     <style>
         :root {
             --overlay-img: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgv3Xb1xi808ij28d3b0nFah5mYidUcRD06nUga1R9L9d2JgQt-LAoQ0DNVZ7-6O8v4IkTc-hIrcLcvFwjUAz9LPJvjKqBPGzwwV6Byu57IWdU9BFUZfWCPk-2kCWMh1d5Naitqy1qugZ6iYGNl35-qVVqXt6GRajtV-cUpo-oqREvmUE9ORU752-J0AAEg/s1600/genie%20congo.png');
             --blue-rdc: #007bff;
             --yellow-rdc: #ffcc00;
+            --neon-glow: 0 0 15px var(--blue-rdc);
         }
 
-        body, html { 
-            margin: 0; padding: 0; width: 100vw; height: 100vh; 
-            background: #000; overflow: hidden; font-family: 'Arial', sans-serif;
-        }
+        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
 
-        /* --- BLOCAGE ROTATION --- */
-        #rotate-device {
-            position: fixed; inset: 0; background: #000; z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white; text-align: center; visibility: hidden;
+        /* --- BLOCAGE ET FORCE LANDSCAPE --- */
+        #rotate-screen {
+            position: fixed; inset: 0; background: radial-gradient(circle, #111, #000); z-index: 10000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
         }
-        @media (orientation: portrait) { #rotate-device { visibility: visible; } }
+        @media (orientation: landscape) { #rotate-screen { display: none; } }
         
-        .phone-icon {
-            width: 50px; height: 80px; border: 3px solid white; border-radius: 5px;
-            animation: rotateAnim 2s infinite; position: relative; margin-bottom: 20px;
-        }
-        @keyframes rotateAnim { 0% { transform: rotate(0deg); } 50% { transform: rotate(90deg); } 100% { transform: rotate(90deg); } }
+        .rotate-icon { width: 60px; height: 60px; border: 3px solid var(--yellow-rdc); border-radius: 10px; animation: rotateMe 2s infinite; }
+        @keyframes rotateMe { 0% { transform: rotate(0deg); } 70%, 100% { transform: rotate(90deg); } }
 
-        /* --- EFFET MIROIR GLOBAL (Toutes les 5s) --- */
-        .mirror-sweep {
-            position: absolute; inset: 0; z-index: 40; pointer-events: none;
-            background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
-            background-size: 200% 100%; animation: sweepMove 5s infinite linear;
-        }
-        @keyframes sweepMove { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+        /* --- ANIMATION ZOOM (Lancée par JS après rotation) --- */
+        .camera-zoom-init { transform: scale(1.6); opacity: 0; }
+        .start-zoom { animation: studioIntro 4s forwards cubic-bezier(0.15, 0, 0.15, 1); }
+        @keyframes studioIntro { to { transform: scale(1); opacity: 1; } }
 
-        /* --- ZOOM ENTRÉE --- */
-        .camera-zoom { animation: cameraEntry 5s forwards ease-out; width: 100%; height: 100%; position: relative; }
-        @keyframes cameraEntry { from { transform: scale(1.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
+        .studio-container { position: relative; width: 100%; height: 100%; }
         .studio-mask { position: absolute; inset: 0; background: var(--overlay-img) no-repeat center; background-size: 100% 100%; z-index: 10; pointer-events: none; }
 
-        /* --- MENU DU HAUT RÉALIGNÉ --- */
-        .top-menu {
+        /* --- MENU DU HAUT CADRÉ --- */
+        .top-nav {
             position: absolute; top: 4%; left: 50%; transform: translateX(-50%);
-            width: 60%; display: flex; justify-content: space-between; z-index: 20;
+            width: 55%; height: 30px; z-index: 25;
+            display: grid; grid-template-columns: repeat(4, 1fr); align-items: center;
         }
-        .menu-item { background: transparent; border: none; color: white; font-size: 0.65rem; font-weight: bold; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; }
+        .nav-btn { background: none; border: none; color: white; font-size: 0.6rem; font-weight: 900; text-transform: uppercase; cursor: pointer; text-shadow: 0 0 5px #000; }
 
-        .auth-zone { position: absolute; top: 3.5%; right: 4%; z-index: 20; display: flex; align-items: center; gap: 8px; }
-        .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--yellow-rdc); background: #222; }
-        .auth-label { color: white; font-size: 0.7rem; font-weight: bold; }
-
-        /* --- ZONE CANDIDATS 2X2 --- */
-        .candidates-container {
-            position: absolute; top: 32%; left: 50%; transform: translateX(-50%);
-            z-index: 5; display: flex; flex-direction: column; align-items: center; width: 220px;
+        /* --- ZONE CANDIDATS RÉDUITE ET MONTÉE --- */
+        .candidates-stage {
+            position: absolute; top: 28%; left: 50%; transform: translateX(-50%);
+            z-index: 20; text-align: center; width: 180px;
         }
-        .candidates-title {
-            color: var(--yellow-rdc); font-size: 0.7rem; font-weight: bold;
-            text-shadow: 0 0 10px var(--yellow-rdc); margin-bottom: 5px;
-            animation: pulseText 2s infinite;
-        }
-        @keyframes pulseText { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+        .cand-title { color: var(--yellow-rdc); font-size: 0.7rem; font-weight: bold; margin-bottom: 5px; text-shadow: var(--neon-glow); animation: blink 1.5s infinite; }
+        @keyframes blink { 50% { opacity: 0.4; } }
 
-        .grid-2x2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+        .grid-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .c-slot { 
-            height: 45px; background: rgba(0,0,0,0.7); border: 1.5px solid rgba(255,255,255,0.2); 
-            border-radius: 4px; position: relative; cursor: pointer;
+            height: 38px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); 
+            border-radius: 3px; position: relative; 
         }
 
-        /* --- MINI MODALES JOUEURS --- */
-        .p-info {
-            position: absolute; top: 0; width: 80px; height: 100%;
-            background: var(--blue-rdc); color: white; font-size: 0.5rem;
-            display: flex; flex-direction: column; justify-content: center; padding: 0 5px;
-            transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; z-index: -1;
+        /* --- MODALES NÉON AU-DESSUS --- */
+        .player-modal {
+            position: absolute; width: 90px; background: rgba(0, 30, 80, 0.95);
+            border: 1px solid var(--blue-rdc); box-shadow: var(--neon-glow);
+            padding: 5px; color: white; font-size: 0.55rem; z-index: 50;
+            opacity: 0; transition: 0.4s; pointer-events: none; border-radius: 5px;
         }
-        .left-p .p-info { right: 100%; border-radius: 4px 0 0 4px; transform: translateX(10px); }
-        .right-p .p-info { left: 100%; border-radius: 0 4px 4px 0; transform: translateX(-10px); }
-        
-        .c-slot.show-info .p-info { opacity: 1; transform: translateX(0); z-index: 15; }
+        .left-p .player-modal { right: 105%; }
+        .right-p .player-modal { left: 105%; }
+        .c-slot.active .player-modal { opacity: 1; transform: scale(1.1); }
 
-        /* --- CHAT ET MODALE QUESTION --- */
-        .live-chat {
-            position: absolute; bottom: 20px; right: 3%; width: 220px; height: 150px;
-            z-index: 30; display: flex; flex-direction: column-reverse;
-            mask-image: linear-gradient(to top, black 60%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to top, black 60%, transparent 100%);
-            overflow: hidden; pointer-events: none;
+        /* --- CHAT STYLE GAMING --- */
+        .chat-live {
+            position: absolute; bottom: 15px; right: 5%; width: 220px; height: 120px;
+            z-index: 30; display: flex; flex-direction: column-reverse; overflow: hidden;
         }
-        .chat-msg { color: white; font-size: 0.65rem; background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 4px; margin-bottom: 3px; animation: msgIn 0.3s forwards; }
-        @keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .chat-line {
+            background: linear-gradient(90deg, rgba(0,123,255,0.2), transparent);
+            border-left: 3px solid var(--blue-rdc); margin-bottom: 5px;
+            padding: 4px 10px; color: #fff; font-size: 0.65rem;
+            animation: slideChat 0.4s ease-out; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .chat-line b { color: var(--yellow-rdc); text-shadow: 0 0 5px var(--yellow-rdc); }
+        @keyframes slideChat { from { transform: translateX(30px); opacity: 0; } }
 
-        .question-box {
-            position: absolute; bottom: -300px; left: 4%; width: 52%;
-            background: rgba(0, 15, 40, 0.98); border: 2px solid var(--blue-rdc);
-            border-radius: 12px 12px 0 0; padding: 12px; z-index: 25;
-            transition: bottom 0.8s; box-shadow: 0 -5px 20px rgba(0, 123, 255, 0.4);
+        /* --- EFFET MIROIR --- */
+        .mirror { position: absolute; inset: 0; z-index: 35; pointer-events: none; background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%); background-size: 200% 100%; animation: sweep 6s infinite; }
+        @keyframes sweep { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .q-box {
+            position: absolute; bottom: -200px; left: 4%; width: 50%;
+            background: rgba(0,5,20,0.95); border-top: 3px solid var(--blue-rdc);
+            padding: 15px; z-index: 40; border-radius: 15px 15px 0 0;
+            transition: 1s cubic-bezier(0.17, 0.84, 0.44, 1);
         }
-        .question-box.active { bottom: 0; }
-        .btn-opt { background: rgba(255,255,255,0.05); border: 1px solid var(--blue-rdc); color: white; padding: 8px; border-radius: 6px; font-size: 0.7rem; cursor: pointer; }
+        .q-box.active { bottom: 0; }
     </style>
 </head>
 <body>
 
-    <div id="rotate-device">
-        <div class="phone-icon"></div>
-        <p>Veuillez tourner votre téléphone</p>
-        <small>Le studio nécessite le mode paysage</small>
+    <div id="rotate-screen">
+        <div class="rotate-icon"></div>
+        <h2 style="margin-top:20px">TOURNEZ VOTRE ÉCRAN</h2>
+        <p>Le studio TV s'active en mode paysage</p>
     </div>
 
-    <div class="camera-zoom">
-        <div class="mirror-sweep"></div>
-        <div class="studio-mask"></div>
+    <div class="camera-zoom-init" id="main-view">
+        <div class="studio-container">
+            <div class="mirror"></div>
+            <div class="studio-mask"></div>
 
-        <nav class="top-menu">
-            <button class="menu-item">Accueil</button>
-            <button class="menu-item">Directs</button>
-            <button class="menu-item">Classement</button>
-            <button class="menu-item">À Propos</button>
-        </nav>
+            <nav class="top-nav">
+                <button class="nav-btn">Accueil</button>
+                <button class="nav-btn">Directs</button>
+                <button class="nav-btn">Classement</button>
+                <button class="nav-btn">Aide</button>
+            </nav>
 
-        <div class="auth-zone">
-            <span class="auth-label">CONNEXION</span>
-            <div class="user-avatar"></div>
-        </div>
-
-        <div class="candidates-container">
-            <div class="candidates-title">CANDIDATS</div>
-            <div class="grid-2x2">
-                <div class="c-slot left-p" onclick="toggleInfo(this)">
-                    <div class="p-info"><b>Joueur 1</b><br>Score: 250<br>Niv: 5</div>
-                </div>
-                <div class="c-slot right-p" onclick="toggleInfo(this)">
-                    <div class="p-info"><b>Joueur 2</b><br>Score: 180<br>Niv: 3</div>
-                </div>
-                <div class="c-slot left-p" onclick="toggleInfo(this)">
-                    <div class="p-info"><b>Joueur 3</b><br>Score: 400<br>Niv: 8</div>
-                </div>
-                <div class="c-slot right-p" onclick="toggleInfo(this)">
-                    <div class="p-info"><b>Joueur 4</b><br>Score: 90<br>Niv: 2</div>
+            <div class="candidates-stage">
+                <div class="cand-title">CANDIDATS</div>
+                <div class="grid-mini">
+                    <div class="c-slot left-p" id="c1"><div class="player-modal"><b>JOUEUR 1</b><br>Score: 2450<br>Rang: #1</div></div>
+                    <div class="c-slot right-p" id="c2"><div class="player-modal"><b>JOUEUR 2</b><br>Score: 1900<br>Rang: #4</div></div>
+                    <div class="c-slot left-p" id="c3"><div class="player-modal"><b>JOUEUR 3</b><br>Score: 2100<br>Rang: #2</div></div>
+                    <div class="c-slot right-p" id="c4"><div class="player-modal"><b>JOUEUR 4</b><br>Score: 1200<br>Rang: #10</div></div>
                 </div>
             </div>
-        </div>
 
-        <div class="live-chat" id="chat-box"></div>
+            <div class="chat-live" id="chat"></div>
 
-        <div class="question-box" id="q-box">
-            <p id="q-text" style="color: white; font-weight: bold; margin: 0; font-size: 0.9rem;">Chargement...</p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
-                <button class="btn-opt">Option A</button>
-                <button class="btn-opt">Option B</button>
-                <button class="btn-opt">Option C</button>
-                <button class="btn-opt">Option D</button>
+            <div class="q-box" id="q-box">
+                <p id="q-txt" style="color:white; margin:0; font-size:0.8rem; font-weight:bold"></p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px">
+                    <button style="background:rgba(255,255,255,0.1); border:1px solid var(--blue-rdc); color:white; padding:8px; border-radius:5px; font-size:0.7rem">Option A</button>
+                    <button style="background:rgba(255,255,255,0.1); border:1px solid var(--blue-rdc); color:white; padding:8px; border-radius:5px; font-size:0.7rem">Option B</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        function toggleInfo(el) {
-            el.classList.toggle('show-info');
-            setTimeout(() => el.classList.remove('show-info'), 4000);
+        // Lancer le zoom UNIQUEMENT quand on passe en paysage
+        function checkOrientation() {
+            if (window.innerWidth > window.innerHeight) {
+                const view = document.getElementById('main-view');
+                if (!view.classList.contains('start-zoom')) {
+                    view.classList.add('start-zoom');
+                    startStudio();
+                }
+            }
         }
 
-        // Auto-show infos toutes les 5min (ici 10s pour tester)
-        setInterval(() => {
+        window.addEventListener('resize', checkOrientation);
+        window.addEventListener('load', checkOrientation);
+
+        function startStudio() {
+            setTimeout(() => {
+                document.getElementById('q-box').classList.add('active');
+                document.getElementById('q-txt').innerText = "Quel pays partage sa frontière Est avec la RDC ?";
+                setInterval(simulateChat, 3000);
+                setInterval(showModals, 10000); // Modales auto toutes les 10s
+            }, 4000);
+        }
+
+        function simulateChat() {
+            const users = ["Bot_Kin", "Fans_Congo", "Expert_VFX", "Gaming_DRC"];
+            const msg = ["Force au joueur 1 !", "La question est dure", "Génie Congo en live !", "Wouah le studio !"];
+            const div = document.createElement('div');
+            div.className = 'chat-line';
+            div.innerHTML = `<b>${users[Math.floor(Math.random()*users.length)]}</b>: ${msg[Math.floor(Math.random()*msg.length)]}`;
+            const chat = document.getElementById('chat');
+            chat.prepend(div);
+            if(chat.childNodes.length > 4) chat.lastChild.remove();
+        }
+
+        function showModals() {
             const slots = document.querySelectorAll('.c-slot');
-            slots.forEach(s => s.classList.add('show-info'));
-            setTimeout(() => slots.forEach(s => s.classList.remove('show-info')), 5000);
-        }, 15000);
-
-        const chatBox = document.getElementById('chat-box');
-        const msgs = ["<b>Ali</b> a rejoint", "<b>Kev</b> a offert 10pts", "<b>Maman</b>: Bonne chance !", "<b>Jules</b> a rejoint"];
-        
-        function addChat() {
-            const d = document.createElement('div');
-            d.className = 'chat-msg';
-            d.innerHTML = msgs[Math.floor(Math.random()*msgs.length)];
-            chatBox.prepend(d);
-            if(chatBox.childNodes.length > 5) chatBox.lastChild.remove();
+            slots.forEach(s => s.classList.add('active'));
+            setTimeout(() => slots.forEach(s => s.classList.remove('active')), 4000);
         }
-
-        setTimeout(() => {
-            setInterval(addChat, 3500);
-            document.getElementById('q-box').classList.add('active');
-            document.getElementById('q-text').innerText = "Quelle est la monnaie de la RDC ?";
-        }, 6000);
     </script>
 </body>
 </html>
