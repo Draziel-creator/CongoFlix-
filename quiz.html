@@ -18,12 +18,25 @@
             background: #000; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif;
         }
 
+        /* --- ALERTE ROTATION --- */
+        #rotate-device { 
+            position: fixed; inset: 0; background: #000; z-index: 9999; 
+            display: flex; flex-direction: column; justify-content: center; 
+            align-items: center; color: white; text-align: center;
+        }
+        .phone-icon {
+            width: 50px; height: 80px; border: 3px solid white; border-radius: 5px;
+            animation: rotatePhone 2s infinite ease-in-out; margin-bottom: 20px;
+        }
+        @keyframes rotatePhone { 0% { transform: rotate(0deg); } 50% { transform: rotate(90deg); } 100% { transform: rotate(0deg); } }
+        @media (orientation: landscape) { #rotate-device { display: none; } }
+
         .studio-container {
             position: relative; width: 100vw; height: 100vh;
             background: var(--overlay-img) no-repeat center;
             background-size: 100% 100%; display: none;
             justify-content: center; align-items: center;
-            filter: brightness(1.2); /* Studio bien éclairé */
+            filter: brightness(1.2);
         }
         @media (orientation: landscape) { .studio-container { display: flex; } }
 
@@ -40,28 +53,26 @@
             100% { opacity: 0; background-position: 100% 100%; }
         }
 
-        #rotate-device { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
-        @media (orientation: landscape) { #rotate-device { display: none; } }
-
         .animate-zoom { animation: cameraEntry 8s forwards cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes cameraEntry { from { background-size: 180% 180%; } to { background-size: 100% 100%; } }
 
         .ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 50; opacity: 0; transition: opacity 1s ease-in; }
         .ui-layer.show { opacity: 1; pointer-events: auto; }
 
-        /* --- SPECTATEURS (CADRES NOIRS EXTÉRIEURS) --- */
+        /* --- SPECTATEURS DANS LES CADRES NOIRS PRÈS DES JOUEURS --- */
         .side-zone {
-            position: absolute; width: 14%; height: 18%;
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+            position: absolute; width: 11%; height: 16%;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
         }
-        .pos-1 { top: 20%; left: 3%; }   
-        .pos-2 { top: 20%; right: 3%; }  
-        .pos-3 { bottom: 22%; left: 3%; } 
-        .pos-4 { bottom: 22%; right: 3%; }
+        /* Ajustés pour être exactement dans les cadres noirs à côté du centre */
+        .pos-1 { top: 30%; left: 11%; }   /* Cadre noir haut gauche interne */
+        .pos-2 { top: 30%; right: 11%; }  /* Cadre noir haut droite interne */
+        .pos-3 { bottom: 25%; left: 11%; } /* Cadre noir bas gauche interne */
+        .pos-4 { bottom: 25%; right: 11%; }/* Cadre noir bas droite interne */
 
         .v-box { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .v-circ { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--yellow-rdc); background: #222; }
-        .v-txt { color: white; font-size: 0.25rem; font-weight: bold; line-height: 0.9; margin-top: 1px; text-align: center; }
+        .v-circ { width: 16px; height: 16px; border-radius: 50%; border: 1.2px solid var(--yellow-rdc); background: #222; }
+        .v-txt { color: white; font-size: 0.22rem; font-weight: bold; line-height: 0.8; margin-top: 1px; text-align: center; transform: scale(0.95); }
 
         /* --- ZONE JOUEURS CENTRE --- */
         .candidates-screen {
@@ -69,9 +80,9 @@
         }
         .label-joueurs { position: absolute; top: -15px; left: 0; color: var(--yellow-rdc); font-size: 0.45rem; font-weight: bold; text-transform: uppercase; }
         .grid-5x2 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%; }
-        .c-slot { position: relative; aspect-ratio: 1/1; background: rgba(0,0,0,0.85); border: 0.5px solid rgba(255,255,255,0.2); border-radius: 1px; }
+        .c-slot { position: relative; aspect-ratio: 1/1; background: rgba(0,0,0,0.85); border: 0.5px solid rgba(255,255,255,0.2); }
 
-        /* --- MODALES QUESTIONS & RÉPONSES --- */
+        /* --- MODALES QUESTIONS --- */
         .question-box {
             position: absolute; bottom: 8.5%; left: 8.5%; width: 31%;
             background: rgba(0, 5, 20, 0.85); border-left: 3px solid var(--tiktok-blue);
@@ -82,18 +93,19 @@
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
         .btn-opt { background: rgba(255,255,255,0.15); border: 0.5px solid rgba(255,255,255,0.3); color: white; padding: 4px; font-size: 0.4rem; text-align: center; border-radius: 2px; }
 
-        /* --- CHAT ET CONNEXION --- */
+        /* --- CHAT COLORÉ --- */
+        #chat-box { position: absolute; bottom: 5%; right: 8.5%; width: 150px; height: 90px; display: flex; flex-direction: column-reverse; overflow: hidden; }
+        .chat-msg { margin-bottom: 4px; padding: 3px 6px; background: rgba(0,0,0,0.7); font-size: 0.55rem; border-radius: 3px; }
+        .chat-name { color: var(--tiktok-blue); font-weight: bold; }
+        .chat-text { color: white; }
+        .chat-gift { color: var(--yellow-rdc); font-weight: bold; }
+
+        /* --- MENU ET UI --- */
         .auth-zone { position: absolute; top: 4%; right: 3.5%; display: flex; align-items: center; gap: 8px; }
         .top-menu { position: absolute; top: 4%; left: 50%; transform: translateX(-50.5%); width: 58%; height: 8%; display: flex; justify-content: space-around; align-items: center; }
         .menu-item { color: white; font-size: 0.6rem; font-weight: bold; text-transform: uppercase; }
 
-        #chat-box { position: absolute; bottom: 5%; right: 8.5%; width: 150px; height: 90px; display: flex; flex-direction: column-reverse; overflow: hidden; }
-        .chat-msg { margin-bottom: 4px; padding: 3px 6px; background: rgba(0,0,0,0.7); font-size: 0.5rem; border-radius: 3px; line-height: 1.2; }
-        .chat-name { color: var(--tiktok-blue); font-weight: bold; }
-        .chat-text { color: white; }
-        .chat-gift { color: var(--yellow-rdc); font-weight: bold; font-style: italic; }
-
-        .player-modal { position: absolute; width: 48px; background: rgba(0, 10, 25, 0.98); border-radius: 2px; padding: 3px; color: white; font-size: 0.28rem; opacity: 0; transform: scale(0.5); transition: 0.3s; z-index: 100; border: 0.5px solid white; }
+        .player-modal { position: absolute; width: 48px; background: rgba(0, 10, 25, 0.98); border-radius: 2px; padding: 3px; color: white; font-size: 0.28rem; opacity: 0; transform: scale(0.5); transition: 0.3s; z-index: 100; border: 0.5px solid white; pointer-events: none; }
         .player-modal.show { opacity: 1; transform: scale(1); }
         .c-slot:nth-child(5n+1) .player-modal, .c-slot:nth-child(5n+2) .player-modal { right: 115%; top: 0; border-right: 2px solid var(--tiktok-pink); }
         .c-slot:nth-child(5n+3) .player-modal { bottom: 115%; left: 50%; transform: translateX(-50%) scale(0.5); border-bottom: 2px solid var(--yellow-rdc); }
@@ -102,7 +114,11 @@
 </head>
 <body>
 
-    <div id="rotate-device"><p>MODE PAYSAGE REQUIS</p></div>
+    <div id="rotate-device">
+        <div class="phone-icon"></div>
+        <p>VEUILLEZ PIVOTER VOTRE TÉLÉPHONE</p>
+    </div>
+
     <div id="mirror-overlay"></div>
 
     <div class="studio-container" id="main-studio">
@@ -127,10 +143,10 @@
             </div>
 
             <div class="question-box" id="q-box">
-                <div class="q-text">QUI A REMPORTÉ LE GÉNIE CONGO 2025 ?</div>
+                <div class="q-text">QUELLE EST LA CAPITALE DE LA RDC ?</div>
                 <div class="options-grid">
-                    <div class="btn-opt">A: J. Kabila</div><div class="btn-opt">B: F. Tshisekedi</div>
-                    <div class="btn-opt">C: P. Lumumba</div><div class="btn-opt">D: S. Kimbangu</div>
+                    <div class="btn-opt">A: Goma</div><div class="btn-opt">B: Kinshasa</div>
+                    <div class="btn-opt">C: Lubumbashi</div><div class="btn-opt">D: Matadi</div>
                 </div>
             </div>
 
@@ -145,12 +161,10 @@
         const chat = document.getElementById('chat-box');
         let currentModal = 1;
 
-        // Joueurs
         for(let i=1; i<=10; i++) {
             document.getElementById('player-grid').innerHTML += `<div class="c-slot" onclick="showPlayer(${i})"><div class="player-modal" id="m${i}"><b>J${i}</b><br>Score: 0</div></div>`;
         }
 
-        // Spectateurs
         const provs = ["Kin", "Goma", "L'shi", "Bukavu"];
         document.querySelectorAll('.side-zone').forEach(z => {
             for(let i=0; i<9; i++) {
@@ -179,15 +193,15 @@
         function startChat() {
             const msgs = [
                 {n: "Moussa", m: "Force à vous !"},
-                {n: "Sarah", m: "C'est la base !", g: "+50 pts"},
+                {n: "Sarah", m: "C'est la base !", g: "+100 PTS"},
                 {n: "Gloire", m: "Magnifique !"},
-                {n: "Dora", m: "J3 va gagner", g: "Cadeau 🎁"}
+                {n: "Dora", m: "J3 va gagner", g: "CADEAU 🎁"}
             ];
             setInterval(() => {
                 const data = msgs[Math.floor(Math.random()*msgs.length)];
                 const div = document.createElement('div');
                 div.className = 'chat-msg';
-                div.innerHTML = `<span class="chat-name">${data.n}:</span> <span class="chat-text">${data.m}</span> ${data.g ? `<br><span class="chat-gift">${data.g}</span>` : ''}`;
+                div.innerHTML = `<span class="chat-name">${data.n}</span>: <span class="chat-text">${data.m}</span> ${data.g ? `<br><span class="chat-gift">${data.g}</span>` : ''}`;
                 chat.prepend(div);
                 if(chat.childNodes.length > 5) chat.lastChild.remove();
             }, 3000);
@@ -199,7 +213,7 @@
                 setTimeout(() => {
                     uiLayer.classList.add('show');
                     startChat();
-                    setInterval(triggerSequence, 7000);
+                    setInterval(triggerSequence, 7500);
                 }, 8000);
             }
         }
