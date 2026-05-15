@@ -18,6 +18,29 @@
             background: #000; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif;
         }
 
+        /* --- EFFET LUMIÈRE ET MIROIR --- */
+        .studio-container {
+            position: relative; width: 100vw; height: 100vh;
+            background: var(--overlay-img) no-repeat center;
+            background-size: 100% 100%; display: none;
+            justify-content: center; align-items: center;
+            filter: brightness(1.15); /* Plus de lumière sur l'écran */
+        }
+        @media (orientation: landscape) { .studio-container { display: flex; } }
+
+        #mirror-overlay {
+            position: absolute; inset: 0; pointer-events: none; z-index: 1000;
+            background: linear-gradient(90deg, transparent, var(--tiktok-blue), var(--tiktok-pink), transparent);
+            background-size: 200% 100%; opacity: 0;
+        }
+        .mirror-active { animation: mirrorEffect 1.5s ease-in-out; }
+        @keyframes mirrorEffect {
+            0% { opacity: 0; background-position: -200% 0; }
+            50% { opacity: 0.4; }
+            100% { opacity: 0; background-position: 200% 0; }
+        }
+
+        /* --- ALERTE ROTATION --- */
         #rotate-device {
             position: fixed; inset: 0; background: #000; z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -25,146 +48,138 @@
         }
         @media (orientation: landscape) { #rotate-device { display: none; } }
 
-        .studio-container {
-            position: relative; width: 100vw; height: 100vh;
-            background: var(--overlay-img) no-repeat center;
-            background-size: 100% 100%; display: none;
-            justify-content: center; align-items: center;
-        }
-        @media (orientation: landscape) { .studio-container { display: flex; } }
-
         .animate-zoom { animation: cameraEntry 8s forwards cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes cameraEntry { from { background-size: 180% 180%; } to { background-size: 100% 100%; } }
 
         .ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 50; opacity: 0; transition: opacity 1s ease-in; }
         .ui-layer.show { opacity: 1; pointer-events: auto; }
 
-        /* --- SPECTATEURS SUR LES BORDS --- */
+        /* --- ZONES SPECTATEURS (IMAGE 1) --- */
         .side-zone {
-            position: absolute; width: 12%; height: 18%;
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
-            padding: 2px; pointer-events: none;
+            position: absolute; width: 11%; height: 16%;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px;
         }
-        .top-left { top: 25%; left: 5%; }
-        .top-right { top: 25%; right: 5%; }
-        .bottom-left { bottom: 25%; left: 5%; }
-        .bottom-right { bottom: 25%; right: 5%; }
+        .pos-1 { top: 23%; left: 7%; }   /* Cadre noir haut gauche */
+        .pos-2 { top: 23%; right: 7%; }  /* Cadre noir haut droite */
+        .pos-3 { bottom: 25%; left: 7%; } /* Cadre noir bas gauche */
+        .pos-4 { bottom: 25%; right: 7%; }/* Cadre noir bas droite */
 
-        .viewer-box { display: flex; flex-direction: column; align-items: center; }
-        .v-circle { 
-            width: 8px; height: 8px; border-radius: 50%; 
-            border: 1px solid var(--yellow-rdc); background: #222; 
-        }
-        .v-info { color: white; font-size: 0.18rem; text-align: center; line-height: 1; margin-top: 1px; font-weight: bold; }
+        .v-box { display: flex; flex-direction: column; align-items: center; }
+        .v-circ { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--yellow-rdc); background: #333; }
+        .v-txt { color: white; font-size: 0.22rem; font-weight: bold; transform: scale(0.9); margin-top: 1px; }
 
-        /* --- GRILLE CANDIDATS --- */
+        /* --- ZONE JOUEURS (IMAGE 3) --- */
         .candidates-screen {
-            position: absolute; top: 31%; left: 50%; transform: translateX(-50%);
-            width: 22%; display: flex; flex-direction: column; align-items: center;
+            position: absolute; top: 28%; /* Remonté sous l'étoile */
+            left: 50%; transform: translateX(-50%); width: 22%;
+        }
+        .label-joueurs { 
+            position: absolute; top: -12px; left: 0;
+            color: var(--yellow-rdc); font-size: 0.4rem; font-weight: bold; 
+            text-transform: uppercase; letter-spacing: 1px;
         }
         .grid-5x2 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%; }
         .c-slot { position: relative; aspect-ratio: 1/1; background: rgba(0,0,0,0.85); border: 0.5px solid rgba(255,255,255,0.2); cursor: pointer; }
 
-        .player-modal {
-            position: absolute; width: 48px; background: rgba(0, 10, 25, 0.98);
-            border-radius: 2px; padding: 3px; color: white; font-size: 0.28rem; 
-            opacity: 0; transform: scale(0.5); transition: 0.3s; z-index: 100;
-            pointer-events: none; border: 0.5px solid white;
-        }
+        /* --- MODALES ET MENU (Reste inchangé) --- */
+        .player-modal { position: absolute; width: 48px; background: rgba(0, 10, 25, 0.98); border-radius: 2px; padding: 3px; color: white; font-size: 0.28rem; opacity: 0; transform: scale(0.5); transition: 0.3s; z-index: 100; pointer-events: none; border: 0.5px solid white; }
         .player-modal.show { opacity: 1; transform: scale(1); }
-
         .c-slot:nth-child(5n+1) .player-modal, .c-slot:nth-child(5n+2) .player-modal { right: 115%; top: 0; border-right: 2px solid var(--tiktok-pink); }
         .c-slot:nth-child(5n+3) .player-modal { bottom: 115%; left: 50%; transform: translateX(-50%) scale(0.5); border-bottom: 2px solid var(--yellow-rdc); }
         .c-slot:nth-child(5n+3) .player-modal.show { transform: translateX(-50%) scale(1); }
         .c-slot:nth-child(5n+4) .player-modal, .c-slot:nth-child(5n+5) .player-modal { left: 115%; top: 0; border-left: 2px solid var(--tiktok-blue); }
 
-        /* --- AUTRES UI --- */
         .top-menu { position: absolute; top: 4%; left: 50%; transform: translateX(-50.5%); width: 58%; height: 8%; display: flex; justify-content: space-around; align-items: center; }
-        .menu-item { color: white; font-size: 0.6rem; font-weight: bold; text-transform: uppercase; }
+        .menu-item { color: white; font-size: 0.6rem; font-weight: bold; text-transform: uppercase; text-shadow: 0 1px 3px #000; }
         .auth-zone { position: absolute; top: 4%; right: 3.5%; display: flex; align-items: center; gap: 8px; }
-        .question-box { position: absolute; bottom: 8.5%; left: 8.5%; width: 31%; background: rgba(0, 5, 20, 0.95); border-left: 3px solid var(--tiktok-blue); padding: 8px; border-radius: 4px; opacity: 0; transition: 0.8s; }
-        .question-box.active { opacity: 1; }
+        .question-box { position: absolute; bottom: 8.5%; left: 8.5%; width: 31%; background: rgba(0, 5, 20, 0.95); border-left: 3px solid var(--tiktok-blue); padding: 8px; border-radius: 4px; opacity: 0; transform: translateY(15px); transition: 0.8s; }
+        .question-box.active { opacity: 1; transform: translateY(0); }
         #chat-box { position: absolute; bottom: 5%; right: 8.5%; width: 140px; height: 80px; display: flex; flex-direction: column-reverse; overflow: hidden; }
-        .chat-msg { margin-bottom: 3px; padding: 2px 5px; background: rgba(0,0,0,0.6); font-size: 0.45rem; color: white; border-radius: 2px; }
+        .chat-msg { margin-bottom: 3px; padding: 2px 5px; background: rgba(0,0,0,0.6); font-size: 0.45rem; border-radius: 2px; }
     </style>
 </head>
 <body>
 
-    <div id="rotate-device"><p>MODE PAYSAGE REQUIS</p></div>
+    <div id="rotate-device"><div class="phone-icon"></div></div>
+    <div id="mirror-overlay"></div>
 
     <div class="studio-container" id="main-studio">
         <div class="ui-layer" id="ui-layer">
-            <div class="side-zone top-left" id="sz1"></div>
-            <div class="side-zone top-right" id="sz2"></div>
-            <div class="side-zone bottom-left" id="sz3"></div>
-            <div class="side-zone bottom-right" id="sz4"></div>
+            <div class="side-zone pos-1" id="sz1"></div>
+            <div class="side-zone pos-2" id="sz2"></div>
+            <div class="side-zone pos-3" id="sz3"></div>
+            <div class="side-zone pos-4" id="sz4"></div>
 
             <nav class="top-menu">
                 <div class="menu-item">Accueil</div><div class="menu-item">Directs</div><div class="menu-item">Classement</div><div class="menu-item">Aide</div>
             </nav>
 
+            <div class="auth-zone">
+                <span style="color:white; font-size:0.55rem; font-weight:bold;">CONNEXION</span>
+                <div style="width:20px; height:20px; border-radius:50%; border:1.5px solid gold; background: #222;"></div>
+            </div>
+
             <div class="candidates-screen">
+                <div class="label-joueurs">JOUEURS</div>
                 <div class="grid-5x2" id="player-grid"></div>
             </div>
 
             <div class="question-box" id="q-box">
-                <div style="color:white; font-size:0.5rem;">STUDIO LIVE</div>
+                <div style="color:white; font-size:0.55rem; font-weight:bold;">PRÊT POUR LA QUESTION ?</div>
             </div>
-
             <div id="chat-box"></div>
         </div>
     </div>
 
     <script>
-        const grid = document.getElementById('player-grid');
+        const studio = document.getElementById('main-studio');
+        const uiLayer = document.getElementById('ui-layer');
+        const mirror = document.getElementById('mirror-overlay');
         let currentModal = 1;
 
-        // Générer les 10 candidats
+        // Création des 10 joueurs
         for(let i=1; i<=10; i++) {
-            const slot = document.createElement('div');
-            slot.className = 'c-slot';
-            slot.onclick = () => showPlayer(i);
-            slot.innerHTML = `<div class="player-modal" id="m${i}"><b>J${i}</b><br>Score: 0</div>`;
-            grid.appendChild(slot);
+            document.getElementById('player-grid').innerHTML += `<div class="c-slot" onclick="showPlayer(${i})"><div class="player-modal" id="m${i}"><b>J${i}</b><br>Score: 0</div></div>`;
         }
 
-        // Générer les spectateurs sur les côtés
-        const provinces = ["Kin", "Goma", "Lubum", "Matadi"];
-        document.querySelectorAll('.side-zone').forEach(zone => {
+        // Création des 36 spectateurs (9x4 zones)
+        const provs = ["Nord-Kivu", "Kinshasa", "Katanga", "Kongo-C"];
+        document.querySelectorAll('.side-zone').forEach(z => {
             for(let i=0; i<9; i++) {
-                zone.innerHTML += `
-                    <div class="viewer-box">
-                        <div class="v-circle"></div>
-                        <div class="v-info">Fan<br>${provinces[Math.floor(Math.random()*4)]}</div>
-                    </div>`;
+                z.innerHTML += `<div class="v-box"><div class="v-circ"></div><div class="v-txt">Fan<br>${provs[Math.floor(Math.random()*4)]}</div></div>`;
             }
         });
 
-        function checkOrientation() {
-            if (window.innerWidth > window.innerHeight) {
-                document.getElementById('main-studio').classList.add('animate-zoom');
-                setTimeout(() => {
-                    document.getElementById('ui-layer').classList.add('show');
-                    setInterval(orderlyModals, 3000); 
-                }, 8000);
-            }
+        function triggerQuestion() {
+            mirror.classList.add('mirror-active');
+            setTimeout(() => {
+                mirror.classList.remove('mirror-active');
+                document.getElementById('q-box').classList.add('active');
+                showOrderly();
+            }, 1500);
         }
-        window.addEventListener('resize', checkOrientation);
-        window.addEventListener('load', checkOrientation);
 
-        function orderlyModals() {
+        function showOrderly() {
             const m = document.getElementById('m' + currentModal);
             if(m) {
                 m.classList.add('show');
-                setTimeout(() => m.classList.remove('show'), 2000);
+                setTimeout(() => m.classList.remove('show'), 3000);
                 currentModal = currentModal >= 10 ? 1 : currentModal + 1;
             }
         }
 
-        function showPlayer(id) {
-            const m = document.getElementById('m' + id);
-            m.classList.toggle('show');
+        function checkOrientation() {
+            if (window.innerWidth > window.innerHeight) {
+                studio.classList.add('animate-zoom');
+                setTimeout(() => {
+                    uiLayer.classList.add('show');
+                    setInterval(triggerQuestion, 6000); 
+                }, 8000);
+            }
         }
+        window.addEventListener('load', checkOrientation);
+        window.addEventListener('resize', checkOrientation);
+        function showPlayer(id) { document.getElementById('m' + id).classList.toggle('show'); }
     </script>
 </body>
 </html>
