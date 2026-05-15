@@ -18,7 +18,6 @@
             background: #000; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* --- ALERTE ROTATION --- */
         #rotate-device {
             position: fixed; inset: 0; background: #000; z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -26,7 +25,6 @@
         }
         @media (orientation: landscape) { #rotate-device { display: none; } }
 
-        /* --- STUDIO & ZOOM 10 SECONDES --- */
         .studio-container {
             position: relative; width: 100vw; height: 100vh;
             background: var(--overlay-img) no-repeat center;
@@ -43,76 +41,83 @@
             to { background-size: 100% 100%; } 
         }
 
-        /* --- UI LAYER (CACHÉE AU DÉBUT) --- */
         .ui-layer { 
             position: absolute; inset: 0; pointer-events: none; z-index: 50; 
             opacity: 0; transition: opacity 1s ease-in;
         }
         .ui-layer.show { opacity: 1; pointer-events: auto; }
 
-        /* --- MENU HAUT (DANS LES CADRES PNG) --- */
+        /* --- MENU DANS LES CADRES SUPÉRIEURS --- */
         .top-menu {
-            position: absolute; top: 12.2%; left: 50%; transform: translateX(-50%);
-            width: 44%; height: 4.5%; display: flex; justify-content: space-between;
+            position: absolute; top: 12.5%; left: 50%; transform: translateX(-50%);
+            width: 44.5%; height: 4.5%; display: flex; justify-content: space-between;
         }
         .menu-item { 
-            width: 24%; display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 0.45rem; font-weight: 900; 
+            width: 21%; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 0.42rem; font-weight: 900; 
             text-transform: uppercase; text-shadow: 0 1px 2px #000;
         }
 
-        /* --- CONNEXION (DANS LE CADRE DROITE) --- */
         .auth-zone { 
             position: absolute; top: 11.5%; right: 9.3%; 
             display: flex; align-items: center; gap: 5px; 
         }
 
-        /* --- ZONE CANDIDATS : TRÈS PETITE ET COLLÉE À L'ÉTOILE --- */
+        /* --- ZONE CANDIDATS : GRILLE 3x2 RÉDUITE --- */
         .candidates-screen {
-            position: absolute; top: 26.5%; left: 50%; transform: translateX(-50%);
-            width: 9%; height: 12%; display: flex; flex-direction: column; align-items: center;
+            position: absolute; top: 26%; left: 50%; transform: translateX(-50%);
+            width: 14%; height: 11%; display: flex; flex-direction: column; align-items: center;
         }
         .candidates-title { 
-            color: var(--yellow-rdc); font-size: 0.32rem; font-weight: bold; 
+            color: var(--yellow-rdc); font-size: 0.35rem; font-weight: bold; 
             margin-bottom: 2px; letter-spacing: 1px;
         }
         
-        .grid-2x2 { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 3px; 
-            width: 100%; aspect-ratio: 1/1;
+        .grid-3x2 { 
+            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); 
+            gap: 4px; width: 100%; height: 100%;
         }
         .c-slot { 
             position: relative; background: rgba(255,255,255,0.03); 
-            border: 0.3px solid rgba(255,255,255,0.2); border-radius: 1px;
+            border: 0.3px solid rgba(255,255,255,0.15); border-radius: 1px;
         }
 
-        /* --- MODALES JOUEURS --- */
+        /* --- MODALES DIRECTIONNELLES --- */
         .player-modal {
-            position: absolute; width: 50px; background: rgba(0, 10, 25, 0.95);
+            position: absolute; width: 45px; background: rgba(0, 10, 25, 0.95);
             border-radius: 2px; padding: 2px; color: white; font-size: 0.28rem; 
             opacity: 0; transform: scale(0.5); transition: 0.3s; z-index: 100;
+            pointer-events: none;
         }
-        .c-slot:nth-child(odd) .player-modal { right: 115%; top: 0; border-right: 2px solid var(--tiktok-pink); }
-        .c-slot:nth-child(even) .player-modal { left: 115%; top: 0; border-left: 2px solid var(--tiktok-blue); }
         .player-modal.show { opacity: 1; transform: scale(1); }
 
-        /* --- BOX QUESTION --- */
+        /* Gauche (Slots 1, 4) */
+        .c-slot:nth-child(1) .player-modal, .c-slot:nth-child(4) .player-modal { right: 110%; top: 0; border-right: 2px solid var(--tiktok-pink); }
+        /* Milieu Haut (Slot 2) */
+        .c-slot:nth-child(2) .player-modal { bottom: 110%; left: 50%; transform: translateX(-50%) scale(0.5); border-bottom: 2px solid var(--yellow-rdc); }
+        .c-slot:nth-child(2) .player-modal.show { transform: translateX(-50%) scale(1); }
+        /* Milieu Bas (Slot 5) */
+        .c-slot:nth-child(5) .player-modal { top: 110%; left: 50%; transform: translateX(-50%) scale(0.5); border-top: 2px solid var(--yellow-rdc); }
+        .c-slot:nth-child(5) .player-modal.show { transform: translateX(-50%) scale(1); }
+        /* Droite (Slots 3, 6) */
+        .c-slot:nth-child(3) .player-modal, .c-slot:nth-child(6) .player-modal { left: 110%; top: 0; border-left: 2px solid var(--tiktok-blue); }
+
+        /* --- QUESTION BOX --- */
         .question-box {
-            position: absolute; bottom: 8.5%; left: 8.5%; width: 32%;
+            position: absolute; bottom: 9%; left: 8.5%; width: 32%;
             background: rgba(0, 5, 20, 0.9); border-left: 3px solid var(--tiktok-blue);
-            padding: 10px; border-radius: 4px; opacity: 0; transform: translateY(20px); transition: 0.8s;
+            padding: 8px; border-radius: 4px; opacity: 0; transform: translateY(10px); transition: 0.8s;
         }
         .question-box.active { opacity: 1; transform: translateY(0); }
-        .q-text { color: white; font-size: 0.6rem; font-weight: bold; margin-bottom: 8px; }
-        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        .btn-opt { background: rgba(255,255,255,0.1); border: 0.5px solid rgba(255,255,255,0.2); color: white; padding: 4px; font-size: 0.4rem; text-align: center; border-radius: 2px; }
+        .q-text { color: white; font-size: 0.55rem; font-weight: bold; margin-bottom: 6px; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        .btn-opt { background: rgba(255,255,255,0.08); border: 0.4px solid rgba(255,255,255,0.2); color: white; padding: 3px; font-size: 0.38rem; text-align: center; border-radius: 2px; }
 
-        /* --- CHAT --- */
         #chat-box {
-            position: absolute; bottom: 5%; right: 8.5%; width: 160px; height: 85px;
+            position: absolute; bottom: 5%; right: 8.5%; width: 140px; height: 80px;
             display: flex; flex-direction: column-reverse; overflow: hidden;
         }
-        .chat-msg { margin-bottom: 3px; padding: 2px 6px; background: rgba(0,0,0,0.6); font-size: 0.48rem; border-radius: 3px; border-left: 2px solid #333; }
+        .chat-msg { margin-bottom: 3px; padding: 2px 6px; background: rgba(0,0,0,0.6); font-size: 0.45rem; border-radius: 3px; border-left: 2px solid #333; }
     </style>
 </head>
 <body>
@@ -133,22 +138,24 @@
             </nav>
 
             <div class="auth-zone">
-                <span style="color:white; font-size:0.42rem; font-weight:900;">CONNEXION</span>
-                <div style="width:16px; height:16px; border-radius:50%; border:1px solid gold; background: radial-gradient(circle, #555, #000);"></div>
+                <span style="color:white; font-size:0.4rem; font-weight:900;">CONNEXION</span>
+                <div style="width:14px; height:14px; border-radius:50%; border:1px solid gold; background: radial-gradient(circle, #555, #000);"></div>
             </div>
 
             <div class="candidates-screen">
                 <div class="candidates-title">CANDIDATS</div>
-                <div class="grid-2x2">
+                <div class="grid-3x2">
                     <div class="c-slot" onclick="showPlayer(0)"><div class="player-modal" id="m0"><b>JOUEUR 1</b><br>Score: 0</div></div>
                     <div class="c-slot" onclick="showPlayer(1)"><div class="player-modal" id="m1"><b>JOUEUR 2</b><br>Score: 0</div></div>
                     <div class="c-slot" onclick="showPlayer(2)"><div class="player-modal" id="m2"><b>JOUEUR 3</b><br>Score: 0</div></div>
                     <div class="c-slot" onclick="showPlayer(3)"><div class="player-modal" id="m3"><b>JOUEUR 4</b><br>Score: 0</div></div>
+                    <div class="c-slot" onclick="showPlayer(4)"><div class="player-modal" id="m4"><b>JOUEUR 5</b><br>Score: 0</div></div>
+                    <div class="c-slot" onclick="showPlayer(5)"><div class="player-modal" id="m5"><b>JOUEUR 6</b><br>Score: 0</div></div>
                 </div>
             </div>
 
             <div class="question-box" id="q-box">
-                <div class="q-text">En attente de la question...</div>
+                <div class="q-text">En attente...</div>
                 <div class="options-grid">
                     <div class="btn-opt">A</div><div class="btn-opt">B</div>
                     <div class="btn-opt">C</div><div class="btn-opt">D</div>
@@ -167,14 +174,12 @@
         function startStudio() {
             if (window.innerWidth > window.innerHeight) {
                 studio.classList.add('animate-zoom');
-                
-                // On attend la fin du zoom (10s) pour afficher l'interface
                 setTimeout(() => {
                     uiLayer.classList.add('show');
                     qBox.classList.add('active');
                     qBox.querySelector('.q-text').innerText = "BIENVENUE SUR GÉNIE CONGO !";
                     startChat();
-                    setInterval(autoCycleModals, 12000);
+                    setInterval(autoCycleModals, 15000);
                 }, 10000);
             }
         }
@@ -183,8 +188,8 @@
             document.querySelectorAll('.player-modal').forEach((m, i) => {
                 setTimeout(() => {
                     m.classList.add('show');
-                    setTimeout(() => m.classList.remove('show'), 4000);
-                }, i * 500);
+                    setTimeout(() => m.classList.remove('show'), 5000);
+                }, i * 800);
             });
         }
 
@@ -194,18 +199,17 @@
 
         function startChat() {
             const chat = document.getElementById('chat-box');
-            const msgs = ["Kinshasa en force! 🇨🇩", "Le studio est magnifique", "Allez les candidats!", "Je vote A"];
+            const msgs = ["Kinshasa en force! 🇨🇩", "Magnifique studio !", "Allez les 6 candidats!", "C'est la capitale !"];
             setInterval(() => {
                 const div = document.createElement('div');
                 div.className = 'chat-msg';
                 div.innerHTML = `<span style="color:var(--tiktok-blue)">User:</span> <span style="color:white">${msgs[Math.floor(Math.random()*msgs.length)]}</span>`;
                 chat.prepend(div);
                 if(chat.childNodes.length > 4) chat.lastChild.remove();
-            }, 4000);
+            }, 4500);
         }
 
         window.onload = startStudio;
-        window.onresize = () => { if(window.innerWidth > window.innerHeight) location.reload(); };
     </script>
 </body>
 </html>
