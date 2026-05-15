@@ -18,7 +18,6 @@
             background: #000; overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* --- BLOCAGE ROTATION --- */
         #rotate-device {
             position: fixed; inset: 0; background: #000; z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -26,91 +25,90 @@
         }
         @media (orientation: landscape) { #rotate-device { display: none; } }
 
-        /* --- STUDIO PLEIN ÉCRAN --- */
         .studio-container {
             position: relative;
             width: 100vw; height: 100vh;
             background: var(--overlay-img) no-repeat center;
             background-size: 100% 100%;
             visibility: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; justify-content: center; align-items: center;
         }
         @media (orientation: landscape) { .studio-container { visibility: visible; } }
 
-        /* --- ANIMATION ZOOM SUR L'IMAGE SEULEMENT --- */
         .animate-zoom {
             animation: cameraEntry 4s forwards cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         @keyframes cameraEntry { 
-            from { background-size: 150% 150%; } 
+            from { background-size: 140% 140%; } 
             to { background-size: 100% 100%; } 
         }
 
-        /* --- INTERFACE FIXE (NE ZOOM PAS) --- */
         .ui-layer {
             position: absolute; inset: 0; width: 100%; height: 100%; z-index: 50;
-            pointer-events: none; /* Laisse cliquer à travers si besoin */
+            pointer-events: none;
         }
         .ui-layer * { pointer-events: auto; }
 
-        /* --- MENU HAUT REPLACÉ --- */
+        /* --- MENU HAUT : ÉLARGI POUR ÉVITER LA CASSE --- */
         .top-menu {
             position: absolute; top: 12%; left: 50%; transform: translateX(-50%);
-            width: 42%; display: flex; justify-content: space-between;
+            width: 60%; display: flex; justify-content: space-around;
         }
-        .menu-item { color: white; font-size: 0.55rem; font-weight: 800; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
+        .menu-item { 
+            color: white; font-size: 0.5rem; font-weight: 800; 
+            text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            white-space: nowrap;
+        }
 
-        .auth-zone { position: absolute; top: 12%; right: 9%; display: flex; align-items: center; gap: 5px; }
+        .auth-zone { position: absolute; top: 11.5%; right: 9%; display: flex; align-items: center; gap: 5px; }
 
-        /* --- ZONE CANDIDATS (Ajustée à l'écran central) --- */
+        /* --- ZONE CANDIDATS : RÉDUITE AU MAXIMUM --- */
         .candidates-screen {
-            position: absolute; top: 29.5%; left: 50%; transform: translateX(-50%);
-            width: 20%; height: 20%;
+            position: absolute; top: 31%; left: 50%; transform: translateX(-50%);
+            width: 14%; height: 16%;
             display: flex; flex-direction: column; align-items: center;
+            justify-content: center;
         }
         .candidates-title {
-            color: var(--yellow-rdc); font-size: 0.45rem; font-weight: bold;
-            margin-bottom: 2px; /* Collé à l'étoile du décor */
+            color: var(--yellow-rdc); font-size: 0.35rem; font-weight: bold;
+            margin-bottom: 2px; text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
         }
         .grid-2x2 { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 4px; 
-            width: 85%; height: 80%; 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 3px; 
+            width: 100%; height: 75%; 
         }
         .c-slot { 
-            background: rgba(255,255,255,0.05); 
-            border: 0.5px solid rgba(255,255,255,0.2); 
-            aspect-ratio: 1 / 1; /* Carré parfait */
-            border-radius: 2px;
+            background: rgba(255,255,255,0.03); 
+            border: 0.3px solid rgba(255,255,255,0.15); 
+            border-radius: 1px;
         }
 
         /* --- MODALE QUESTION --- */
         .question-box {
             position: absolute; bottom: 8%; left: 8%; width: 32%;
-            background: rgba(0, 10, 30, 0.9); border-left: 4px solid var(--tiktok-blue);
-            padding: 10px; border-radius: 6px; opacity: 0; transition: 1s;
+            background: rgba(0, 10, 30, 0.85); border-left: 3px solid var(--tiktok-blue);
+            padding: 8px; border-radius: 5px; opacity: 0; transition: 1s;
         }
         .question-box.active { opacity: 1; }
-        .q-text { color: white; font-size: 0.7rem; font-weight: bold; margin-bottom: 6px; }
+        .q-text { color: white; font-size: 0.65rem; font-weight: bold; margin-bottom: 5px; }
         .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
         .btn-opt { 
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: white; padding: 4px; border-radius: 3px; font-size: 0.5rem; text-align: center;
+            background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.2);
+            color: white; padding: 3px; border-radius: 2px; font-size: 0.45rem; text-align: center;
         }
 
         /* --- CHAT --- */
         .live-chat {
-            position: absolute; bottom: 5%; right: 8%; width: 180px; height: 120px;
+            position: absolute; bottom: 5%; right: 8%; width: 160px; height: 100px;
             display: flex; flex-direction: column-reverse; overflow: hidden;
         }
         .chat-msg { 
-            animation: slideIn 0.3s ease-out; margin-bottom: 4px; padding: 3px 8px; border-radius: 10px;
-            background: rgba(0, 0, 0, 0.4); font-size: 0.6rem;
+            animation: slideIn 0.3s ease-out; margin-bottom: 3px; padding: 2px 6px; border-radius: 8px;
+            background: rgba(0, 0, 0, 0.4); font-size: 0.55rem;
         }
-        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideIn { from { transform: translateX(15px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         
-        .chat-user { font-weight: 800; margin-right: 4px; }
+        .chat-user { font-weight: 800; margin-right: 3px; }
         .user-pink { color: var(--tiktok-pink); }
         .user-blue { color: var(--tiktok-blue); }
         .user-gold { color: var(--yellow-rdc); }
@@ -120,8 +118,8 @@
 <body>
 
     <div id="rotate-device">
-        <div style="width: 40px; height: 70px; border: 3px solid white; border-radius: 5px; animation: rotate 2s infinite;"></div>
-        <p>BASCULEZ L'ÉCRAN</p>
+        <div style="width: 30px; height: 50px; border: 2px solid white; border-radius: 4px; animation: rotate 2s infinite;"></div>
+        <p style="font-size: 0.8rem; margin-top: 10px;">BASCULEZ L'ÉCRAN</p>
     </div>
 
     <div class="studio-container" id="main-studio">
@@ -135,8 +133,8 @@
             </nav>
 
             <div class="auth-zone">
-                <span style="color:white; font-size:0.5rem; font-weight:800;">CONNEXION</span>
-                <div style="width:20px; height:20px; border-radius:50%; border:1px solid gold; background:#222;"></div>
+                <span style="color:white; font-size:0.45rem; font-weight:800; letter-spacing: 0.5px;">CONNEXION</span>
+                <div style="width:18px; height:18px; border-radius:50%; border:1px solid gold; background: radial-gradient(circle, #444, #111);"></div>
             </div>
 
             <div class="candidates-screen">
@@ -150,7 +148,7 @@
             </div>
 
             <div class="question-box" id="q-box">
-                <div class="q-text">Préparation du plateau...</div>
+                <div class="q-text">Initialisation...</div>
                 <div class="options-grid">
                     <div class="btn-opt">Option A</div>
                     <div class="btn-opt">Option B</div>
@@ -170,19 +168,21 @@
 
         function initStudio() {
             if (window.innerWidth > window.innerHeight) {
-                // On applique le zoom uniquement sur le container (image de fond)
                 studio.classList.add('animate-zoom');
                 
                 setTimeout(() => {
                     qBox.querySelector('.q-text').innerText = "Quelle est la capitale de la RDC ?";
                     qBox.classList.add('active');
-                }, 3500);
+                }, 3000);
 
                 startChat();
             }
         }
 
-        window.addEventListener('resize', initStudio);
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > window.innerHeight) location.reload();
+        });
+        
         window.addEventListener('load', initStudio);
 
         function startChat() {
@@ -193,8 +193,8 @@
                 msg.className = 'chat-msg';
                 msg.innerHTML = `<span class="chat-user ${u.c}">${u.n}:</span><span style="color:white">Go go go !</span>`;
                 chatBox.prepend(msg);
-                if(chatBox.childNodes.length > 4) chatBox.lastChild.remove();
-            }, 3000);
+                if(chatBox.childNodes.length > 5) chatBox.lastChild.remove();
+            }, 2500);
         }
     </script>
 </body>
