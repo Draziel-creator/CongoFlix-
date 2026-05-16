@@ -9,171 +9,190 @@
         :root {
             --gold-border: rgba(245, 209, 112, 0.4);
             --gold-text: #f5d170;
-            --dark-glass: rgba(15, 15, 15, 0.9);
+            --dark-glass: rgba(10, 10, 10, 0.95);
+            --verified-blue: #0095f6;
         }
 
         body {
             margin: 0;
             background-color: #000;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: white;
             -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
 
-        /* --- SLIDER RECTANGLE (Plus court) --- */
+        /* --- LOGO LÉOPARD EN HAUT --- */
+        .top-logo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            height: 50px;
+            z-index: 100;
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+        }
+
+        /* --- SLIDER RECTANGLE AVEC NOUVELLE IMAGE --- */
         .hero-slider {
             position: relative;
             width: 100%;
-            height: 280px; /* Rectangle et non carré */
-            background: url('https://img.freepik.com/photos-gratuite/leopard-afrique-afrique-du-sud_1150-13840.jpg') center/cover;
+            height: 250px; /* Légèrement réduit pour remonter le contenu */
+            background: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjaOZoAEtzfyrJbUC06AfGi65jAvxeY2-UAmg7-BjnwkQZ72scwlx-aV8k61TXp9y-CJzdE1snrgUAb2i4c1cy0hCn-w0eUGTexBa0XFMKoPFgjzFM92GOTt39vdnjQohLpvT5_U8dKRiBXOGyHdlZp2oyT3HKHlvMcZbui-Dv7-EiwfAmhc3R22uVSQpWS/s320/1000012980.png') center/cover;
             overflow: hidden;
         }
 
-        /* Flou profond en haut et en bas */
+        /* Effet Nuage Noir profond (Vignettage) */
         .hero-slider::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(to bottom, 
-                #000 0%, 
-                rgba(0,0,0,0.4) 20%, 
-                rgba(0,0,0,0.4) 80%, 
-                #000 100%);
+            background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 100%),
+                        linear-gradient(to bottom, #000 0%, transparent 25%, transparent 75%, #000 100%);
             z-index: 1;
         }
 
         .hero-content {
             position: absolute;
-            bottom: 40px;
+            bottom: 30px;
             left: 20px;
             z-index: 2;
         }
 
-        .hero-content h1 { font-size: 1.3rem; margin: 0; line-height: 1.1; }
-        .hero-content p { font-size: 0.7rem; color: #aaa; margin: 5px 0 10px; }
+        .hero-content h1 { font-size: 1.4rem; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
+        .hero-content .subtitle { font-size: 0.9rem; color: var(--gold-text); font-weight: 600; margin-top: -2px; display: block; }
+        .hero-content p { font-size: 0.65rem; color: #ccc; margin: 4px 0; opacity: 0.8; }
 
-        /* --- RECHERCHE FINE --- */
-        .search-area { padding: 0 15px; margin-top: -20px; position: relative; z-index: 10; }
+        /* --- RECHERCHE --- */
+        .search-area { padding: 0 15px; margin-top: -22px; position: relative; z-index: 10; }
         .search-box {
-            background: #0a0a0a;
+            background: #0d0d0d;
             border: 0.5px solid var(--gold-border);
-            border-radius: 8px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
-            padding: 8px 12px;
+            padding: 10px 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        .search-box input { background: transparent; border: none; color: #666; font-size: 0.75rem; flex: 1; margin: 0 10px; }
-        .search-box i { font-size: 0.8rem; color: var(--gold-text); }
+        .search-box input { background: transparent; border: none; color: #eee; font-size: 0.8rem; flex: 1; margin: 0 10px; }
+        .search-box i { font-size: 0.9rem; color: var(--gold-text); }
 
-        /* --- CATEGORIES MINIATURES --- */
+        /* --- CATEGORIES COMPACTES --- */
         .categories-container {
             display: flex;
-            gap: 8px;
+            gap: 12px;
             padding: 20px 15px;
             overflow-x: auto;
             scrollbar-width: none;
         }
         .cat-box {
-            min-width: 42px;
-            height: 42px;
-            background: #0a0a0a;
+            min-width: 44px;
+            height: 44px;
+            background: #111;
             border: 0.5px solid #222;
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 0.9rem;
-            color: #666;
+            font-size: 1rem;
+            color: #555;
         }
-        .cat-item.active .cat-box { border-color: var(--gold-text); color: var(--gold-text); }
-        .cat-item span { display: block; text-align: center; font-size: 0.55rem; color: #555; margin-top: 4px; }
+        .cat-item.active .cat-box { border-color: var(--gold-text); color: var(--gold-text); box-shadow: 0 0 10px rgba(245, 209, 112, 0.2); }
+        .cat-item span { display: block; text-align: center; font-size: 0.6rem; color: #666; margin-top: 5px; }
 
-        /* --- GRILLE 4 PRODUITS AVEC EFFET MIROIR --- */
+        /* --- GRILLE PRODUITS --- */
         .product-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 12px;
             padding: 0 15px 100px;
         }
 
         .product-card {
-            background: #050505;
+            background: #080808;
             border: 0.5px solid var(--gold-border);
-            border-radius: 12px;
+            border-radius: 14px;
             overflow: hidden;
             position: relative;
         }
 
-        /* EFFET MIROIR OBLIQUE (Shimmer) */
+        /* Effet Miroir Oblique Amélioré */
         .product-card::after {
             content: '';
             position: absolute;
-            top: -100%;
-            left: -100%;
-            width: 50%;
-            height: 300%;
-            background: linear-gradient(rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
-            transform: rotate(45deg);
-            transition: none;
-            animation: mirror 4s infinite ease-in-out;
+            top: -150%;
+            left: -150%;
+            width: 60%;
+            height: 400%;
+            background: linear-gradient(rgba(255,255,255,0) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0) 100%);
+            transform: rotate(35deg);
+            animation: mirror 5s infinite linear;
+            pointer-events: none;
         }
 
         @keyframes mirror {
-            0% { top: -100%; left: -100%; }
-            20% { top: 100%; left: 100%; }
-            100% { top: 100%; left: 100%; }
+            0% { transform: translate(0, 0) rotate(35deg); }
+            20% { transform: translate(300%, 300%) rotate(35deg); }
+            100% { transform: translate(300%, 300%) rotate(35deg); }
         }
 
-        .card-img { width: 100%; height: 130px; object-fit: cover; border-bottom: 0.5px solid #1a1a1a; }
+        .card-img { width: 100%; height: 140px; object-fit: cover; }
 
-        /* EFFET VITRINE LUMINEUX (Bas de carte) */
+        /* Infos Vitrine */
         .card-info {
-            padding: 8px;
-            background: linear-gradient(to bottom, #111, #000);
-            box-shadow: inset 0 1px 10px rgba(245, 209, 112, 0.05);
+            padding: 10px;
+            background: linear-gradient(to bottom, #121212, #000);
+            position: relative;
         }
-        .card-info h4 { font-size: 0.65rem; margin: 0; color: #eee; font-weight: 400; }
-        .price-text { font-size: 0.8rem; color: var(--gold-text); font-weight: 700; margin-top: 5px; display: block; }
+        .card-info h4 { font-size: 0.7rem; margin: 0; color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .vendor-info { font-size: 0.55rem; color: #888; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+        .v-badge { color: var(--verified-blue); font-size: 0.6rem; }
+        
+        .status-tag { font-size: 0.5rem; font-weight: 700; margin-top: 6px; display: inline-block; padding: 1px 5px; border-radius: 3px; background: rgba(0,255,0,0.1); color: #00ff00; }
+        .status-tag.out { background: rgba(255,0,0,0.1); color: #ff3b30; }
 
-        /* --- MENU BAS VITRINE AVEC HALO --- */
+        .price-text { font-size: 0.9rem; color: var(--gold-text); font-weight: 800; margin-top: 6px; display: block; }
+
+        /* --- NAV BAS VITRINE --- */
         .nav-bar {
             position: fixed;
             bottom: 0;
             width: 100%;
-            height: 60px;
+            height: 65px;
             background: var(--dark-glass);
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(20px);
             border-top: 0.5px solid var(--gold-border);
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             align-items: center;
-            z-index: 100;
+            z-index: 1000;
         }
 
-        /* Halo lumineux au dessus de la bordure menu */
         .nav-bar::before {
             content: '';
             position: absolute;
-            top: -2px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: -1px;
+            left: 10%;
             width: 80%;
-            height: 2px;
-            background: radial-gradient(circle, var(--gold-text) 0%, transparent 70%);
-            opacity: 0.6;
+            height: 1px;
+            background: radial-gradient(circle, var(--gold-text) 0%, transparent 100%);
+            box-shadow: 0 -5px 15px rgba(245, 209, 112, 0.3);
         }
 
-        .nav-link { text-decoration: none; text-align: center; color: #444; font-size: 0.55rem; }
-        .nav-link i { font-size: 1rem; display: block; margin-bottom: 3px; }
-        .nav-link.active { color: var(--gold-text); text-shadow: 0 0 10px rgba(245, 209, 112, 0.5); }
+        .nav-link { text-decoration: none; text-align: center; color: #555; font-size: 0.6rem; }
+        .nav-link i { font-size: 1.1rem; display: block; margin-bottom: 4px; }
+        .nav-link.active { color: var(--gold-text); }
 
     </style>
 </head>
 <body>
 
+    <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg479E695i6rWzxekKSwk7Ya5iuO0mQrbAJpgTOQ6mJmSFMQ72osIkbynPA8ZKuWZH_2pY4A0Uiy5MXTI846YxoB8D7Dvr8Ibk4GnraCVvdAwCbEbHFWdEjfKFsETjxs1JDeys67rvVmj7RwcOMgJHQV1ujb4_p8eKt1bT1fuX7ra6shkuGVDP1Ng0SXifQ/w200-h133/24.png" class="top-logo">
+
     <div class="hero-slider">
         <div class="hero-content">
             <h1>Tout le Congo</h1>
+            <span class="subtitle">MARCHÉ</span>
             <p>Le plus grand marché de la RDC.</p>
         </div>
     </div>
@@ -181,7 +200,7 @@
     <div class="search-area">
         <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" placeholder="Rechercher...">
+            <input type="text" placeholder="Rechercher sur le marché...">
             <i class="fa-solid fa-sliders"></i>
         </div>
     </div>
@@ -192,14 +211,15 @@
         <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-laptop"></i></div><span>Électro</span></div>
         <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-shirt"></i></div><span>Mode</span></div>
         <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-car"></i></div><span>Auto</span></div>
-        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-couch"></i></div><span>Maison</span></div>
     </div>
 
     <div class="product-grid">
         <div class="product-card">
             <img src="https://img.freepik.com/photos-gratuite/composition-numerique-du-smartphone_23-2151221209.jpg" class="card-img">
             <div class="card-info">
-                <h4>Galaxy S24 Ultra</h4>
+                <h4>S24 Ultra Titanium</h4>
+                <div class="vendor-info">Samsung Shop <i class="fa-solid fa-circle-check v-badge"></i></div>
+                <div class="status-tag">DISPONIBLE</div>
                 <span class="price-text">1.650 $</span>
             </div>
         </div>
@@ -207,20 +227,26 @@
             <img src="https://img.freepik.com/photos-gratuite/ordinateur-portable-sur-table_23-2148187015.jpg" class="card-img">
             <div class="card-info">
                 <h4>MacBook Pro M3</h4>
+                <div class="vendor-info">Apple Store <i class="fa-solid fa-circle-check v-badge"></i></div>
+                <div class="status-tag">DISPONIBLE</div>
                 <span class="price-text">2.500 $</span>
             </div>
         </div>
         <div class="product-card">
             <img src="https://img.freepik.com/photos-gratuite/parfum-luxe-fond-sombre_23-2149110344.jpg" class="card-img">
             <div class="card-info">
-                <h4>Dior Sauvage</h4>
+                <h4>Dior Sauvage 100ml</h4>
+                <div class="vendor-info">Beauty Luxe <i class="fa-solid fa-circle-check v-badge"></i></div>
+                <div class="status-tag out">PAS DISPONIBLE</div>
                 <span class="price-text">120 $</span>
             </div>
         </div>
         <div class="product-card">
             <img src="https://img.freepik.com/photos-gratuite/chaussures-sport-noir-blanc_23-2148827773.jpg" class="card-img">
             <div class="card-info">
-                <h4>Nike Jordan 1</h4>
+                <h4>Nike Air Jordan 1</h4>
+                <div class="vendor-info">Sneakers King <i class="fa-solid fa-circle-check v-badge"></i></div>
+                <div class="status-tag">DISPONIBLE</div>
                 <span class="price-text">130 $</span>
             </div>
         </div>
@@ -229,7 +255,7 @@
     <nav class="nav-bar">
         <a href="#" class="nav-link active"><i class="fa-solid fa-house"></i>Accueil</a>
         <a href="#" class="nav-link"><i class="fa-solid fa-list-ul"></i>Menu</a>
-        <a href="#" class="nav-link"><i class="fa-solid fa-plus-circle" style="font-size: 1.4rem; color:#eee;"></i></a>
+        <a href="#" class="nav-link"><i class="fa-solid fa-plus-circle" style="font-size: 1.5rem; color:#fff;"></i></a>
         <a href="#" class="nav-link"><i class="fa-regular fa-heart"></i>Favoris</a>
         <a href="#" class="nav-link"><i class="fa-regular fa-user"></i>Profil</a>
     </nav>
