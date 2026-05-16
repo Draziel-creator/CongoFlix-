@@ -2,257 +2,328 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Marché RDC - Elite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Marché RDC - Elite Mirror</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --gold: linear-gradient(135deg, #f5d170 0%, #b88a1a 100%);
+            --gold-flat: #b88a1a;
             --dark: #000000;
-            --surface: #121212;
-            --gray: #8e8e93;
+            --card-bg: #0f0f0f;
+            --gray-text: #8e8e93;
         }
 
         body {
             margin: 0;
             background-color: var(--dark);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'SF Pro Display', -apple-system, sans-serif;
             color: white;
-            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* --- HEADER IMMERSIF --- */
-        .hero-header {
+        /* --- LOGO & NOTIF (Haut du Slider) --- */
+        .top-bar {
+            position: absolute;
+            top: 40px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+        .logo-center { height: 45px; }
+        .notif-btn { position: absolute; right: 20px; font-size: 1.2rem; color: #f5d170; }
+
+        /* --- SLIDER IMMERSIF (Image 2 Style) --- */
+        .hero-slider {
             position: relative;
             width: 100%;
-            height: 380px; /* Slider qui monte jusqu'en haut */
+            height: 440px;
             background: url('https://img.freepik.com/photos-gratuite/leopard-afrique-afrique-du-sud_1150-13840.jpg') center/cover;
+            background-position: 20% center; /* Pour voir le léopard comme sur la capture */
         }
 
-        .hero-overlay {
+        /* Le "Nuage Noir" en haut et en bas du slider */
+        .hero-slider::before {
+            content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 50%, var(--dark) 100%);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
+            background: linear-gradient(to bottom, 
+                rgba(0,0,0,0.8) 0%, 
+                transparent 25%, 
+                transparent 70%, 
+                var(--dark) 100%);
         }
 
-        .hero-content { margin-bottom: 20px; }
-        .hero-content h1 { 
-            font-size: 1.8rem; 
-            margin: 0; 
-            font-weight: 800;
-            line-height: 1.1;
+        .hero-content {
+            position: absolute;
+            bottom: 60px;
+            left: 20px;
+            z-index: 10;
         }
-        .hero-content p { font-size: 0.9rem; color: #ccc; margin: 10px 0; }
+
+        .hero-content h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .hero-content p {
+            font-size: 0.75rem;
+            color: #bbb;
+            margin: 8px 0 15px 0;
+            max-width: 200px;
+        }
 
         .btn-explorer {
             background: var(--gold);
             border: none;
-            padding: 10px 24px;
-            border-radius: 25px;
-            color: #000;
-            font-weight: 900;
-            font-size: 0.8rem;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 0.7rem;
             text-transform: uppercase;
         }
 
-        /* --- BARRE DE RECHERCHE --- */
-        .search-container {
-            padding: 0 15px;
-            margin-top: -25px; /* Chevauche le slider */
+        /* --- RECHERCHE FINE --- */
+        .search-area {
+            padding: 0 20px;
+            margin-top: -30px;
             position: relative;
-            z-index: 10;
+            z-index: 30;
         }
-        .search-bar {
-            background: #1c1c1e;
-            border-radius: 12px;
+        .search-box {
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid #222;
+            border-radius: 10px;
             display: flex;
             align-items: center;
-            padding: 12px 15px;
-            border: 1px solid #2c2c2e;
+            padding: 10px 15px;
         }
-        .search-bar i { color: var(--gray); margin-right: 10px; }
-        .search-bar input {
+        .search-box input {
             background: transparent;
             border: none;
-            color: white;
+            color: #888;
+            font-size: 0.8rem;
             width: 100%;
-            outline: none;
+            margin-left: 10px;
         }
 
-        /* --- CATÉGORIES (Vrais boutons) --- */
-        .cat-section {
+        /* --- CATÉGORIES (Mini boutons élégants) --- */
+        .categories-container {
             display: flex;
             overflow-x: auto;
-            gap: 15px;
-            padding: 20px 15px;
+            gap: 12px;
+            padding: 25px 20px;
             scrollbar-width: none;
         }
-        .cat-btn {
+        .cat-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 70px;
-            text-decoration: none;
+            min-width: 65px;
         }
-        .cat-icon-box {
-            width: 55px;
-            height: 55px;
-            background: #1c1c1e;
-            border-radius: 15px;
+        .cat-box {
+            width: 50px;
+            height: 50px;
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-bottom: 8px;
-            border: 1px solid #2c2c2e;
-            color: white;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
+            color: #f5d170;
+            margin-bottom: 6px;
         }
-        .cat-btn.active .cat-icon-box {
+        .cat-item.active .cat-box {
             background: #f5d170;
             color: black;
             border: none;
         }
-        .cat-btn span { font-size: 0.7rem; color: var(--gray); font-weight: 500; }
+        .cat-item span { font-size: 0.65rem; color: var(--gray-text); }
 
-        /* --- GRILLE DE PRODUITS --- */
+        /* --- GRILLE DE PRODUITS (Hauteur identique capture) --- */
+        .grid-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px 10px;
+            font-size: 0.9rem;
+        }
+
         .product-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            padding: 15px;
-        }
-        .card {
-            background: #1c1c1e;
-            border-radius: 20px;
-            overflow: hidden;
-            position: relative;
-            border: 1px solid #2c2c2e;
-        }
-        .card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
-        .card-body { padding: 12px; }
-        .card-title { font-size: 0.85rem; margin: 0; font-weight: 600; }
-        .card-vendor { font-size: 0.7rem; color: var(--gray); margin: 4px 0; display: flex; align-items: center; }
-        .verified-badge { color: #f5d170; margin-left: 4px; font-size: 0.7rem; }
-        .card-price { 
-            font-size: 1.1rem; 
-            font-weight: 800; 
-            background: var(--gold); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
-        }
-        .heart-icon {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            color: var(--gray);
-            font-size: 1rem;
+            padding: 0 15px 100px;
         }
 
-        /* --- NAV BASSE (Identique capture) --- */
-        .bottom-nav {
+        .product-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            border: 1px solid #1a1a1a;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .badge-premium {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            border: 0.5px solid #f5d170;
+            color: #f5d170;
+            font-size: 0.5rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            z-index: 5;
+        }
+
+        .card-img-box {
+            width: 100%;
+            height: 160px;
+            background: #000;
+        }
+        .card-img-box img { width: 100%; height: 100%; object-fit: cover; }
+
+        .card-info { padding: 10px; }
+        .card-info h4 { font-size: 0.75rem; margin: 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .vendor-line { 
+            font-size: 0.6rem; 
+            color: var(--gray-text); 
+            margin: 4px 0; 
+            display: flex; 
+            align-items: center; 
+            gap: 3px; 
+        }
+        .price-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .price-text { font-weight: 700; color: #f5d170; font-size: 0.9rem; }
+        .heart-btn { color: #444; font-size: 0.8rem; }
+
+        /* --- BARRE DE NAVIGATION (Finesse Max) --- */
+        .nav-bar {
             position: fixed;
             bottom: 0;
             width: 100%;
-            height: 70px;
-            background: rgba(10, 10, 10, 0.95);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-around;
+            height: 65px;
+            background: rgba(5, 5, 5, 0.98);
+            border-top: 1px solid #1a1a1a;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
             align-items: center;
-            border-top: 1px solid #2c2c2e;
             z-index: 100;
         }
-        .nav-item { text-align: center; color: var(--gray); text-decoration: none; font-size: 0.65rem; }
-        .nav-item i { font-size: 1.3rem; display: block; margin-bottom: 4px; }
-        .nav-item.active { color: #f5d170; }
-        
-        /* Bouton Publier spécial */
-        .nav-publish {
-            width: 45px;
-            height: 45px;
-            background: #1c1c1e;
-            border: 1px solid #2c2c2e;
-            border-radius: 50%;
+        .nav-link {
+            text-decoration: none;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            font-size: 1.5rem;
-            color: white;
-            margin-top: -30px;
+            color: #666;
+            font-size: 0.6rem;
         }
+        .nav-link i { font-size: 1.1rem; margin-bottom: 4px; }
+        .nav-link.active { color: #f5d170; }
+
+        /* Vrai badge TikTok Style */
+        .v-badge { color: #b88a1a; font-size: 0.65rem; }
 
     </style>
 </head>
 <body>
 
-    <div class="hero-header">
-        <div class="hero-overlay">
-            <div class="hero-content">
-                <h1>Tout le Congo<br>dans votre poche</h1>
-                <p>Des milliers de produits locaux.</p>
-                <button class="btn-explorer">Explorer ></button>
-            </div>
+    <div class="top-bar">
+        <img src="https://i.ibb.co/vzYyS0R/logo-marche-rdc.png" class="logo-center" alt="MARCHÉ RDC">
+        <i class="fa-regular fa-bell notif-btn"></i>
+    </div>
+
+    <div class="hero-slider">
+        <div class="hero-content">
+            <h1>Tout le Congo<br>dans votre poche</h1>
+            <p>Des milliers de produits, des vendeurs locaux.</p>
+            <button class="btn-explorer">Explorer ></button>
         </div>
     </div>
 
-    <div class="search-container">
-        <div class="search-bar">
+    <div class="search-area">
+        <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" placeholder="Rechercher un produit, une marque...">
             <i class="fa-solid fa-sliders"></i>
         </div>
     </div>
 
-    <div class="cat-section">
-        <a href="#" class="cat-btn active">
-            <div class="cat-icon-box"><i class="fa-solid fa-border-all"></i></div>
+    <div class="categories-container">
+        <div class="cat-item active">
+            <div class="cat-box"><i class="fa-solid fa-grip"></i></div>
             <span style="color:white">Tout</span>
-        </a>
-        <a href="#" class="cat-btn">
-            <div class="cat-icon-box"><i class="fa-solid fa-mobile-screen-button"></i></div>
+        </div>
+        <div class="cat-item">
+            <div class="cat-box"><i class="fa-solid fa-mobile-screen"></i></div>
             <span>Téléphones</span>
-        </a>
-        <a href="#" class="cat-btn">
-            <div class="cat-icon-box"><i class="fa-solid fa-laptop"></i></div>
+        </div>
+        <div class="cat-item">
+            <div class="cat-box"><i class="fa-solid fa-laptop"></i></div>
             <span>Électro</span>
-        </a>
-        <a href="#" class="cat-btn">
-            <div class="cat-icon-box"><i class="fa-solid fa-shirt"></i></div>
+        </div>
+        <div class="cat-item">
+            <div class="cat-box"><i class="fa-solid fa-shirt"></i></div>
             <span>Mode</span>
-        </a>
+        </div>
+        <div class="cat-item">
+            <div class="cat-box"><i class="fa-solid fa-house"></i></div>
+            <span>Maison</span>
+        </div>
+    </div>
+
+    <div class="grid-header">
+        <span>Produits populaires</span>
+        <span style="color: #b88a1a; font-size: 0.75rem;">Voir tout ></span>
     </div>
 
     <div class="product-grid">
-        <div class="card">
-            <img src="https://img.freepik.com/photos-gratuite/composition-numerique-du-smartphone_23-2151221209.jpg" class="card-img">
-            <div class="card-body">
-                <p class="card-title">Samsung S24 Ultra</p>
-                <div class="card-vendor">Tech Congo SARL <i class="fa-solid fa-circle-check verified-badge"></i></div>
-                <span class="card-price">1.650 $</span>
-                <i class="fa-regular fa-heart heart-icon"></i>
+        <div class="product-card">
+            <div class="badge-premium">PREMIUM</div>
+            <div class="card-img-box">
+                <img src="https://img.freepik.com/photos-gratuite/composition-numerique-du-smartphone_23-2151221209.jpg">
+            </div>
+            <div class="card-info">
+                <h4>Samsung Galaxy S24 Ultra</h4>
+                <div class="vendor-line">Tech Congo SARL <i class="fa-solid fa-circle-check v-badge"></i></div>
+                <div class="price-line">
+                    <span class="price-text">1.650 $</span>
+                    <i class="fa-regular fa-heart heart-btn"></i>
+                </div>
             </div>
         </div>
-        <div class="card">
-            <img src="https://img.freepik.com/photos-gratuite/ordinateur-portable-sur-table-dans-obscurite_23-2148187015.jpg" class="card-img">
-            <div class="card-body">
-                <p class="card-title">MacBook Pro M3</p>
-                <div class="card-vendor">Smart Digital <i class="fa-solid fa-circle-check verified-badge"></i></div>
-                <span class="card-price">2.500 $</span>
-                <i class="fa-regular fa-heart heart-icon"></i>
+
+        <div class="product-card">
+            <div class="card-img-box">
+                <img src="https://img.freepik.com/photos-gratuite/composition-numerique-du-smartphone_23-2149110344.jpg">
+            </div>
+            <div class="card-info">
+                <h4>MacBook Pro M3 14"</h4>
+                <div class="vendor-line">Smart Digital <i class="fa-solid fa-circle-check v-badge"></i></div>
+                <div class="price-line">
+                    <span class="price-text">2.500 $</span>
+                    <i class="fa-regular fa-heart heart-btn"></i>
+                </div>
             </div>
         </div>
     </div>
 
-    <nav class="bottom-nav">
-        <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i>Accueil</a>
-        <a href="#" class="nav-item"><i class="fa-solid fa-list-ul"></i>Catégories</a>
-        <div class="nav-publish"><i class="fa-solid fa-plus"></i></div>
-        <a href="#" class="nav-item"><i class="fa-regular fa-heart"></i>Favoris</a>
-        <a href="#" class="nav-item"><i class="fa-regular fa-user"></i>Profil</a>
+    <nav class="nav-bar">
+        <a href="#" class="nav-link active"><i class="fa-solid fa-house"></i>Accueil</a>
+        <a href="#" class="nav-link"><i class="fa-solid fa-grid-2"></i>Catégories</a>
+        <a href="#" class="nav-link"><i class="fa-regular fa-heart"></i>Favoris</a>
+        <a href="#" class="nav-link"><i class="fa-regular fa-comment-dots"></i>Messages</a>
+        <a href="#" class="nav-link"><i class="fa-regular fa-user"></i>Profil</a>
     </nav>
 
 </body>
