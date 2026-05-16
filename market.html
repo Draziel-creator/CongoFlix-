@@ -43,7 +43,6 @@
         .header-brand h2 { font-size: 1.1rem; margin: 0; font-weight: 900; text-transform: uppercase; }
         .header-brand .slogan { font-size: 0.55rem; color: var(--gold-text); display: block; }
 
-        /* Info produit sur Slider */
         .slider-product-name {
             position: absolute; bottom: 35px; right: 15px;
             background: rgba(0,0,0,0.7); padding: 4px 10px;
@@ -59,8 +58,10 @@
         .search-box input { background: transparent; border: none; color: #eee; font-size: 0.8rem; flex: 1; margin: 0 10px; outline: none; }
         .search-box i { font-size: 0.9rem; color: var(--gold-text); }
 
-        .categories-container { display: flex; gap: 12px; padding: 15px; overflow-x: auto; scrollbar-width: none; }
-        .cat-item { text-align: center; min-width: 40px; cursor: pointer; }
+        /* CATEGORIES */
+        .categories-container { display: flex; gap: 12px; padding: 15px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .cat-item { text-align: center; min-width: 45px; cursor: pointer; transition: transform 0.2s; }
+        .cat-item:active { transform: scale(0.9); }
         .cat-box {
             width: 32px; height: 32px; border: 0.3px solid var(--gold-border);
             border-radius: 8px; display: flex; justify-content: center; align-items: center; margin: 0 auto 4px;
@@ -70,6 +71,7 @@
         .cat-item.active i { color: #000; }
         .cat-item span { font-size: 0.5rem; color: #777; display: block; }
 
+        /* GRILLE PRODUITS */
         .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 15px 120px; }
         .product-card { background: #0a0a0a; border: 0.3px solid var(--gold-border); border-radius: 12px; overflow: hidden; position: relative; }
         .card-img { width: 100%; height: 120px; object-fit: cover; }
@@ -86,7 +88,7 @@
         .like-container { display: flex; align-items: center; gap: 4px; color: #555; }
         .like-count { font-size: 0.6rem; font-weight: bold; }
         .like-btn { background: transparent; border: none; padding: 0; cursor: pointer; }
-        .like-btn.liked i { color: #ffcc00; }
+        .like-btn.liked i { color: #f5d170; }
 
         /* MODAL CONNEXION */
         #authModal {
@@ -100,6 +102,7 @@
             border-radius: 25px; font-weight: bold; text-decoration: none; display: block; margin-top: 20px;
         }
 
+        /* NAVIGATION BAR */
         .nav-bar {
             position: fixed; bottom: 0; width: 100%; height: 60px;
             background: var(--dark-glass); backdrop-filter: blur(15px);
@@ -111,7 +114,6 @@
         .nav-link i { font-size: 1rem; display: block; margin-bottom: 2px; }
         .nav-link.active { color: var(--gold-text); }
 
-        /* Avatar Profil */
         .user-avatar { width: 22px; height: 22px; border-radius: 50%; border: 0.5px solid var(--gold-text); display: none; margin: 0 auto 2px; }
     </style>
 </head>
@@ -136,10 +138,13 @@
     </div>
 
     <div class="categories-container" id="catList">
-        <div class="cat-item active" onclick="filterCat('Tout')"><div class="cat-box"><i class="fa-solid fa-grip"></i></div><span>Tout</span></div>
-        <div class="cat-item" onclick="filterCat('Tél')"><div class="cat-box"><i class="fa-solid fa-mobile-screen"></i></div><span>Tél</span></div>
-        <div class="cat-item" onclick="filterCat('Électro')"><div class="cat-box"><i class="fa-solid fa-laptop"></i></div><span>Électro</span></div>
-        <div class="cat-item" onclick="filterCat('Mode')"><div class="cat-box"><i class="fa-solid fa-shirt"></i></div><span>Mode</span></div>
+        <div class="cat-item active" onclick="filterCat('Tout', this)"><div class="cat-box"><i class="fa-solid fa-grip"></i></div><span>Tout</span></div>
+        <div class="cat-item" onclick="filterCat('Tél', this)"><div class="cat-box"><i class="fa-solid fa-mobile-screen"></i></div><span>Tél</span></div>
+        <div class="cat-item" onclick="filterCat('Électro', this)"><div class="cat-box"><i class="fa-solid fa-laptop"></i></div><span>Électro</span></div>
+        <div class="cat-item" onclick="filterCat('Mode', this)"><div class="cat-box"><i class="fa-solid fa-shirt"></i></div><span>Mode</span></div>
+        <div class="cat-item" onclick="filterCat('Beauté', this)"><div class="cat-box"><i class="fa-solid fa-sparkles"></i></div><span>Beauté</span></div>
+        <div class="cat-item" onclick="filterCat('Auto', this)"><div class="cat-box"><i class="fa-solid fa-car"></i></div><span>Auto</span></div>
+        <div class="cat-item" onclick="filterCat('Maison', this)"><div class="cat-box"><i class="fa-solid fa-couch"></i></div><span>Maison</span></div>
     </div>
 
     <div class="product-grid" id="productGrid">
@@ -168,7 +173,7 @@
     </nav>
 
     <script>
-        // CONFIGURATION FIREBASE (Utilisation de ton API APK)
+        // CONFIGURATION FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
             authDomain: "congo-streaming-51333.firebaseapp.com",
@@ -183,14 +188,12 @@
         let currentUser = null;
         let allProducts = [];
 
-        // --- AUTHENTIFICATION ---
+        // --- GESTION AUTHENTIFICATION ---
         auth.onAuthStateChanged(async (user) => {
             const userImg = document.getElementById('userNavImg');
             const userIcon = document.getElementById('userDefaultIcon');
-            
             if (user) {
                 currentUser = user;
-                // Récupération de la photo de profil depuis la collection "users"
                 const userDoc = await db.collection("users").doc(user.uid).get();
                 if (userDoc.exists && userDoc.data().photoURL) {
                     userImg.src = userDoc.data().photoURL;
@@ -224,8 +227,11 @@
                     let i = 0;
                     const updateSlider = () => {
                         const s = slides[i];
-                        document.getElementById('mainSlider').style.backgroundImage = `url('${s.image}')`;
-                        document.getElementById('sliderProdName').innerText = s.nomProduit;
+                        const sliderEl = document.getElementById('mainSlider');
+                        if(sliderEl && s.image) {
+                            sliderEl.style.backgroundImage = `url('${s.image}')`;
+                            document.getElementById('sliderProdName').innerText = s.nomProduit || "Produit Elite";
+                        }
                         i = (i + 1) % slides.length;
                     };
                     updateSlider();
@@ -234,7 +240,7 @@
             });
         }
 
-        // --- LECTURE PRODUITS FIREBASE ---
+        // --- CHARGEMENT ET RENDU PRODUITS ---
         function loadProducts() {
             db.collection("marche_produits").orderBy("createdAt", "desc").onSnapshot(snap => {
                 allProducts = [];
@@ -245,22 +251,21 @@
 
         function renderProducts(products) {
             const grid = document.getElementById('productGrid');
+            if (!grid) return;
             grid.innerHTML = "";
 
             products.forEach(p => {
                 const isAvailable = p.statut === "Disponible";
                 grid.innerHTML += `
                     <div class="product-card" onclick="checkAuthAction('view', '${p.id}')">
-                        <img src="${p.image}" class="card-img">
+                        <img src="${p.image}" class="card-img" loading="lazy">
                         <div class="card-info">
                             <h4>${p.nom}</h4>
                             <div class="card-divider"></div>
                             <div class="card-bottom">
                                 <div class="bottom-left">
                                     <div class="vendor-name">${p.vendeur} ${p.verifie ? '<i class="fa-solid fa-circle-check"></i>' : ''}</div>
-                                    <span class="status-text ${isAvailable ? 'status-available' : ''}" style="color:${isAvailable ? '#00ff00':'#ff4444'}">
-                                        ${p.statut}
-                                    </span>
+                                    <span class="status-text" style="color:${isAvailable ? '#00ff00':'#ff4444'}">${p.statut}</span>
                                     <span class="price-text">${p.prix} $</span>
                                 </div>
                                 <div class="bottom-right">
@@ -274,28 +279,45 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
-        // --- SYSTÈME DE LIKES EN TEMPS RÉEL ---
+        // --- FILTRES PAR CATÉGORIE ---
+        function filterCat(category, element) {
+            // Mise à jour de l'UI des boutons
+            document.querySelectorAll('.cat-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+
+            if (category === 'Tout') {
+                renderProducts(allProducts);
+            } else {
+                const filtered = allProducts.filter(p => p.categorie === category);
+                renderProducts(filtered);
+            }
+        }
+
+        // --- SYSTÈME DE LIKES ---
         async function toggleLike(id) {
-            if (!currentUser) { closeModal(); checkAuthAction('like'); return; }
-
+            if (!currentUser) { closeModal(); return; }
             const prodRef = db.collection("marche_produits").doc(id);
-            // Transaction pour incrémenter le compteur de manière fiable
-            db.runTransaction(async (transaction) => {
-                const doc = await transaction.get(prodRef);
-                const newLikes = (doc.data().likes || 0) + 1;
-                transaction.update(prodRef, { likes: newLikes });
-            });
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(prodRef);
+                    if (!doc.exists) return;
+                    const newLikes = (doc.data().likes || 0) + 1;
+                    transaction.update(prodRef, { likes: newLikes });
+                });
+            } catch (e) { console.error("Erreur like:", e); }
         }
 
-        // --- FILTRES ET RECHERCHE ---
+        // --- RECHERCHE TEXTUELLE ---
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase();
-            const filtered = allProducts.filter(p => p.nom.toLowerCase().includes(val));
+            const filtered = allProducts.filter(p => 
+                p.nom.toLowerCase().includes(val) || 
+                p.vendeur.toLowerCase().includes(val)
+            );
             renderProducts(filtered);
         });
 
