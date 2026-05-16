@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Marché RDC - Elite Mirror</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --gold-border: rgba(245, 209, 112, 0.3);
@@ -15,51 +20,47 @@
         }
 
         body {
-            margin: 0;
-            background-color: #000;
+            margin: 0; background-color: #000;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: white;
-            -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
+            color: white; -webkit-font-smoothing: antialiased; overflow-x: hidden;
         }
 
-        /* --- LOGO --- */
-        .top-logo {
-            position: absolute;
-            top: 0; left: 0; height: 60px; z-index: 100; pointer-events: none;
-        }
+        .top-logo { position: absolute; top: 0; left: 0; height: 60px; z-index: 100; pointer-events: none; }
 
-        /* --- SLIDER AVEC NUAGE NOIR --- */
+        /* SLIDER DYNAMIQUE */
         .hero-slider {
-            position: relative;
-            width: 100%; height: 230px;
-            background: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjaOZoAEtzfyrJbUC06AfGi65jAvxeY2-UAmg7-BjnwkQZ72scwlx-aV8k61TXp9y-CJzdE1snrgUAb2i4c1cy0hCn-w0eUGTexBa0XFMKoPFgjzFM92GOTt39vdnjQohLpvT5_U8dKRiBXOGyHdlZp2oyT3HKHlvMcZbui-Dv7-EiwfAmhc3R22uVSQpWS/s1600/1000012980.png') center/cover;
+            position: relative; width: 100%; height: 230px;
+            background-size: cover; background-position: center;
+            transition: background 0.5s ease-in-out;
         }
 
         .hero-slider::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 70%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
-            z-index: 1;
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 70%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%); z-index: 1;
         }
 
         .header-brand { position: absolute; top: 15px; left: 70px; z-index: 2; }
         .header-brand h2 { font-size: 1.1rem; margin: 0; font-weight: 900; text-transform: uppercase; }
         .header-brand .slogan { font-size: 0.55rem; color: var(--gold-text); display: block; }
 
-        /* --- RECHERCHE --- */
+        /* Info produit sur Slider */
+        .slider-product-name {
+            position: absolute; bottom: 35px; right: 15px;
+            background: rgba(0,0,0,0.7); padding: 4px 10px;
+            border-radius: 5px; font-size: 0.6rem; color: var(--gold-text);
+            border: 0.3px solid var(--gold-border); z-index: 2;
+        }
+
         .search-area { padding: 0 15px; margin-top: -22px; position: relative; z-index: 10; }
         .search-box {
             background: #0d0d0d; border: 0.3px solid var(--gold-border);
             border-radius: 10px; display: flex; align-items: center; padding: 10px 15px;
         }
-        .search-box input { background: transparent; border: none; color: #eee; font-size: 0.8rem; flex: 1; margin: 0 10px; }
+        .search-box input { background: transparent; border: none; color: #eee; font-size: 0.8rem; flex: 1; margin: 0 10px; outline: none; }
         .search-box i { font-size: 0.9rem; color: var(--gold-text); }
 
-        /* --- CATÉGORIES (BORDURE FINE 0.3px) --- */
         .categories-container { display: flex; gap: 12px; padding: 15px; overflow-x: auto; scrollbar-width: none; }
-        .cat-item { text-align: center; min-width: 40px; }
+        .cat-item { text-align: center; min-width: 40px; cursor: pointer; }
         .cat-box {
             width: 32px; height: 32px; border: 0.3px solid var(--gold-border);
             border-radius: 8px; display: flex; justify-content: center; align-items: center; margin: 0 auto 4px;
@@ -69,137 +70,239 @@
         .cat-item.active i { color: #000; }
         .cat-item span { font-size: 0.5rem; color: #777; display: block; }
 
-        /* --- GRILLE PRODUITS --- */
-        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 15px 100px; }
+        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 15px 120px; }
         .product-card { background: #0a0a0a; border: 0.3px solid var(--gold-border); border-radius: 12px; overflow: hidden; position: relative; }
         .card-img { width: 100%; height: 120px; object-fit: cover; }
         .card-info { padding: 8px; }
         .card-info h4 { font-size: 0.75rem; margin: 0 0 6px 0; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
         .card-divider { height: 0.3px; background: var(--gold-border); margin: 6px 0; }
-
         .card-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
-        .bottom-left { flex: 1; }
-        .vendor-name { font-size: 0.55rem; color: #aaa; display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
+        .vendor-name { font-size: 0.55rem; color: #aaa; display: flex; align-items: center; gap: 3px; }
         .vendor-name i { color: var(--verified-blue); font-size: 0.5rem; }
-
-        .status-text { font-size: 0.45rem; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; display: block; }
-        .status-available { color: #00ff00; }
-        
+        .status-text { font-size: 0.45rem; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
         .price-text { font-size: 0.85rem; color: var(--gold-text); font-weight: 800; }
+        .loc-text { font-size: 0.5rem; color: #777; text-transform: uppercase; display: block; }
 
-        .bottom-right { text-align: right; }
-        .loc-text { font-size: 0.5rem; color: #777; text-transform: uppercase; display: block; margin-bottom: 5px; }
+        .like-container { display: flex; align-items: center; gap: 4px; color: #555; }
+        .like-count { font-size: 0.6rem; font-weight: bold; }
+        .like-btn { background: transparent; border: none; padding: 0; cursor: pointer; }
+        .like-btn.liked i { color: #ffcc00; }
 
-        .like-btn { background: transparent; border: none; padding: 0; cursor: pointer; transition: transform 0.2s; }
-        .like-btn i { font-size: 0.9rem; color: #555; }
-        .like-btn.liked i { color: #ffcc00; font-weight: 900; }
+        /* MODAL CONNEXION */
+        #authModal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 5000; padding: 20px; text-align: center;
+        }
+        .modal-content { border: 0.3px solid var(--gold-border); padding: 30px; border-radius: 20px; background: #050505; }
+        .btn-connect { 
+            background: var(--gold-text); color: #000; border: none; padding: 12px 25px; 
+            border-radius: 25px; font-weight: bold; text-decoration: none; display: block; margin-top: 20px;
+        }
 
-        /* --- NAV BAS AVEC EFFET NÉON/TORCHE --- */
         .nav-bar {
             position: fixed; bottom: 0; width: 100%; height: 60px;
             background: var(--dark-glass); backdrop-filter: blur(15px);
             border-top: 0.3px solid var(--gold-border);
             display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; z-index: 1000;
-            /* L'effet torche/néon derrière */
             box-shadow: 0 -10px 40px var(--neon-glow);
         }
-        .nav-link { text-decoration: none; text-align: center; color: #555; font-size: 0.6rem; }
+        .nav-link { text-decoration: none; text-align: center; color: #555; font-size: 0.6rem; cursor: pointer; }
         .nav-link i { font-size: 1rem; display: block; margin-bottom: 2px; }
         .nav-link.active { color: var(--gold-text); }
+
+        /* Avatar Profil */
+        .user-avatar { width: 22px; height: 22px; border-radius: 50%; border: 0.5px solid var(--gold-text); display: none; margin: 0 auto 2px; }
     </style>
 </head>
 <body>
 
     <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg479E695i6rWzxekKSwk7Ya5iuO0mQrbAJpgTOQ6mJmSFMQ72osIkbynPA8ZKuWZH_2pY4A0Uiy5MXTI846YxoB8D7Dvr8Ibk4GnraCVvdAwCbEbHFWdEjfKFsETjxs1JDeys67rvVmj7RwcOMgJHQV1ujb4_p8eKt1bT1fuX7ra6shkuGVDP1Ng0SXifQ/w200-h133/24.png" class="top-logo">
 
-    <div class="hero-slider">
+    <div class="hero-slider" id="mainSlider">
         <div class="header-brand">
             <h2>Marché RDC</h2>
             <span class="slogan">(le plus grand marché du congo)</span>
         </div>
+        <div class="slider-product-name" id="sliderProdName">Chargement...</div>
     </div>
 
     <div class="search-area">
         <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" placeholder="Rechercher...">
+            <input type="text" id="searchInput" placeholder="Rechercher...">
             <i class="fa-solid fa-sliders"></i>
         </div>
     </div>
 
-    <div class="categories-container">
-        <div class="cat-item active"><div class="cat-box"><i class="fa-solid fa-grip"></i></div><span>Tout</span></div>
-        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-mobile-screen"></i></div><span>Tél</span></div>
-        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-laptop"></i></div><span>Électro</span></div>
-        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-shirt"></i></div><span>Mode</span></div>
-        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-vial"></i></div><span>Beauté</span></div>
-        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-car"></i></div><span>Auto</span></div>
-        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-house"></i></div><span>Maison</span></div>
+    <div class="categories-container" id="catList">
+        <div class="cat-item active" onclick="filterCat('Tout')"><div class="cat-box"><i class="fa-solid fa-grip"></i></div><span>Tout</span></div>
+        <div class="cat-item" onclick="filterCat('Tél')"><div class="cat-box"><i class="fa-solid fa-mobile-screen"></i></div><span>Tél</span></div>
+        <div class="cat-item" onclick="filterCat('Électro')"><div class="cat-box"><i class="fa-solid fa-laptop"></i></div><span>Électro</span></div>
+        <div class="cat-item" onclick="filterCat('Mode')"><div class="cat-box"><i class="fa-solid fa-shirt"></i></div><span>Mode</span></div>
     </div>
 
-    <div class="product-grid">
-        <div class="product-card">
-            <img src="https://img.freepik.com/photos-gratuite/composition-numerique-du-smartphone_23-2151221209.jpg" class="card-img">
-            <div class="card-info">
-                <h4>S24 Ultra Titanium</h4>
-                <div class="card-divider"></div>
-                <div class="card-bottom">
-                    <div class="bottom-left">
-                        <div class="vendor-name">Samsung Shop <i class="fa-solid fa-circle-check"></i></div>
-                        <span class="status-text status-available">Disponible</span>
-                        <span class="price-text">1.650 $</span>
-                    </div>
-                    <div class="bottom-right">
-                        <span class="loc-text">Kinshasa</span>
-                        <button class="like-btn" onclick="toggleLike(this, 'prod_001')">
-                            <i class="fa-regular fa-heart"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
+    <div class="product-grid" id="productGrid">
         </div>
 
-        <div class="product-card">
-            <img src="https://img.freepik.com/photos-gratuite/ordinateur-portable-sur-table_23-2148187015.jpg" class="card-img">
-            <div class="card-info">
-                <h4>MacBook Pro M3 14"</h4>
-                <div class="card-divider"></div>
-                <div class="card-bottom">
-                    <div class="bottom-left">
-                        <div class="vendor-name">Smart Digital <i class="fa-solid fa-circle-check"></i></div>
-                        <span class="status-text status-available">Disponible</span>
-                        <span class="price-text">2.500 $</span>
-                    </div>
-                    <div class="bottom-right">
-                        <span class="loc-text">L'shi</span>
-                        <button class="like-btn" onclick="toggleLike(this, 'prod_002')">
-                            <i class="fa-regular fa-heart"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
+    <div id="authModal">
+        <div class="modal-content">
+            <i class="fas fa-lock" style="font-size: 40px; color: var(--gold-text);"></i>
+            <h3>Connexion Requise</h3>
+            <p style="font-size: 14px; color: #aaa;">Veuillez vous connecter pour accéder à cette fonctionnalité ou voir les détails.</p>
+            <a href="https://draziel-creator.github.io/CongoFlix-/index.html" class="btn-connect">SE CONNECTER</a>
+            <button onclick="closeModal()" style="background:none; border:none; color:#555; margin-top:15px; cursor:pointer;">Annuler</button>
         </div>
     </div>
 
     <nav class="nav-bar">
-        <a href="#" class="nav-link active"><i class="fa-solid fa-house"></i>Accueil</a>
-        <a href="#" class="nav-link"><i class="fa-solid fa-list-ul"></i>Catégories</a>
-        <a href="#" class="nav-link"><i class="fa-solid fa-plus-circle" style="font-size: 1.5rem; color:#fff;"></i>Publier</a>
-        <a href="#" class="nav-link"><i class="fa-regular fa-heart"></i>Favoris</a>
-        <a href="#" class="nav-link"><i class="fa-regular fa-user"></i>Profil</a>
+        <a class="nav-link active"><i class="fa-solid fa-house"></i>Accueil</a>
+        <a class="nav-link"><i class="fa-solid fa-list-ul"></i>Catégories</a>
+        <a class="nav-link" onclick="checkAuthAction('publier')"><i class="fa-solid fa-plus-circle" style="font-size: 1.5rem; color:#fff;"></i>Publier</a>
+        <a class="nav-link"><i class="fa-regular fa-heart"></i>Favoris</a>
+        <a href="https://draziel-creator.github.io/CongoFlix-/index.html" class="nav-link">
+            <img id="userNavImg" class="user-avatar" src="">
+            <i id="userDefaultIcon" class="fa-regular fa-user"></i>
+            Profil
+        </a>
     </nav>
 
     <script>
-        function toggleLike(element, productId) {
-            element.classList.toggle('liked');
-            const icon = element.querySelector('i');
-            if (element.classList.contains('liked')) {
-                icon.classList.replace('fa-regular', 'fa-solid');
+        // CONFIGURATION FIREBASE (Utilisation de ton API APK)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
+            authDomain: "congo-streaming-51333.firebaseapp.com",
+            projectId: "congo-streaming-51333",
+            appId: "1:304286627819:android:36e0b43b8b10508a054bae"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        let currentUser = null;
+        let allProducts = [];
+
+        // --- AUTHENTIFICATION ---
+        auth.onAuthStateChanged(async (user) => {
+            const userImg = document.getElementById('userNavImg');
+            const userIcon = document.getElementById('userDefaultIcon');
+            
+            if (user) {
+                currentUser = user;
+                // Récupération de la photo de profil depuis la collection "users"
+                const userDoc = await db.collection("users").doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().photoURL) {
+                    userImg.src = userDoc.data().photoURL;
+                    userImg.style.display = "block";
+                    userIcon.style.display = "none";
+                }
             } else {
-                icon.classList.replace('fa-solid', 'fa-regular');
+                currentUser = null;
+                userImg.style.display = "none";
+                userIcon.style.display = "block";
+            }
+        });
+
+        function checkAuthAction(type, prodId = null) {
+            if (!currentUser) {
+                document.getElementById('authModal').style.display = 'flex';
+            } else {
+                if(type === 'view') window.location.href = `produit.html?id=${prodId}`;
+                if(type === 'publier') window.location.href = `publier.html`;
             }
         }
+
+        function closeModal() { document.getElementById('authModal').style.display = 'none'; }
+
+        // --- SLIDER DYNAMIQUE ---
+        function initSlider() {
+            db.collection("slider_market").orderBy("createdAt", "desc").limit(5).onSnapshot(snap => {
+                const slides = [];
+                snap.forEach(doc => slides.push(doc.data()));
+                if(slides.length > 0) {
+                    let i = 0;
+                    const updateSlider = () => {
+                        const s = slides[i];
+                        document.getElementById('mainSlider').style.backgroundImage = `url('${s.image}')`;
+                        document.getElementById('sliderProdName').innerText = s.nomProduit;
+                        i = (i + 1) % slides.length;
+                    };
+                    updateSlider();
+                    setInterval(updateSlider, 5000);
+                }
+            });
+        }
+
+        // --- LECTURE PRODUITS FIREBASE ---
+        function loadProducts() {
+            db.collection("marche_produits").orderBy("createdAt", "desc").onSnapshot(snap => {
+                allProducts = [];
+                snap.forEach(doc => allProducts.push({ id: doc.id, ...doc.data() }));
+                renderProducts(allProducts);
+            });
+        }
+
+        function renderProducts(products) {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = "";
+
+            products.forEach(p => {
+                const isAvailable = p.statut === "Disponible";
+                grid.innerHTML += `
+                    <div class="product-card" onclick="checkAuthAction('view', '${p.id}')">
+                        <img src="${p.image}" class="card-img">
+                        <div class="card-info">
+                            <h4>${p.nom}</h4>
+                            <div class="card-divider"></div>
+                            <div class="card-bottom">
+                                <div class="bottom-left">
+                                    <div class="vendor-name">${p.vendeur} ${p.verifie ? '<i class="fa-solid fa-circle-check"></i>' : ''}</div>
+                                    <span class="status-text ${isAvailable ? 'status-available' : ''}" style="color:${isAvailable ? '#00ff00':'#ff4444'}">
+                                        ${p.statut}
+                                    </span>
+                                    <span class="price-text">${p.prix} $</span>
+                                </div>
+                                <div class="bottom-right">
+                                    <span class="loc-text">${p.ville || 'RDC'}</span>
+                                    <div class="like-container">
+                                        <span class="like-count" id="count-${p.id}">${p.likes || 0}</span>
+                                        <button class="like-btn" onclick="event.stopPropagation(); toggleLike('${p.id}')">
+                                            <i class="fa-solid fa-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- SYSTÈME DE LIKES EN TEMPS RÉEL ---
+        async function toggleLike(id) {
+            if (!currentUser) { closeModal(); checkAuthAction('like'); return; }
+
+            const prodRef = db.collection("marche_produits").doc(id);
+            // Transaction pour incrémenter le compteur de manière fiable
+            db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(prodRef);
+                const newLikes = (doc.data().likes || 0) + 1;
+                transaction.update(prodRef, { likes: newLikes });
+            });
+        }
+
+        // --- FILTRES ET RECHERCHE ---
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            const filtered = allProducts.filter(p => p.nom.toLowerCase().includes(val));
+            renderProducts(filtered);
+        });
+
+        window.onload = () => {
+            initSlider();
+            loadProducts();
+        };
     </script>
 </body>
 </html>
