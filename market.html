@@ -2,216 +2,258 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marché RDC - Premium</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Marché RDC - Elite</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --gold-gradient: linear-gradient(135deg, #f5d170 0%, #b88a1a 100%);
-            --dark-bg: #0a0a0a;
-            --card-bg: #161616;
-            --text-gray: #a0a0a0;
+            --gold: linear-gradient(135deg, #f5d170 0%, #b88a1a 100%);
+            --dark: #000000;
+            --surface: #121212;
+            --gray: #8e8e93;
         }
 
         body {
             margin: 0;
-            padding: 0;
-            background-color: var(--dark-bg);
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             color: white;
-            padding-bottom: 80px;
+            overflow-x: hidden;
         }
 
-        /* --- BANNIÈRE SLIDER --- */
-        .promo-slider {
+        /* --- HEADER IMMERSIF --- */
+        .hero-header {
             position: relative;
-            width: 92%;
-            height: 180px;
-            margin: 15px auto;
-            border-radius: 20px;
-            overflow: hidden;
-            background: url('https://img.freepik.com/photos-gratuite/paysage-urbain-nuit-moderne_23-2151004652.jpg') center/cover;
-            display: flex;
-            align-items: center;
+            width: 100%;
+            height: 380px; /* Slider qui monte jusqu'en haut */
+            background: url('https://img.freepik.com/photos-gratuite/leopard-afrique-afrique-du-sud_1150-13840.jpg') center/cover;
         }
 
-        .slider-overlay {
+        .hero-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(to right, rgba(0,0,0,0.9), transparent);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 50%, var(--dark) 100%);
             padding: 20px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-end;
         }
 
-        .slider-content h2 {
-            margin: 0;
-            font-size: 1.4rem;
-            background: var(--gold-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .hero-content { margin-bottom: 20px; }
+        .hero-content h1 { 
+            font-size: 1.8rem; 
+            margin: 0; 
+            font-weight: 800;
+            line-height: 1.1;
         }
-
-        .slider-content p {
-            font-size: 0.8rem;
-            color: #ddd;
-            margin: 5px 0 15px 0;
-            max-width: 60%;
-        }
+        .hero-content p { font-size: 0.9rem; color: #ccc; margin: 10px 0; }
 
         .btn-explorer {
-            background: var(--gold-gradient);
+            background: var(--gold);
             border: none;
-            padding: 8px 20px;
-            border-radius: 10px;
-            font-weight: bold;
-            width: fit-content;
+            padding: 10px 24px;
+            border-radius: 25px;
+            color: #000;
+            font-weight: 900;
             font-size: 0.8rem;
-            cursor: pointer;
+            text-transform: uppercase;
         }
 
-        /* --- FILTRE CATÉGORIES --- */
-        .categories-scroll {
+        /* --- BARRE DE RECHERCHE --- */
+        .search-container {
+            padding: 0 15px;
+            margin-top: -25px; /* Chevauche le slider */
+            position: relative;
+            z-index: 10;
+        }
+        .search-bar {
+            background: #1c1c1e;
+            border-radius: 12px;
             display: flex;
-            gap: 15px;
+            align-items: center;
+            padding: 12px 15px;
+            border: 1px solid #2c2c2e;
+        }
+        .search-bar i { color: var(--gray); margin-right: 10px; }
+        .search-bar input {
+            background: transparent;
+            border: none;
+            color: white;
+            width: 100%;
+            outline: none;
+        }
+
+        /* --- CATÉGORIES (Vrais boutons) --- */
+        .cat-section {
+            display: flex;
             overflow-x: auto;
-            padding: 10px 4%;
+            gap: 15px;
+            padding: 20px 15px;
             scrollbar-width: none;
         }
-        .categories-scroll::-webkit-scrollbar { display: none; }
-
-        .cat-item {
+        .cat-btn {
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 60px;
+            min-width: 70px;
+            text-decoration: none;
         }
-
-        .cat-icon {
-            width: 50px;
-            height: 50px;
-            background: var(--card-bg);
-            border: 1px solid #333;
-            border-radius: 12px;
+        .cat-icon-box {
+            width: 55px;
+            height: 55px;
+            background: #1c1c1e;
+            border-radius: 15px;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            border: 1px solid #2c2c2e;
+            color: white;
+            font-size: 1.2rem;
         }
-
-        .cat-item span { font-size: 0.7rem; color: var(--text-gray); }
+        .cat-btn.active .cat-icon-box {
+            background: #f5d170;
+            color: black;
+            border: none;
+        }
+        .cat-btn span { font-size: 0.7rem; color: var(--gray); font-weight: 500; }
 
         /* --- GRILLE DE PRODUITS --- */
-        .section-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 4%;
-        }
-        .section-title h3 { margin: 0; font-size: 1.1rem; }
-        .view-all { color: #b88a1a; font-size: 0.8rem; text-decoration: none; }
-
         .product-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
-            padding: 0 4%;
+            padding: 15px;
         }
-
-        .product-card {
-            background: var(--card-bg);
-            border-radius: 18px;
-            padding: 10px;
-            border: 1px solid #222;
-            position: relative;
-        }
-
-        .badge-premium {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(0,0,0,0.6);
-            border: 0.5px solid #f5d170;
-            color: #f5d170;
-            padding: 2px 8px;
-            border-radius: 5px;
-            font-size: 0.5rem;
-            font-weight: bold;
-            z-index: 2;
-        }
-
-        .img-container {
-            width: 100%;
-            aspect-ratio: 1/1;
-            background: #000;
-            border-radius: 12px;
+        .card {
+            background: #1c1c1e;
+            border-radius: 20px;
             overflow: hidden;
-            margin-bottom: 8px;
+            position: relative;
+            border: 1px solid #2c2c2e;
         }
-        .img-container img { width: 100%; height: 100%; object-fit: cover; }
-
-        .p-name { font-size: 0.85rem; font-weight: 500; margin-bottom: 4px; }
-        .p-vendor { font-size: 0.65rem; color: var(--text-gray); display: flex; align-items: center; gap: 4px; }
-        .v-check { color: #4ade80; font-size: 0.7rem; }
-
-        .p-price {
+        .card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
+        .card-body { padding: 12px; }
+        .card-title { font-size: 0.85rem; margin: 0; font-weight: 600; }
+        .card-vendor { font-size: 0.7rem; color: var(--gray); margin: 4px 0; display: flex; align-items: center; }
+        .verified-badge { color: #f5d170; margin-left: 4px; font-size: 0.7rem; }
+        .card-price { 
+            font-size: 1.1rem; 
+            font-weight: 800; 
+            background: var(--gold); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        .heart-icon {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            color: var(--gray);
             font-size: 1rem;
-            font-weight: bold;
-            background: var(--gold-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-top: 8px;
         }
+
+        /* --- NAV BASSE (Identique capture) --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 70px;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #2c2c2e;
+            z-index: 100;
+        }
+        .nav-item { text-align: center; color: var(--gray); text-decoration: none; font-size: 0.65rem; }
+        .nav-item i { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: #f5d170; }
+        
+        /* Bouton Publier spécial */
+        .nav-publish {
+            width: 45px;
+            height: 45px;
+            background: #1c1c1e;
+            border: 1px solid #2c2c2e;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            color: white;
+            margin-top: -30px;
+        }
+
     </style>
 </head>
 <body>
 
-    <div class="promo-slider">
-        <div class="slider-overlay">
-            <div class="slider-content">
-                <h2>Tout le Congo<br>dans votre poche</h2>
-                <p>Des milliers de produits, des vendeurs locaux.</p>
-                <button class="btn-explorer">EXPLORER ></button>
+    <div class="hero-header">
+        <div class="hero-overlay">
+            <div class="hero-content">
+                <h1>Tout le Congo<br>dans votre poche</h1>
+                <p>Des milliers de produits locaux.</p>
+                <button class="btn-explorer">Explorer ></button>
             </div>
         </div>
     </div>
 
-    <div class="categories-scroll">
-        <div class="cat-item">
-            <div class="cat-icon" style="border-color: #f5d170;">📱</div>
-            <span style="color:white">Tout</span>
+    <div class="search-container">
+        <div class="search-bar">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Rechercher un produit, une marque...">
+            <i class="fa-solid fa-sliders"></i>
         </div>
-        <div class="cat-item"><div class="cat-icon">📱</div><span>Télés</span></div>
-        <div class="cat-item"><div class="cat-icon">💻</div><span>Électro</span></div>
-        <div class="cat-item"><div class="cat-icon">👕</div><span>Mode</span></div>
-        <div class="cat-item"><div class="cat-icon">🏠</div><span>Maison</span></div>
     </div>
 
-    <div class="section-title">
-        <h3>Produits populaires</h3>
-        <a href="#" class="view-all">Voir tout ></a>
+    <div class="cat-section">
+        <a href="#" class="cat-btn active">
+            <div class="cat-icon-box"><i class="fa-solid fa-border-all"></i></div>
+            <span style="color:white">Tout</span>
+        </a>
+        <a href="#" class="cat-btn">
+            <div class="cat-icon-box"><i class="fa-solid fa-mobile-screen-button"></i></div>
+            <span>Téléphones</span>
+        </a>
+        <a href="#" class="cat-btn">
+            <div class="cat-icon-box"><i class="fa-solid fa-laptop"></i></div>
+            <span>Électro</span>
+        </a>
+        <a href="#" class="cat-btn">
+            <div class="cat-icon-box"><i class="fa-solid fa-shirt"></i></div>
+            <span>Mode</span>
+        </a>
     </div>
 
     <div class="product-grid">
-        <div class="product-card">
-            <div class="badge-premium">PREMIUM</div>
-            <div class="img-container">
-                <img src="https://img.freepik.com/photos-gratuite/composition-numerique-du-smartphone_23-2151221209.jpg" alt="S24">
+        <div class="card">
+            <img src="https://img.freepik.com/photos-gratuite/composition-numerique-du-smartphone_23-2151221209.jpg" class="card-img">
+            <div class="card-body">
+                <p class="card-title">Samsung S24 Ultra</p>
+                <div class="card-vendor">Tech Congo SARL <i class="fa-solid fa-circle-check verified-badge"></i></div>
+                <span class="card-price">1.650 $</span>
+                <i class="fa-regular fa-heart heart-icon"></i>
             </div>
-            <div class="p-name">Samsung S24 Ultra</div>
-            <div class="p-vendor">Tech Congo SARL <span class="v-check">✔</span></div>
-            <div class="p-price">1.650 $</div>
         </div>
-
-        <div class="product-card">
-            <div class="img-container">
-                <img src="https://img.freepik.com/photos-gratuite/ordinateur-portable-sur-table-dans-obscurite_23-2148187015.jpg" alt="Macbook">
+        <div class="card">
+            <img src="https://img.freepik.com/photos-gratuite/ordinateur-portable-sur-table-dans-obscurite_23-2148187015.jpg" class="card-img">
+            <div class="card-body">
+                <p class="card-title">MacBook Pro M3</p>
+                <div class="card-vendor">Smart Digital <i class="fa-solid fa-circle-check verified-badge"></i></div>
+                <span class="card-price">2.500 $</span>
+                <i class="fa-regular fa-heart heart-icon"></i>
             </div>
-            <div class="p-name">MacBook Pro M3</div>
-            <div class="p-vendor">Smart Digital <span class="v-check">✔</span></div>
-            <div class="p-price">2.500 $</div>
         </div>
     </div>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i>Accueil</a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-list-ul"></i>Catégories</a>
+        <div class="nav-publish"><i class="fa-solid fa-plus"></i></div>
+        <a href="#" class="nav-item"><i class="fa-regular fa-heart"></i>Favoris</a>
+        <a href="#" class="nav-item"><i class="fa-regular fa-user"></i>Profil</a>
+    </nav>
 
 </body>
 </html>
