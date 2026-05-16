@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --gold-border: rgba(245, 209, 112, 0.4);
+            --gold-border: rgba(245, 209, 112, 0.3);
             --gold-text: #f5d170;
             --dark-glass: rgba(10, 10, 10, 0.95);
             --verified-blue: #0095f6;
@@ -28,11 +28,20 @@
             top: 0; left: 0; height: 60px; z-index: 100; pointer-events: none;
         }
 
-        /* --- SLIDER --- */
+        /* --- SLIDER AVEC NUAGE NOIR --- */
         .hero-slider {
             position: relative;
             width: 100%; height: 230px;
             background: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjaOZoAEtzfyrJbUC06AfGi65jAvxeY2-UAmg7-BjnwkQZ72scwlx-aV8k61TXp9y-CJzdE1snrgUAb2i4c1cy0hCn-w0eUGTexBa0XFMKoPFgjzFM92GOTt39vdnjQohLpvT5_U8dKRiBXOGyHdlZp2oyT3HKHlvMcZbui-Dv7-EiwfAmhc3R22uVSQpWS/s1600/1000012980.png') center/cover;
+        }
+
+        /* Le "nuage noir" au dessus du slider */
+        .hero-slider::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 60%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
+            z-index: 1;
         }
 
         .header-brand { position: absolute; top: 15px; left: 70px; z-index: 2; }
@@ -42,41 +51,38 @@
         /* --- RECHERCHE --- */
         .search-area { padding: 0 15px; margin-top: -22px; position: relative; z-index: 10; }
         .search-box {
-            background: #0d0d0d; border: 0.5px solid var(--gold-border);
+            background: #0d0d0d; border: 0.3px solid var(--gold-border);
             border-radius: 10px; display: flex; align-items: center; padding: 10px 15px;
         }
         .search-box input { background: transparent; border: none; color: #eee; font-size: 0.8rem; flex: 1; margin: 0 10px; }
         .search-box i { font-size: 0.9rem; color: var(--gold-text); }
 
-        /* --- CATÉGORIES --- */
+        /* --- CATÉGORIES BORDURE FINE --- */
         .categories-container { display: flex; gap: 12px; padding: 15px; overflow-x: auto; scrollbar-width: none; }
         .cat-item { text-align: center; min-width: 40px; }
         .cat-box {
-            width: 32px; height: 32px; border: 0.5px solid var(--gold-border);
+            width: 30px; height: 30px; border: 0.3px solid var(--gold-border);
             border-radius: 8px; display: flex; justify-content: center; align-items: center; margin: 0 auto 4px;
         }
-        .cat-box i { font-size: 0.75rem; color: var(--gold-text); }
+        .cat-box i { font-size: 0.7rem; color: var(--gold-text); }
         .cat-item.active .cat-box { background: var(--gold-text); border-color: var(--gold-text); }
         .cat-item.active i { color: #000; }
-        .cat-item span { font-size: 0.5rem; color: #777; display: block; }
+        .cat-item span { font-size: 0.45rem; color: #777; display: block; }
 
         /* --- GRILLE PRODUITS --- */
         .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 15px 100px; }
-        .product-card { background: #0a0a0a; border: 0.5px solid var(--gold-border); border-radius: 12px; overflow: hidden; position: relative; }
+        .product-card { background: #0a0a0a; border: 0.3px solid var(--gold-border); border-radius: 12px; overflow: hidden; position: relative; }
         .card-img { width: 100%; height: 120px; object-fit: cover; }
         .card-info { padding: 8px; }
         .card-info h4 { font-size: 0.75rem; margin: 0 0 6px 0; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .card-divider { height: 0.5px; background: var(--gold-border); margin: 6px 0; }
+        .card-divider { height: 0.3px; background: var(--gold-border); margin: 6px 0; }
 
-        /* --- NOUVELLE STRUCTURE PRIX & LIKE --- */
         .card-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
-        
         .bottom-left { flex: 1; }
         .vendor-name { font-size: 0.55rem; color: #aaa; display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
         .vendor-name i { color: var(--verified-blue); font-size: 0.5rem; }
 
-        /* Status au dessus du prix */
         .status-text { font-size: 0.45rem; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; display: block; }
         .status-available { color: #00ff00; }
         .status-unavailable { color: #ff3b30; }
@@ -86,20 +92,15 @@
         .bottom-right { text-align: right; }
         .loc-text { font-size: 0.5rem; color: #777; text-transform: uppercase; display: block; margin-bottom: 5px; }
 
-        /* Bouton Like Interactif */
-        .like-btn { 
-            background: transparent; border: none; padding: 0; cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-        .like-btn i { font-size: 0.9rem; color: #555; transition: color 0.3s; }
-        .like-btn.liked i { color: #ffcc00; font-weight: 900; } /* Jaune quand cliqué */
-        .like-btn:active { transform: scale(1.3); }
+        .like-btn { background: transparent; border: none; padding: 0; cursor: pointer; transition: transform 0.2s; }
+        .like-btn i { font-size: 0.9rem; color: #555; }
+        .like-btn.liked i { color: #ffcc00; font-weight: 900; }
 
         /* --- NAV BAS --- */
         .nav-bar {
             position: fixed; bottom: 0; width: 100%; height: 60px;
             background: var(--dark-glass); backdrop-filter: blur(15px);
-            border-top: 0.5px solid var(--gold-border);
+            border-top: 0.3px solid var(--gold-border);
             display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; z-index: 1000;
         }
         .nav-link { text-decoration: none; text-align: center; color: #555; font-size: 0.6rem; }
@@ -131,7 +132,7 @@
         <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-mobile-screen"></i></div><span>Tél</span></div>
         <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-laptop"></i></div><span>Électro</span></div>
         <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-shirt"></i></div><span>Mode</span></div>
-        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-flask-bubble"></i></div><span>Beauté</span></div>
+        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-pump-soap"></i></div><span>Beauté</span></div>
         <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-house"></i></div><span>Maison</span></div>
     </div>
 
@@ -191,14 +192,10 @@
         function toggleLike(element, productId) {
             element.classList.toggle('liked');
             const icon = element.querySelector('i');
-            
             if (element.classList.contains('liked')) {
                 icon.classList.replace('fa-regular', 'fa-solid');
-                console.log("Like ajouté pour : " + productId);
-                // Ici on ajoutera : firebase.database().ref('likes/' + productId).set(...)
             } else {
                 icon.classList.replace('fa-solid', 'fa-regular');
-                console.log("Like retiré pour : " + productId);
             }
         }
     </script>
