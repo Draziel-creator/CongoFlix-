@@ -78,10 +78,11 @@
             gap: 2px; align-items: center; justify-items: center;
         }
 
-        .pos-l1 { top: 23%; left: 1%; }    /* BORD GAUCHE */
+        /* Ajustement final des positions pour centrer dans les écrans noirs latéraux */
+        .pos-l1 { top: 23%; left: 1%; }    /* BORD GAUCHE : Centré à 1% du bord et 23% du haut */
         .pos-l2 { top: 23%; left: 20%; } 
         .pos-r1 { top: 23%; right: 18.5%; } 
-        .pos-r2 { top: 23%; right: 1%; }   /* BORD DROIT */
+        .pos-r2 { top: 23%; right: 1%; }   /* BORD DROIT : Centré à 1% du bord et 23% du haut */
 
         .v-box { display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .v-circ { 
@@ -162,7 +163,7 @@
             </div>
 
             <div class="question-box" id="q-box">
-                <div class="q-text" id="main-q">QUI EST LE PÈRE DE L'INDÉPENDANCE DU CONGO ?</div>
+                <div class="q-text">QUI EST LE PÈRE DE L'INDÉPENDANCE DU CONGO ?</div>
                 <div class="options-grid">
                     <div class="btn-opt">A: Mobutu</div><div class="btn-opt">B: Lumumba</div>
                     <div class="btn-opt">C: Kasa-Vubu</div><div class="btn-opt">D: Tshombe</div>
@@ -180,18 +181,8 @@
         const chat = document.getElementById('chat-box');
         let currentModal = 1;
 
-        // IA ANIMATRICE (VOIX)
-        function parler(texte) {
-            const synthese = window.speechSynthesis;
-            const message = new SpeechSynthesisUtterance(texte);
-            message.lang = 'fr-FR';
-            message.pitch = 1.1; 
-            message.rate = 1;
-            synthese.speak(message);
-        }
-
         for(let i=1; i<=10; i++) {
-            document.getElementById('player-grid').innerHTML += `<div class="c-slot" onclick="showPlayer(${i})"><div class="player-modal" id="m${i}"><b>Joueur ${i}</b><br>Score: 0</div></div>`;
+            document.getElementById('player-grid').innerHTML += `<div class="c-slot" onclick="showPlayer(${i})"><div class="player-modal" id="m${i}"><b>J${i}</b><br>Score: 0</div></div>`;
         }
 
         const names = ["Fan", "Rex", "Luz", "Dan", "Eve", "Madi", "Papy", "Toto", "Lia"];
@@ -201,7 +192,12 @@
             const container = document.getElementById(id);
             for(let i=0; i<9; i++) {
                 const pr = provs[Math.floor(Math.random()*provs.length)];
-                container.innerHTML += `<div class="v-box"><div class="v-circ"></div><div class="v-txt">${names[i]}</div><div class="v-prov">${pr}</div></div>`;
+                container.innerHTML += `
+                    <div class="v-box">
+                        <div class="v-circ"></div>
+                        <div class="v-txt">${names[i]}</div>
+                        <div class="v-prov">${pr}</div>
+                    </div>`;
             }
         });
 
@@ -210,8 +206,6 @@
             setTimeout(() => {
                 mirror.classList.remove('mirror-active');
                 document.getElementById('q-box').classList.add('active');
-                const question = document.getElementById('main-q').innerText;
-                parler("Attention tout le monde ! Voici la question : " + question);
                 showOrderly();
             }, 1500);
         }
@@ -220,17 +214,19 @@
             const m = document.getElementById('m' + currentModal);
             if(m) {
                 m.classList.add('show');
-                parler("C'est au tour du Joueur " + currentModal);
-                setTimeout(() => {
-                    m.classList.remove('show');
-                    parler("Félicitations au joueur " + currentModal + " pour sa réponse !");
-                }, 4000);
+                setTimeout(() => m.classList.remove('show'), 3000);
                 currentModal = currentModal >= 10 ? 1 : currentModal + 1;
             }
         }
 
         function startChat() {
-            const msgs = [{n: "Moussa", m: "Force au candidat !"}, {n: "Sarah", m: "C'est Lumumba sûr !", g: "+100 PTS"}, {n: "Gloire", m: "Vrai génie ce J4"}, {n: "Kevin", m: "Incroyable le studio", g: "DIAMANT"}, {n: "Julie", m: "Génie Congo !!!"}];
+            const msgs = [
+                {n: "Moussa", m: "Force au candidat !"}, 
+                {n: "Sarah", m: "C'est Lumumba sûr !", g: "+100 PTS"}, 
+                {n: "Gloire", m: "Vrai génie ce J4"},
+                {n: "Kevin", m: "Incroyable le studio", g: "DIAMANT"},
+                {n: "Julie", m: "Génie Congo !!!"}
+            ];
             setInterval(() => {
                 const data = msgs[Math.floor(Math.random()*msgs.length)];
                 const div = document.createElement('div');
@@ -246,18 +242,14 @@
                 studio.classList.add('animate-zoom');
                 setTimeout(() => {
                     uiLayer.classList.add('show');
-                    parler("Bienvenue dans Génie Congo ! Préparez-vous pour le direct.");
                     startChat();
-                    setInterval(triggerSequence, 12000);
+                    setInterval(triggerSequence, 7500);
                 }, 8000);
             }
         }
         window.addEventListener('load', checkOrientation);
         window.addEventListener('resize', checkOrientation);
-        function showPlayer(id) { 
-            document.getElementById('m' + id).classList.toggle('show');
-            if(document.getElementById('m' + id).classList.contains('show')) parler("Présentation du Joueur " + id);
-        }
+        function showPlayer(id) { document.getElementById('m' + id).classList.toggle('show'); }
     </script>
 </body>
 </html>
