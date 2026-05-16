@@ -7,322 +7,230 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --gold: linear-gradient(135deg, #f5d170 0%, #b88a1a 100%);
-            --gold-flat: #b88a1a;
-            --dark: #000000;
-            --card-bg: #0f0f0f;
-            --gray-text: #8e8e93;
+            --gold-border: rgba(245, 209, 112, 0.4);
+            --gold-text: #f5d170;
+            --dark-glass: rgba(15, 15, 15, 0.9);
         }
 
         body {
             margin: 0;
-            background-color: var(--dark);
-            font-family: 'SF Pro Display', -apple-system, sans-serif;
+            background-color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
             color: white;
             -webkit-font-smoothing: antialiased;
         }
 
-        /* --- LOGO & NOTIF (Haut du Slider) --- */
-        .top-bar {
-            position: absolute;
-            top: 40px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
-        }
-        .logo-center { height: 45px; }
-        .notif-btn { position: absolute; right: 20px; font-size: 1.2rem; color: #f5d170; }
-
-        /* --- SLIDER IMMERSIF (Image 2 Style) --- */
+        /* --- SLIDER RECTANGLE (Plus court) --- */
         .hero-slider {
             position: relative;
             width: 100%;
-            height: 440px;
+            height: 280px; /* Rectangle et non carré */
             background: url('https://img.freepik.com/photos-gratuite/leopard-afrique-afrique-du-sud_1150-13840.jpg') center/cover;
-            background-position: 20% center; /* Pour voir le léopard comme sur la capture */
+            overflow: hidden;
         }
 
-        /* Le "Nuage Noir" en haut et en bas du slider */
+        /* Flou profond en haut et en bas */
         .hero-slider::before {
             content: '';
             position: absolute;
             inset: 0;
             background: linear-gradient(to bottom, 
-                rgba(0,0,0,0.8) 0%, 
-                transparent 25%, 
-                transparent 70%, 
-                var(--dark) 100%);
+                #000 0%, 
+                rgba(0,0,0,0.4) 20%, 
+                rgba(0,0,0,0.4) 80%, 
+                #000 100%);
+            z-index: 1;
         }
 
         .hero-content {
             position: absolute;
-            bottom: 60px;
+            bottom: 40px;
             left: 20px;
-            z-index: 10;
+            z-index: 2;
         }
 
-        .hero-content h1 {
-            font-size: 1.5rem;
-            margin: 0;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-
-        .hero-content p {
-            font-size: 0.75rem;
-            color: #bbb;
-            margin: 8px 0 15px 0;
-            max-width: 200px;
-        }
-
-        .btn-explorer {
-            background: var(--gold);
-            border: none;
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-weight: 800;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-        }
+        .hero-content h1 { font-size: 1.3rem; margin: 0; line-height: 1.1; }
+        .hero-content p { font-size: 0.7rem; color: #aaa; margin: 5px 0 10px; }
 
         /* --- RECHERCHE FINE --- */
-        .search-area {
-            padding: 0 20px;
-            margin-top: -30px;
-            position: relative;
-            z-index: 30;
-        }
+        .search-area { padding: 0 15px; margin-top: -20px; position: relative; z-index: 10; }
         .search-box {
-            background: rgba(20, 20, 20, 0.95);
-            border: 1px solid #222;
-            border-radius: 10px;
+            background: #0a0a0a;
+            border: 0.5px solid var(--gold-border);
+            border-radius: 8px;
             display: flex;
             align-items: center;
-            padding: 10px 15px;
+            padding: 8px 12px;
         }
-        .search-box input {
-            background: transparent;
-            border: none;
-            color: #888;
-            font-size: 0.8rem;
-            width: 100%;
-            margin-left: 10px;
-        }
+        .search-box input { background: transparent; border: none; color: #666; font-size: 0.75rem; flex: 1; margin: 0 10px; }
+        .search-box i { font-size: 0.8rem; color: var(--gold-text); }
 
-        /* --- CATÉGORIES (Mini boutons élégants) --- */
+        /* --- CATEGORIES MINIATURES --- */
         .categories-container {
             display: flex;
+            gap: 8px;
+            padding: 20px 15px;
             overflow-x: auto;
-            gap: 12px;
-            padding: 25px 20px;
             scrollbar-width: none;
         }
-        .cat-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 65px;
-        }
         .cat-box {
-            width: 50px;
-            height: 50px;
-            background: #111;
-            border: 1px solid #222;
-            border-radius: 12px;
+            min-width: 42px;
+            height: 42px;
+            background: #0a0a0a;
+            border: 0.5px solid #222;
+            border-radius: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.1rem;
-            color: #f5d170;
-            margin-bottom: 6px;
-        }
-        .cat-item.active .cat-box {
-            background: #f5d170;
-            color: black;
-            border: none;
-        }
-        .cat-item span { font-size: 0.65rem; color: var(--gray-text); }
-
-        /* --- GRILLE DE PRODUITS (Hauteur identique capture) --- */
-        .grid-header {
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px 10px;
             font-size: 0.9rem;
+            color: #666;
         }
+        .cat-item.active .cat-box { border-color: var(--gold-text); color: var(--gold-text); }
+        .cat-item span { display: block; text-align: center; font-size: 0.55rem; color: #555; margin-top: 4px; }
 
+        /* --- GRILLE 4 PRODUITS AVEC EFFET MIROIR --- */
         .product-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 10px;
             padding: 0 15px 100px;
         }
 
         .product-card {
-            background: var(--card-bg);
-            border-radius: 15px;
-            border: 1px solid #1a1a1a;
+            background: #050505;
+            border: 0.5px solid var(--gold-border);
+            border-radius: 12px;
             overflow: hidden;
             position: relative;
         }
 
-        .badge-premium {
+        /* EFFET MIROIR OBLIQUE (Shimmer) */
+        .product-card::after {
+            content: '';
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            border: 0.5px solid #f5d170;
-            color: #f5d170;
-            font-size: 0.5rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            z-index: 5;
+            top: -100%;
+            left: -100%;
+            width: 50%;
+            height: 300%;
+            background: linear-gradient(rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+            transform: rotate(45deg);
+            transition: none;
+            animation: mirror 4s infinite ease-in-out;
         }
 
-        .card-img-box {
-            width: 100%;
-            height: 160px;
-            background: #000;
+        @keyframes mirror {
+            0% { top: -100%; left: -100%; }
+            20% { top: 100%; left: 100%; }
+            100% { top: 100%; left: 100%; }
         }
-        .card-img-box img { width: 100%; height: 100%; object-fit: cover; }
 
-        .card-info { padding: 10px; }
-        .card-info h4 { font-size: 0.75rem; margin: 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
-        .vendor-line { 
-            font-size: 0.6rem; 
-            color: var(--gray-text); 
-            margin: 4px 0; 
-            display: flex; 
-            align-items: center; 
-            gap: 3px; 
-        }
-        .price-line {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 8px;
-        }
-        .price-text { font-weight: 700; color: #f5d170; font-size: 0.9rem; }
-        .heart-btn { color: #444; font-size: 0.8rem; }
+        .card-img { width: 100%; height: 130px; object-fit: cover; border-bottom: 0.5px solid #1a1a1a; }
 
-        /* --- BARRE DE NAVIGATION (Finesse Max) --- */
+        /* EFFET VITRINE LUMINEUX (Bas de carte) */
+        .card-info {
+            padding: 8px;
+            background: linear-gradient(to bottom, #111, #000);
+            box-shadow: inset 0 1px 10px rgba(245, 209, 112, 0.05);
+        }
+        .card-info h4 { font-size: 0.65rem; margin: 0; color: #eee; font-weight: 400; }
+        .price-text { font-size: 0.8rem; color: var(--gold-text); font-weight: 700; margin-top: 5px; display: block; }
+
+        /* --- MENU BAS VITRINE AVEC HALO --- */
         .nav-bar {
             position: fixed;
             bottom: 0;
             width: 100%;
-            height: 65px;
-            background: rgba(5, 5, 5, 0.98);
-            border-top: 1px solid #1a1a1a;
+            height: 60px;
+            background: var(--dark-glass);
+            backdrop-filter: blur(15px);
+            border-top: 0.5px solid var(--gold-border);
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             align-items: center;
             z-index: 100;
         }
-        .nav-link {
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: #666;
-            font-size: 0.6rem;
-        }
-        .nav-link i { font-size: 1.1rem; margin-bottom: 4px; }
-        .nav-link.active { color: #f5d170; }
 
-        /* Vrai badge TikTok Style */
-        .v-badge { color: #b88a1a; font-size: 0.65rem; }
+        /* Halo lumineux au dessus de la bordure menu */
+        .nav-bar::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 2px;
+            background: radial-gradient(circle, var(--gold-text) 0%, transparent 70%);
+            opacity: 0.6;
+        }
+
+        .nav-link { text-decoration: none; text-align: center; color: #444; font-size: 0.55rem; }
+        .nav-link i { font-size: 1rem; display: block; margin-bottom: 3px; }
+        .nav-link.active { color: var(--gold-text); text-shadow: 0 0 10px rgba(245, 209, 112, 0.5); }
 
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <img src="https://i.ibb.co/vzYyS0R/logo-marche-rdc.png" class="logo-center" alt="MARCHÉ RDC">
-        <i class="fa-regular fa-bell notif-btn"></i>
-    </div>
-
     <div class="hero-slider">
         <div class="hero-content">
-            <h1>Tout le Congo<br>dans votre poche</h1>
-            <p>Des milliers de produits, des vendeurs locaux.</p>
-            <button class="btn-explorer">Explorer ></button>
+            <h1>Tout le Congo</h1>
+            <p>Le plus grand marché de la RDC.</p>
         </div>
     </div>
 
     <div class="search-area">
         <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" placeholder="Rechercher un produit, une marque...">
+            <input type="text" placeholder="Rechercher...">
             <i class="fa-solid fa-sliders"></i>
         </div>
     </div>
 
     <div class="categories-container">
-        <div class="cat-item active">
-            <div class="cat-box"><i class="fa-solid fa-grip"></i></div>
-            <span style="color:white">Tout</span>
-        </div>
-        <div class="cat-item">
-            <div class="cat-box"><i class="fa-solid fa-mobile-screen"></i></div>
-            <span>Téléphones</span>
-        </div>
-        <div class="cat-item">
-            <div class="cat-box"><i class="fa-solid fa-laptop"></i></div>
-            <span>Électro</span>
-        </div>
-        <div class="cat-item">
-            <div class="cat-box"><i class="fa-solid fa-shirt"></i></div>
-            <span>Mode</span>
-        </div>
-        <div class="cat-item">
-            <div class="cat-box"><i class="fa-solid fa-house"></i></div>
-            <span>Maison</span>
-        </div>
-    </div>
-
-    <div class="grid-header">
-        <span>Produits populaires</span>
-        <span style="color: #b88a1a; font-size: 0.75rem;">Voir tout ></span>
+        <div class="cat-item active"><div class="cat-box"><i class="fa-solid fa-grip"></i></div><span>Tout</span></div>
+        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-mobile-screen"></i></div><span>Tél</span></div>
+        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-laptop"></i></div><span>Électro</span></div>
+        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-shirt"></i></div><span>Mode</span></div>
+        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-car"></i></div><span>Auto</span></div>
+        <div class="cat-item"><div class="cat-box"><i class="fa-solid fa-couch"></i></div><span>Maison</span></div>
     </div>
 
     <div class="product-grid">
         <div class="product-card">
-            <div class="badge-premium">PREMIUM</div>
-            <div class="card-img-box">
-                <img src="https://img.freepik.com/photos-gratuite/composition-numerique-du-smartphone_23-2151221209.jpg">
-            </div>
+            <img src="https://img.freepik.com/photos-gratuite/composition-numerique-du-smartphone_23-2151221209.jpg" class="card-img">
             <div class="card-info">
-                <h4>Samsung Galaxy S24 Ultra</h4>
-                <div class="vendor-line">Tech Congo SARL <i class="fa-solid fa-circle-check v-badge"></i></div>
-                <div class="price-line">
-                    <span class="price-text">1.650 $</span>
-                    <i class="fa-regular fa-heart heart-btn"></i>
-                </div>
+                <h4>Galaxy S24 Ultra</h4>
+                <span class="price-text">1.650 $</span>
             </div>
         </div>
-
         <div class="product-card">
-            <div class="card-img-box">
-                <img src="https://img.freepik.com/photos-gratuite/composition-numerique-du-smartphone_23-2149110344.jpg">
-            </div>
+            <img src="https://img.freepik.com/photos-gratuite/ordinateur-portable-sur-table_23-2148187015.jpg" class="card-img">
             <div class="card-info">
-                <h4>MacBook Pro M3 14"</h4>
-                <div class="vendor-line">Smart Digital <i class="fa-solid fa-circle-check v-badge"></i></div>
-                <div class="price-line">
-                    <span class="price-text">2.500 $</span>
-                    <i class="fa-regular fa-heart heart-btn"></i>
-                </div>
+                <h4>MacBook Pro M3</h4>
+                <span class="price-text">2.500 $</span>
+            </div>
+        </div>
+        <div class="product-card">
+            <img src="https://img.freepik.com/photos-gratuite/parfum-luxe-fond-sombre_23-2149110344.jpg" class="card-img">
+            <div class="card-info">
+                <h4>Dior Sauvage</h4>
+                <span class="price-text">120 $</span>
+            </div>
+        </div>
+        <div class="product-card">
+            <img src="https://img.freepik.com/photos-gratuite/chaussures-sport-noir-blanc_23-2148827773.jpg" class="card-img">
+            <div class="card-info">
+                <h4>Nike Jordan 1</h4>
+                <span class="price-text">130 $</span>
             </div>
         </div>
     </div>
 
     <nav class="nav-bar">
         <a href="#" class="nav-link active"><i class="fa-solid fa-house"></i>Accueil</a>
-        <a href="#" class="nav-link"><i class="fa-solid fa-grid-2"></i>Catégories</a>
+        <a href="#" class="nav-link"><i class="fa-solid fa-list-ul"></i>Menu</a>
+        <a href="#" class="nav-link"><i class="fa-solid fa-plus-circle" style="font-size: 1.4rem; color:#eee;"></i></a>
         <a href="#" class="nav-link"><i class="fa-regular fa-heart"></i>Favoris</a>
-        <a href="#" class="nav-link"><i class="fa-regular fa-comment-dots"></i>Messages</a>
         <a href="#" class="nav-link"><i class="fa-regular fa-user"></i>Profil</a>
     </nav>
 
