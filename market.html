@@ -79,15 +79,23 @@
         .card-info h4 { font-size: 0.75rem; margin: 0 0 6px 0; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .card-divider { height: 0.3px; background: var(--gold-border); margin: 6px 0; }
         .card-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+        
+        /* Infos Gauche */
+        .bottom-left { display: flex; flex-direction: column; gap: 2px; }
         .vendor-name { font-size: 0.55rem; color: #aaa; display: flex; align-items: center; gap: 3px; }
         .vendor-name i { color: var(--verified-blue); font-size: 0.5rem; }
-        .status-text { font-size: 0.45rem; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+        .status-text { font-size: 0.45rem; font-weight: 700; text-transform: uppercase; }
         .price-text { font-size: 0.85rem; color: var(--gold-text); font-weight: 800; }
-        .loc-text { font-size: 0.5rem; color: #777; text-transform: uppercase; display: block; }
 
-        .like-container { display: flex; align-items: center; gap: 4px; color: #555; }
+        /* Infos Droite (Province + Catégorie + Likes) */
+        .bottom-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+        .loc-text { font-size: 0.5rem; color: #777; text-transform: uppercase; font-weight: bold; }
+        .cat-tag { font-size: 0.45rem; color: var(--gold-text); background: rgba(245, 209, 112, 0.1); padding: 1px 4px; border-radius: 3px; text-transform: lowercase; border: 0.1px solid var(--gold-border); }
+        
+        .like-container { display: flex; align-items: center; gap: 4px; color: #555; margin-top: 2px; }
         .like-count { font-size: 0.6rem; font-weight: bold; }
         .like-btn { background: transparent; border: none; padding: 0; cursor: pointer; }
+        .like-btn i { font-size: 0.8rem; }
         .like-btn.liked i { color: #f5d170; }
 
         /* MODAL CONNEXION */
@@ -154,7 +162,7 @@
         <div class="modal-content">
             <i class="fas fa-lock" style="font-size: 40px; color: var(--gold-text);"></i>
             <h3>Connexion Requise</h3>
-            <p style="font-size: 14px; color: #aaa;">Veuillez vous connecter pour accéder à cette fonctionnalité ou voir les détails.</p>
+            <p style="font-size: 14px; color: #aaa;">Veuillez vous connecter pour accéder à cette fonctionnalité.</p>
             <a href="https://draziel-creator.github.io/CongoFlix-/index.html" class="btn-connect">SE CONNECTER</a>
             <button onclick="closeModal()" style="background:none; border:none; color:#555; margin-top:15px; cursor:pointer;">Annuler</button>
         </div>
@@ -173,7 +181,6 @@
     </nav>
 
     <script>
-        // CONFIGURATION FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
             authDomain: "congo-streaming-51333.firebaseapp.com",
@@ -188,7 +195,7 @@
         let currentUser = null;
         let allProducts = [];
 
-        // --- GESTION AUTHENTIFICATION ---
+        // --- AUTH ---
         auth.onAuthStateChanged(async (user) => {
             const userImg = document.getElementById('userNavImg');
             const userIcon = document.getElementById('userDefaultIcon');
@@ -218,7 +225,7 @@
 
         function closeModal() { document.getElementById('authModal').style.display = 'none'; }
 
-        // --- SLIDER DYNAMIQUE ---
+        // --- SLIDER ---
         function initSlider() {
             db.collection("slider_market").orderBy("createdAt", "desc").limit(5).onSnapshot(snap => {
                 const slides = [];
@@ -227,10 +234,10 @@
                     let i = 0;
                     const updateSlider = () => {
                         const s = slides[i];
-                        const sliderEl = document.getElementById('mainSlider');
-                        if(sliderEl && s.image) {
-                            sliderEl.style.backgroundImage = `url('${s.image}')`;
-                            document.getElementById('sliderProdName').innerText = s.nomProduit || "Produit Elite";
+                        const el = document.getElementById('mainSlider');
+                        if(el && s.image) {
+                            el.style.backgroundImage = `url('${s.image}')`;
+                            document.getElementById('sliderProdName').innerText = s.nomProduit || "Elite Mirror";
                         }
                         i = (i + 1) % slides.length;
                     };
@@ -240,7 +247,7 @@
             });
         }
 
-        // --- CHARGEMENT ET RENDU PRODUITS ---
+        // --- PRODUITS & CATEGORIES ---
         function loadProducts() {
             db.collection("marche_produits").orderBy("createdAt", "desc").onSnapshot(snap => {
                 allProducts = [];
@@ -270,6 +277,7 @@
                                 </div>
                                 <div class="bottom-right">
                                     <span class="loc-text">${p.ville || 'RDC'}</span>
+                                    <span class="cat-tag">${p.categorie || 'divers'}</span>
                                     <div class="like-container">
                                         <span class="like-count" id="count-${p.id}">${p.likes || 0}</span>
                                         <button class="like-btn" onclick="event.stopPropagation(); toggleLike('${p.id}')">
@@ -283,23 +291,23 @@
             });
         }
 
-        // --- FILTRES PAR CATÉGORIE ---
+        // --- FILTRE DYNAMIQUE ---
         function filterCat(category, element) {
-            // Mise à jour de l'UI des boutons
             document.querySelectorAll('.cat-item').forEach(item => item.classList.remove('active'));
             element.classList.add('active');
 
             if (category === 'Tout') {
                 renderProducts(allProducts);
             } else {
+                // Filtre les produits dont le champ 'categorie' correspond au texte du bouton
                 const filtered = allProducts.filter(p => p.categorie === category);
                 renderProducts(filtered);
             }
         }
 
-        // --- SYSTÈME DE LIKES ---
+        // --- LIKES ---
         async function toggleLike(id) {
-            if (!currentUser) { closeModal(); return; }
+            if (!currentUser) { document.getElementById('authModal').style.display = 'flex'; return; }
             const prodRef = db.collection("marche_produits").doc(id);
             try {
                 await db.runTransaction(async (transaction) => {
@@ -311,12 +319,13 @@
             } catch (e) { console.error("Erreur like:", e); }
         }
 
-        // --- RECHERCHE TEXTUELLE ---
+        // --- RECHERCHE ---
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase();
             const filtered = allProducts.filter(p => 
                 p.nom.toLowerCase().includes(val) || 
-                p.vendeur.toLowerCase().includes(val)
+                p.vendeur.toLowerCase().includes(val) ||
+                (p.categorie && p.categorie.toLowerCase().includes(val))
             );
             renderProducts(filtered);
         });
