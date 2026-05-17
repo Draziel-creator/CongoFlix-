@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Détails Premium - Marché RDC</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
     <style>
@@ -24,7 +26,7 @@
             overflow-x: hidden; padding-top: env(safe-area-inset-top);
         }
 
-        /* HEADER EXTERNE TOUT EN HAUT */
+        /* HEADER */
         .external-header {
             padding: 15px 20px; display: flex; align-items: center; justify-content: space-between;
             position: relative; z-index: 100;
@@ -36,7 +38,7 @@
         .brand-name { display: block; font-weight: 700; color: var(--gold); font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; }
         .brand-slogan { display: block; font-size: 0.5rem; color: var(--gold-muted); text-transform: lowercase; margin-top: -2px; }
 
-        /* VITRINE LUMINEUSE PULSANTE */
+        /* VITRINE LUMINEUSE */
         .showcase-container {
             margin: 0 10px 20px 10px; border-radius: 25px; position: relative;
             background: var(--bg-dark); overflow: hidden;
@@ -50,14 +52,12 @@
             100% { box-shadow: 0 0 5px var(--gold-glow); border-color: var(--gold-muted); }
         }
 
-        /* IMAGE AVEC COURBE STYLE CAPTURE */
         .product-header { position: relative; width: 100%; height: 38vh; background: #000; }
         .main-img { width: 100%; height: 100%; object-fit: contain; }
         
         .curve-separator {
             position: absolute; bottom: -1px; left: 0; width: 100%; height: 50px;
             background: var(--bg-dark);
-            /* Courbe stylisée */
             clip-path: ellipse(75% 100% at 50% 100%);
             border-top: 1.5px solid var(--gold);
         }
@@ -67,26 +67,27 @@
             border: none; color: white; width: 38px; height: 38px; border-radius: 50%; font-size: 1.1rem;
         }
 
-        /* CONTENT */
         .product-content { padding: 20px 15px; position: relative; }
         h1 { font-size: 1.2rem; margin: 0 0 10px 0; font-weight: 500; }
         
         .price-line { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
         .price-group .amt { font-size: 1.6rem; color: var(--gold); font-weight: 800; display: block; }
         .price-group .negoc { font-size: 0.6rem; color: #888; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
-        .v-check { color: #4cd137; background: rgba(76, 209, 55, 0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.6rem; border: 0.2px solid #4cd137; }
+        
+        /* Badge de vérification produit/vendeur */
+        .v-check { color: #4cd137; background: rgba(76, 209, 55, 0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.6rem; border: 0.2px solid #4cd137; display: none; }
 
         .section-header { display: flex; align-items: center; gap: 8px; font-size: 0.6rem; color: var(--text-gray); text-transform: uppercase; margin: 20px 0 10px 0; letter-spacing: 1px; }
         .description { color: #bbb; line-height: 1.5; font-weight: 300; font-size: 0.75rem; margin-bottom: 20px; }
 
-        /* BLOC VENDEUR COMPLET */
+        /* BLOC VENDEUR */
         .vendeur-card {
             background: var(--card-bg); padding: 12px; border-radius: 15px;
             display: flex; align-items: center; justify-content: space-between;
             border: 0.3px solid rgba(255,255,255,0.08); margin-bottom: 15px;
         }
         .v-info { display: flex; align-items: center; gap: 12px; }
-        .v-logo { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; background: #222; }
+        .v-logo { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; background: #222; border: 0.5px solid var(--gold-muted); }
         .v-text .v-name { font-size: 0.8rem; font-weight: 600; color: #fff; margin-bottom: 2px; }
         .v-text .v-sub { font-size: 0.6rem; color: var(--text-gray); display: flex; align-items: center; gap: 4px; }
         .v-badge { color: var(--gold); font-size: 0.65rem; }
@@ -103,7 +104,7 @@
         }
         .cc-logo { width: 22px; height: 22px; border: 1.5px solid #4cd137; border-radius: 50%; color: var(--gold); font-weight: bold; font-size: 12px; display: grid; place-items: center; }
 
-        /* BOUTON ACHETER DORÉ */
+        /* BOUTON ACHETER */
         .buy-area { padding: 10px 0 20px 0; }
         .btn-buy-full {
             width: 100%; height: 48px; border-radius: 12px;
@@ -138,9 +139,9 @@
             <div class="price-line">
                 <div class="price-group">
                     <span class="amt" id="prodPrice">0 $</span>
-                    <span class="negoc"><i class="fa-solid fa-tag"></i> Prix négociable</span>
+                    <span class="negoc" id="negocText"><i class="fa-solid fa-tag"></i> Chargement...</span>
                 </div>
-                <div class="v-check"><i class="fa-solid fa-circle-check"></i> Vendeur Vérifié</div>
+                <div class="v-check" id="verifyBadge"><i class="fa-solid fa-circle-check"></i> Vendeur Vérifié</div>
             </div>
 
             <div class="section-header"><i class="fa-solid fa-file-lines"></i> Description</div>
@@ -151,12 +152,12 @@
                 <div class="v-info">
                     <img src="" id="vendImg" class="v-logo">
                     <div class="v-text">
-                        <div class="v-name" id="vendName">... <i class="fa-solid fa-certificate v-badge"></i></div>
-                        <div class="v-sub">Vendeur professionnel</div>
-                        <div class="v-sub"><i class="fa-solid fa-location-dot"></i> <span id="vendLoc">Kinshasa, RDC</span></div>
+                        <div class="v-name" id="vendName">...</div>
+                        <div class="v-sub" id="vendProTag">Vendeur professionnel</div>
+                        <div class="v-sub"><i class="fa-solid fa-location-dot"></i> <span id="vendLoc">...</span></div>
                     </div>
                 </div>
-                <a href="#" class="btn-store">Voir la boutique</a>
+                <a href="#" class="btn-store">Boutique</a>
             </div>
 
             <div class="section-header">Contact Vendeur</div>
@@ -168,7 +169,7 @@
             </div>
 
             <div class="buy-area">
-                <button class="btn-buy-full" onclick="alert('Commande sécurisée lancée...')">
+                <button class="btn-buy-full" onclick="alert('Lancement du processus de paiement...')">
                     <i class="fa-solid fa-cart-shopping"></i>
                     <span>ACHETER MAINTENANT</span>
                     <i class="fa-solid fa-arrow-right"></i>
@@ -178,28 +179,75 @@
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", projectId: "congo-streaming-51333" };
+        const firebaseConfig = {
+            apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
+            authDomain: "congo-streaming-51333.firebaseapp.com",
+            projectId: "congo-streaming-51333",
+            appId: "1:304286627819:android:36e0b43b8b10508a054bae"
+        };
+
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        async function load() {
-            const id = new URLSearchParams(window.location.search).get('id');
-            if(!id) return;
-            const doc = await db.collection("marche_produits").doc(id).get();
-            if(doc.exists) {
-                const p = doc.data();
-                document.getElementById('prodImg').src = p.image;
-                document.getElementById('prodName').innerText = p.nom;
-                document.getElementById('prodPrice').innerText = p.prix + " $";
-                document.getElementById('prodDesc').innerText = p.description;
-                document.getElementById('vendName').innerHTML = p.vendeur + ' <i class="fa-solid fa-certificate v-badge"></i>';
-                document.getElementById('vendImg').src = p.vendeurImg || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+        async function loadProduct() {
+            // Récupération de l'ID du produit depuis l'URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('id');
+
+            if (!productId) {
+                document.getElementById('prodName').innerText = "Produit introuvable";
+                return;
+            }
+
+            try {
+                const doc = await db.collection("marche_produits").doc(productId).get();
                 
-                document.getElementById('chatLink').href = `https://draziel-creator.github.io/CongoChat/?id=${id}`;
-                document.getElementById('callLink').href = `tel:${p.telephone}`;
+                if (doc.exists) {
+                    const data = doc.data();
+
+                    // 1. Infos Produit
+                    document.getElementById('prodImg').src = data.image;
+                    document.getElementById('prodName').innerText = data.nom;
+                    document.getElementById('prodPrice').innerText = data.prix + " $";
+                    document.getElementById('prodDesc').innerText = data.description || "Aucune description disponible.";
+                    
+                    // 2. Gestion Négociable
+                    const negocText = document.getElementById('negocText');
+                    if(data.negociable === true) {
+                        negocText.innerHTML = '<i class="fa-solid fa-comments"></i> Prix négociable';
+                    } else {
+                        negocText.innerHTML = '<i class="fa-solid fa-lock"></i> Prix non négociable';
+                    }
+
+                    // 3. Infos Vendeur
+                    document.getElementById('vendImg').src = data.vendeurImg || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+                    document.getElementById('vendName').innerHTML = (data.vendeur || "Boutique") + (data.verifie ? ' <i class="fa-solid fa-certificate v-badge"></i>' : '');
+                    document.getElementById('vendLoc').innerText = (data.ville || "RDC");
+                    
+                    // Badge "Vendeur Vérifié" en haut
+                    if(data.verifie) {
+                        document.getElementById('verifyBadge').style.display = "block";
+                    }
+
+                    // 4. Liens de contact
+                    // On passe l'email du vendeur pour que CongoChat puisse identifier le destinataire
+                    const sellerEmail = data.vendeurEmail || "";
+                    document.getElementById('chatLink').href = `https://draziel-creator.github.io/CongoChat/?targetEmail=${sellerEmail}`;
+                    
+                    // Lien téléphone
+                    document.getElementById('callLink').href = `tel:${data.telephone || ""}`;
+
+                } else {
+                    document.getElementById('prodName').innerText = "Produit inexistant";
+                }
+            } catch (error) {
+                console.error("Erreur Firebase:", error);
             }
         }
-        window.onload = load;
+
+        // Exécution au chargement
+        window.onload = loadProduct;
     </script>
 </body>
 </html>
