@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Premium - Marché RDC</title>
+    <title>Détails Premium - Marché RDC</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -11,94 +11,118 @@
     <style>
         :root {
             --gold: #f5d170;
-            --gold-glow: #f5d17088;
+            --gold-muted: #b89542;
+            --gold-glow: rgba(245, 209, 112, 0.4);
             --bg-dark: #070707;
-            --card-bg: #0f0f0f;
+            --card-bg: #121212;
+            --text-gray: #888888;
         }
 
         body {
             margin: 0; background-color: var(--bg-dark);
             font-family: -apple-system, sans-serif; color: #efefef;
-            overflow-x: hidden;
+            overflow-x: hidden; padding-top: env(safe-area-inset-top);
         }
 
-        /* HEADER EXTERNE (Logo & Retour) */
+        /* HEADER EXTERNE TOUT EN HAUT */
         .external-header {
-            padding: 45px 20px 10px; display: flex; align-items: center; justify-content: space-between;
+            padding: 15px 20px; display: flex; align-items: center; justify-content: space-between;
+            position: relative; z-index: 100;
         }
-        .top-logo { height: 35px; width: auto; position: absolute; left: 50%; transform: translateX(-50%); }
-        .back-link { color: white; font-size: 1.2rem; text-decoration: none; }
+        .back-link { color: white; font-size: 1.3rem; text-decoration: none; position: absolute; left: 15px; top: 25px; }
+        
+        .header-center { text-align: center; width: 100%; margin-top: 10px; }
+        .top-logo { height: 40px; margin-bottom: 2px; }
+        .brand-name { display: block; font-weight: 700; color: var(--gold); font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; }
+        .brand-slogan { display: block; font-size: 0.5rem; color: var(--gold-muted); text-transform: lowercase; margin-top: -2px; }
 
         /* VITRINE LUMINEUSE PULSANTE */
         .showcase-container {
-            margin: 10px; border-radius: 30px; position: relative;
+            margin: 0 10px 20px 10px; border-radius: 25px; position: relative;
             background: var(--bg-dark); overflow: hidden;
-            border: 1px solid var(--gold);
-            animation: pulse-border 2s infinite ease-in-out;
+            border: 1.5px solid var(--gold);
+            animation: pulse-border 2.5s infinite ease-in-out;
         }
 
         @keyframes pulse-border {
             0% { box-shadow: 0 0 5px var(--gold-glow); border-color: var(--gold-muted); }
-            50% { box-shadow: 0 0 20px var(--gold-glow); border-color: var(--gold); }
+            50% { box-shadow: 0 0 18px var(--gold-glow); border-color: var(--gold); }
             100% { box-shadow: 0 0 5px var(--gold-glow); border-color: var(--gold-muted); }
         }
 
-        /* IMAGE AVEC COURBE LUMINEUSE */
-        .product-header { position: relative; width: 100%; height: 32vh; background: #000; }
+        /* IMAGE AVEC COURBE STYLE CAPTURE */
+        .product-header { position: relative; width: 100%; height: 38vh; background: #000; }
         .main-img { width: 100%; height: 100%; object-fit: contain; }
         
         .curve-separator {
-            position: absolute; bottom: -1px; left: 0; width: 100%; height: 40px;
+            position: absolute; bottom: -1px; left: 0; width: 100%; height: 50px;
             background: var(--bg-dark);
-            clip-path: ellipse(60% 100% at 50% 100%);
-            border-top: 1px solid var(--gold);
-            filter: drop-shadow(0px -2px 5px var(--gold));
+            /* Courbe stylisée */
+            clip-path: ellipse(75% 100% at 50% 100%);
+            border-top: 1.5px solid var(--gold);
         }
 
         .fav-btn {
-            position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.4);
-            border: none; color: white; width: 35px; height: 35px; border-radius: 50%;
+            position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5);
+            border: none; color: white; width: 38px; height: 38px; border-radius: 50%; font-size: 1.1rem;
         }
 
-        /* DETAILS PRODUIT */
-        .product-content { padding: 15px; font-size: 0.7rem; }
-        h1 { font-size: 1.1rem; margin: 0 0 8px 0; font-weight: 500; letter-spacing: 0.5px; }
+        /* CONTENT */
+        .product-content { padding: 20px 15px; position: relative; }
+        h1 { font-size: 1.2rem; margin: 0 0 10px 0; font-weight: 500; }
         
-        .price-line { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .price-group .amt { font-size: 1.4rem; color: var(--gold); font-weight: 700; display: block; }
-        .price-group .negoc { font-size: 0.55rem; color: #888; display: flex; align-items: center; gap: 3px; }
-        .v-check { color: #4cd137; border: 0.3px solid #4cd137; padding: 3px 8px; border-radius: 20px; font-size: 0.55rem; }
+        .price-line { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .price-group .amt { font-size: 1.6rem; color: var(--gold); font-weight: 800; display: block; }
+        .price-group .negoc { font-size: 0.6rem; color: #888; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+        .v-check { color: #4cd137; background: rgba(76, 209, 55, 0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.6rem; border: 0.2px solid #4cd137; }
 
-        .section-title { font-size: 0.55rem; color: #666; text-transform: uppercase; margin-top: 15px; letter-spacing: 1px; }
-        .description { color: #aaa; line-height: 1.5; font-weight: 300; margin-bottom: 20px; }
+        .section-header { display: flex; align-items: center; gap: 8px; font-size: 0.6rem; color: var(--text-gray); text-transform: uppercase; margin: 20px 0 10px 0; letter-spacing: 1px; }
+        .description { color: #bbb; line-height: 1.5; font-weight: 300; font-size: 0.75rem; margin-bottom: 20px; }
 
-        /* CONTACT STYLE CONGOCHAT */
-        .contact-box { display: flex; gap: 10px; margin: 15px 0; }
-        .btn-congo {
-            flex: 1; height: 42px; background: #111; border: 0.3px solid #222; border-radius: 12px;
-            color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px;
+        /* BLOC VENDEUR COMPLET */
+        .vendeur-card {
+            background: var(--card-bg); padding: 12px; border-radius: 15px;
+            display: flex; align-items: center; justify-content: space-between;
+            border: 0.3px solid rgba(255,255,255,0.08); margin-bottom: 15px;
         }
-        .cc-logo { width: 18px; height: 18px; border: 1px solid #4cd137; border-radius: 50%; color: var(--gold); font-weight: bold; font-size: 10px; display: grid; place-items: center; }
+        .v-info { display: flex; align-items: center; gap: 12px; }
+        .v-logo { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; background: #222; }
+        .v-text .v-name { font-size: 0.8rem; font-weight: 600; color: #fff; margin-bottom: 2px; }
+        .v-text .v-sub { font-size: 0.6rem; color: var(--text-gray); display: flex; align-items: center; gap: 4px; }
+        .v-badge { color: var(--gold); font-size: 0.65rem; }
+        .btn-store {
+            background: var(--gold); color: #000; padding: 6px 12px; border-radius: 8px;
+            font-size: 0.6rem; font-weight: 700; text-decoration: none;
+        }
 
-        .security-footer { text-align: center; color: #4cd137; font-size: 0.55rem; padding: 10px; opacity: 0.7; }
+        /* CONTACT */
+        .contact-box { display: flex; gap: 10px; margin: 20px 0; }
+        .btn-congo {
+            flex: 1; height: 45px; background: #111; border: 0.5px solid #222; border-radius: 12px;
+            color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.75rem;
+        }
+        .cc-logo { width: 22px; height: 22px; border: 1.5px solid #4cd137; border-radius: 50%; color: var(--gold); font-weight: bold; font-size: 12px; display: grid; place-items: center; }
 
-        /* BOUTON ACHETER STYLE STYLO */
-        .buy-area { padding: 20px; }
-        .btn-buy-pen {
-            width: 100%; height: 36px; border-radius: 40px;
-            background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
-            border: 0.8px solid var(--gold-muted);
-            color: var(--gold); font-size: 0.7rem; letter-spacing: 1.5px;
-            display: flex; align-items: center; justify-content: space-between; padding: 0 15px;
+        /* BOUTON ACHETER DORÉ */
+        .buy-area { padding: 10px 0 20px 0; }
+        .btn-buy-full {
+            width: 100%; height: 48px; border-radius: 12px;
+            background: var(--gold);
+            color: #000; font-size: 0.85rem; font-weight: 800; letter-spacing: 1px;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border: none;
         }
     </style>
 </head>
 <body>
 
     <header class="external-header">
-        <a href="#" onclick="history.back()" class="back-link"><i class="fa-solid fa-arrow-left-long"></i></a>
-        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg479E695i6rWzxekKSwk7Ya5iuO0mQrbAJpgTOQ6mJmSFMQ72osIkbynPA8ZKuWZH_2pY4A0Uiy5MXTI846YxoB8D7Dvr8Ibk4GnraCVvdAwCbEbHFWdEjfKFsETjxs1JDeys67rvVmj7RwcOMgJHQV1ujb4_p8eKt1bT1fuX7ra6shkuGVDP1Ng0SXifQ/w200-h133/24.png" class="top-logo">
-        <div style="width:20px"></div> </header>
+        <a href="#" onclick="history.back()" class="back-link"><i class="fa-solid fa-arrow-left"></i></a>
+        <div class="header-center">
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg479E695i6rWzxekKSwk7Ya5iuO0mQrbAJpgTOQ6mJmSFMQ72osIkbynPA8ZKuWZH_2pY4A0Uiy5MXTI846YxoB8D7Dvr8Ibk4GnraCVvdAwCbEbHFWdEjfKFsETjxs1JDeys67rvVmj7RwcOMgJHQV1ujb4_p8eKt1bT1fuX7ra6shkuGVDP1Ng0SXifQ/w200-h133/24.png" class="top-logo">
+            <span class="brand-name">Marché RDC</span>
+            <span class="brand-slogan">le plus grand marché du congo</span>
+        </div>
+    </header>
 
     <div class="showcase-container">
         
@@ -113,31 +137,41 @@
             
             <div class="price-line">
                 <div class="price-group">
-                    <span class="amt" id="prodPrice">... $</span>
+                    <span class="amt" id="prodPrice">0 $</span>
                     <span class="negoc"><i class="fa-solid fa-tag"></i> Prix négociable</span>
                 </div>
-                <div class="v-check"><i class="fa-solid fa-check-circle"></i> Vendeur Vérifié</div>
+                <div class="v-check"><i class="fa-solid fa-circle-check"></i> Vendeur Vérifié</div>
             </div>
 
-            <div class="section-title">Description</div>
+            <div class="section-header"><i class="fa-solid fa-file-lines"></i> Description</div>
             <p class="description" id="prodDesc">...</p>
 
+            <div class="section-header"><i class="fa-solid fa-address-card"></i> Informations du vendeur</div>
+            <div class="vendeur-card">
+                <div class="v-info">
+                    <img src="" id="vendImg" class="v-logo">
+                    <div class="v-text">
+                        <div class="v-name" id="vendName">... <i class="fa-solid fa-certificate v-badge"></i></div>
+                        <div class="v-sub">Vendeur professionnel</div>
+                        <div class="v-sub"><i class="fa-solid fa-location-dot"></i> <span id="vendLoc">Kinshasa, RDC</span></div>
+                    </div>
+                </div>
+                <a href="#" class="btn-store">Voir la boutique</a>
+            </div>
+
+            <div class="section-header">Contact Vendeur</div>
             <div class="contact-box">
                 <a href="#" id="chatLink" class="btn-congo">
                     <div class="cc-logo">C</div> CongoChat
                 </a>
-                <a href="#" id="callLink" class="btn-congo" style="flex:0; width:42px;"><i class="fa-solid fa-phone"></i></a>
-            </div>
-
-            <div class="security-footer">
-                <i class="fa-solid fa-shield-halved"></i> Paiement 100% sécurisé via Marché RDC
+                <a href="#" id="callLink" class="btn-congo" style="flex:0; width:45px;"><i class="fa-solid fa-phone"></i></a>
             </div>
 
             <div class="buy-area">
-                <button class="btn-buy-pen" onclick="alert('Commande lancée')">
-                    <i class="fa-solid fa-bag-shopping"></i>
+                <button class="btn-buy-full" onclick="alert('Commande sécurisée lancée...')">
+                    <i class="fa-solid fa-cart-shopping"></i>
                     <span>ACHETER MAINTENANT</span>
-                    <i class="fa-solid fa-chevron-right"></i>
+                    <i class="fa-solid fa-arrow-right"></i>
                 </button>
             </div>
         </div>
@@ -158,6 +192,9 @@
                 document.getElementById('prodName').innerText = p.nom;
                 document.getElementById('prodPrice').innerText = p.prix + " $";
                 document.getElementById('prodDesc').innerText = p.description;
+                document.getElementById('vendName').innerHTML = p.vendeur + ' <i class="fa-solid fa-certificate v-badge"></i>';
+                document.getElementById('vendImg').src = p.vendeurImg || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+                
                 document.getElementById('chatLink').href = `https://draziel-creator.github.io/CongoChat/?id=${id}`;
                 document.getElementById('callLink').href = `tel:${p.telephone}`;
             }
