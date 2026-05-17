@@ -1,1039 +1,496 @@
 <!DOCTYPE html>
-
 <html lang="fr">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
     <title>CongoChat Elite Pro v3</title>
-
     <!-- Polices et Icones -->
-
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
     
-
     <!-- SDK AGORA (Version Stable) -->
-
     <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js"></script>
-
-
-
     <style>
-
         :root {
-
             --whatsapp-yellow: #ffcc00;
-
             --chat-bg: #ece5dd;
-
             --bg-body: #050507;
-
             --rdc-blue: #0088cc;
-
             --rdc-red: #ce1021;
-
             --msg-sent: #dcf8c6;
-
             --msg-received: #ffffff;
-
             --pwa-header: #202124;
-
         }
-
-
-
         /* Styles de base et Reset PWA */
-
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
         body { 
-
             margin: 0; 
-
             font-family: 'Rajdhani', sans-serif; 
-
             background: var(--bg-body); 
-
             color: white; 
-
             height: 100vh; 
-
             display: flex; 
-
             flex-direction: column; 
-
             overflow: hidden; 
-
             position: fixed; 
-
             width: 100%; 
-
         }
-
-
-
         /* --- HEADER STRUCTURE --- */
-
         header { 
-
             background: var(--whatsapp-yellow); 
-
             color: black; 
-
             padding-top: env(safe-area-inset-top, 10px); 
-
             z-index: 1000; 
-
             box-shadow: 0 2px 15px rgba(0,0,0,0.4); 
-
             flex-shrink: 0; 
-
         }
-
-
-
         .header-top { 
-
             display: flex; 
-
             justify-content: space-between; 
-
             align-items: center; 
-
             padding: 10px 20px; 
-
             font-weight: 900; 
-
             font-size: 1.5rem; 
-
             letter-spacing: 1px;
-
             text-transform: uppercase; 
-
         }
-
-
-
         .online-dot { 
-
             height: 12px; 
-
             width: 12px; 
-
             border-radius: 50%; 
-
             display: inline-block; 
-
             margin-right: 8px; 
-
             box-shadow: 0 0 10px #00ff00;
-
             animation: pulse-green 1.8s infinite; 
-
         }
-
         @keyframes pulse-green {
-
             0% { background: #00ff00; transform: scale(1); }
-
             50% { background: #008800; transform: scale(1.2); }
-
             100% { background: #00ff00; transform: scale(1); }
-
         }
-
-
-
         /* --- TABS SYSTEM --- */
-
         .tabs { display: flex; justify-content: space-around; background: rgba(0,0,0,0.05); }
-
         .tab { 
-
             padding: 18px 5px; 
-
             flex: 1; 
-
             text-align: center; 
-
             cursor: pointer; 
-
             font-weight: 700; 
-
             font-size: 0.75rem; 
-
             position: relative; 
-
             color: rgba(0,0,0,0.5); 
-
             text-transform: uppercase; 
-
             transition: all 0.3s ease;
-
         }
-
         .tab.active { color: black; border-bottom: 4px solid var(--rdc-red); }
-
         
-
         /* Correction des Badges (Compteurs) */
-
         .badge { 
-
             position: absolute; 
-
             top: 8px; 
-
             right: 15%; 
-
             background: var(--rdc-red); 
-
             color: white; 
-
             font-size: 0.65rem; 
-
             padding: 2px 7px; 
-
             border-radius: 12px; 
-
             border: 1.5px solid white; 
-
             display: none; 
-
             min-width: 18px;
-
             font-family: Arial, sans-serif;
-
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-
         }
-
-
-
         /* --- CONTAINERS --- */
-
         .chat-container { 
-
             flex: 1; 
-
             background: var(--chat-bg) url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); 
-
             overflow-y: auto; 
-
             padding: 12px; 
-
             display: none; 
-
             flex-direction: column; 
-
             scroll-behavior: smooth;
-
             -webkit-overflow-scrolling: touch;
-
         }
-
         .chat-container.active { display: flex; }
-
-
-
         /* --- MESSAGE UI (DESIGN CONGOLAIS) --- */
-
         .msg-wrapper { 
-
             display: flex; 
-
             align-items: flex-end; 
-
             gap: 10px; 
-
             margin-bottom: 18px; 
-
             max-width: 88%; 
-
             animation: slideUp 0.35s ease-out; 
-
             position: relative; 
-
         }
-
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-
         
-
         .msg-wrapper.sent { align-self: flex-end; flex-direction: row-reverse; }
-
         
-
         .message { 
-
             padding: 10px 14px; 
-
             border-radius: 18px; 
-
             color: black; 
-
             font-size: 0.98rem; 
-
             position: relative; 
-
             box-shadow: 0 2px 4px rgba(0,0,0,0.12); 
-
             background: var(--msg-received); 
-
             word-break: break-word;
-
             line-height: 1.4;
-
         }
-
         .sent .message { background: var(--msg-sent); border-bottom-right-radius: 4px; }
-
         .received .message { border-bottom-left-radius: 4px; border-left: 4px solid var(--rdc-blue); }
-
         
-
         .msg-avatar { 
-
             width: 36px; 
-
             height: 36px; 
-
             border-radius: 50%; 
-
             object-fit: cover; 
-
             flex-shrink: 0; 
-
             background: #ddd; 
-
             border: 1.5px solid white;
-
             cursor: zoom-in; 
-
         }
-
         .msg-name { 
-
             display: block; 
-
             font-weight: 700; 
-
             font-size: 0.8rem; 
-
             color: var(--rdc-blue); 
-
             margin-bottom: 4px; 
-
             cursor: pointer; 
-
         }
-
         .msg-time { 
-
             font-size: 0.62rem; 
-
             color: #777; 
-
             display: block;
-
             text-align: right;
-
             margin-top: 4px; 
-
         }
-
-
-
         /* --- CORRECTION LIGNE NOUVEAU MESSAGE --- */
-
         .new-msg-divider {
-
             width: 100%;
-
             display: flex;
-
             align-items: center;
-
             text-align: center;
-
             margin: 20px 0;
-
             pointer-events: none;
-
         }
-
         .new-msg-divider::before, .new-msg-divider::after {
-
             content: '';
-
             flex: 1;
-
             border-bottom: 2px solid var(--rdc-red);
-
             opacity: 0.6;
-
         }
-
         .new-msg-divider span {
-
             background: var(--rdc-red);
-
             color: white;
-
             padding: 3px 12px;
-
             border-radius: 20px;
-
             font-size: 0.7rem;
-
             font-weight: bold;
-
             text-transform: uppercase;
-
             margin: 0 10px;
-
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-
         }
-
-
-
         /* --- REACTIONS & STICKERS --- */
-
         .reaction-trigger { 
-
             position: absolute; 
-
             bottom: -10px; 
-
             left: 45px; 
-
             font-size: 0.75rem; 
-
             color: #666; 
-
             cursor: pointer; 
-
             background: white; 
-
             border-radius: 50%; 
-
             width: 24px; 
-
             height: 24px; 
-
             display: flex; 
-
             align-items: center; 
-
             justify-content: center; 
-
             border: 1px solid #ddd; 
-
             z-index: 5; 
-
             transition: transform 0.2s;
-
         }
-
         .reaction-trigger:active { transform: scale(1.4); }
-
         .sent .reaction-trigger { left: auto; right: 45px; }
-
-
-
         .reactions-container { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
-
         .reaction-pill { 
-
             background: rgba(255,255,255,0.9); 
-
             border-radius: 15px; 
-
             padding: 2px 8px; 
-
             font-size: 0.8rem; 
-
             display: flex; 
-
             align-items: center; 
-
             gap: 4px; 
-
             border: 1px solid #ddd; 
-
             color: black; 
-
             animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-
         }
-
         @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
-
         
-
         .sticker-modal { 
-
             position: absolute; 
-
             background: white; 
-
             border-radius: 20px; 
-
             padding: 12px; 
-
             display: none; 
-
             grid-template-columns: repeat(4, 1fr); 
-
             gap: 12px; 
-
             box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
-
             z-index: 1100; 
-
             bottom: 40px; 
-
             border: 1px solid #eee; 
-
             width: 180px; 
-
         }
-
         .sticker-modal span { font-size: 1.6rem; cursor: pointer; transition: transform 0.1s; }
-
         .sticker-modal span:hover { transform: scale(1.2); }
-
-
-
         /* --- ZONE DE SAISIE --- */
-
         .input-area { 
-
             background: #f0f0f0; 
-
             padding: 10px 15px; 
-
             display: flex; 
-
             align-items: center; 
-
             gap: 10px; 
-
             border-top: 1px solid #ddd; 
-
             flex-shrink: 0; 
-
             position: relative; 
-
             padding-bottom: env(safe-area-inset-bottom, 10px);
-
         }
-
         .profile-me { 
-
             width: 42px; 
-
             height: 42px; 
-
             border-radius: 50%; 
-
             object-fit: cover; 
-
             border: 2px solid var(--whatsapp-yellow); 
-
             flex-shrink: 0; 
-
             background: #ccc;
-
         }
-
         .input-wrapper { 
-
             flex: 1; 
-
             background: white; 
-
             border-radius: 30px; 
-
             padding: 0 18px; 
-
             display: flex; 
-
             align-items: center; 
-
             box-shadow: inset 0 1px 4px rgba(0,0,0,0.08); 
-
         }
-
         .input-wrapper input { 
-
             flex: 1; 
-
             border: none; 
-
             padding: 12px 0; 
-
             outline: none; 
-
             font-size: 1.05rem; 
-
             background: transparent; 
-
             width: 100%; 
-
         }
-
         .btn-action { 
-
             background: var(--whatsapp-yellow); 
-
             width: 48px; 
-
             height: 48px; 
-
             border-radius: 50%; 
-
             border: none; 
-
             color: black; 
-
             display: flex; 
-
             justify-content: center; 
-
             align-items: center; 
-
             font-size: 1.2rem; 
-
             cursor: pointer; 
-
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-
             transition: all 0.2s;
-
         }
-
         .btn-action:active { transform: scale(0.9); background: #e6b800; }
-
-
-
         /* --- SYSTEME D'APPEL (FIX PERMISSIONS) --- */
-
         #callScreen { 
-
             position: fixed; 
-
             inset: 0; 
-
             background: #0b0b0d; 
-
             z-index: 20000; 
-
             display: none; 
-
             flex-direction: column; 
-
             align-items: center; 
-
             justify-content: center; 
-
         }
-
         #remote-video { position: absolute; inset: 0; background: #000; z-index: 1; }
-
         #local-video { 
-
             position: absolute; 
-
             top: 40px; 
-
             right: 20px; 
-
             width: 110px; 
-
             height: 160px; 
-
             background: #1a1a1a; 
-
             border-radius: 12px; 
-
             overflow: hidden; 
-
             z-index: 10; 
-
             border: 2px solid rgba(255,255,255,0.3);
-
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-
         }
-
         .call-info-ui { z-index: 20; text-align: center; position: relative; }
-
         .call-avatar-pulse {
-
             width: 140px; height: 140px; border-radius: 50%; 
-
             border: 4px solid var(--whatsapp-yellow);
-
             animation: call-pulse 2s infinite;
-
         }
-
         @keyframes call-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.7); } 70% { box-shadow: 0 0 0 30px rgba(255, 204, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0); } }
-
-
-
         .call-controls { 
-
             z-index: 20; 
-
             display: flex; 
-
             gap: 30px; 
-
             position: absolute; 
-
             bottom: 80px; 
-
         }
-
-
-
         /* --- PRIVATE SECTION & MODALS --- */
-
         #privateHeader { 
-
             background: #ffffff; 
-
             color: black; 
-
             padding: 12px 18px; 
-
             display: none; 
-
             align-items: center; 
-
             justify-content: space-between; 
-
             border-bottom: 1px solid #ddd; 
-
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-
         }
-
         
-
         .contact-item { 
-
             background: white; 
-
             padding: 18px; 
-
             display: flex; 
-
             align-items: center; 
-
             gap: 15px; 
-
             color: #000; 
-
             border-bottom: 1px solid #f2f2f2; 
-
             cursor: pointer; 
-
             position: relative;
-
         }
-
         .contact-item:active { background: #f9f9f9; }
-
         .contact-item img { width: 55px; height: 55px; border-radius: 50%; border: 1px solid #eee; }
-
         .contact-info { flex: 1; }
-
         .contact-info strong { font-size: 1.1rem; }
-
         .contact-info p { margin: 3px 0 0; font-size: 0.85rem; color: #666; }
-
         
-
         .unread-dot {
-
             width: 10px; height: 10px; background: var(--rdc-red); border-radius: 50%;
-
             position: absolute; right: 20px; top: 40px;
-
         }
-
-
-
         /* --- MODALS --- */
-
         .custom-modal { 
-
             position: fixed; 
-
             inset: 0; 
-
             background: rgba(0,0,0,0.85); 
-
             display: none; 
-
             align-items: center; 
-
             justify-content: center; 
-
             z-index: 15000; 
-
             padding: 25px; 
-
             backdrop-filter: blur(5px);
-
         }
-
         .modal-card { 
-
             background: #fff; 
-
             color: #000; 
-
             padding: 30px; 
-
             border-radius: 25px; 
-
             width: 100%; 
-
             max-width: 340px; 
-
             text-align: center; 
-
             box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-
         }
-
         .modal-card h3 { margin-top: 0; color: var(--bg-body); }
-
         .modal-card button { 
-
             width: 100%; 
-
             padding: 14px; 
-
             margin-top: 12px; 
-
             border-radius: 12px; 
-
             border: none; 
-
             font-weight: 700; 
-
             font-size: 1rem;
-
             cursor: pointer; 
-
         }
-
-
-
         /* Typing Indicator */
-
         #typing-status { 
-
             font-size: 0.75rem; 
-
             color: #25d366; 
-
             font-weight: bold; 
-
             padding: 5px 25px; 
-
             height: 25px; 
-
             position: absolute; 
-
             bottom: 75px; 
-
             z-index: 100; 
-
             pointer-events: none; 
-
             text-shadow: 0 1px 1px rgba(0,0,0,0.1);
-
         }
-
-
-
     </style>
-
 </head>
-
 <body>
-
-
-
     <!-- Zoom Image -->
-
     <div id="zoomModal" class="custom-modal" onclick="this.style.display='none'">
-
         <img id="zoomedImg" src="" style="width:100%; max-height:80vh; object-fit:contain; border-radius:15px; box-shadow:0 0 30px rgba(0,0,0,0.5);">
-
     </div>
-
-
-
     <!-- Écran d'appel (Fix Permission Agora) -->
-
     <div id="callScreen">
-
         <div id="remote-video"></div>
-
         <div id="local-video"></div>
-
         <div class="call-info-ui">
-
             <div style="margin-bottom:20px;">
-
                 <img id="callAvatar" src="" class="call-avatar-pulse">
-
             </div>
-
             <h2 id="callName" style="color:white; font-size:2rem; margin:10px 0;">Nom...</h2>
-
             <p id="callStatusText" style="color:var(--whatsapp-yellow); font-size:1.2rem; font-weight:bold;">Appel en cours...</p>
-
         </div>
-
         <div class="call-controls">
-
             <!-- Bouton Accepter : Point d'entrée pour la permission téléphone -->
-
             <button id="acceptBtn" class="btn-action" style="background:#25d366; width:70px; height:70px; display:none;" onclick="handleUserAcceptCall()">
-
                 <i class="fas fa-phone fa-lg"></i>
-
             </button>
-
             <button class="btn-action" style="background:var(--rdc-red); width:70px; height:70px;" onclick="endAgoraCall()">
-
                 <i class="fas fa-phone-slash fa-lg" style="color:white;"></i>
-
             </button>
-
         </div>
-
     </div>
-
-
-
     <!-- Header Principal -->
-
     <header id="mainHeader">
-
         <div class="header-top">
-
             <span><i class="fas fa-shield-alt"></i> CongoChat</span>
-
             <div style="font-size: 0.85rem;"><span class="online-dot"></span> <span id="onlineDisplay">...</span></div>
-
         </div>
-
         <div class="tabs">
-
             <div class="tab active" id="tab-live" onclick="switchTab('live')">Live <span class="badge" id="badge-live">0</span></div>
-
             <div class="tab" id="tab-games" onclick="switchTab('games')">Games <span class="badge" id="badge-games">0</span></div>
-
             <div class="tab" id="tab-market" onclick="switchTab('market')">Market <span class="badge" id="badge-market">0</span></div>
-
             <div class="tab" id="tab-private" onclick="switchTab('private')">Privé <span class="badge" id="badge-private">0</span></div>
-
         </div>
-
     </header>
-
-
-
     <!-- Header Chat Privé -->
-
     <div id="privateHeader">
-
         <div style="display:flex; align-items:center; gap:12px;">
-
             <i class="fas fa-arrow-left" style="font-size:1.3rem; padding:5px;" onclick="exitPrivateChat()"></i>
-
             <img id="pHeadImg" src="" style="width:42px; height:42px; border-radius:50%; background:#eee;">
-
             <div>
-
                 <strong id="pHeadName" style="font-size:1.1rem;">...</strong><br>
-
                 <small id="pHeadStatus" style="color:#25d366; font-weight:bold;">en ligne</small>
-
             </div>
-
         </div>
-
         <div style="display:flex; gap:22px; font-size:1.3rem; color:var(--rdc-blue);">
-
             <i class="fas fa-video" onclick="initiateCall('video')"></i>
-
             <i class="fas fa-phone" onclick="initiateCall('audio')"></i>
-
             <i class="fas fa-ellipsis-v" style="color:#888;" onclick="openContactOptions()"></i>
-
         </div>
-
     </div>
-
-
-
     <!-- Conteneurs de Chat -->
-
     <div id="live" class="chat-container active"></div>
-
     <div id="games" class="chat-container"></div>
-
     <div id="market" class="chat-container"></div>
-
     <div id="private" class="chat-container" style="background:#f0f0f0; padding:0;">
-
         <!-- Liste des contacts ici -->
-
     </div>
-
     <div id="privateWindow" class="chat-container"></div>
-
-
-
     <div id="typing-status"></div>
-
-
-
     <!-- Barre de Saisie -->
-
     <div class="input-area" id="inputBar">
-
         <img id="myAvatar" src="https://via.placeholder.com/40" class="profile-me">
-
         <div class="input-wrapper">
-
             <input type="text" id="msgInput" placeholder="Écrire un message..." autocomplete="off">
-
         </div>
-
         <button class="btn-action" id="sendBtn" onclick="handleSendAction()">
-
             <i id="btnIcon" class="fas fa-microphone"></i>
-
         </button>
-
     </div> 
     <!-- Modals -->
     <div id="contactOptionsModal" class="custom-modal">
@@ -1044,7 +501,6 @@
             <button style="background:#eee; color:#333;" onclick="closeAllModals()">ANNULER</button>
         </div>
     </div>
-
     <div id="addContactModal" class="custom-modal">
         <div class="modal-card">
             <h3 id="targetNameDisplay">Nouvel Ami ?</h3>
@@ -1053,13 +509,11 @@
             <button style="background:#eee;" onclick="closeAllModals()">PAS MAINTENANT</button>
         </div>
     </div>
-
     <!-- Firebase & Logique Appli -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, setDoc, getDoc, updateDoc, deleteDoc, runTransaction, where, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
         // Configuration (La même que la vôtre)
         const firebaseConfig = {
             apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
@@ -1067,7 +521,6 @@
             projectId: "congo-streaming-51333",
             appId: "1:304286627819:android:36e0b43b8b10508a054bae"
         };
-
         const AGORA_APP_ID = "395bf61671f44c9284be2f8f49daa884";
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -1083,7 +536,6 @@
         let badgeCounters = { live: 0, games: 0, market: 0, private: 0 };
         let currentCallDocId = null;
         let lastReadTimes = {};
-
         // --- AUTH & INITIALISATION ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -1103,7 +555,6 @@
                     status: 'online',
                     lastSeen: serverTimestamp()
                 }, { merge: true });
-
                 // Cache des utilisateurs et compteur total
                 onSnapshot(collection(db, "online_users"), (snap) => {
                     let count = 0;
@@ -1113,14 +564,12 @@
                     });
                     document.getElementById('onlineDisplay').innerText = `${count} en ligne`;
                 });
-
                 listenMessages('live');
                 loadContacts();
                 setupGlobalNotifications();
                 listenIncomingCalls();
             }
         });
-
         // --- GESTION DES ONGLETS (BADGES FIX) ---
         window.switchTab = (tab) => {
             currentRoom = tab;
@@ -1134,7 +583,6 @@
             badgeCounters[tab] = 0;
             const b = document.getElementById(`badge-${tab}`);
             b.innerText = "0"; b.style.display = "none";
-
             if(tab === 'private') {
                 document.getElementById('inputBar').style.display = 'none';
             } else {
@@ -1142,7 +590,6 @@
                 listenMessages(tab);
             }
         };
-
         // --- CHAT PRIVÉ ---
         window.enterPrivateChat = async (id, name, photo) => {
             targetUser = { id, name, photo };
@@ -1157,23 +604,19 @@
             
             document.getElementById('pHeadName').innerText = name;
             document.getElementById('pHeadImg').src = photo;
-
             // Marquer comme lu
             const chatId = getChatId(currentUser.uid, id);
             await setDoc(doc(db, `private_chats/${chatId}/read_status`, currentUser.uid), { 
                 lastRead: serverTimestamp() 
             });
-
             listenMessages('private_active');
         };
-
         window.exitPrivateChat = () => {
             document.getElementById('privateHeader').style.display = 'none';
             document.getElementById('mainHeader').style.display = 'block';
             document.getElementById('privateWindow').classList.remove('active');
             switchTab('private');
         };
-
         // --- MESSAGES ENGINE (CORRECTION LINE & SYNC) ---
         async function listenMessages(room) {
             if(activeListeners.msgs) activeListeners.msgs();
@@ -1182,29 +625,24 @@
             const chatId = isPrivate ? getChatId(currentUser.uid, targetUser.id) : null;
             const path = isPrivate ? `private_chats/${chatId}/messages` : room;
             const container = isPrivate ? document.getElementById('privateWindow') : document.getElementById(room);
-
             // Récupérer le timestamp de lecture
             let lastReadDate = null;
             if(isPrivate) {
                 const rs = await getDoc(doc(db, `private_chats/${chatId}/read_status`, currentUser.uid));
                 if(rs.exists() && rs.data().lastRead) lastReadDate = rs.data().lastRead.toDate();
             }
-
             const q = query(collection(db, path), orderBy("timestamp", "asc"), limit(100));
             
             activeListeners.msgs = onSnapshot(q, (snap) => {
                 let html = "";
                 let dividerPlaced = false;
-
                 snap.forEach(d => {
                     const m = d.data();
                     if(!m.timestamp) return; // Skip temporary local echoes
-
                     const msgDate = m.timestamp.toDate();
                     const isMe = m.userId === currentUser.uid;
                     const info = userCache[m.userId] || { name: "Anonyme", photo: "https://via.placeholder.com/40" };
                     const timeStr = msgDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
                     // Injection de la ligne "Nouveau Message"
                     if(isPrivate && !isMe && lastReadDate && msgDate > lastReadDate && !dividerPlaced) {
                         html += `
@@ -1213,14 +651,12 @@
                             </div>`;
                         dividerPlaced = true;
                     }
-
                     // Bulles de reactions
                     let reactHtml = '<div class="reactions-container">';
                     for(let emoji in (m.reactions || {})) {
                         reactHtml += `<div class="reaction-pill"><span>${emoji}</span> ${m.reactions[emoji].count}</div>`;
                     }
                     reactHtml += '</div>';
-
                     html += `
                         <div class="msg-wrapper ${isMe ? 'sent' : 'received'}">
                             <img src="${info.photo}" class="msg-avatar" onclick="zoomImg('${info.photo}')">
@@ -1239,20 +675,17 @@
                             </div>
                         </div>`;
                 });
-
                 container.innerHTML = html;
                 container.scrollTop = container.scrollHeight;
             });
             
             listenTyping(isPrivate ? chatId : room);
         }
-
         // --- ENVOI MESSAGE ---
         window.handleSendAction = async () => {
             const input = document.getElementById('msgInput');
             const text = input.value.trim();
             if(!text) return;
-
             // Check blocage si privé
             if(currentRoom === 'private_active') {
                 const bCheck = await getDoc(doc(db, `users/${targetUser.id}/blocked`, currentUser.uid));
@@ -1261,11 +694,9 @@
                     return;
                 }
             }
-
             const path = (currentRoom === 'private_active') 
                 ? `private_chats/${getChatId(currentUser.uid, targetUser.id)}/messages` 
                 : currentRoom;
-
             try {
                 await addDoc(collection(db, path), {
                     text,
@@ -1277,7 +708,6 @@
                 updateTyping(false);
             } catch(e) { console.error(e); }
         };
-
         // --- PERMISSIONS AGORA & APPELS (VERSION PWA SAFE) ---
         
         // 1. Demande de permission initiée par l'utilisateur (Crucial pour PWA)
@@ -1294,14 +724,11 @@
                 return false;
             }
         }
-
         window.initiateCall = async (type) => {
             const hasPermission = await requestHardwarePermissions();
             if(!hasPermission) return;
-
             const channel = getChatId(currentUser.uid, targetUser.id);
             currentCallDocId = targetUser.id; 
-
             await setDoc(doc(db, "calls", targetUser.id), {
                 callerId: currentUser.uid,
                 callerName: userCache[currentUser.uid].name,
@@ -1309,7 +736,6 @@
                 type, channel, status: 'ringing',
                 timestamp: serverTimestamp()
             });
-
             showCallScreen(targetUser.name, targetUser.photo, "Appel sortant...");
             
             // Écouter si l'autre accepte
@@ -1320,7 +746,6 @@
                 }
             });
         };
-
         function listenIncomingCalls() {
             onSnapshot(doc(db, "calls", currentUser.uid), (snap) => {
                 if(snap.exists()) {
@@ -1334,7 +759,6 @@
                 }
             });
         }
-
         window.handleUserAcceptCall = async () => {
             // L'utilisateur a cliqué sur le bouton vert
             const hasPermission = await requestHardwarePermissions();
@@ -1347,7 +771,6 @@
                 }
             }
         };
-
         async function startAgoraSession(channel, type) {
             document.getElementById('acceptBtn').style.display = 'none';
             document.getElementById('callStatusText').innerText = "Connexion sécurisée...";
@@ -1364,10 +787,8 @@
                     tracksToPublish.push(localTracks.videoTrack);
                     document.getElementById('local-video').style.display = 'block';
                 }
-
                 await agoraClient.publish(tracksToPublish);
                 document.getElementById('callStatusText').innerText = "En communication";
-
                 agoraClient.on("user-published", async (user, mediaType) => {
                     await agoraClient.subscribe(user, mediaType);
                     if (mediaType === "video") {
@@ -1376,22 +797,18 @@
                     }
                     if (mediaType === "audio") user.audioTrack.play();
                 });
-
                 agoraClient.on("user-left", () => endAgoraCall());
-
             } catch (err) {
                 console.error(err);
                 endAgoraCall();
             }
         }
-
         window.endAgoraCall = async () => {
             if(currentCallDocId) {
                 await deleteDoc(doc(db, "calls", currentCallDocId)).catch(()=>{});
             }
             cleanupAgora();
         };
-
         function cleanupAgora() {
             if(localTracks.audioTrack) { localTracks.audioTrack.stop(); localTracks.audioTrack.close(); localTracks.audioTrack = null; }
             if(localTracks.videoTrack) { localTracks.videoTrack.stop(); localTracks.videoTrack.close(); localTracks.videoTrack = null; }
@@ -1402,7 +819,6 @@
             document.getElementById('local-video').style.display = 'none';
             currentCallDocId = null;
         }
-
         function showCallScreen(name, photo, status, incoming = false) {
             document.getElementById('callScreen').style.display = 'flex';
             document.getElementById('callName').innerText = name;
@@ -1410,7 +826,6 @@
             document.getElementById('callStatusText').innerText = status;
             document.getElementById('acceptBtn').style.display = incoming ? 'flex' : 'none';
         }
-
         // --- COMPTEURS ET NOTIFICATIONS (BADGES) ---
         function setupGlobalNotifications() {
             const rooms = ['live', 'games', 'market'];
@@ -1429,14 +844,12 @@
                 });
             });
         }
-
         // --- CONTACTS & PRIVÉ ---
         function loadContacts() {
             onSnapshot(collection(db, `users/${currentUser.uid}/contacts`), (snap) => {
                 const cont = document.getElementById('private');
                 cont.innerHTML = "";
                 let totalUnread = 0;
-
                 snap.forEach(d => {
                     const c = d.data();
                     const div = document.createElement('div');
@@ -1452,12 +865,10 @@
                 });
             });
         }
-
         window.openContactOptions = () => {
             document.getElementById('optContactName').innerText = targetUser.name;
             document.getElementById('contactOptionsModal').style.display = 'flex';
         };
-
         window.toggleBlockUser = async () => {
             if(!confirm(`Bloquer ${targetUser.name} ?`)) return;
             await setDoc(doc(db, `users/${currentUser.uid}/blocked`, targetUser.id), { blockedAt: serverTimestamp() });
@@ -1465,21 +876,18 @@
             closeAllModals();
             exitPrivateChat();
         };
-
         window.removeContact = async () => {
             if(!confirm("Supprimer ce contact de votre liste ?")) return;
             await deleteDoc(doc(db, `users/${currentUser.uid}/contacts`, targetUser.id));
             closeAllModals();
             exitPrivateChat();
         };
-
         window.openAddModal = (id, name) => {
             if(id === currentUser.uid) return;
             targetUser = { id, name };
             document.getElementById('targetNameDisplay').innerText = name;
             document.getElementById('addContactModal').style.display = 'flex';
         };
-
         window.confirmAddContact = async () => {
             const info = userCache[targetUser.id];
             await setDoc(doc(db, `users/${currentUser.uid}/contacts`, targetUser.id), {
@@ -1488,21 +896,17 @@
             closeAllModals();
             alert("Ajouté aux contacts privés !");
         };
-
         window.closeAllModals = () => {
             document.querySelectorAll('.custom-modal').forEach(m => m.style.display = 'none');
         };
-
         // --- UTILS ---
         const getChatId = (u1, u2) => [u1, u2].sort().join('_');
-
         function updateTyping(isTyping) {
             const roomId = (currentRoom === 'private_active') ? getChatId(currentUser.uid, targetUser.id) : currentRoom;
             setDoc(doc(db, "typing", roomId), {
                 [currentUser.uid]: { typing: isTyping, name: userCache[currentUser.uid].name }
             }, { merge: true });
         }
-
         function listenTyping(roomId) {
             onSnapshot(doc(db, "typing", roomId), (snap) => {
                 if(!snap.exists()) return;
@@ -1512,7 +916,6 @@
                 document.getElementById('typing-status').innerText = text;
             });
         }
-
         window.addReaction = async (msgId, path, emoji) => {
             const ref = doc(db, path, msgId);
             await runTransaction(db, async (transaction) => {
@@ -1524,19 +927,16 @@
             });
             document.getElementById(`stickers-${msgId}`).style.display = 'none';
         };
-
         window.toggleStickers = (id) => {
             const m = document.getElementById(`stickers-${id}`);
             const isVisible = m.style.display === 'grid';
             document.querySelectorAll('.sticker-modal').forEach(sm => sm.style.display = 'none');
             m.style.display = isVisible ? 'none' : 'grid';
         };
-
         window.zoomImg = (url) => {
             document.getElementById('zoomedImg').src = url;
             document.getElementById('zoomModal').style.display = 'flex';
         };
-
         // Input effect
         document.getElementById('msgInput').oninput = (e) => {
             const val = e.target.value;
@@ -1553,7 +953,6 @@
                 btn.style.color = "black";
             }
         };
-
     </script>
 </body>
 </html>
