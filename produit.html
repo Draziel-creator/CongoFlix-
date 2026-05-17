@@ -3,209 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Détails - Marché RDC</title>
+    <title>Premium - Marché RDC</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
     <style>
         :root {
             --gold: #f5d170;
-            --gold-muted: #b89542;
+            --gold-glow: #f5d17088;
             --bg-dark: #070707;
             --card-bg: #0f0f0f;
-            --text-gray: #888888;
         }
 
         body {
             margin: 0; background-color: var(--bg-dark);
-            font-family: -apple-system, sans-serif;
-            color: #efefef; font-size: 0.7rem; /* Police très petite */
+            font-family: -apple-system, sans-serif; color: #efefef;
             overflow-x: hidden;
         }
 
-        /* HEADER & IMAGE REDUITE */
-        .product-header { position: relative; width: 100%; height: 28vh; background: #000; }
+        /* HEADER EXTERNE (Logo & Retour) */
+        .external-header {
+            padding: 45px 20px 10px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .top-logo { height: 35px; width: auto; position: absolute; left: 50%; transform: translateX(-50%); }
+        .back-link { color: white; font-size: 1.2rem; text-decoration: none; }
+
+        /* VITRINE LUMINEUSE PULSANTE */
+        .showcase-container {
+            margin: 10px; border-radius: 30px; position: relative;
+            background: var(--bg-dark); overflow: hidden;
+            border: 1px solid var(--gold);
+            animation: pulse-border 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 5px var(--gold-glow); border-color: var(--gold-muted); }
+            50% { box-shadow: 0 0 20px var(--gold-glow); border-color: var(--gold); }
+            100% { box-shadow: 0 0 5px var(--gold-glow); border-color: var(--gold-muted); }
+        }
+
+        /* IMAGE AVEC COURBE LUMINEUSE */
+        .product-header { position: relative; width: 100%; height: 32vh; background: #000; }
         .main-img { width: 100%; height: 100%; object-fit: contain; }
         
-        .header-btns {
-            position: absolute; top: 35px; left: 15px; right: 15px;
-            display: flex; justify-content: space-between; align-items: center; z-index: 10;
-        }
-        .icon-btn {
-            background: rgba(0,0,0,0.3); color: white; border: none;
-            width: 32px; height: 32px; border-radius: 50%; display: flex;
-            align-items: center; justify-content: center; font-size: 0.9rem;
-        }
-        .fav-active { color: #ff4757; }
-
-        .premium-label {
-            position: absolute; bottom: 10px; left: 15px;
-            background: rgba(245, 209, 112, 0.15); border: 0.3px solid var(--gold);
-            color: var(--gold); padding: 2px 8px; border-radius: 3px;
-            font-size: 0.55rem; letter-spacing: 1px; text-transform: uppercase;
+        .curve-separator {
+            position: absolute; bottom: -1px; left: 0; width: 100%; height: 40px;
+            background: var(--bg-dark);
+            clip-path: ellipse(60% 100% at 50% 100%);
+            border-top: 1px solid var(--gold);
+            filter: drop-shadow(0px -2px 5px var(--gold));
         }
 
-        /* CONTENT COMPACT */
-        .product-content { padding: 15px; margin-top: -15px; background: var(--bg-dark); border-radius: 20px 20px 0 0; }
+        .fav-btn {
+            position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.4);
+            border: none; color: white; width: 35px; height: 35px; border-radius: 50%;
+        }
+
+        /* DETAILS PRODUIT */
+        .product-content { padding: 15px; font-size: 0.7rem; }
+        h1 { font-size: 1.1rem; margin: 0 0 8px 0; font-weight: 500; letter-spacing: 0.5px; }
         
-        h1 { font-size: 1.1rem; margin: 0 0 4px 0; font-weight: 500; }
-        .price-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
-        .price { font-size: 1.4rem; color: var(--gold); font-weight: 700; }
-        .verified { color: #4cd137; font-size: 0.6rem; display: flex; align-items: center; gap: 4px; }
+        .price-line { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .price-group .amt { font-size: 1.4rem; color: var(--gold); font-weight: 700; display: block; }
+        .price-group .negoc { font-size: 0.55rem; color: #888; display: flex; align-items: center; gap: 3px; }
+        .v-check { color: #4cd137; border: 0.3px solid #4cd137; padding: 3px 8px; border-radius: 20px; font-size: 0.55rem; }
 
-        .section-title { font-size: 0.6rem; color: var(--text-gray); text-transform: uppercase; margin: 12px 0 6px 0; letter-spacing: 0.5px; }
+        .section-title { font-size: 0.55rem; color: #666; text-transform: uppercase; margin-top: 15px; letter-spacing: 1px; }
+        .description { color: #aaa; line-height: 1.5; font-weight: 300; margin-bottom: 20px; }
 
-        .description { font-size: 0.75rem; color: #bbb; line-height: 1.4; margin-bottom: 15px; font-weight: 300; }
+        /* CONTACT STYLE CONGOCHAT */
+        .contact-box { display: flex; gap: 10px; margin: 15px 0; }
+        .btn-congo {
+            flex: 1; height: 42px; background: #111; border: 0.3px solid #222; border-radius: 12px;
+            color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .cc-logo { width: 18px; height: 18px; border: 1px solid #4cd137; border-radius: 50%; color: var(--gold); font-weight: bold; font-size: 10px; display: grid; place-items: center; }
 
-        /* VENDEUR MINI */
-        .vendeur-box {
-            background: var(--card-bg); padding: 10px; border-radius: 12px;
-            display: flex; align-items: center; justify-content: space-between;
-            border: 0.2px solid rgba(255,255,255,0.05);
-        }
-        .v-profile { display: flex; align-items: center; gap: 10px; }
-        .v-img { width: 35px; height: 35px; border-radius: 8px; background: #222; }
-        .v-name { font-size: 0.75rem; font-weight: 500; }
-        .v-loc { font-size: 0.6rem; color: var(--text-gray); }
+        .security-footer { text-align: center; color: #4cd137; font-size: 0.55rem; padding: 10px; opacity: 0.7; }
 
-        /* CONTACT STYLE WHATSAPP/CONGOCHAT */
-        .contact-row { display: flex; gap: 8px; margin: 15px 0; }
-        .btn-congochat {
-            flex: 1; background: #111; border: 0.2px solid #222; border-radius: 10px;
-            color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.7rem;
+        /* BOUTON ACHETER STYLE STYLO */
+        .buy-area { padding: 20px; }
+        .btn-buy-pen {
+            width: 100%; height: 36px; border-radius: 40px;
+            background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
+            border: 0.8px solid var(--gold-muted);
+            color: var(--gold); font-size: 0.7rem; letter-spacing: 1.5px;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 15px;
         }
-        /* L'icône C jaune dans cercle vert */
-        .cc-icon {
-            width: 20px; height: 20px; border-radius: 50%; border: 1px solid #4cd137;
-            display: flex; align-items: center; justify-content: center; 
-            color: var(--gold); font-weight: bold; font-size: 12px;
-        }
-        .btn-call { width: 40px; height: 40px; background: #111; border-radius: 10px; color: var(--gold); display: flex; align-items: center; justify-content: center; border: 0.2px solid #222;}
-
-        /* BADGE SECURITE */
-        .security-badge {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            padding: 10px; border-radius: 8px; background: rgba(76, 209, 55, 0.03);
-            border: 0.2px dashed rgba(76, 209, 55, 0.2); margin-top: 5px;
-        }
-        .security-badge i { color: #4cd137; font-size: 0.8rem; }
-        .security-text { font-size: 0.6rem; color: #4cd137; font-weight: 300; }
-
-        /* BOUTON ACHETER FINE (Épaisseur stylo) */
-        .action-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            padding: 15px 20px 30px 20px; background: var(--bg-dark);
-        }
-        .btn-buy {
-            width: 100%; height: 38px; /* Très fin */
-            background: transparent;
-            border: 0.8px solid var(--gold-muted); /* Bordure fine dorée */
-            color: var(--gold); border-radius: 30px;
-            font-size: 0.75rem; font-weight: 300; letter-spacing: 2px;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            transition: 0.3s;
-        }
-        .btn-buy:active { background: rgba(245, 209, 112, 0.1); }
     </style>
 </head>
 <body>
 
-    <div class="product-header">
-        <div class="header-btns">
-            <button class="icon-btn" onclick="history.back()"><i class="fa-solid fa-arrow-left"></i></button>
-            <button class="icon-btn" id="favBtn" onclick="toggleFav()"><i class="fa-regular fa-heart"></i></button>
-        </div>
-        <span class="premium-label" id="badgePremium" style="display:none;">Premium Edition</span>
-        <img src="" id="prodImg" class="main-img">
-    </div>
+    <header class="external-header">
+        <a href="#" onclick="history.back()" class="back-link"><i class="fa-solid fa-arrow-left-long"></i></a>
+        <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg479E695i6rWzxekKSwk7Ya5iuO0mQrbAJpgTOQ6mJmSFMQ72osIkbynPA8ZKuWZH_2pY4A0Uiy5MXTI846YxoB8D7Dvr8Ibk4GnraCVvdAwCbEbHFWdEjfKFsETjxs1JDeys67rvVmj7RwcOMgJHQV1ujb4_p8eKt1bT1fuX7ra6shkuGVDP1Ng0SXifQ/w200-h133/24.png" class="top-logo">
+        <div style="width:20px"></div> </header>
 
-    <div class="product-content">
-        <div class="price-row">
-            <h1 id="prodName">Chargement...</h1>
-            <div class="price" id="prodPrice">0 $</div>
-        </div>
+    <div class="showcase-container">
         
-        <div class="verified"><i class="fa-solid fa-shield-check"></i> Vendeur certifié Marché RDC</div>
+        <div class="product-header">
+            <img src="" id="prodImg" class="main-img">
+            <button class="fav-btn" onclick="this.style.color='#ff4757'"><i class="fa-regular fa-heart"></i></button>
+            <div class="curve-separator"></div>
+        </div>
 
-        <div class="section-title">Description du produit</div>
-        <div class="description" id="prodDesc">...</div>
-
-        <div class="section-title">Vendeur</div>
-        <div class="vendeur-box">
-            <div class="v-profile">
-                <img src="" id="vendImg" class="v-img">
-                <div>
-                    <div class="v-name" id="vendName">...</div>
-                    <div class="v-loc" id="vendLoc">Kinshasa, RDC</div>
+        <div class="product-content">
+            <h1 id="prodName">Chargement...</h1>
+            
+            <div class="price-line">
+                <div class="price-group">
+                    <span class="amt" id="prodPrice">... $</span>
+                    <span class="negoc"><i class="fa-solid fa-tag"></i> Prix négociable</span>
                 </div>
+                <div class="v-check"><i class="fa-solid fa-check-circle"></i> Vendeur Vérifié</div>
             </div>
-            <i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; color: #444;"></i>
-        </div>
 
-        <div class="contact-row">
-            <a href="#" id="chatLink" class="btn-congochat">
-                <div class="cc-icon">C</div> Discuter sur CongoChat
-            </a>
-            <a href="#" id="callLink" class="btn-call"><i class="fa-solid fa-phone-flip"></i></a>
-        </div>
+            <div class="section-title">Description</div>
+            <p class="description" id="prodDesc">...</p>
 
-        <div class="security-badge">
-            <i class="fa-solid fa-lock"></i>
-            <div class="security-text">Paiement sécurisé · 100% garanti par Marché RDC</div>
-        </div>
-    </div>
+            <div class="contact-box">
+                <a href="#" id="chatLink" class="btn-congo">
+                    <div class="cc-logo">C</div> CongoChat
+                </a>
+                <a href="#" id="callLink" class="btn-congo" style="flex:0; width:42px;"><i class="fa-solid fa-phone"></i></a>
+            </div>
 
-    <div class="action-bar">
-        <button class="btn-buy" onclick="initiateOrder()">
-            ACHETER MAINTENANT
-        </button>
+            <div class="security-footer">
+                <i class="fa-solid fa-shield-halved"></i> Paiement 100% sécurisé via Marché RDC
+            </div>
+
+            <div class="buy-area">
+                <button class="btn-buy-pen" onclick="alert('Commande lancée')">
+                    <i class="fa-solid fa-bag-shopping"></i>
+                    <span>ACHETER MAINTENANT</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Configuration Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
-            projectId: "congo-streaming-51333",
-        };
+        const firebaseConfig = { apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", projectId: "congo-streaming-51333" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const productId = urlParams.get('id');
-
-        async function loadProductDetails() {
-            if(!productId) return;
-            const doc = await db.collection("marche_produits").doc(productId).get();
+        async function load() {
+            const id = new URLSearchParams(window.location.search).get('id');
+            if(!id) return;
+            const doc = await db.collection("marche_produits").doc(id).get();
             if(doc.exists) {
                 const p = doc.data();
                 document.getElementById('prodImg').src = p.image;
                 document.getElementById('prodName').innerText = p.nom;
                 document.getElementById('prodPrice').innerText = p.prix + " $";
                 document.getElementById('prodDesc').innerText = p.description;
-                document.getElementById('vendName').innerText = p.vendeur;
-                
-                if(p.premium) document.getElementById('badgePremium').style.display = 'block';
-
-                document.getElementById('chatLink').href = `https://draziel-creator.github.io/CongoChat/?id=${productId}`;
+                document.getElementById('chatLink').href = `https://draziel-creator.github.io/CongoChat/?id=${id}`;
                 document.getElementById('callLink').href = `tel:${p.telephone}`;
             }
         }
-
-        function toggleFav() {
-            const btn = document.getElementById('favBtn').querySelector('i');
-            btn.classList.toggle('fa-regular');
-            btn.classList.toggle('fa-solid');
-            btn.classList.toggle('fav-active');
-            // Logique Firebase favoris ici si nécessaire
-        }
-
-        function initiateOrder() {
-            alert("Traitement sécurisé de la commande...");
-        }
-
-        window.onload = loadProductDetails;
+        window.onload = load;
     </script>
 </body>
 </html>
