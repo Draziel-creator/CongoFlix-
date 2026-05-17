@@ -3,208 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Détails du Produit - Marché RDC</title>
+    <title>Détails - Marché RDC</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
 
     <style>
         :root {
             --gold: #f5d170;
-            --gold-dark: #b89542;
-            --bg-dark: #0a0a0a;
-            --card-bg: #111111;
-            --text-gray: #aaaaaa;
-            --verified: #0095f6;
+            --gold-muted: #b89542;
+            --bg-dark: #070707;
+            --card-bg: #0f0f0f;
+            --text-gray: #888888;
         }
 
         body {
             margin: 0; background-color: var(--bg-dark);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: white; padding-bottom: 100px;
+            font-family: -apple-system, sans-serif;
+            color: #efefef; font-size: 0.7rem; /* Police très petite */
+            overflow-x: hidden;
         }
 
-        /* HEADER IMAGE */
-        .product-header { position: relative; width: 100%; height: 400px; background: #000; }
+        /* HEADER & IMAGE REDUITE */
+        .product-header { position: relative; width: 100%; height: 28vh; background: #000; }
         .main-img { width: 100%; height: 100%; object-fit: contain; }
-        .back-btn { 
-            position: absolute; top: 40px; left: 20px; 
-            background: rgba(0,0,0,0.5); color: white; border: none;
-            width: 40px; height: 40px; border-radius: 50%; display: flex;
-            align-items: center; justify-content: center; z-index: 10;
-        }
-        .premium-badge {
-            position: absolute; top: 100px; left: 20px;
-            background: rgba(245, 209, 112, 0.2); border: 0.5px solid var(--gold);
-            color: var(--gold); padding: 4px 12px; border-radius: 5px;
-            font-size: 0.7rem; font-weight: bold; text-transform: uppercase;
-        }
-
-        /* CONTENT */
-        .product-content { padding: 20px; margin-top: -20px; background: var(--bg-dark); border-radius: 25px 25px 0 0; position: relative; }
         
-        .title-section h1 { font-size: 1.4rem; margin: 0 0 5px 0; }
-        .condition-tag { 
-            background: #222; color: var(--gold); font-size: 0.65rem; 
-            padding: 2px 8px; border-radius: 4px; border: 0.2px solid var(--gold);
+        .header-btns {
+            position: absolute; top: 35px; left: 15px; right: 15px;
+            display: flex; justify-content: space-between; align-items: center; z-index: 10;
+        }
+        .icon-btn {
+            background: rgba(0,0,0,0.3); color: white; border: none;
+            width: 32px; height: 32px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 0.9rem;
+        }
+        .fav-active { color: #ff4757; }
+
+        .premium-label {
+            position: absolute; bottom: 10px; left: 15px;
+            background: rgba(245, 209, 112, 0.15); border: 0.3px solid var(--gold);
+            color: var(--gold); padding: 2px 8px; border-radius: 3px;
+            font-size: 0.55rem; letter-spacing: 1px; text-transform: uppercase;
         }
 
-        .price-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; }
-        .price { font-size: 1.8rem; color: var(--gold); font-weight: 800; }
-        .verified-badge { 
-            color: #00ff00; background: rgba(0,255,0,0.1); 
-            padding: 5px 12px; border-radius: 20px; font-size: 0.7rem; display: flex; align-items: center; gap: 5px;
-        }
+        /* CONTENT COMPACT */
+        .product-content { padding: 15px; margin-top: -15px; background: var(--bg-dark); border-radius: 20px 20px 0 0; }
+        
+        h1 { font-size: 1.1rem; margin: 0 0 4px 0; font-weight: 500; }
+        .price-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+        .price { font-size: 1.4rem; color: var(--gold); font-weight: 700; }
+        .verified { color: #4cd137; font-size: 0.6rem; display: flex; align-items: center; gap: 4px; }
 
-        .section-title { font-size: 0.8rem; color: var(--text-gray); text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .section-title i { color: var(--gold); }
+        .section-title { font-size: 0.6rem; color: var(--text-gray); text-transform: uppercase; margin: 12px 0 6px 0; letter-spacing: 0.5px; }
 
-        .description { font-size: 0.85rem; color: #ddd; line-height: 1.6; margin-bottom: 25px; }
+        .description { font-size: 0.75rem; color: #bbb; line-height: 1.4; margin-bottom: 15px; font-weight: 300; }
 
-        /* VENDEUR CARD */
-        .vendeur-card {
-            background: var(--card-bg); padding: 15px; border-radius: 15px;
+        /* VENDEUR MINI */
+        .vendeur-box {
+            background: var(--card-bg); padding: 10px; border-radius: 12px;
             display: flex; align-items: center; justify-content: space-between;
-            border: 0.3px solid rgba(245, 209, 112, 0.2); margin-bottom: 25px;
+            border: 0.2px solid rgba(255,255,255,0.05);
         }
-        .v-info { display: flex; align-items: center; gap: 12px; }
-        .v-img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #222; }
-        .v-name { font-size: 0.9rem; font-weight: bold; margin-bottom: 3px; }
-        .v-loc { font-size: 0.7rem; color: var(--text-gray); }
-        .btn-shop { background: var(--gold); color: #000; border: none; padding: 8px 15px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
+        .v-profile { display: flex; align-items: center; gap: 10px; }
+        .v-img { width: 35px; height: 35px; border-radius: 8px; background: #222; }
+        .v-name { font-size: 0.75rem; font-weight: 500; }
+        .v-loc { font-size: 0.6rem; color: var(--text-gray); }
 
-        /* CONTACT BUTTONS */
-        .contact-section { display: flex; gap: 10px; margin-bottom: 30px; }
-        .btn-chat { 
-            flex: 1; background: #111; color: white; border: 0.5px solid #333;
-            padding: 15px; border-radius: 15px; display: flex; align-items: center; justify-content: center; gap: 10px;
-            font-weight: bold; text-decoration: none;
+        /* CONTACT STYLE WHATSAPP/CONGOCHAT */
+        .contact-row { display: flex; gap: 8px; margin: 15px 0; }
+        .btn-congochat {
+            flex: 1; background: #111; border: 0.2px solid #222; border-radius: 10px;
+            color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.7rem;
         }
-        .btn-chat i { color: #00ff00; font-size: 1.2rem; }
-        .btn-call { 
-            width: 55px; height: 55px; background: #111; border: 0.5px solid #333;
-            border-radius: 15px; color: var(--gold); display: flex; align-items: center; justify-content: center;
+        /* L'icône C jaune dans cercle vert */
+        .cc-icon {
+            width: 20px; height: 20px; border-radius: 50%; border: 1px solid #4cd137;
+            display: flex; align-items: center; justify-content: center; 
+            color: var(--gold); font-weight: bold; font-size: 12px;
         }
+        .btn-call { width: 40px; height: 40px; background: #111; border-radius: 10px; color: var(--gold); display: flex; align-items: center; justify-content: center; border: 0.2px solid #222;}
 
-        /* BOTTOM ACTION */
+        /* BADGE SECURITE */
+        .security-badge {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 10px; border-radius: 8px; background: rgba(76, 209, 55, 0.03);
+            border: 0.2px dashed rgba(76, 209, 55, 0.2); margin-top: 5px;
+        }
+        .security-badge i { color: #4cd137; font-size: 0.8rem; }
+        .security-text { font-size: 0.6rem; color: #4cd137; font-weight: 300; }
+
+        /* BOUTON ACHETER FINE (Épaisseur stylo) */
         .action-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
-            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(10px);
-            padding: 20px; border-top: 0.3px solid var(--gold-border);
-            z-index: 1000;
+            padding: 15px 20px 30px 20px; background: var(--bg-dark);
         }
         .btn-buy {
-            background: linear-gradient(to right, #f5d170, #b89542);
-            color: black; width: 100%; padding: 15px; border-radius: 15px;
-            border: none; font-weight: 900; font-size: 1rem;
-            display: flex; align-items: center; justify-content: center; gap: 15px;
+            width: 100%; height: 38px; /* Très fin */
+            background: transparent;
+            border: 0.8px solid var(--gold-muted); /* Bordure fine dorée */
+            color: var(--gold); border-radius: 30px;
+            font-size: 0.75rem; font-weight: 300; letter-spacing: 2px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: 0.3s;
         }
-        .btn-buy i { background: black; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-
+        .btn-buy:active { background: rgba(245, 209, 112, 0.1); }
     </style>
 </head>
 <body>
 
     <div class="product-header">
-        <button class="back-btn" onclick="history.back()"><i class="fa-solid fa-chevron-left"></i></button>
-        <span class="premium-badge" id="badgePremium" style="display:none;">Premium</span>
+        <div class="header-btns">
+            <button class="icon-btn" onclick="history.back()"><i class="fa-solid fa-arrow-left"></i></button>
+            <button class="icon-btn" id="favBtn" onclick="toggleFav()"><i class="fa-regular fa-heart"></i></button>
+        </div>
+        <span class="premium-label" id="badgePremium" style="display:none;">Premium Edition</span>
         <img src="" id="prodImg" class="main-img">
     </div>
 
     <div class="product-content">
-        <div class="title-section">
-            <h1 id="prodName">Chargement...</h1>
-            <span class="condition-tag">Neuf</span>
-        </div>
-
         <div class="price-row">
-            <div class="price" id="prodPrice">... $</div>
-            <div class="verified-badge"><i class="fa-solid fa-circle-check"></i> Vendeur Vérifié</div>
+            <h1 id="prodName">Chargement...</h1>
+            <div class="price" id="prodPrice">0 $</div>
         </div>
+        
+        <div class="verified"><i class="fa-solid fa-shield-check"></i> Vendeur certifié Marché RDC</div>
 
-        <div class="section-title"><i class="fa-solid fa-file-lines"></i> Description</div>
-        <div class="description" id="prodDesc">
-            Veuillez patienter pendant le chargement des détails du produit...
-        </div>
+        <div class="section-title">Description du produit</div>
+        <div class="description" id="prodDesc">...</div>
 
-        <div class="section-title"><i class="fa-solid fa-user-tie"></i> Informations du Vendeur</div>
-        <div class="vendeur-card">
-            <div class="v-info">
+        <div class="section-title">Vendeur</div>
+        <div class="vendeur-box">
+            <div class="v-profile">
                 <img src="" id="vendImg" class="v-img">
                 <div>
-                    <div class="v-name" id="vendName">Vendeur Pro</div>
-                    <div class="v-loc" id="vendLoc"><i class="fa-solid fa-location-dot"></i> Kinshasa, RDC</div>
+                    <div class="v-name" id="vendName">...</div>
+                    <div class="v-loc" id="vendLoc">Kinshasa, RDC</div>
                 </div>
             </div>
-            <button class="btn-shop">Voir boutique</button>
+            <i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; color: #444;"></i>
         </div>
 
-        <div class="section-title"><i class="fa-solid fa-comment-dots"></i> Contact Vendeur</div>
-        <div class="contact-section">
-            <a href="#" id="chatLink" class="btn-chat">
-                <i class="fa-solid fa-message"></i> Discuter sur Congo Chat
+        <div class="contact-row">
+            <a href="#" id="chatLink" class="btn-congochat">
+                <div class="cc-icon">C</div> Discuter sur CongoChat
             </a>
-            <a href="#" id="callLink" class="btn-call">
-                <i class="fa-solid fa-phone"></i>
-            </a>
+            <a href="#" id="callLink" class="btn-call"><i class="fa-solid fa-phone-flip"></i></a>
+        </div>
+
+        <div class="security-badge">
+            <i class="fa-solid fa-lock"></i>
+            <div class="security-text">Paiement sécurisé · 100% garanti par Marché RDC</div>
         </div>
     </div>
 
     <div class="action-bar">
         <button class="btn-buy" onclick="initiateOrder()">
-            <i class="fa-solid fa-shopping-bag"></i> ACHETER MAINTENANT
+            ACHETER MAINTENANT
         </button>
     </div>
 
     <script>
+        // Configuration Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
-            authDomain: "congo-streaming-51333.firebaseapp.com",
             projectId: "congo-streaming-51333",
-            appId: "1:304286627819:android:36e0b43b8b10508a054bae"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Récupérer l'ID dans l'URL
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get('id');
 
         async function loadProductDetails() {
             if(!productId) return;
-
             const doc = await db.collection("marche_produits").doc(productId).get();
             if(doc.exists) {
                 const p = doc.data();
                 document.getElementById('prodImg').src = p.image;
                 document.getElementById('prodName').innerText = p.nom;
                 document.getElementById('prodPrice').innerText = p.prix + " $";
-                document.getElementById('prodDesc').innerText = p.description || "Aucune description fournie.";
+                document.getElementById('prodDesc').innerText = p.description;
                 document.getElementById('vendName').innerText = p.vendeur;
-                document.getElementById('vendLoc').innerHTML = `<i class="fa-solid fa-location-dot"></i> ${p.ville || 'RDC'}`;
                 
                 if(p.premium) document.getElementById('badgePremium').style.display = 'block';
 
-                // Redirection Congo Chat
-                // On passe l'ID du vendeur ou du produit pour que Congo Chat sache à qui on parle
-                document.getElementById('chatLink').href = `https://draziel-creator.github.io/CongoChat/?vendeur=${p.vendeurId || 'default'}&produit=${productId}`;
-                document.getElementById('callLink').href = `tel:${p.telephone || ''}`;
-
-                // Image du vendeur
-                if(p.vendeurId) {
-                    const vDoc = await db.collection("users").doc(p.vendeurId).get();
-                    if(vDoc.exists && vDoc.data().photoURL) {
-                        document.getElementById('vendImg').src = vDoc.data().photoURL;
-                    }
-                }
+                document.getElementById('chatLink').href = `https://draziel-creator.github.io/CongoChat/?id=${productId}`;
+                document.getElementById('callLink').href = `tel:${p.telephone}`;
             }
         }
 
+        function toggleFav() {
+            const btn = document.getElementById('favBtn').querySelector('i');
+            btn.classList.toggle('fa-regular');
+            btn.classList.toggle('fa-solid');
+            btn.classList.toggle('fav-active');
+            // Logique Firebase favoris ici si nécessaire
+        }
+
         function initiateOrder() {
-            // Ici tu peux ajouter la logique de paiement ou de commande sécurisée
-            alert("Redirection vers la commande sécurisée...");
+            alert("Traitement sécurisé de la commande...");
         }
 
         window.onload = loadProductDetails;
