@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Détails du Produit - Marché RDC</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+    <style>
+        :root {
+            --gold: #f5d170;
+            --gold-dark: #b89542;
+            --bg-dark: #0a0a0a;
+            --card-bg: #111111;
+            --text-gray: #aaaaaa;
+            --verified: #0095f6;
+        }
+
+        body {
+            margin: 0; background-color: var(--bg-dark);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: white; padding-bottom: 100px;
+        }
+
+        /* HEADER IMAGE */
+        .product-header { position: relative; width: 100%; height: 400px; background: #000; }
+        .main-img { width: 100%; height: 100%; object-fit: contain; }
+        .back-btn { 
+            position: absolute; top: 40px; left: 20px; 
+            background: rgba(0,0,0,0.5); color: white; border: none;
+            width: 40px; height: 40px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; z-index: 10;
+        }
+        .premium-badge {
+            position: absolute; top: 100px; left: 20px;
+            background: rgba(245, 209, 112, 0.2); border: 0.5px solid var(--gold);
+            color: var(--gold); padding: 4px 12px; border-radius: 5px;
+            font-size: 0.7rem; font-weight: bold; text-transform: uppercase;
+        }
+
+        /* CONTENT */
+        .product-content { padding: 20px; margin-top: -20px; background: var(--bg-dark); border-radius: 25px 25px 0 0; position: relative; }
+        
+        .title-section h1 { font-size: 1.4rem; margin: 0 0 5px 0; }
+        .condition-tag { 
+            background: #222; color: var(--gold); font-size: 0.65rem; 
+            padding: 2px 8px; border-radius: 4px; border: 0.2px solid var(--gold);
+        }
+
+        .price-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; }
+        .price { font-size: 1.8rem; color: var(--gold); font-weight: 800; }
+        .verified-badge { 
+            color: #00ff00; background: rgba(0,255,0,0.1); 
+            padding: 5px 12px; border-radius: 20px; font-size: 0.7rem; display: flex; align-items: center; gap: 5px;
+        }
+
+        .section-title { font-size: 0.8rem; color: var(--text-gray); text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .section-title i { color: var(--gold); }
+
+        .description { font-size: 0.85rem; color: #ddd; line-height: 1.6; margin-bottom: 25px; }
+
+        /* VENDEUR CARD */
+        .vendeur-card {
+            background: var(--card-bg); padding: 15px; border-radius: 15px;
+            display: flex; align-items: center; justify-content: space-between;
+            border: 0.3px solid rgba(245, 209, 112, 0.2); margin-bottom: 25px;
+        }
+        .v-info { display: flex; align-items: center; gap: 12px; }
+        .v-img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #222; }
+        .v-name { font-size: 0.9rem; font-weight: bold; margin-bottom: 3px; }
+        .v-loc { font-size: 0.7rem; color: var(--text-gray); }
+        .btn-shop { background: var(--gold); color: #000; border: none; padding: 8px 15px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; }
+
+        /* CONTACT BUTTONS */
+        .contact-section { display: flex; gap: 10px; margin-bottom: 30px; }
+        .btn-chat { 
+            flex: 1; background: #111; color: white; border: 0.5px solid #333;
+            padding: 15px; border-radius: 15px; display: flex; align-items: center; justify-content: center; gap: 10px;
+            font-weight: bold; text-decoration: none;
+        }
+        .btn-chat i { color: #00ff00; font-size: 1.2rem; }
+        .btn-call { 
+            width: 55px; height: 55px; background: #111; border: 0.5px solid #333;
+            border-radius: 15px; color: var(--gold); display: flex; align-items: center; justify-content: center;
+        }
+
+        /* BOTTOM ACTION */
+        .action-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(10px);
+            padding: 20px; border-top: 0.3px solid var(--gold-border);
+            z-index: 1000;
+        }
+        .btn-buy {
+            background: linear-gradient(to right, #f5d170, #b89542);
+            color: black; width: 100%; padding: 15px; border-radius: 15px;
+            border: none; font-weight: 900; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+        }
+        .btn-buy i { background: black; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+    </style>
+</head>
+<body>
+
+    <div class="product-header">
+        <button class="back-btn" onclick="history.back()"><i class="fa-solid fa-chevron-left"></i></button>
+        <span class="premium-badge" id="badgePremium" style="display:none;">Premium</span>
+        <img src="" id="prodImg" class="main-img">
+    </div>
+
+    <div class="product-content">
+        <div class="title-section">
+            <h1 id="prodName">Chargement...</h1>
+            <span class="condition-tag">Neuf</span>
+        </div>
+
+        <div class="price-row">
+            <div class="price" id="prodPrice">... $</div>
+            <div class="verified-badge"><i class="fa-solid fa-circle-check"></i> Vendeur Vérifié</div>
+        </div>
+
+        <div class="section-title"><i class="fa-solid fa-file-lines"></i> Description</div>
+        <div class="description" id="prodDesc">
+            Veuillez patienter pendant le chargement des détails du produit...
+        </div>
+
+        <div class="section-title"><i class="fa-solid fa-user-tie"></i> Informations du Vendeur</div>
+        <div class="vendeur-card">
+            <div class="v-info">
+                <img src="" id="vendImg" class="v-img">
+                <div>
+                    <div class="v-name" id="vendName">Vendeur Pro</div>
+                    <div class="v-loc" id="vendLoc"><i class="fa-solid fa-location-dot"></i> Kinshasa, RDC</div>
+                </div>
+            </div>
+            <button class="btn-shop">Voir boutique</button>
+        </div>
+
+        <div class="section-title"><i class="fa-solid fa-comment-dots"></i> Contact Vendeur</div>
+        <div class="contact-section">
+            <a href="#" id="chatLink" class="btn-chat">
+                <i class="fa-solid fa-message"></i> Discuter sur Congo Chat
+            </a>
+            <a href="#" id="callLink" class="btn-call">
+                <i class="fa-solid fa-phone"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="action-bar">
+        <button class="btn-buy" onclick="initiateOrder()">
+            <i class="fa-solid fa-shopping-bag"></i> ACHETER MAINTENANT
+        </button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
+            authDomain: "congo-streaming-51333.firebaseapp.com",
+            projectId: "congo-streaming-51333",
+            appId: "1:304286627819:android:36e0b43b8b10508a054bae"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Récupérer l'ID dans l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+
+        async function loadProductDetails() {
+            if(!productId) return;
+
+            const doc = await db.collection("marche_produits").doc(productId).get();
+            if(doc.exists) {
+                const p = doc.data();
+                document.getElementById('prodImg').src = p.image;
+                document.getElementById('prodName').innerText = p.nom;
+                document.getElementById('prodPrice').innerText = p.prix + " $";
+                document.getElementById('prodDesc').innerText = p.description || "Aucune description fournie.";
+                document.getElementById('vendName').innerText = p.vendeur;
+                document.getElementById('vendLoc').innerHTML = `<i class="fa-solid fa-location-dot"></i> ${p.ville || 'RDC'}`;
+                
+                if(p.premium) document.getElementById('badgePremium').style.display = 'block';
+
+                // Redirection Congo Chat
+                // On passe l'ID du vendeur ou du produit pour que Congo Chat sache à qui on parle
+                document.getElementById('chatLink').href = `https://draziel-creator.github.io/CongoChat/?vendeur=${p.vendeurId || 'default'}&produit=${productId}`;
+                document.getElementById('callLink').href = `tel:${p.telephone || ''}`;
+
+                // Image du vendeur
+                if(p.vendeurId) {
+                    const vDoc = await db.collection("users").doc(p.vendeurId).get();
+                    if(vDoc.exists && vDoc.data().photoURL) {
+                        document.getElementById('vendImg').src = vDoc.data().photoURL;
+                    }
+                }
+            }
+        }
+
+        function initiateOrder() {
+            // Ici tu peux ajouter la logique de paiement ou de commande sécurisée
+            alert("Redirection vers la commande sécurisée...");
+        }
+
+        window.onload = loadProductDetails;
+    </script>
+</body>
+</html>
