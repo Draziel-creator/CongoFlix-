@@ -294,20 +294,30 @@
             }
 
             renderCasting(data);
-            renderEpisodes(data.episodes || data.partie || data.film || []);
+            renderEpisodes(currentFilmData.episodes || currentFilmData.partie || currentFilmData.film || currentFilmData.Saison || []);
             renderComments(data.comments || []);
         });
 
-        // EPISODES & SEASONS LOGIC
+       // EPISODES & SEASONS LOGIC (AVEC DOUBLE LIEN ET SUPPORT SAISON1)
         function renderEpisodes(epArray) {
             const container = document.getElementById('episodesList');
             let html = ""; let seasons = {};
-            for (let i = 0; i < epArray.length; i += 3) {
-                const img = epArray[i], title = epArray[i+1], link = epArray[i+2];
+            
+            // On avance de 4 en 4 désormais : Image, Titre, Lien Regarder (Embed), Lien Télécharger (Direct)
+            for (let i = 0; i < epArray.length; i += 4) {
+                const img = epArray[i];
+                const title = epArray[i+1];
+                const linkWatch = epArray[i+2];    // Reçoit l'index 2 (Lecteur)
+                const linkDownload = epArray[i+3]; // Reçoit l'index 3 (Téléchargement)
+                
+                // Si l'un des éléments est manquant à la fin du tableau pour éviter un crash
+                if (!title) continue; 
+
                 let sName = title.includes(':') ? title.split(':')[0].trim() : "Épisodes";
                 if(!seasons[sName]) seasons[sName] = [];
-                seasons[sName].push({img, title, link});
+                seasons[sName].push({img, title, linkWatch, linkDownload});
             }
+            
             for (let s in seasons) {
                 html += `
                 <div class="season-wrapper">
@@ -316,7 +326,7 @@
                     </div>
                     <div class="season-content">
                         ${seasons[s].map(ep => `
-                            <div class="ep-card" onclick="openDetails('${ep.title.replace(/'/g, "\\'")}', '${ep.link}')">
+                            <div class="ep-card" onclick="openDetails('${ep.title.replace(/'/g, "\\'")}', '${ep.linkWatch || ''}', '${ep.linkDownload || ''}')">
                                 <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
                                 <div class="ep-info"><div class="ep-title">${ep.title}</div></div>
                                 <button class="detail-btn">Détails</button>
@@ -328,23 +338,29 @@
             container.innerHTML = html;
         }
 
-        // DETAIL MODAL LOGIC
-        window.openDetails = (title, link) => {
+        // DETAIL MODAL LOGIC (SEPARATION DES DEUX BOUTONS)
+        window.openDetails = (title, linkWatch, linkDownload) => {
             document.getElementById('detEpTitle').innerText = title;
             document.getElementById('modalAdContainer').style.display = 'flex';
             document.getElementById('modalPlayerContainer').style.display = 'none';
             document.getElementById('modalPlayerContainer').innerHTML = "";
             document.getElementById('detailDrawer').classList.add('active');
 
+            // Le bouton regarder prend uniquement le lien Embed (Index 2)
             document.getElementById('btnWatchNow').onclick = () => {
                 document.getElementById('modalAdContainer').style.display = 'none';
                 const container = document.getElementById('modalPlayerContainer');
                 container.style.display = 'block';
-                container.innerHTML = `<iframe src="${link}" allowfullscreen></iframe>`;
+                container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen></iframe>`;
             };
 
+            // Le bouton télécharger prend uniquement le lien Direct (Index 3)
             document.getElementById('btnDownloadNow').onclick = () => {
-                window.open(link, '_blank');
+                if(linkDownload) {
+                    window.open(linkDownload, '_blank');
+                } else {
+                    alert("Lien de téléchargement indisponible");
+                }
             };
         };
 
@@ -352,7 +368,6 @@
             document.getElementById('detailDrawer').classList.remove('active');
             document.getElementById('modalPlayerContainer').innerHTML = "";
         };
-
         // COMMENTS SYSTEM
         window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
