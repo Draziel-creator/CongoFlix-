@@ -268,7 +268,7 @@
             }
         });
 
-// --- INJECTION DU CSS DE STABILISATION, ANIMATION MODALE ET DEFILEMENT REBONDISSANT ---
+// --- INJECTION DU CSS DE STABILISATION ENRICHI (TEXTE FIXE & TIROIR PARFAIT) ---
         const styleStabilisateur = document.createElement('style');
         styleStabilisateur.innerHTML = `
             .ep-card {
@@ -285,11 +285,22 @@
             .ep-info {
                 flex: 1 !important;
                 min-width: 0 !important;
-                overflow: hidden !important; /* Verrouille la poche pour cacher le débordement */
                 position: relative !important;
                 display: flex !important;
                 align-items: center !important;
+                justify-content: flex-start !important;
+                overflow: hidden !important; /* Force le texte à disparaître ici, dès le bord de la miniature */
             }
+            
+            /* Conteneur de sécurité pour empêcher le texte d'entrer sous le bouton détail ou sur la miniature */
+            .ep-title-wrapper {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: hidden !important; 
+                position: relative !important;
+                display: inline-block !important;
+            }
+            
             .ep-title {
                 white-space: nowrap !important;
                 font-size: 14px;
@@ -299,12 +310,12 @@
                 animation: scrollRebondLeft 10s ease-in-out infinite alternate !important;
             }
             
-            /* Le titre glisse vers la gauche pour révéler le texte caché à droite, puis rebondit */
+            /* Le titre glisse vers la gauche : le début rentre sous la miniature, la fin sort du bouton détail */
             @keyframes scrollRebondLeft {
                 0% { transform: translateX(0); }
-                20% { transform: translateX(0); } /* Temps de lecture au début */
-                80% { transform: translateX(calc(-100% + 140px)); } /* Se cogne au bout du texte */
-                100% { transform: translateX(calc(-100% + 140px)); }
+                25% { transform: translateX(0); } /* Pause pour lire tranquillement le mot "Saison..." et le numéro */
+                75% { transform: translateX(calc(-100% + 100px)); } /* Glisse pour montrer le reste sans casser le bouton */
+                100% { transform: translateX(calc(-100% + 100px)); }
             }
 
             .detail-btn {
@@ -338,28 +349,28 @@
                 display: none !important;
             }
 
-            /* --- SYSTÈME DE TIROIR ULTRA-FLUIDE SANS PUSH DE PAGE --- */
+            /* --- TIROIR MODALE AJUSTÉ ET FLUIDE --- */
             #detailDrawer {
                 position: fixed !important;
                 bottom: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
-                height: auto !important; /* La hauteur s'adapte pile à la fin de la pub */
-                max-height: 85vh !important; /* Sécurité anti-débordement */
+                height: auto !important; /* S'adapte à la fin de la pub */
+                max-height: 85vh !important;
                 background: #141414 !important;
                 z-index: 99999 !important;
                 box-shadow: 0 -10px 30px rgba(0,0,0,0.7) !important;
                 border-radius: 20px 20px 0 0 !important;
                 box-sizing: border-box !important;
-                padding-bottom: env(safe-area-inset-bottom); /* Support mobile */
+                padding-bottom: env(safe-area-inset-bottom);
                 
-                /* Transition matérielle invisible : glisse par-dessus sans toucher au reste */
+                /* Glisse par-dessus sans saccade */
                 transform: translateY(100%) !important; 
                 transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
             }
             
             #detailDrawer.active {
-                transform: translateY(0) !important; /* Monte en douceur comme une carte */
+                transform: translateY(0) !important;
             }
         `;
         document.head.appendChild(styleStabilisateur);
@@ -447,7 +458,11 @@
                         cartesHtml += `
                             <div class="ep-card ${classeCachee}" onclick="openDetails('${ep.title.replace(/'/g, "\\'")}', '${ep.linkWatch || ''}', '${ep.linkDownload || ''}')">
                                 <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
-                                <div class="ep-info"><div class="ep-title">${ep.title}</div></div>
+                                <div class="ep-info">
+                                    <div class="ep-title-wrapper">
+                                        <div class="ep-title">${ep.title}</div>
+                                    </div>
+                                </div>
                                 <button class="detail-btn">Détails</button>
                             </div>
                         `;
@@ -479,7 +494,7 @@
             if(boutonMore) boutonMore.style.display = 'none';
         };
 
-        // --- DETAIL MODAL LOGIC (OUVERTURE CARDINALE ET DOUCE) ---
+        // --- DETAIL MODAL LOGIC ---
         window.openDetails = (title, linkWatch, linkDownload) => {
             document.getElementById('detEpTitle').innerText = title;
             document.getElementById('modalAdContainer').style.display = 'flex';
