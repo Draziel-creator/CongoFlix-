@@ -175,7 +175,7 @@
             <div class="season-content" id="infoPocketContent" style="padding: 15px;">
                 
                 <div class="glass-box" style="margin-top: 10px;">
-                    <p id="txtDesc">...</p>
+                    <p id="txtDesc" style="white-space: pre-wrap; word-break: break-word; width: 100%; margin: 0; color: #eee; font-size: 14px; line-height: 1.5;"></p>
                 </div>
                 
                 <span class="cast-label"><i class="fa-solid fa-users"></i> Casting Principal</span>
@@ -286,16 +286,17 @@
 
             function taper() {
                 if (i < texte.length) {
-                    txtDesc.innerText += texte.charAt(i);
+                    let caractereActuel = texte.charAt(i); // On prend le caractère AVANT d'avancer
+                    txtDesc.innerText += caractereActuel;
                     i++;
                     
-                    let caractereActuel = texte.charAt(i - 1);
                     let delai = 20; 
-                    
                     if (caractereActuel === '.' || caractereActuel === '!') {
                         delai = 250; 
                     } else if (caractereActuel === ',') {
                         delai = 120; 
+                    } else if (caractereActuel === ' ') {
+                        delai = 15; // Petit délai normal pour l'espace
                     }
                     
                     globalTimeout = setTimeout(taper, delai);
@@ -303,7 +304,6 @@
             }
             taper();
         }
-
         // AUTH TRACKING
         onAuthStateChanged(auth, async (user) => {
             if (user) {
