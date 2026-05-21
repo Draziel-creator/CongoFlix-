@@ -289,7 +289,7 @@
                 display: flex !important;
                 align-items: center !important;
                 justify-content: flex-start !important;
-                overflow: hidden !important; /* Force le texte à disparaître ici, dès le bord de la miniature */
+                overflow: hidden !important;
             }
             
             /* Conteneur de sécurité pour empêcher le texte d'entrer sous le bouton détail ou sur la miniature */
@@ -310,11 +310,11 @@
                 animation: scrollRebondLeft 10s ease-in-out infinite alternate !important;
             }
             
-            /* Le titre glisse vers la gauche : le début rentre sous la miniature, la fin sort du bouton détail */
+            /* Le titre glisse proprement vers la gauche à l'intérieur de sa zone dédiée */
             @keyframes scrollRebondLeft {
                 0% { transform: translateX(0); }
-                25% { transform: translateX(0); } /* Pause pour lire tranquillement le mot "Saison..." et le numéro */
-                75% { transform: translateX(calc(-100% + 100px)); } /* Glisse pour montrer le reste sans casser le bouton */
+                25% { transform: translateX(0); } /* Temps de lecture pour bien voir le numéro d'épisode */
+                75% { transform: translateX(calc(-100% + 100px)); } /* Se cogne en douceur */
                 100% { transform: translateX(calc(-100% + 100px)); }
             }
 
@@ -355,7 +355,7 @@
                 bottom: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
-                height: auto !important; /* S'adapte à la fin de la pub */
+                height: auto !important; 
                 max-height: 85vh !important;
                 background: #141414 !important;
                 z-index: 99999 !important;
@@ -364,7 +364,6 @@
                 box-sizing: border-box !important;
                 padding-bottom: env(safe-area-inset-bottom);
                 
-                /* Glisse par-dessus sans saccade */
                 transform: translateY(100%) !important; 
                 transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
             }
@@ -421,7 +420,7 @@
             fusionnerEtAfficher();
         });
 
-        // --- EPISODES & SEASONS LOGIC ---
+        // --- EPISODES & SEASONS LOGIC (NETTOYAGE DU TEXTE ET SÉCURISATION) ---
         function renderEpisodes(epArray) {
             const container = document.getElementById('episodesList');
             let html = ""; let seasons = {};
@@ -455,12 +454,20 @@
                     } else {
                         let classeCachee = modificateursSuite ? `suite-hidden partie-suite-${s}` : "";
                         
+                        // ICI : On nettoie le titre de la carte pour enlever "Saison X :" et afficher directement l'épisode !
+                        let titreAffiche = ep.title;
+                        if (ep.title.includes(':')) {
+                            const morceaux = ep.title.split(':');
+                            morceaux.shift(); // Supprime "Saison X"
+                            titreAffiche = morceaux.join(':').trim(); // Garde uniquement le mot "Épisode X..."
+                        }
+
                         cartesHtml += `
                             <div class="ep-card ${classeCachee}" onclick="openDetails('${ep.title.replace(/'/g, "\\'")}', '${ep.linkWatch || ''}', '${ep.linkDownload || ''}')">
                                 <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
                                 <div class="ep-info">
                                     <div class="ep-title-wrapper">
-                                        <div class="ep-title">${ep.title}</div>
+                                        <div class="ep-title">${titreAffiche}</div>
                                     </div>
                                 </div>
                                 <button class="detail-btn">Détails</button>
