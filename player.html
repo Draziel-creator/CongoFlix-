@@ -268,35 +268,96 @@
             }
         });
 
-       // LIVE DATA LOADING (MODE DOUBLE SOURCE POUR ÉVITER LE BLOCAGE FIREBASE)
+      // --- STYLE DE STABILISATION DES CARTES (ÉVITE QUE LE BOUTON DÉTAILS SOIT POUSSÉ) ---
+        // Tu peux ajouter ces règles directement en haut dans tes balises <style> si tu veux, 
+        // mais je les injecte ici dynamiquement pour sécuriser tes cartes d'épisodes sur mobile.
+        const styleSecurite = document.createElement('style');
+        styleSecurite.innerHTML = `
+            .ep-card {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                gap: 12px !important;
+                box-sizing: border-box !important;
+                width: 100% !important;
+            }
+            .ep-info {
+                flex: 1 !important;
+                min-width: 0 !important; /* Force le texte à respecter l'espace restant */
+            }
+            .ep-title {
+                font-size: 14px;
+                font-weight: 600;
+                color: #fff;
+                white-space: nowrap !important; /* Empêche le texte de créer une deuxième ligne */
+                overflow: hidden !important; /* Cache le texte qui dépasse */
+                text-overflow: ellipsis !important; /* Ajoute les trois petits points (...) */
+            }
+            .detail-btn {
+                flex-shrink: 0 !important; /* Empêche le bouton de rétrécir ou de disparaître */
+            }
+            .badge-suite {
+                background: #007bff !important;
+                color: #fff !important;
+                font-size: 10px !important;
+                font-weight: bold !important;
+                padding: 2px 6px !important;
+                border-radius: 4px !important;
+                margin-left: 5px !important;
+                display: inline-block !important;
+            }
+        `;
+        document.head.appendChild(styleSecurite);
+
+
+        // --- LIVE DATA LOADING (MODE DOUBLE SOURCE OPTIMISÉ) ---
         let listeEp_Partie1 = [];
         let listeEp_Partie2 = [];
 
         function fusionnerEtAfficher() {
-            // Fusionne automatiquement le document principal et le document -suite
-            const tousLesEpisodes = [...listeEp_Partie1, ...listeEp_Partie2];
-            renderEpisodes(tousLesEpisodes);
+            // On marque les éléments de la partie 2 pour que le système sache que c'est la suite
+            const partie1Marquee = [];
+            for (let i = 0; i < listeEp_Partie1.length; i += 4) {
+                partie1Marquee.push({
+                    img: listeEp_Partie1[i],
+                    title: listeEp_Partie1[i+1],
+                    watch: listeEp_Partie1[i+2],
+                    download: listeEp_Partie1[i+3],
+                    isSuite: false
+                });
+            }
+
+            const partie2Marquee = [];
+            for (let i = 0; i < listeEp_Partie2.length; i += 4) {
+                partie2Marquee.push({
+                    img: listeEp_Partie2[i],
+                    title: listeEp_Partie2[i+1],
+                    watch: listeEp_Partie2[i+2],
+                    download: listeEp_Partie2[i+3],
+                    isSuite: true // Tagged comme suite
+                });
+            }
+
+            // Fusion totale de tous les objets d'épisodes
+            const tousLesEpisodes = [...partie1Marquee, ...partie2Marquee];
+            renderEpisodesScurises(tousLesEpisodes);
         }
 
         onSnapshot(doc(db, "films", filmId), (snap) => {
             const data = snap.data(); if(!data) return;
             currentFilmData = data;
             
-            // Textual info
             document.getElementById('txtTitle').innerText = data.titre || "CongoFlix";
             document.getElementById('txtDesc').innerText = data.description || "...";
             
-            // Stats
             document.getElementById('statV').innerText = data.views || 0;
             const likeList = data.likes || [];
             document.getElementById('statL').innerText = likeList.length;
             
-            // Like Button State
             const likeBtn = document.getElementById('mainLikeBtn');
             if(currentUser && likeList.includes(userId)) likeBtn.classList.add('is-liked');
             else likeBtn.classList.remove('is-liked');
 
-            // Player & View Counter
             if(!document.getElementById('playerRoot').innerHTML.trim() && data.url) {
                 document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
                 updateDoc(doc(db, "films", filmId), { views: increment(1) });
@@ -305,12 +366,10 @@
             renderCasting(data);
             renderComments(data.comments || []);
 
-            // On stocke les épisodes du premier document (1 à 9) puis on lance la fusion
             listeEp_Partie1 = data.episodes || data.partie || data.film || data.Saison || data.Saison1 || [];
             fusionnerEtAfficher();
         });
 
-        // ÉCOUTE DU DEUXIÈME DOCUMENT (-suite) POUR LES ÉPISODES 10 À 14
         onSnapshot(doc(db, "films", filmId + "-suite"), (snap) => {
             if (snap.exists()) {
                 const dataSuite = snap.data();
@@ -321,37 +380,39 @@
             fusionnerEtAfficher();
         });
 
-        // EPISODES & SEASONS LOGIC (AVEC DOUBLE LIEN ET SUPPORT SAISON1)
-        function renderEpisodes(epArray) {
+
+        // --- LOGIQUE DE RENDU DES ÉPISODES SÉCURISÉE ET COLLÉE ---
+        function renderEpisodesScurises(structuredEpArray) {
             const container = document.getElementById('episodesList');
             let html = ""; let seasons = {};
             
-            // On avance de 4 en 4 désormais : Image, Titre, Lien Regarder (Embed), Lien Télécharger (Direct)
-            for (let i = 0; i < epArray.length; i += 4) {
-                const img = epArray[i];
-                const title = epArray[i+1];
-                const linkWatch = epArray[i+2];    // Reçoit l'index 2 (Lecteur)
-                const linkDownload = epArray[i+3]; // Reçoit l'index 3 (Téléchargement)
-                
-                // Si l'un des éléments est manquant à la fin du tableau pour éviter un crash
-                if (!title) continue; 
-
-                let sName = title.includes(':') ? title.split(':')[0].trim() : "Épisodes";
+            // Organisation par nom de Saisons
+            structuredEpArray.forEach(ep => {
+                if (!ep.title) return;
+                let sName = ep.title.includes(':') ? ep.title.split(':')[0].trim() : "Épisodes";
                 if(!seasons[sName]) seasons[sName] = [];
-                seasons[sName].push({img, title, linkWatch, linkDownload});
-            }
+                seasons[sName].push(ep);
+            });
             
             for (let s in seasons) {
                 html += `
-                <div class="season-wrapper">
+                <div class="season-wrapper" style="margin-bottom: 20px;">
                     <div class="season-pocket" onclick="this.parentElement.classList.toggle('active')">
                         <span><i class="fa-solid fa-layer-group"></i> ${s}</span> <i class="fa-solid fa-chevron-down"></i>
                     </div>
                     <div class="season-content">
                         ${seasons[s].map(ep => `
-                            <div class="ep-card" onclick="openDetails('${ep.title.replace(/'/g, "\\'")}', '${ep.linkWatch || ''}', '${ep.linkDownload || ''}')">
-                                <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
-                                <div class="ep-info"><div class="ep-title">${ep.title}</div></div>
+                            <div class="ep-card" onclick="openDetails('${ep.title.replace(/'/g, "\\'")}', '${ep.watch || ''}', '${ep.download || ''}')">
+                                <div class="ep-poster-box">
+                                    <img src="${ep.img}">
+                                    <div class="ep-hd-tag">HD</div>
+                                </div>
+                                <div class="ep-info">
+                                    <div class="ep-title">
+                                        ${ep.title} 
+                                        ${ep.isSuite ? '<span class="badge-suite">Suite</span>' : ''}
+                                    </div>
+                                </div>
                                 <button class="detail-btn">Détails</button>
                             </div>
                         `).join('')}
@@ -361,7 +422,8 @@
             container.innerHTML = html;
         }
 
-        // DETAIL MODAL LOGIC (SEPARATION DES DEUX BOUTONS)
+
+        // --- DETAIL MODAL LOGIC (DEUX BOUTONS STABLES) ---
         window.openDetails = (title, linkWatch, linkDownload) => {
             document.getElementById('detEpTitle').innerText = title;
             document.getElementById('modalAdContainer').style.display = 'flex';
@@ -369,7 +431,6 @@
             document.getElementById('modalPlayerContainer').innerHTML = "";
             document.getElementById('detailDrawer').classList.add('active');
 
-            // Le bouton regarder prend uniquement le lien Embed (Index 2)
             document.getElementById('btnWatchNow').onclick = () => {
                 document.getElementById('modalAdContainer').style.display = 'none';
                 const container = document.getElementById('modalPlayerContainer');
@@ -377,7 +438,6 @@
                 container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen></iframe>`;
             };
 
-            // Le bouton télécharger prend uniquement le lien Direct (Index 3)
             document.getElementById('btnDownloadNow').onclick = () => {
                 if(linkDownload) {
                     window.open(linkDownload, '_blank');
