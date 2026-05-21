@@ -268,7 +268,7 @@
             }
         });
 
-    // --- INJECTION DU CSS DE STABILISATION, ANIMATION MODALE ET DEFILEMENT REBONDISSANT ---
+// --- INJECTION DU CSS DE STABILISATION, ANIMATION MODALE ET DEFILEMENT REBONDISSANT ---
         const styleStabilisateur = document.createElement('style');
         styleStabilisateur.innerHTML = `
             .ep-card {
@@ -280,11 +280,12 @@
                 box-sizing: border-box !important;
                 position: relative !important;
                 margin-bottom: 8px !important;
+                cursor: pointer;
             }
             .ep-info {
                 flex: 1 !important;
                 min-width: 0 !important;
-                overflow: hidden !important; /* Cache ce qui dépasse de la poche du texte */
+                overflow: hidden !important; /* Verrouille la poche pour cacher le débordement */
                 position: relative !important;
                 display: flex !important;
                 align-items: center !important;
@@ -294,20 +295,16 @@
                 font-size: 14px;
                 color: #fff;
                 display: inline-block !important;
-                animation: scrollRebond 8s ease-in-out infinite alternate;
+                transform: translateX(0);
+                animation: scrollRebondLeft 10s ease-in-out infinite alternate !important;
             }
             
-            /* Animation CSS pour l'effet de rebondissement automatique du titre */
-            @keyframes scrollRebond {
+            /* Le titre glisse vers la gauche pour révéler le texte caché à droite, puis rebondit */
+            @keyframes scrollRebondLeft {
                 0% { transform: translateX(0); }
-                15% { transform: translateX(0); } /* Petite pause au début */
-                85% { transform: translateX(calc(-100% + 120px)); } /* Glisse vers la gauche selon la taille */
-                100% { transform: translateX(calc(-100% + 120px)); } /* Petite pause au mur avant de revenir */
-            }
-
-            /* Sécurité : Si le titre est assez court, on annule l'animation pour qu'il reste fixe */
-            .ep-title:not(:min-width: 100%) {
-                animation: none !important;
+                20% { transform: translateX(0); } /* Temps de lecture au début */
+                80% { transform: translateX(calc(-100% + 140px)); } /* Se cogne au bout du texte */
+                100% { transform: translateX(calc(-100% + 140px)); }
             }
 
             .detail-btn {
@@ -326,7 +323,7 @@
                 border-radius: 6px !important;
                 font-size: 13px !important;
                 font-weight: bold !important;
-                margin-top: 2px !important; /* Collé directement à la dernière carte */
+                margin-top: 2px !important;
                 margin-bottom: 10px !important;
                 cursor: pointer !important;
                 border: none !important;
@@ -341,21 +338,28 @@
                 display: none !important;
             }
 
-            /* --- ANIMATION PROFESSIONNELLE DOUCE DU DRAWER/MODALE --- */
+            /* --- SYSTÈME DE TIROIR ULTRA-FLUIDE SANS PUSH DE PAGE --- */
             #detailDrawer {
                 position: fixed !important;
-                bottom: -100% !important; /* Caché tout en bas au départ */
+                bottom: 0 !important;
                 left: 0 !important;
                 width: 100% !important;
-                height: 80vh !important; /* Ajuste selon ton design */
-                background: #111 !important;
-                z-index: 9999 !important;
-                transition: bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important; /* Glissement fluide et pro */
-                box-shadow: 0 -5px 25px rgba(0,0,0,0.5) !important;
-                border-radius: 16px 16px 0 0 !important;
+                height: auto !important; /* La hauteur s'adapte pile à la fin de la pub */
+                max-height: 85vh !important; /* Sécurité anti-débordement */
+                background: #141414 !important;
+                z-index: 99999 !important;
+                box-shadow: 0 -10px 30px rgba(0,0,0,0.7) !important;
+                border-radius: 20px 20px 0 0 !important;
+                box-sizing: border-box !important;
+                padding-bottom: env(safe-area-inset-bottom); /* Support mobile */
+                
+                /* Transition matérielle invisible : glisse par-dessus sans toucher au reste */
+                transform: translateY(100%) !important; 
+                transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
             }
+            
             #detailDrawer.active {
-                bottom: 0 !important; /* Remonte en douceur */
+                transform: translateY(0) !important; /* Monte en douceur comme une carte */
             }
         `;
         document.head.appendChild(styleStabilisateur);
@@ -406,7 +410,7 @@
             fusionnerEtAfficher();
         });
 
-        // --- EPISODES & SEASONS LOGIC (FLÈCHE ET REBONDISSEMENT CONFIGURÉS) ---
+        // --- EPISODES & SEASONS LOGIC ---
         function renderEpisodes(epArray) {
             const container = document.getElementById('episodesList');
             let html = ""; let seasons = {};
@@ -450,7 +454,6 @@
                     }
                 });
 
-                // Correction de la flèche ici avec la bonne classe font-awesome "fa-chevron-down"
                 html += `
                 <div class="season-wrapper" style="margin-bottom: 25px;">
                     <div class="season-pocket" onclick="this.parentElement.classList.toggle('active')">
@@ -476,7 +479,7 @@
             if(boutonMore) boutonMore.style.display = 'none';
         };
 
-        // --- DETAIL MODAL LOGIC (OUVERTURE PROGRESSIVE PAR LES STYLES APPLIQUÉS) ---
+        // --- DETAIL MODAL LOGIC (OUVERTURE CARDINALE ET DOUCE) ---
         window.openDetails = (title, linkWatch, linkDownload) => {
             document.getElementById('detEpTitle').innerText = title;
             document.getElementById('modalAdContainer').style.display = 'flex';
