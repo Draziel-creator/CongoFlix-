@@ -268,7 +268,7 @@
             }
         });
 
-     // --- INJECTION DU CSS DE STABILISATION ENRICHI ---
+    // --- INJECTION DU CSS DE STABILISATION, ANIMATION MODALE ET DEFILEMENT REBONDISSANT ---
         const styleStabilisateur = document.createElement('style');
         styleStabilisateur.innerHTML = `
             .ep-card {
@@ -284,21 +284,37 @@
             .ep-info {
                 flex: 1 !important;
                 min-width: 0 !important;
-                overflow-x: auto !important;
-                scrollbar-width: none !important;
-            }
-            .ep-info::-webkit-scrollbar {
-                display: none !important;
+                overflow: hidden !important; /* Cache ce qui dépasse de la poche du texte */
+                position: relative !important;
+                display: flex !important;
+                align-items: center !important;
             }
             .ep-title {
                 white-space: nowrap !important;
                 font-size: 14px;
                 color: #fff;
+                display: inline-block !important;
+                animation: scrollRebond 8s ease-in-out infinite alternate;
             }
+            
+            /* Animation CSS pour l'effet de rebondissement automatique du titre */
+            @keyframes scrollRebond {
+                0% { transform: translateX(0); }
+                15% { transform: translateX(0); } /* Petite pause au début */
+                85% { transform: translateX(calc(-100% + 120px)); } /* Glisse vers la gauche selon la taille */
+                100% { transform: translateX(calc(-100% + 120px)); } /* Petite pause au mur avant de revenir */
+            }
+
+            /* Sécurité : Si le titre est assez court, on annule l'animation pour qu'il reste fixe */
+            .ep-title:not(:min-width: 100%) {
+                animation: none !important;
+            }
+
             .detail-btn {
                 flex-shrink: 0 !important;
             }
-            /* Style de la poche d'extension bleue Voir Plus - Parfaitement collée */
+
+            /* Style du bouton bleu Voir Plus - Parfaitement collé */
             .btn-voir-plus-poche {
                 display: flex !important;
                 align-items: center !important;
@@ -310,20 +326,36 @@
                 border-radius: 6px !important;
                 font-size: 13px !important;
                 font-weight: bold !important;
-                margin-top: 5px !important; /* Réduit pour coller au dernier épisode */
+                margin-top: 2px !important; /* Collé directement à la dernière carte */
                 margin-bottom: 10px !important;
                 cursor: pointer !important;
                 border: none !important;
-                width: 100% !important; /* Prend toute la largeur pour faire une belle séparation */
+                width: 100% !important;
                 box-sizing: border-box !important;
                 transition: background 0.2s;
             }
             .btn-voir-plus-poche:hover {
                 background-color: #0056b3 !important;
             }
-            /* Classe pour masquer discrètement la suite au départ */
             .suite-hidden {
                 display: none !important;
+            }
+
+            /* --- ANIMATION PROFESSIONNELLE DOUCE DU DRAWER/MODALE --- */
+            #detailDrawer {
+                position: fixed !important;
+                bottom: -100% !important; /* Caché tout en bas au départ */
+                left: 0 !important;
+                width: 100% !important;
+                height: 80vh !important; /* Ajuste selon ton design */
+                background: #111 !important;
+                z-index: 9999 !important;
+                transition: bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important; /* Glissement fluide et pro */
+                box-shadow: 0 -5px 25px rgba(0,0,0,0.5) !important;
+                border-radius: 16px 16px 0 0 !important;
+            }
+            #detailDrawer.active {
+                bottom: 0 !important; /* Remonte en douceur */
             }
         `;
         document.head.appendChild(styleStabilisateur);
@@ -374,7 +406,7 @@
             fusionnerEtAfficher();
         });
 
-        // --- EPISODES & SEASONS LOGIC (GESTIONNAIRE DE SUITE INTELLIGENT) ---
+        // --- EPISODES & SEASONS LOGIC (FLÈCHE ET REBONDISSEMENT CONFIGURÉS) ---
         function renderEpisodes(epArray) {
             const container = document.getElementById('episodesList');
             let html = ""; let seasons = {};
@@ -387,7 +419,6 @@
                 
                 if (!title) continue; 
 
-                // Découpage propre même si c'est collé comme "Saison1:voir plus"
                 let sName = title.includes(':') ? title.split(':')[0].trim() : "Épisodes";
                 if(!seasons[sName]) seasons[sName] = [];
                 seasons[sName].push({img, title, linkWatch, linkDownload});
@@ -396,19 +427,17 @@
             for (let s in seasons) {
                 let cartesHtml = "";
                 let boutonVoirPlusHtml = "";
-                let modificateursSuite = false; // Passe à true dès qu'on croise le mot clé
+                let modificateursSuite = false;
 
                 seasons[s].forEach((ep, index) => {
-                    // Nettoyage et vérification du mot clé "voir plus"
                     if (ep.title.toLowerCase().includes("voir plus")) {
-                        modificateursSuite = true; // Tout ce qui suit sera marqué comme faisant partie de la suite cachée
+                        modificateursSuite = true;
                         boutonVoirPlusHtml = `
                             <button class="btn-voir-plus-poche" id="btn-more-${s}" onclick="afficherLaSuiteDeLaPoche('${s}')">
                                 <i class="fa-solid fa-circle-plus"></i> Voir plus d'épisodes
                             </button>
                         `;
                     } else {
-                        // Si modificateursSuite est vrai, on ajoute la classe 'suite-hidden' pour cacher l'épisode au début
                         let classeCachee = modificateursSuite ? `suite-hidden partie-suite-${s}` : "";
                         
                         cartesHtml += `
@@ -421,10 +450,11 @@
                     }
                 });
 
+                // Correction de la flèche ici avec la bonne classe font-awesome "fa-chevron-down"
                 html += `
                 <div class="season-wrapper" style="margin-bottom: 25px;">
                     <div class="season-pocket" onclick="this.parentElement.classList.toggle('active')">
-                        <span><i class="fa-solid fa-layer-group"></i> ${s}</span> <i class="fa-solid =chevron-down"></i>
+                        <span><i class="fa-solid fa-layer-group"></i> ${s}</span> <i class="fa-solid fa-chevron-down"></i>
                     </div>
                     <div class="season-content">
                         ${cartesHtml}
@@ -435,20 +465,18 @@
             container.innerHTML = html;
         }
 
-        // --- ACTION DU BOUTON VOIR PLUS : DEBLOQUE LA SUITE DANS LA POCHE ---
+        // --- ACTION DU BOUTON VOIR PLUS ---
         window.afficherLaSuiteDeLaPoche = (saisonId) => {
-            // Récupère toutes les cartes cachées liées à cette saison spécifique
             const elementsSuite = document.querySelectorAll(`.partie-suite-${saisonId}`);
             elementsSuite.forEach(el => {
-                el.classList.remove('suite-hidden'); // Supprime le masquage pour les révéler
+                el.classList.remove('suite-hidden');
             });
             
-            // Masque le bouton "Voir plus" puisqu'on a affiché le reste
             const boutonMore = document.getElementById(`btn-more-${saisonId}`);
             if(boutonMore) boutonMore.style.display = 'none';
         };
 
-        // --- DETAIL MODAL LOGIC ---
+        // --- DETAIL MODAL LOGIC (OUVERTURE PROGRESSIVE PAR LES STYLES APPLIQUÉS) ---
         window.openDetails = (title, linkWatch, linkDownload) => {
             document.getElementById('detEpTitle').innerText = title;
             document.getElementById('modalAdContainer').style.display = 'flex';
