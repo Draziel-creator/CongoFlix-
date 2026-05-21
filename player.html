@@ -268,7 +268,16 @@
             }
         });
 
-        // LIVE DATA LOADING
+       // LIVE DATA LOADING (MODE DOUBLE SOURCE POUR ÉVITER LE BLOCAGE FIREBASE)
+        let listeEp_Partie1 = [];
+        let listeEp_Partie2 = [];
+
+        function fusionnerEtAfficher() {
+            // Fusionne automatiquement le document principal et le document -suite
+            const tousLesEpisodes = [...listeEp_Partie1, ...listeEp_Partie2];
+            renderEpisodes(tousLesEpisodes);
+        }
+
         onSnapshot(doc(db, "films", filmId), (snap) => {
             const data = snap.data(); if(!data) return;
             currentFilmData = data;
@@ -294,11 +303,25 @@
             }
 
             renderCasting(data);
-            renderEpisodes(currentFilmData.episodes || currentFilmData.partie || currentFilmData.film || currentFilmData.Saison || []);
             renderComments(data.comments || []);
+
+            // On stocke les épisodes du premier document (1 à 9) puis on lance la fusion
+            listeEp_Partie1 = data.episodes || data.partie || data.film || data.Saison || data.Saison1 || [];
+            fusionnerEtAfficher();
         });
 
-       // EPISODES & SEASONS LOGIC (AVEC DOUBLE LIEN ET SUPPORT SAISON1)
+        // ÉCOUTE DU DEUXIÈME DOCUMENT (-suite) POUR LES ÉPISODES 10 À 14
+        onSnapshot(doc(db, "films", filmId + "-suite"), (snap) => {
+            if (snap.exists()) {
+                const dataSuite = snap.data();
+                listeEp_Partie2 = dataSuite.episodes || dataSuite.partie || dataSuite.film || dataSuite.Saison || dataSuite.Saison1 || [];
+            } else {
+                listeEp_Partie2 = [];
+            }
+            fusionnerEtAfficher();
+        });
+
+        // EPISODES & SEASONS LOGIC (AVEC DOUBLE LIEN ET SUPPORT SAISON1)
         function renderEpisodes(epArray) {
             const container = document.getElementById('episodesList');
             let html = ""; let seasons = {};
