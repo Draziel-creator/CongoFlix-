@@ -167,11 +167,23 @@
     </div>
 
     <div class="info-pane">
-        <div class="glass-box"><p id="txtDesc">...</p></div>
-        
-        <span class="cast-label"><i class="fa-solid fa-users"></i> Casting Principal</span>
-        <div id="rowCastImgs" class="cast-row-imgs"></div> 
-        <div id="listCastNames" class="cast-list-vertical"></div> 
+        <div class="season-wrapper" style="margin-bottom: 25px;">
+            <div class="season-pocket" onclick="toggleInfoPocket(this)">
+                <span><i class="fa-solid fa-circle-info"></i> Histoire & Distribution</span> 
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <div class="season-content" id="infoPocketContent" style="padding: 15px;">
+                
+                <div class="glass-box" style="margin-top: 10px;">
+                    <p id="txtDesc">...</p>
+                </div>
+                
+                <span class="cast-label"><i class="fa-solid fa-users"></i> Casting Principal</span>
+                <div id="rowCastImgs" class="cast-row-imgs"></div> 
+                <div id="listCastNames" class="cast-list-vertical"></div> 
+                
+            </div>
+        </div>
         
         <div id="episodesList"></div>
     </div>
@@ -247,6 +259,50 @@
         let userImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
         let currentFilmData = null;
         let targetCommentId = null;
+        // --- LOGIQUE DE LA POCHE INFOS & EFFET MACHINE À ÉCRIRE ---
+        let descriptionComplete = ""; // Stockera le texte original de Firebase
+        let globalTimeout = null;
+
+        window.toggleInfoPocket = (pocketElement) => {
+            const wrapper = pocketElement.parentElement;
+            const content = document.getElementById('infoPocketContent');
+            
+            wrapper.classList.toggle('active');
+            
+            if (wrapper.classList.contains('active')) {
+                content.style.display = 'block';
+                lancerMachineAEcrire(descriptionComplete);
+            } else {
+                content.style.display = 'none';
+                if(globalTimeout) clearTimeout(globalTimeout);
+            }
+        };
+
+        function lancerMachineAEcrire(texte) {
+            const txtDesc = document.getElementById('txtDesc');
+            txtDesc.innerText = "";
+            let i = 0;
+            if(globalTimeout) clearTimeout(globalTimeout);
+
+            function taper() {
+                if (i < texte.length) {
+                    txtDesc.innerText += texte.charAt(i);
+                    i++;
+                    
+                    let caractereActuel = texte.charAt(i - 1);
+                    let delai = 20; 
+                    
+                    if (caractereActuel === '.' || caractereActuel === '!') {
+                        delai = 250; 
+                    } else if (caractereActuel === ',') {
+                        delai = 120; 
+                    }
+                    
+                    globalTimeout = setTimeout(taper, delai);
+                }
+            }
+            taper();
+        }
 
         // AUTH TRACKING
         onAuthStateChanged(auth, async (user) => {
@@ -388,7 +444,8 @@
             currentFilmData = data;
             
             document.getElementById('txtTitle').innerText = data.titre || "CongoFlix";
-            document.getElementById('txtDesc').innerText = data.description || "...";
+            descriptionComplete = data.description || "Aucune description disponible.";
+document.getElementById('txtDesc').innerText = "...";
             
             document.getElementById('statV').innerText = data.views || 0;
             const likeList = data.likes || [];
