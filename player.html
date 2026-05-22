@@ -474,35 +474,24 @@ document.getElementById('txtDesc').innerText = "...";
             }
             fusionnerEtAfficher();
         });
-       // ÉCOUTEUR TEMPS RÉEL DÉDIÉ AUX COMMENTAIRES + LEURS LIKES 
-onSnapshot(collection(db, "films", filmId, "comments"), async (snapshot) => {
+      // ÉCOUTEUR TEMPS RÉEL FLUIDE : PLUS DE BLOCAGE DE PAGE
+onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
     let comms = [];
     
-    for (let docSnap of snapshot.docs) {
+    snapshot.forEach((docSnap) => {
         let commentData = docSnap.data();
         const cId = docSnap.id;
         
-        // On va chercher la sous-collection de likes propre à CE commentaire
-        const likesColl = collection(db, "films", filmId, "comments", cId, "likes");
-        const likesSnap = await getDocs(likesColl);
-        
-        let userHasLiked = false;
-        let likesCount = likesSnap.size;
-        
-        // On vérifie si l'utilisateur actuel a mis un cœur
-        likesSnap.forEach((lDoc) => {
-            if (lDoc.id === userId) {
-                userHasLiked = true;
-            }
-        });
-        
+        // On lit directement les données sans faire de requêtes réseau bloquantes
         comms.push({ 
             id: cId, 
             ...commentData, 
-            likesCount: likesCount, 
-            userHasLiked: userHasLiked 
+            likesCount: commentData.likesCount || 0, // Sera géré par transaction plus tard si tu veux
+            userHasLiked: false 
         });
-    }
+    });
+    
+    // On envoie direct à l'affichage pour que l'interface reste instantanée
     renderComments(comms);
 });
         // ÉCOUTEUR COMPTEUR DE LIKES SÉCURISÉ
