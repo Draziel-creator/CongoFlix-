@@ -647,17 +647,26 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
             field.focus();
         };
 
-        function renderComments(comms) {
+       function renderComments(comms) {
     const list = document.getElementById('tkList');
     document.getElementById('statC').innerText = comms.length;
     document.getElementById('hCount').innerText = comms.length;
 
-    list.innerHTML = comms.sort((a,b) => b.date - a.date).map(c => `
+    list.innerHTML = comms.sort((a,b) => b.date - a.date).map(c => {
+        // Sécurité pour la date du commentaire principal
+        let dateCommentaire = "";
+        try {
+            dateCommentaire = typeof formatDate === 'function' ? formatDate(c.date) : new Date(c.date).toLocaleDateString();
+        } catch(e) {
+            dateCommentaire = new Date(c.date).toLocaleDateString();
+        }
+
+        return `
         <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start; position:relative;">
             <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:35px; height:35px; border-radius:50%">
             <div style="flex:1; padding-right:30px;">
                 <div style="font-size:12px; color:#999; font-weight:bold">
-                    ${c.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${formatDate ? formatDate(c.date) : new Date(c.date).toLocaleDateString()}</span>
+                    ${c.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateCommentaire}</span>
                 </div>
                 <div style="font-size:14px; color:#eee; margin-top:2px;">${c.text}</div>
                 <div class="c-foot" style="margin-top:4px;"><span onclick="prepareReply('${c.id}', '${c.nom}')" style="cursor:pointer; color:#777; font-size:12px;">Répondre</span></div>
@@ -665,12 +674,21 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
                 ${(c.replies || []).length > 0 ? `
                     <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher les réponses</div>
                     <div class="replies-pocket">
-                        ${(c.replies || []).map(r => `
+                        ${(c.replies || []).map(r => {
+                            // Sécurité pour la date de la réponse
+                            let dateReponse = "";
+                            try {
+                                dateReponse = typeof formatDate === 'function' ? formatDate(r.date) : new Date(r.date).toLocaleDateString();
+                            } catch(e) {
+                                dateReponse = new Date(r.date).toLocaleDateString();
+                            }
+
+                            return `
                             <div style="display:flex; gap:8px; margin-top:12px; position:relative;">
                                 <img src="${r.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:24px; height:24px; border-radius:50%">
                                 <div style="flex:1; padding-right:25px;">
                                     <div style="font-size:11px; color:#777; font-weight:bold">
-                                        ${r.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${formatDate ? formatDate(r.date) : new Date(r.date).toLocaleDateString()}</span>
+                                        ${r.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateReponse}</span>
                                     </div>
                                     <div style="font-size:13px; color:#eee; margin-top:1px;">${r.text}</div>
                                 </div>
@@ -678,7 +696,8 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
                                     ❤️ <span style="font-size:10px; display:block; text-align:center; color:#555;">0</span>
                                 </div>
                             </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </div>
                 ` : ''}
             </div>
@@ -686,7 +705,8 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
                 ❤️ <span style="font-size:11px; display:block; text-align:center; color:#555;">0</span>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
         // CASTING
         function renderCasting(data) {
