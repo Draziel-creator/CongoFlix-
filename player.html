@@ -474,25 +474,48 @@ document.getElementById('txtDesc').innerText = "...";
             }
             fusionnerEtAfficher();
         });
-      // ÉCOUTEUR TEMPS RÉEL FLUIDE : PLUS DE BLOCAGE DE PAGE
+     // ÉCOUTEUR TEMPS RÉEL OPTIMISÉ (PLUS DE BLOCAGE DE INTERFACE)
 onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
     let comms = [];
     
+    // 1. On extrait immédiatement les données de base pour ne pas bloquer le thread principal
     snapshot.forEach((docSnap) => {
         let commentData = docSnap.data();
-        const cId = docSnap.id;
-        
-        // On lit directement les données sans faire de requêtes réseau bloquantes
         comms.push({ 
-            id: cId, 
+            id: docSnap.id, 
             ...commentData, 
-            likesCount: commentData.likesCount || 0, // Sera géré par transaction plus tard si tu veux
+            likesCount: commentData.likesCount || 0, // Utilise un compteur sur le doc s'il existe
             userHasLiked: false 
         });
     });
+
+    // 2. On lance la récupération des likes en tâche de fond (async) pour chaque commentaire
+    const currentUserId = typeof userId !== 'undefined' ? userId : (currentUser ? currentUser.uid : null);
     
-    // On envoie direct à l'affichage pour que l'interface reste instantanée
-    renderComments(comms);
+    if (currentUserId) {
+        const promises = comms.map(async (c) => {
+            try {
+                const likesColl = collection(db, "films", filmId, "comments", c.id, "likes");
+                const likesSnap = await getDocs(likesColl);
+                c.likesCount = likesSnap.size;
+                likesSnap.forEach((lDoc) => {
+                    if (lDoc.id === currentUserId) {
+                        c.userHasLiked = true;
+                    }
+                });
+            } catch (err) {
+                console.error("Erreur récupération sous-likes:", err);
+            }
+        });
+
+        // Une fois que les likes de tâche de fond sont récupérés, on rafraîchit proprement
+        Promise.all(promises).then(() => {
+            renderComments(comms);
+        });
+    } else {
+        // Si aucun utilisateur n'est connecté, on affiche directement
+        renderComments(comms);
+    }
 });
         // ÉCOUTEUR COMPTEUR DE LIKES SÉCURISÉ
         onSnapshot(collection(db, "films", filmId, "likes"), (snapshot) => {
