@@ -600,44 +600,46 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
         window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
        window.handlePost = async () => {
-            if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
-            const f = document.getElementById('tkField');
-            const val = f.value.trim();
-            if(!val) return;
-            
-            try {
-                if(targetCommentId) {
-                    // Mode Réponse
-                    const replyData = {
-                        nom: userName,
-                        text: val,
-                        photo: userImg,
-                        date: Date.now()
-                    };
-                    const replyRef = doc(db, "films", filmId, "comments", targetCommentId);
-                    await updateDoc(replyRef, {
-                        replies: arrayUnion(replyData)
-                    });
-                } else {
-                    // Mode Commentaire Principal
-                    const newComment = {
-                        nom: userName,
-                        text: val,
-                        photo: userImg,
-                        date: Date.now(),
-                        replies: []
-                    };
-                    // Crée un document indépendant dans la sous-collection
-                    await addDoc(collection(db, "films", filmId, "comments"), newComment);
-                }
-                f.value = "";
-                targetCommentId = null;
-                f.placeholder = "Ajouter un commentaire...";
-            } catch (err) {
-                console.error("Erreur envoi commentaire : ", err);
-            }
-        };
+    if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
+    const f = document.getElementById('tkField');
+    const val = f.value.trim();
+    if(!val) return;
+    
+    try {
+        const uniqueId = "ID-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
 
+        if(targetCommentId) {
+            // Mode Réponse : On ajoute un ID unique à la réponse pour éviter le blocage de arrayUnion
+            const replyData = {
+                id: uniqueId,
+                nom: userName,
+                text: val,
+                photo: userImg,
+                date: Date.now()
+            };
+            const replyRef = doc(db, "films", filmId, "comments", targetCommentId);
+            await updateDoc(replyRef, {
+                replies: arrayUnion(replyData)
+            });
+        } else {
+            // Mode Commentaire Principal : On force l'identifiant pour la fonction renderComments
+            const newComment = {
+                id: uniqueId,
+                nom: userName,
+                text: val,
+                photo: userImg,
+                date: Date.now(),
+                replies: []
+            };
+            await addDoc(collection(db, "films", filmId, "comments"), newComment);
+        }
+        f.value = "";
+        targetCommentId = null;
+        f.placeholder = "Ajouter un commentaire...";
+    } catch (err) {
+        console.error("Erreur envoi commentaire : ", err);
+    }
+};
         window.prepareReply = (cid, name) => {
             targetCommentId = cid;
             const field = document.getElementById('tkField');
