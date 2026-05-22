@@ -733,21 +733,38 @@ onSnapshot(collection(db, "films", filmId, "comments"), async (snapshot) => {
         `;
     }).join('');
 }
-        window.toggleLikeComment = async (commentId) => {
-    if (!currentUser) return showAuthAlert("Connecte-toi pour liker !");
-    
-    // Chemin sécurisé vers la sous-collection de likes de CE commentaire précis
-    const likeRef = doc(db, "films", filmId, "comments", commentId, "likes", userId);
-    const likeSnap = await getDoc(likeRef);
-    
-    if (likeSnap.exists()) {
-        // Si le like existe déjà, l'utilisateur veut l'enlever
-        await deleteDoc(likeRef);
-    } else {
-        // Sinon, on enregistre son mini-document de like
-        await setDoc(likeRef, { liked: true });
+       window.toggleLikeComment = async (commentId) => {
+    // 1. Sécurité : Vérification de l'utilisateur connecté
+    if (typeof currentUser === 'undefined' || !currentUser) {
+        return typeof showAuthAlert === 'function' ? showAuthAlert("Connecte-toi pour liker !") : alert("Connecte-toi pour liker !");
     }
-};
+    
+    try {
+        // 2. Récupération des variables ID indispensables
+        const currentUserId = typeof userId !== 'undefined' ? userId : (currentUser ? currentUser.uid : null);
+        const currentFilmId = typeof filmId !== 'undefined' ? filmId : null;
+        
+        if (!currentUserId || !currentFilmId) {
+            console.error("Identifiants manquants :", { currentFilmId, currentUserId });
+            return;
+        }
+
+        // 3. Référence vers la sous-collection de Likes de ce commentaire précis
+        const likeRef = doc(db, "films", currentFilmId, "comments", commentId, "likes", currentUserId);
+        const likeSnap = await getDoc(likeRef);
+        
+        if (likeSnap.exists()) {
+            // Si le like existe déjà, on l'enlève (Le cœur repassera au gris)
+            await deleteDoc(likeRef);
+            console.log("Like retiré pour le commentaire :", commentId);
+        } else {
+            // Sinon, on crée le document de like (Le cœur passera au rouge)
+            await setDoc(likeRef, { liked: true });
+            console.log("Like ajouté pour le commentaire :", commentId);
+        }
+    } catch (error) {
+        console.error("Erreur lors du toggleLikeComment :", error);
+    }
         // CASTING
         function renderCasting(data) {
             document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
