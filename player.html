@@ -396,54 +396,24 @@
             fusionnerEtAfficher();
         });
 
-        // ÉCOUTEUR TEMPS RÉEL DES COMMENTAIRES ET LIKES (VERSION ROBUSTE)
+        // ÉCOUTEUR TEMPS RÉEL SIMPLE ET ULTRA-RAPIDE (STYLE BOUTON FILM)
 onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
     let comms = [];
     const currentUserId = auth.currentUser ? auth.currentUser.uid : userId;
-
-    let totalDocs = snapshot.docs.length;
-    if (totalDocs === 0) {
-        renderComments([]);
-        return;
-    }
-
-    let charges = 0;
-
-    snapshot.docs.forEach((docSnap) => {
+    
+    snapshot.forEach((docSnap) => {
         let commentData = docSnap.data();
-        const cId = docSnap.id;
-
-        // On va chercher directement la sous-collection de likes pour ce commentaire
-        const likesColl = collection(db, "films", filmId, "comments", cId, "likes");
+        const commentLikesList = commentData.likes || []; // Récupère le tableau des likes
         
-        getDocs(likesColl).then((likesSnap) => {
-            let userHasLiked = false;
-            let likesCount = likesSnap.size;
-
-            likesSnap.forEach((lDoc) => {
-                if (lDoc.id === currentUserId) {
-                    userHasLiked = true;
-                }
-            });
-
-            comms.push({
-                id: cId,
-                ...commentData,
-                likesCount: likesCount,
-                userHasLiked: userHasLiked
-            });
-
-            charges++;
-            // Une fois que tous les commentaires ont scanné leurs sous-collections de likes, on affiche
-            if (charges === totalDocs) {
-                renderComments(comms);
-            }
-        }).catch((err) => {
-            console.error("Erreur likes:", err);
-            charges++;
-            if (charges === totalDocs) renderComments(comms);
+        comms.push({ 
+            id: docSnap.id, 
+            ...commentData, 
+            likesCount: commentLikesList.length, // Le nombre de likes est la taille du tableau
+            userHasLiked: commentLikesList.includes(currentUserId) // Vérifie si l'ID est dans le tableau
         });
     });
+    
+    renderComments(comms);
 });
         // ÉCOUTEUR COMPTEUR DE LIKES DU FILM SÉCURISÉ
         onSnapshot(collection(db, "films", filmId, "likes"), (snapshot) => {
@@ -601,93 +571,96 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
         };
 
         function renderComments(comms) {
-            const list = document.getElementById('tkList');
-            if(!list) return;
-            document.getElementById('statC').innerText = comms.length;
-            document.getElementById('hCount').innerText = comms.length;
+    const list = document.getElementById('tkList');
+    if(!list) return;
+    document.getElementById('statC').innerText = comms.length;
+    document.getElementById('hCount').innerText = comms.length;
 
-            list.innerHTML = comms.sort((a,b) => b.date - a.date).map(c => {
-                let dateCommentaire = "";
-                try {
-                    dateCommentaire = typeof formatDate === 'function' ? formatDate(c.date) : new Date(c.date).toLocaleDateString();
-                } catch(e) {
-                    dateCommentaire = new Date(c.date).toLocaleDateString();
-                }
-
-                const heartColor = c.userHasLiked ? "#ff0050" : "#555"; 
-                const heartIcon = c.userHasLiked ? "❤️" : "🤍";
-
-                return `
-                <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start; position:relative;">
-                    <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:35px; height:35px; border-radius:50%">
-                    <div style="flex:1; padding-right:30px;">
-                        <div style="font-size:12px; color:#999; font-weight:bold">
-                            ${c.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateCommentaire}</span>
-                        </div>
-                        <div style="font-size:14px; color:#eee; margin-top:2px;">${c.text}</div>
-                        <div class="c-foot" style="margin-top:4px;"><span onclick="prepareReply('${c.id}', '${c.nom}')" style="cursor:pointer; color:#777; font-size:12px;">Répondre</span></div>
-                        
-                        ${(c.replies || []).length > 0 ? `
-                            <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher les réponses</div>
-                            <div class="replies-pocket">
-                                ${(c.replies || []).map(r => {
-                                    let dateReponse = "";
-                                    try {
-                                        dateReponse = typeof formatDate === 'function' ? formatDate(r.date) : new Date(r.date).toLocaleDateString();
-                                    } catch(e) {
-                                        dateReponse = new Date(r.date).toLocaleDateString();
-                                    }
-
-                                    return `
-                                    <div style="display:flex; gap:8px; margin-top:12px; position:relative;">
-                                        <img src="${r.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:24px; height:24px; border-radius:50%">
-                                        <div style="flex:1; padding-right:25px;">
-                                            <div style="font-size:11px; color:#777; font-weight:bold">
-                                                ${r.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateReponse}</span>
-                                            </div>
-                                            <div style="font-size:13px; color:#eee; margin-top:1px;">${r.text}</div>
-                                        </div>
-                                        <div style="position:absolute; right:0; top:2px; color:#555; cursor:pointer; font-size:12px;">
-                                            🤍 <span style="font-size:10px; display:block; text-align:center; color:#555;">0</span>
-                                        </div>
-                                    </div>
-                                    `;
-                                }).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                    <div style="position:absolute; right:0; top:2px; color:${heartColor}; cursor:pointer; font-size:14px; text-align:center;" onclick="window.toggleLikeComment('${c.id}')">
-                        ${heartIcon} <span style="font-size:11px; display:block; text-align:center; color:#999; margin-top:2px;">${c.likesCount || 0}</span>
-                    </div>
-                </div>
-                `;
-            }).join('');
+    list.innerHTML = comms.sort((a,b) => b.date - a.date).map(c => {
+        let dateCommentaire = "";
+        try {
+            dateCommentaire = typeof formatDate === 'function' ? formatDate(c.date) : new Date(c.date).toLocaleDateString();
+        } catch(e) {
+            dateCommentaire = new Date(c.date).toLocaleDateString();
         }
 
-       window.toggleLikeComment = async (commentId) => {
-    // On prend l'ID de l'utilisateur connecté ou l'ID invité
-    const currentUserId = auth.currentUser ? auth.currentUser.uid : userId;
-    
+        const heartColor = c.userHasLiked ? "#ff0050" : "#555"; 
+        const heartIcon = c.userHasLiked ? "❤️" : "🤍";
+
+        return `
+        <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start; position:relative;">
+            <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:35px; height:35px; border-radius:50%">
+            <div style="flex:1; padding-right:30px;">
+                <div style="font-size:12px; color:#999; font-weight:bold">
+                    ${c.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateCommentaire}</span>
+                </div>
+                <div style="font-size:14px; color:#eee; margin-top:2px;">${c.text}</div>
+                <div class="c-foot" style="margin-top:4px;"><span onclick="prepareReply('${c.id}', '${c.nom}')" style="cursor:pointer; color:#777; font-size:12px;">Répondre</span></div>
+                
+                ${(c.replies || []).length > 0 ? `
+                    <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher les réponses</div>
+                    <div class="replies-pocket">
+                        ${(c.replies || []).map(r => {
+                            let dateReponse = "";
+                            try {
+                                dateReponse = typeof formatDate === 'function' ? formatDate(r.date) : new Date(r.date).toLocaleDateString();
+                            } catch(e) {
+                                dateReponse = new Date(r.date).toLocaleDateString();
+                            }
+
+                            return `
+                            <div style="display:flex; gap:8px; margin-top:12px; position:relative;">
+                                <img src="${r.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:24px; height:24px; border-radius:50%">
+                                <div style="flex:1; padding-right:25px;">
+                                    <div style="font-size:11px; color:#777; font-weight:bold">
+                                        ${r.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateReponse}</span>
+                                    </div>
+                                    <div style="font-size:13px; color:#eee; margin-top:1px;">${r.text}</div>
+                                </div>
+                                <div style="position:absolute; right:0; top:2px; color:#555; cursor:pointer; font-size:12px;">
+                                    🤍 <span style="font-size:10px; display:block; text-align:center; color:#555;">0</span>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : ''}
+            </div>
+            <div style="position:absolute; right:0; top:2px; color:${heartColor}; cursor:pointer; font-size:14px; text-align:center;" onclick="window.toggleLikeComment('${c.id}')">
+                ${heartIcon} <span style="font-size:11px; display:block; text-align:center; color:#999; margin-top:2px;">${c.likesCount || 0}</span>
+            </div>
+        </div>
+        `;
+    }).join('');
+}
+      window.toggleLikeComment = async (commentId) => {
     if (!auth.currentUser) {
         return typeof showAuthAlert === 'function' ? showAuthAlert("Connecte-toi pour liker !") : alert("Connecte-toi pour liker !");
     }
    
     try {
-        const currentFilmId = filmId;
-        if (!currentUserId || !currentFilmId) return;
-
-        // Référence exacte vers le sous-document de like
-        const likeRef = doc(db, "films", currentFilmId, "comments", commentId, "likes", currentUserId);
-        const likeSnap = await getDoc(likeRef);
+        const currentUserId = auth.currentUser.uid;
+        const commentRef = doc(db, "films", filmId, "comments", commentId);
         
-        if (likeSnap.exists()) {
-            // Si déjà liké, on supprime le document de like
-            await deleteDoc(likeRef);
-            console.log("Like retiré !");
+        // On récupère le commentaire actuel pour savoir s'il est déjà liké
+        const commentSnap = await getDoc(commentRef);
+        if (!commentSnap.exists()) return;
+        
+        const commentData = commentSnap.data();
+        const commentLikesList = commentData.likes || [];
+
+        if (commentLikesList.includes(currentUserId)) {
+            // Si l'utilisateur est déjà dans le tableau, on le retire
+            await updateDoc(commentRef, {
+                likes: arrayRemove(currentUserId)
+            });
+            console.log("Like retiré du commentaire !");
         } else {
-            // Sinon on crée le document de like
-            await setDoc(likeRef, { liked: true });
-            console.log("Like ajouté !");
+            // Sinon, on l'ajoute dans le tableau
+            await updateDoc(commentRef, {
+                likes: arrayUnion(currentUserId)
+            });
+            console.log("Like ajouté au commentaire !");
         }
     } catch (error) {
         console.error("Erreur lors du toggleLikeComment :", error);
