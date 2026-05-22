@@ -396,45 +396,55 @@
             fusionnerEtAfficher();
         });
 
-        // ÉCOUTEUR TEMPS RÉEL DÉDIÉ AUX COMMENTAIRES (SANS AUCUN BLOCAGE DE PAGE)
-        onSnapshot(collection(db, "films", filmId, "comments"), async (snapshot) => {
-            let comms = [];
-            const currentUserId = currentUser ? currentUser.uid : userId;
-            
-            // Étape 1 : Cartographier immédiatement pour une exécution asynchrone en parallèle
-            const mapPromises = snapshot.docs.map(async (docSnap) => {
-                let commentData = docSnap.data();
-                const cId = docSnap.id;
-                let userHasLiked = false;
-                let likesCount = 0;
+        // ÉCOUTEUR TEMPS RÉEL DES COMMENTAIRES ET LIKES (VERSION ROBUSTE)
+onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
+    let comms = [];
+    const currentUserId = auth.currentUser ? auth.currentUser.uid : userId;
 
-                try {
-                    const likesColl = collection(db, "films", filmId, "comments", cId, "likes");
-                    const likesSnap = await getDocs(likesColl);
-                    likesCount = likesSnap.size;
-                    
-                    likesSnap.forEach((lDoc) => {
-                        if (lDoc.id === currentUserId) {
-                            userHasLiked = true;
-                        }
-                    });
-                } catch (err) {
-                    console.error("Erreur récupération sous-likes:", err);
+    let totalDocs = snapshot.docs.length;
+    if (totalDocs === 0) {
+        renderComments([]);
+        return;
+    }
+
+    let charges = 0;
+
+    snapshot.docs.forEach((docSnap) => {
+        let commentData = docSnap.data();
+        const cId = docSnap.id;
+
+        // On va chercher directement la sous-collection de likes pour ce commentaire
+        const likesColl = collection(db, "films", filmId, "comments", cId, "likes");
+        
+        getDocs(likesColl).then((likesSnap) => {
+            let userHasLiked = false;
+            let likesCount = likesSnap.size;
+
+            likesSnap.forEach((lDoc) => {
+                if (lDoc.id === currentUserId) {
+                    userHasLiked = true;
                 }
-
-                return {
-                    id: cId,
-                    ...commentData,
-                    likesCount: likesCount,
-                    userHasLiked: userHasLiked
-                };
             });
 
-            // Étape 2 : Attendre que toutes les tâches asynchrones se terminent en tâche de fond
-            comms = await Promise.all(mapPromises);
-            renderComments(comms);
-        });
+            comms.push({
+                id: cId,
+                ...commentData,
+                likesCount: likesCount,
+                userHasLiked: userHasLiked
+            });
 
+            charges++;
+            // Une fois que tous les commentaires ont scanné leurs sous-collections de likes, on affiche
+            if (charges === totalDocs) {
+                renderComments(comms);
+            }
+        }).catch((err) => {
+            console.error("Erreur likes:", err);
+            charges++;
+            if (charges === totalDocs) renderComments(comms);
+        });
+    });
+});
         // ÉCOUTEUR COMPTEUR DE LIKES DU FILM SÉCURISÉ
         onSnapshot(collection(db, "films", filmId, "likes"), (snapshot) => {
             const statL = document.getElementById('statL');
@@ -654,30 +664,35 @@
             }).join('');
         }
 
-        window.toggleLikeComment = async (commentId) => {
-            if (typeof currentUser === 'undefined' || !currentUser) {
-                return typeof showAuthAlert === 'function' ? showAuthAlert("Connecte-toi pour liker !") : alert("Connecte-toi pour liker !");
-            }
-           
-            try {
-                const currentUserId = currentUser ? currentUser.uid : userId;
-                const currentFilmId = filmId;
-                
-                if (!currentUserId || !currentFilmId) return;
+       window.toggleLikeComment = async (commentId) => {
+    // On prend l'ID de l'utilisateur connecté ou l'ID invité
+    const currentUserId = auth.currentUser ? auth.currentUser.uid : userId;
+    
+    if (!auth.currentUser) {
+        return typeof showAuthAlert === 'function' ? showAuthAlert("Connecte-toi pour liker !") : alert("Connecte-toi pour liker !");
+    }
+   
+    try {
+        const currentFilmId = filmId;
+        if (!currentUserId || !currentFilmId) return;
 
-                const likeRef = doc(db, "films", currentFilmId, "comments", commentId, "likes", currentUserId);
-                const likeSnap = await getDoc(likeRef);
-                
-                if (likeSnap.exists()) {
-                    await deleteDoc(likeRef);
-                } else {
-                    await setDoc(likeRef, { liked: true });
-                }
-            } catch (error) {
-                console.error("Erreur lors du toggleLikeComment :", error);
-            }
-        };
-
+        // Référence exacte vers le sous-document de like
+        const likeRef = doc(db, "films", currentFilmId, "comments", commentId, "likes", currentUserId);
+        const likeSnap = await getDoc(likeRef);
+        
+        if (likeSnap.exists()) {
+            // Si déjà liké, on supprime le document de like
+            await deleteDoc(likeRef);
+            console.log("Like retiré !");
+        } else {
+            // Sinon on crée le document de like
+            await setDoc(likeRef, { liked: true });
+            console.log("Like ajouté !");
+        }
+    } catch (error) {
+        console.error("Erreur lors du toggleLikeComment :", error);
+    }
+};
         function renderCasting(data) {
             document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
             document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || []).map(n => `<div class="cast-name-item"><i class="fa-solid fa-star" style="color:var(--gold); margin-right:10px; font-size: 8px;"></i> ${n}</div>`).join('');
