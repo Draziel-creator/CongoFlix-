@@ -396,22 +396,24 @@
             fusionnerEtAfficher();
         });
 
-        // ÉCOUTEUR DES COMMENTAIRES FIABLE ET INDIVIDUEL
+       // ÉCOUTEUR RE-STABILISÉ ET SÉCURISÉ POUR LES LIKES MULTI-COMPTES
 onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
     let comms = [];
     
+    // On récupère l'identifiant de session le plus frais possible
+    const currentUserId = auth.currentUser ? auth.currentUser.uid : userId;
+    
     snapshot.forEach((docSnap) => {
         let commentData = docSnap.data();
-        const commentLikesList = commentData.likes || [];
         
-        // On récupère l'UID actuel au moment précis du rendu pour éviter les mélanges
-        const currentUserId = auth.currentUser ? auth.currentUser.uid : null;
+        // Sécurité : si le document existant n'a pas de champ likes, on crée un tableau vide
+        const commentLikesList = commentData.likes || [];
         
         comms.push({ 
             id: docSnap.id, 
             ...commentData, 
-            likesCount: commentLikesList.length, // Compte le nombre total d'UID uniques dans le tableau
-            userHasLiked: currentUserId ? commentLikesList.includes(currentUserId) : false // Rouge uniquement si MON uid y est
+            likesCount: commentLikesList.length,
+            userHasLiked: commentLikesList.includes(currentUserId)
         });
     });
     
@@ -572,13 +574,17 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
             field.focus();
         };
 
-        function renderComments(comms) {
+       function renderComments(comms) {
     const list = document.getElementById('tkList');
     if(!list) return;
+    
     document.getElementById('statC').innerText = comms.length;
     document.getElementById('hCount').innerText = comms.length;
 
-    list.innerHTML = comms.sort((a,b) => b.date - a.date).map(c => {
+    // CORRECTION MAJEURE : On trie d'abord le tableau proprement en JavaScript avant de mapper
+    const commsTries = [...comms].sort((a, b) => b.date - a.date);
+
+    list.innerHTML = commsTries.map(c => {
         let dateCommentaire = "";
         try {
             dateCommentaire = typeof formatDate === 'function' ? formatDate(c.date) : new Date(c.date).toLocaleDateString();
@@ -586,6 +592,7 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
             dateCommentaire = new Date(c.date).toLocaleDateString();
         }
 
+        // Configuration dynamique du cœur
         const heartColor = c.userHasLiked ? "#ff0050" : "#555"; 
         const heartIcon = c.userHasLiked ? "❤️" : "🤍";
 
@@ -628,7 +635,7 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
                     </div>
                 ` : ''}
             </div>
-            <div style="position:absolute; right:0; top:2px; color:${heartColor}; cursor:pointer; font-size:14px; text-align:center;" onclick="window.toggleLikeComment('${c.id}')">
+            <div style="position:absolute; right:0; top:2px; color:${heartColor}; cursor:pointer; font-size:14px; text-align:center; z-index:10;" onclick="window.toggleLikeComment('${c.id}')">
                 ${heartIcon} <span style="font-size:11px; display:block; text-align:center; color:#999; margin-top:2px;">${c.likesCount || 0}</span>
             </div>
         </div>
