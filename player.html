@@ -237,8 +237,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+       import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, increment, collection, addDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         const firebaseConfig = {
             apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
             authDomain: "congo-streaming-51333.firebaseapp.com",
@@ -458,13 +457,10 @@ document.getElementById('txtDesc').innerText = "...";
             else likeBtn.classList.remove('is-liked');
 
             if(!document.getElementById('playerRoot').innerHTML.trim() && data.url) {
-                document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
-                updateDoc(doc(db, "films", filmId), { views: increment(1) });
-            }
+    document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
+}
 
             renderCasting(data);
-            renderComments(data.comments || []);
-
             listeEp_Partie1 = data.episodes || data.partie || data.film || data.Saison || data.Saison1 || [];
             fusionnerEtAfficher();
         });
@@ -477,6 +473,18 @@ document.getElementById('txtDesc').innerText = "...";
                 listeEp_Partie2 = [];
             }
             fusionnerEtAfficher();
+        });
+        // ÉCOUTEUR TEMPS RÉEL DÉDIÉ AUX COMMENTAIRES (FLUIDE ET SÉCURISÉ)
+onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
+    let comms = [];
+    snapshot.forEach((doc) => {
+        comms.push({ id: doc.id, ...doc.data() });
+    });
+    renderComments(comms);
+});
+        // ÉCOUTEUR COMPTEUR DE LIKES SÉCURISÉ
+        onSnapshot(collection(db, "films", filmId, "likes"), (snapshot) => {
+            document.getElementById('likeCount').innerText = snapshot.size;
         });
 
         // --- EPISODES & SEASONS LOGIC (NETTOYAGE DU TEXTE ET SÉCURISATION) ---
@@ -591,36 +599,43 @@ document.getElementById('txtDesc').innerText = "...";
         // COMMENTS SYSTEM
         window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
-        window.handlePost = async () => {
+       window.handlePost = async () => {
             if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
             const f = document.getElementById('tkField');
             const val = f.value.trim();
             if(!val) return;
             
-            const ref = doc(db, "films", filmId);
-            const snap = await getDoc(ref);
-            let comments = snap.data().comments || [];
-            
-            if(targetCommentId) {
-                // Reply Mode
-                comments = comments.map(c => {
-                    if(c.id === targetCommentId) {
-                        const reps = c.replies || [];
-                        return { ...c, replies: [...reps, { nom: userName, text: val, photo: userImg, date: Date.now() }] };
-                    }
-                    return c;
-                });
-            } else {
-                // Root Comment Mode
-                comments.push({
-                    id: "ID-" + Date.now(), nom: userName, text: val, photo: userImg, date: Date.now(),
-                    likedBy: [], replies: []
-                });
+            try {
+                if(targetCommentId) {
+                    // Mode Réponse
+                    const replyData = {
+                        nom: userName,
+                        text: val,
+                        photo: userImg,
+                        date: Date.now()
+                    };
+                    const replyRef = doc(db, "films", filmId, "comments", targetCommentId);
+                    await updateDoc(replyRef, {
+                        replies: arrayUnion(replyData)
+                    });
+                } else {
+                    // Mode Commentaire Principal
+                    const newComment = {
+                        nom: userName,
+                        text: val,
+                        photo: userImg,
+                        date: Date.now(),
+                        replies: []
+                    };
+                    // Crée un document indépendant dans la sous-collection
+                    await addDoc(collection(db, "films", filmId, "comments"), newComment);
+                }
+                f.value = "";
+                targetCommentId = null;
+                f.placeholder = "Ajouter un commentaire...";
+            } catch (err) {
+                console.error("Erreur envoi commentaire : ", err);
             }
-            await updateDoc(ref, { comments: comments });
-            f.value = "";
-            targetCommentId = null;
-            f.placeholder = "Ajouter un commentaire...";
         };
 
         window.prepareReply = (cid, name) => {
@@ -667,10 +682,18 @@ document.getElementById('txtDesc').innerText = "...";
         // LIKES & FAVS CONNECTION
         document.getElementById('mainLikeBtn').onclick = async () => {
             if(!currentUser) return showAuthAlert("Connecte-toi pour liker !");
-            const ref = doc(db, "films", filmId);
-            const s = await getDoc(ref);
-            const l = s.data().likes || [];
-            await updateDoc(ref, { likes: l.includes(userId) ? arrayRemove(userId) : arrayUnion(userId) });
+            
+            // On cible un document unique pour cet utilisateur dans la sous-collection 'likes'
+            const likeRef = doc(db, "films", filmId, "likes", userId);
+            const likeSnap = await getDoc(likeRef);
+
+            if (likeSnap.exists()) {
+                // Si l'utilisateur avait déjà liké, on enlève son like
+                await deleteDoc(likeRef);
+            } else {
+                // S'il n'avait pas liké, on crée le document de son like
+                await setDoc(likeRef, { liked: true });
+            }
         };
 
         document.getElementById('mainFavBtn').onclick = async () => { 
@@ -696,6 +719,28 @@ document.getElementById('txtDesc').innerText = "...";
             document.getElementById('authAlertMsg').innerText = m || "Action requise";
             a.style.display='block'; setTimeout(()=>a.style.display='none', 3000);
         };
+        // Enregistrement de la vue UNIQUE au chargement de la page (ne boucle pas !)
+try {
+    await updateDoc(doc(db, "films", filmId), { views: increment(1) });
+} catch(e) {
+    console.log("Erreur compteur vue:", e);
+}
+        // ENREGISTREMENT AUTOMATIQUE DANS L'HISTORIQUE DE L'UTILISATEUR
+if (currentUser) {
+    try {
+        const userRef = doc(db, "users", userId);
+        const historyItem = { 
+            id: filmId, 
+            titre: currentFilmData.titre || filmId, 
+            image: currentFilmData.poster || "",
+            date: Date.now() 
+        };
+        // On l'ajoute dans le tableau 'history' de l'utilisateur
+        await updateDoc(userRef, { history: arrayUnion(historyItem) });
+    } catch(e) {
+        console.log("Erreur enregistrement historique:", e);
+    }
+}
     </script>
 </body>
 </html>
