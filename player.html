@@ -396,20 +396,22 @@
             fusionnerEtAfficher();
         });
 
-        // ÉCOUTEUR TEMPS RÉEL SIMPLE ET ULTRA-RAPIDE (STYLE BOUTON FILM)
+        // ÉCOUTEUR DES COMMENTAIRES FIABLE ET INDIVIDUEL
 onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
     let comms = [];
-    const currentUserId = auth.currentUser ? auth.currentUser.uid : userId;
     
     snapshot.forEach((docSnap) => {
         let commentData = docSnap.data();
-        const commentLikesList = commentData.likes || []; // Récupère le tableau des likes
+        const commentLikesList = commentData.likes || [];
+        
+        // On récupère l'UID actuel au moment précis du rendu pour éviter les mélanges
+        const currentUserId = auth.currentUser ? auth.currentUser.uid : null;
         
         comms.push({ 
             id: docSnap.id, 
             ...commentData, 
-            likesCount: commentLikesList.length, // Le nombre de likes est la taille du tableau
-            userHasLiked: commentLikesList.includes(currentUserId) // Vérifie si l'ID est dans le tableau
+            likesCount: commentLikesList.length, // Compte le nombre total d'UID uniques dans le tableau
+            userHasLiked: currentUserId ? commentLikesList.includes(currentUserId) : false // Rouge uniquement si MON uid y est
         });
     });
     
@@ -525,44 +527,44 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
         window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
         window.handlePost = async () => {
-            if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
-            const f = document.getElementById('tkField');
-            const val = f.value.trim();
-            if(!val) return;
-            
-            try {
-                const uniqueId = "ID-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-                if(targetCommentId) {
-                    const replyData = {
-                        id: uniqueId,
-                        nom: userName,
-                        text: val,
-                        photo: userImg,
-                        date: Date.now()
-                    };
-                    const replyRef = doc(db, "films", filmId, "comments", targetCommentId);
-                    await updateDoc(replyRef, {
-                        replies: arrayUnion(replyData)
-                    });
-                } else {
-                    const newComment = {
-                        id: uniqueId,
-                        nom: userName,
-                        text: val,
-                        photo: userImg,
-                        date: Date.now(),
-                        replies: []
-                    };
-                    await addDoc(collection(db, "films", filmId, "comments"), newComment);
-                }
-                f.value = "";
-                targetCommentId = null;
-                f.placeholder = "Ajouter un commentaire...";
-            } catch (err) {
-                console.error("Erreur envoi commentaire : ", err);
-            }
-        };
-
+    if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
+    const f = document.getElementById('tkField');
+    const val = f.value.trim();
+    if(!val) return;
+    
+    try {
+        const uniqueId = "ID-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+        if(targetCommentId) {
+            const replyData = {
+                id: uniqueId,
+                nom: userName,
+                text: val,
+                photo: userImg,
+                date: Date.now()
+            };
+            const replyRef = doc(db, "films", filmId, "comments", targetCommentId);
+            await updateDoc(replyRef, {
+                replies: arrayUnion(replyData)
+            });
+        } else {
+            const newComment = {
+                id: uniqueId,
+                nom: userName,
+                text: val,
+                photo: userImg,
+                date: Date.now(),
+                replies: [],
+                likes: [] // INITIALISATION IMPORTANTE : Crée le tableau de likes vide pour ce commentaire !
+            };
+            await addDoc(collection(db, "films", filmId, "comments"), newComment);
+        }
+        f.value = "";
+        targetCommentId = null;
+        f.placeholder = "Ajouter un commentaire...";
+    } catch (err) {
+        console.error("Erreur envoi commentaire : ", err);
+    }
+};
         window.prepareReply = (cid, name) => {
             targetCommentId = cid;
             const field = document.getElementById('tkField');
@@ -633,16 +635,16 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
         `;
     }).join('');
 }
-      window.toggleLikeComment = async (commentId) => {
+     window.toggleLikeComment = async (commentId) => {
+    // Sécurité absolue : On prend l'ID de l'utilisateur connecté via Firebase Auth
     if (!auth.currentUser) {
         return typeof showAuthAlert === 'function' ? showAuthAlert("Connecte-toi pour liker !") : alert("Connecte-toi pour liker !");
     }
    
+    const currentUserId = auth.currentUser.uid;
+
     try {
-        const currentUserId = auth.currentUser.uid;
         const commentRef = doc(db, "films", filmId, "comments", commentId);
-        
-        // On récupère le commentaire actuel pour savoir s'il est déjà liké
         const commentSnap = await getDoc(commentRef);
         if (!commentSnap.exists()) return;
         
@@ -650,17 +652,17 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
         const commentLikesList = commentData.likes || [];
 
         if (commentLikesList.includes(currentUserId)) {
-            // Si l'utilisateur est déjà dans le tableau, on le retire
+            // Si MON uid est déjà dans le tableau, je l'enlève (sans toucher aux autres)
             await updateDoc(commentRef, {
                 likes: arrayRemove(currentUserId)
             });
-            console.log("Like retiré du commentaire !");
+            console.log("Like retiré !");
         } else {
-            // Sinon, on l'ajoute dans le tableau
+            // Sinon, j'ajoute MON uid dans le tableau
             await updateDoc(commentRef, {
                 likes: arrayUnion(currentUserId)
             });
-            console.log("Like ajouté au commentaire !");
+            console.log("Like ajouté !");
         }
     } catch (error) {
         console.error("Erreur lors du toggleLikeComment :", error);
