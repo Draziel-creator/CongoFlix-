@@ -261,6 +261,19 @@
         let descriptionComplete = "";
         let globalTimeout = null;
 
+        // Fonction sécurisée pour récupérer et formater les dates des commentaires et réponses
+        function recupererDateFormattee(timestamp) {
+            if (!timestamp) return new Date().toLocaleDateString();
+            try {
+                if (typeof formatDate === 'function') {
+                    return formatDate(timestamp);
+                }
+                return new Date(timestamp).toLocaleDateString();
+            } catch (e) {
+                return new Date(timestamp).toLocaleDateString();
+            }
+        }
+
         window.toggleInfoPocket = (pocketElement) => {
             const wrapper = pocketElement.parentElement;
             const content = document.getElementById('infoPocketContent');
@@ -299,7 +312,7 @@
             taper();
         }
 
-        // AUTH TRACKING & VUES ET HISTORIQUE ASYNCHRONES SÉCURISÉS
+        // AUTH TRACKING : Rétablit parfaitement l'avatar de connexion de l'utilisateur
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user; 
@@ -310,7 +323,9 @@
                     const d = snap.data();
                     userName = d.name || user.email.split('@')[0];
                     userImg = d.photoURL || userImg;
-                    document.getElementById('myAvatar').src = userImg;
+                    
+                    const myAvatarImg = document.getElementById('myAvatar');
+                    if(myAvatarImg) myAvatarImg.src = userImg;
             
                     if((d.favorites || []).some(f => f.id === filmId)) {
                         document.getElementById('mainFavBtn').classList.add('is-fav');
@@ -318,7 +333,6 @@
                     }
                 }
 
-                // Enregistrement asynchrone sécurisé dans l'historique utilisateur (Ne bloque plus la page)
                 setTimeout(async () => {
                     try {
                         const userRef = doc(db, "users", userId);
@@ -336,7 +350,7 @@
             }
         });
 
-        // INJECTION DU CSS DE STABILISATION ENRICHI
+        // INJECTION DU CSS DE STABILISATION DES ÉPISODES
         const styleStabilisateur = document.createElement('style');
         styleStabilisateur.innerHTML = `
             .ep-card { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 15px !important; width: 100% !important; box-sizing: border-box !important; position: relative !important; margin-bottom: 8px !important; cursor: pointer; }
@@ -396,47 +410,16 @@
             fusionnerEtAfficher();
         });
 
-      // ÉCOUTEUR DES COMMENTAIRES FLUIDE ET LIÉ AUX VRAIS IDS FIRESTORE
-onSnapshot(collection(db, "films", filmId, "comments"), async (snapshot) => {
-    let comms = [];
-    const currentUserId = auth.currentUser ? auth.currentUser.uid : (typeof userId !== 'undefined' ? userId : null);
-    
-    // Étape A : On liste tous les commentaires avec leur VRAI id Firestore (Ex: 98ZYHI00...)
-    snapshot.forEach((docSnap) => {
-        let commentData = docSnap.data();
-        comms.push({ 
-            id: docSnap.id, // ID réel de la colonne 3 de ta capture
-            ...commentData, 
-            likesCount: 0, 
-            userHasLiked: false 
-        });
-    });
-
-    if (currentUserId && comms.length > 0) {
-        // Étape B : On récupère les likes en tâche de fond dans la sous-collection dédiée
-        const promises = comms.map(async (c) => {
-            try {
-                const likesColl = collection(db, "films", filmId, "comments", c.id, "likes");
-                const likesSnap = await getDocs(likesColl);
-                c.likesCount = likesSnap.size;
-                
-                likesSnap.forEach((lDoc) => {
-                    if (lDoc.id === currentUserId) {
-                        c.userHasLiked = true;
-                    }
-                });
-            } catch (err) {
-                console.error("Erreur récupération sous-likes:", err);
-            }
+        // ÉCOUTEUR SIMPLE EN TEMPS RÉEL DES COMMENTAIRES (STABLE ET SANS SURCHARGE)
+        onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
+            let comms = [];
+            snapshot.forEach((docSnap) => {
+                comms.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            renderComments(comms);
         });
 
-        await Promise.all(promises);
-        renderComments(comms);
-    } else {
-        renderComments(comms);
-    }
-});
-        // ÉCOUTEUR COMPTEUR DE LIKES DU FILM SÉCURISÉ
+        // ÉCOUTEUR COMPTEUR DE LIKES DU FILM UNIQUE
         onSnapshot(collection(db, "films", filmId, "likes"), (snapshot) => {
             const statL = document.getElementById('statL');
             if (statL) statL.innerText = snapshot.size;
@@ -546,44 +529,44 @@ onSnapshot(collection(db, "films", filmId, "comments"), async (snapshot) => {
         window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
         window.handlePost = async () => {
-    if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
-    const f = document.getElementById('tkField');
-    const val = f.value.trim();
-    if(!val) return;
-    
-    try {
-        const uniqueId = "ID-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-        if(targetCommentId) {
-            const replyData = {
-                id: uniqueId,
-                nom: userName,
-                text: val,
-                photo: userImg,
-                date: Date.now()
-            };
-            const replyRef = doc(db, "films", filmId, "comments", targetCommentId);
-            await updateDoc(replyRef, {
-                replies: arrayUnion(replyData)
-            });
-        } else {
-            const newComment = {
-                id: uniqueId,
-                nom: userName,
-                text: val,
-                photo: userImg,
-                date: Date.now(),
-                replies: [],
-                likes: [] // INITIALISATION IMPORTANTE : Crée le tableau de likes vide pour ce commentaire !
-            };
-            await addDoc(collection(db, "films", filmId, "comments"), newComment);
-        }
-        f.value = "";
-        targetCommentId = null;
-        f.placeholder = "Ajouter un commentaire...";
-    } catch (err) {
-        console.error("Erreur envoi commentaire : ", err);
-    }
-};
+            if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
+            const f = document.getElementById('tkField');
+            const val = f.value.trim();
+            if(!val) return;
+            
+            try {
+                const uniqueId = "ID-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+                if(targetCommentId) {
+                    const replyData = {
+                        id: uniqueId,
+                        nom: userName,
+                        text: val,
+                        photo: userImg,
+                        date: Date.now()
+                    };
+                    const replyRef = doc(db, "films", filmId, "comments", targetCommentId);
+                    await updateDoc(replyRef, {
+                        replies: arrayUnion(replyData)
+                    });
+                } else {
+                    const newComment = {
+                        id: uniqueId,
+                        nom: userName,
+                        text: val,
+                        photo: userImg,
+                        date: Date.now(),
+                        replies: []
+                    };
+                    await addDoc(collection(db, "films", filmId, "comments"), newComment);
+                }
+                f.value = "";
+                targetCommentId = null;
+                f.placeholder = "Ajouter un commentaire...";
+            } catch (err) {
+                console.error("Erreur envoi commentaire : ", err);
+            }
+        };
+
         window.prepareReply = (cid, name) => {
             targetCommentId = cid;
             const field = document.getElementById('tkField');
@@ -591,89 +574,55 @@ onSnapshot(collection(db, "films", filmId, "comments"), async (snapshot) => {
             field.focus();
         };
 
-       function renderComments(comms) {
-    const list = document.getElementById('tkList');
-    if (!list) return;
-    
-    document.getElementById('statC').innerText = comms.length;
-    document.getElementById('hCount').innerText = comms.length;
+        // RENDU DES COMMENTAIRES PROPRE, LIÉ AUX DATES SUR PRINCIPAUX ET RÉPONSES
+        function renderComments(comms) {
+            const list = document.getElementById('tkList');
+            if(!list) return;
+            
+            document.getElementById('statC').innerText = comms.length;
+            document.getElementById('hCount').innerText = comms.length;
 
-    // On trie une copie du tableau pour ne pas casser les liaisons du DOM
-    const commsTries = [...comms].sort((a,b) => b.date - a.date);
+            const commsTries = [...comms].sort((a,b) => b.date - a.date);
 
-    list.innerHTML = commsTries.map(c => {
-        let dateCommentaire = "";
-        try {
-            dateCommentaire = typeof formatDate === 'function' ? formatDate(c.date) : new Date(c.date).toLocaleDateString();
-        } catch(e) {
-            dateCommentaire = new Date(c.date).toLocaleDateString();
-        }
+            list.innerHTML = commsTries.map(c => {
+                let dateCommentaire = recupererDateFormattee(c.date);
 
-        const heartColor = c.userHasLiked ? "#ff0050" : "#555"; 
-        const heartIcon = c.userHasLiked ? "❤️" : "🤍";
+                return `
+                <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start; position:relative;">
+                    <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:35px; height:35px; border-radius:50%">
+                    <div style="flex:1; padding-right:30px;">
+                        <div style="font-size:12px; color:#999; font-weight:bold">
+                            ${c.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateCommentaire}</span>
+                        </div>
+                        <div style="font-size:14px; color:#eee; margin-top:2px;">${c.text}</div>
+                        <div class="c-foot" style="margin-top:4px;"><span onclick="prepareReply('${c.id}', '${c.nom}')" style="cursor:pointer; color:#777; font-size:12px;">Répondre</span></div>
+                        
+                        ${(c.replies || []).length > 0 ? `
+                            <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher les réponses</div>
+                            <div class="replies-pocket">
+                                ${(c.replies || []).map(r => {
+                                    let dateReponse = recupererDateFormattee(r.date);
 
-        return `
-        <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start; position:relative;">
-            <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:35px; height:35px; border-radius:50%">
-            <div style="flex:1; padding-right:30px;">
-                <div style="font-size:12px; color:#999; font-weight:bold">
-                    ${c.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateCommentaire}</span>
-                </div>
-                <div style="font-size:14px; color:#eee; margin-top:2px;">${c.text}</div>
-                <div class="c-foot" style="margin-top:4px;"><span onclick="prepareReply('${c.id}', '${c.nom}')" style="cursor:pointer; color:#777; font-size:12px;">Répondre</span></div>
-                
-                ${(c.replies || []).length > 0 ? `
-                    <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher les réponses</div>
-                    <div class="replies-pocket">
-                        ${(c.replies || []).map(r => {
-                            return `
-                            <div style="display:flex; gap:8px; margin-top:12px; position:relative;">
-                                <img src="${r.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:24px; height:24px; border-radius:50%">
-                                <div style="flex:1; padding-right:25px;">
-                                    <div style="font-size:11px; color:#777; font-weight:bold">${r.nom}</div>
-                                    <div style="font-size:13px; color:#eee; margin-top:1px;">${r.text}</div>
-                                </div>
+                                    return `
+                                    <div style="display:flex; gap:8px; margin-top:12px; position:relative;">
+                                        <img src="${r.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:24px; height:24px; border-radius:50%">
+                                        <div style="flex:1; padding-right:25px;">
+                                            <div style="font-size:11px; color:#777; font-weight:bold">
+                                                ${r.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateReponse}</span>
+                                            </div>
+                                            <div style="font-size:13px; color:#eee; margin-top:1px;">${r.text}</div>
+                                        </div>
+                                    </div>
+                                    `;
+                                }).join('')}
                             </div>
-                            `;
-                        }).join('')}
+                        ` : ''}
                     </div>
-                ` : ''}
-            </div>
-            <div style="position:absolute; right:0; top:2px; color:${heartColor}; cursor:pointer; font-size:14px; text-align:center; z-index:100;" onclick="window.toggleLikeComment('${c.id}')">
-                ${heartIcon} <span style="font-size:11px; display:block; text-align:center; color:#999; margin-top:2px;">${c.likesCount || 0}</span>
-            </div>
-        </div>
-        `;
-    }).join('');
-}
-    window.toggleLikeComment = async (commentId) => {
-    if (!auth.currentUser) {
-        return typeof showAuthAlert === 'function' ? showAuthAlert("Connecte-toi pour liker !") : alert("Connecte-toi pour liker !");
-    }
-   
-    try {
-        const currentUserId = auth.currentUser.uid;
-        const currentFilmId = filmId;
-        
-        if (!currentUserId || !currentFilmId) return;
-
-        // Référence vers le document de like dans la sous-collection du commentaire
-        const likeRef = doc(db, "films", currentFilmId, "comments", commentId, "likes", currentUserId);
-        const likeSnap = await getDoc(likeRef);
-        
-        if (likeSnap.exists()) {
-            // Si le compte a déjà cliqué, on supprime son document de like unique
-            await deleteDoc(likeRef);
-            console.log("Like retiré !");
-        } else {
-            // Sinon, on crée un document vide nommé avec son UID unique
-            await setDoc(likeRef, { liked: true });
-            console.log("Like ajouté !");
+                </div>
+                `;
+            }).join('');
         }
-    } catch (error) {
-        console.error("Erreur lors du toggleLikeComment :", error);
-    }
-};
+
         function renderCasting(data) {
             document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
             document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || []).map(n => `<div class="cast-name-item"><i class="fa-solid fa-star" style="color:var(--gold); margin-right:10px; font-size: 8px;"></i> ${n}</div>`).join('');
@@ -714,7 +663,7 @@ onSnapshot(collection(db, "films", filmId, "comments"), async (snapshot) => {
             a.style.display='block'; setTimeout(()=>a.style.display='none', 3000);
         };
 
-        // ENREGISTREMENT COMPTEUR DE VUES EN ARRIÈRE-PLAN SÉCURISÉ (NE BLOQUE PLUS LA PAGE)
+        // COMPTEUR DE VUES SÉCURISÉ EN ARRIÈRE-PLAN
         setTimeout(async () => {
             try {
                 await updateDoc(doc(db, "films", filmId), { views: increment(1) });
