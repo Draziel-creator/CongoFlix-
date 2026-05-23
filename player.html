@@ -235,444 +235,456 @@
     <div id="authAlert"> <span id="authAlertMsg">Connecte-toi !</span> </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, increment, collection, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
-            authDomain: "congo-streaming-51333.firebaseapp.com",
-            projectId: "congo-streaming-51333",
-            appId: "1:304286627819:android:36e0b43b8b10508a054bae"
-        };
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, increment, collection, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    
+    const firebaseConfig = {
+        apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
+        authDomain: "congo-streaming-51333.firebaseapp.com",
+        projectId: "congo-streaming-51333",
+        appId: "1:304286627819:android:36e0b43b8b10508a054bae"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-        const params = new URLSearchParams(window.location.search);
-        const filmId = params.get('id') || "MUSHOTA_VS_KARANI_01";
-        let currentUser = null;
-        let userId = "GUEST_" + Math.floor(Math.random()*9999);
-        let userName = "Fan CongoFlix";
-        let userImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-        let currentFilmData = null;
-        let targetCommentId = null;
-        let descriptionComplete = "";
-        let globalTimeout = null;
+    const params = new URLSearchParams(window.location.search);
+    const filmId = params.get('id') || "MUSHOTA_VS_KARANI_01";
+    let currentUser = null;
+    let userId = "GUEST_" + Math.floor(Math.random()*9999);
+    let userName = "Fan CongoFlix";
+    let userImg = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    let currentFilmData = null;
+    let targetCommentId = null;
+    let descriptionComplete = "";
+    let globalTimeout = null;
 
-        // Fonction sécurisée pour récupérer et formater les dates des commentaires et réponses
-        function recupererDateFormattee(timestamp) {
-            if (!timestamp) return new Date().toLocaleDateString();
-            try {
-                if (typeof formatDate === 'function') {
-                    return formatDate(timestamp);
-                }
-                return new Date(timestamp).toLocaleDateString();
-            } catch (e) {
-                return new Date(timestamp).toLocaleDateString();
+    // Fonction sécurisée pour récupérer et formater les dates des commentaires et réponses
+    function recupererDateFormattee(timestamp) {
+        if (!timestamp) return new Date().toLocaleDateString();
+        try {
+            if (typeof formatDate === 'function') {
+                return formatDate(timestamp);
             }
+            return new Date(timestamp).toLocaleDateString();
+        } catch (e) {
+            return new Date(timestamp).toLocaleDateString();
         }
+    }
 
-        window.toggleInfoPocket = (pocketElement) => {
-            const wrapper = pocketElement.parentElement;
-            const content = document.getElementById('infoPocketContent');
-            wrapper.classList.toggle('active');
-            if (wrapper.classList.contains('active')) {
-                content.style.display = 'block';
-                lancerMachineAEcrire(descriptionComplete);
-            } else {
-                content.style.display = 'none';
-                if(globalTimeout) clearTimeout(globalTimeout);
-            }
-        };
-
-        function lancerMachineAEcrire(texte) {
-            const txtDesc = document.getElementById('txtDesc');
-            txtDesc.innerText = "";
-            let i = 0;
+    window.toggleInfoPocket = (pocketElement) => {
+        const wrapper = pocketElement.parentElement;
+        const content = document.getElementById('infoPocketContent');
+        wrapper.classList.toggle('active');
+        if (wrapper.classList.contains('active')) {
+            content.style.display = 'block';
+            lancerMachineAEcrire(descriptionComplete);
+        } else {
+            content.style.display = 'none';
             if(globalTimeout) clearTimeout(globalTimeout);
-
-            function taper() {
-                if (i < texte.length) {
-                    let caractereActuel = texte.charAt(i);
-                    txtDesc.innerText += caractereActuel;
-                    i++;
-                    let delai = 70;
-                    if (caractereActuel === '.' || caractereActuel === '!') {
-                        delai = 900;
-                    } else if (caractereActuel === ',') {
-                        delai = 600;
-                    } else if (caractereActuel === ' ') {
-                        delai = 50;
-                    }
-                    globalTimeout = setTimeout(taper, delai);
-                }
-            }
-            taper();
         }
+    };
 
-        // AUTH TRACKING : Rétablit parfaitement l'avatar de connexion de l'utilisateur
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user; 
-                userId = user.uid;
+    function lancerMachineAEcrire(texte) {
+        const txtDesc = document.getElementById('txtDesc');
+        txtDesc.innerText = "";
+        let i = 0;
+        if(globalTimeout) clearTimeout(globalTimeout);
+
+        function taper() {
+            if (i < texte.length) {
+                let caractereActuel = texte.charAt(i);
+                txtDesc.innerText += caractereActuel;
+                i++;
+                let delai = 70;
+                if (caractereActuel === '.' || caractereActuel === '!') {
+                    delai = 900;
+                } else if (caractereActuel === ',') {
+                    delai = 600;
+                } else if (caractereActuel === ' ') {
+                    delai = 50;
+                }
+                globalTimeout = setTimeout(taper, delai);
+            }
+        }
+        taper();
+    }
+
+    // AUTH TRACKING : Rétablit l'avatar de connexion depuis Firestore ou Firebase Auth directement
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user; 
+            userId = user.uid;
+            
+            // Sécurité : prend d'abord les infos du compte Google/Firebase si dispo
+            userName = user.displayName || user.email.split('@')[0];
+            userImg = user.photoURL || userImg;
+
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if(snap.exists()){
+                const d = snap.data();
+                userName = d.name || userName;
+                userImg = d.photoURL || userImg;
                 
-                const snap = await getDoc(doc(db, "users", user.uid));
-                if(snap.exists()){
-                    const d = snap.data();
-                    userName = d.name || user.email.split('@')[0];
-                    userImg = d.photoURL || userImg;
-                    
-                    const myAvatarImg = document.getElementById('myAvatar');
-                    if(myAvatarImg) myAvatarImg.src = userImg;
-            
-                    if((d.favorites || []).some(f => f.id === filmId)) {
-                        document.getElementById('mainFavBtn').classList.add('is-fav');
-                        document.getElementById('favText').innerText = "Ma Liste";
-                    }
+                if((d.favorites || []).some(f => f.id === filmId)) {
+                    document.getElementById('mainFavBtn').classList.add('is-fav');
+                    document.getElementById('favText').innerText = "Ma Liste";
                 }
-
-                setTimeout(async () => {
-                    try {
-                        const userRef = doc(db, "users", userId);
-                        const historyItem = { 
-                            id: filmId, 
-                            titre: currentFilmData?.titre || filmId, 
-                            image: currentFilmData?.poster || "",
-                            date: Date.now() 
-                        };
-                        await updateDoc(userRef, { history: arrayUnion(historyItem) });
-                    } catch(e) {
-                        console.log("Erreur historique:", e);
-                    }
-                }, 1000);
             }
-        });
 
-        // INJECTION DU CSS DE STABILISATION DES ÉPISODES
-        const styleStabilisateur = document.createElement('style');
-        styleStabilisateur.innerHTML = `
-            .ep-card { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 15px !important; width: 100% !important; box-sizing: border-box !important; position: relative !important; margin-bottom: 8px !important; cursor: pointer; }
-            .ep-info { flex: 1 !important; min-width: 0 !important; position: relative !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; overflow: hidden !important; }
-            .ep-title-wrapper { width: 100% !important; max-width: 100% !important; overflow: hidden !important; position: relative !important; display: inline-block !important; }
-            .ep-title { white-space: nowrap !important; font-size: 14px; color: #fff; display: inline-block !important; transform: translateX(0); animation: scrollRebondLeft 10s ease-in-out infinite alternate !important; }
-            @keyframes scrollRebondLeft { 0% { transform: translateX(0); } 25% { transform: translateX(0); } 75% { transform: translateX(calc(-100% + 100px)); } 100% { transform: translateX(calc(-100% + 100px)); } }
-            .detail-btn { flex-shrink: 0 !important; }
-            .btn-voir-plus-poche { display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; background-color: #007bff !important; color: #ffffff !important; padding: 12px 20px !important; border-radius: 6px !important; font-size: 13px !important; font-weight: bold !important; margin-top: 2px !important; margin-bottom: 10px !important; cursor: pointer !important; border: none !important; width: 100% !important; box-sizing: border-box !important; transition: background 0.2s; }
-            .btn-voir-plus-poche:hover { background-color: #0056b3 !important; }
-            .suite-hidden { display: none !important; }
-            #detailDrawer { position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; max-height: 85vh !important; background: #141414 !important; z-index: 99999 !important; box-shadow: 0 -10px 30px rgba(0,0,0,0.7) !important; border-radius: 20px 20px 0 0 !important; box-sizing: border-box !important; padding-bottom: env(safe-area-inset-bottom); transform: translateY(100%) !important; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important; }
-            #detailDrawer.active { transform: translateY(0) !important; }
-        `;
-        document.head.appendChild(styleStabilisateur);
+            // Met à jour l'interface avec l'avatar trouvé
+            const myAvatarImg = document.getElementById('myAvatar');
+            if(myAvatarImg) myAvatarImg.src = userImg;
 
-        let listeEp_Partie1 = [];
-        let listeEp_Partie2 = [];
+            setTimeout(async () => {
+                try {
+                    const userRef = doc(db, "users", userId);
+                    const historyItem = { 
+                        id: filmId, 
+                        titre: currentFilmData?.titre || filmId, 
+                        image: currentFilmData?.poster || "",
+                        date: Date.now() 
+                    };
+                    await updateDoc(userRef, { history: arrayUnion(historyItem) });
+                } catch(e) {
+                    console.log("Erreur historique:", e);
+                }
+            }, 1000);
+        }
+    });
 
-        function fusionnerEtAfficher() {
-            const tousLesEpisodes = [...listeEp_Partie1, ...listeEp_Partie2];
-            renderEpisodes(tousLesEpisodes);
+    // INJECTION DU CSS DE STABILISATION DES ÉPISODES
+    const styleStabilisateur = document.createElement('style');
+    styleStabilisateur.innerHTML = `
+        .ep-card { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 15px !important; width: 100% !important; box-sizing: border-box !important; position: relative !important; margin-bottom: 8px !important; cursor: pointer; }
+        .ep-info { flex: 1 !important; min-width: 0 !important; position: relative !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; overflow: hidden !important; }
+        .ep-title-wrapper { width: 100% !important; max-width: 100% !important; overflow: hidden !important; position: relative !important; display: inline-block !important; }
+        .ep-title { white-space: nowrap !important; font-size: 14px; color: #fff; display: inline-block !important; transform: translateX(0); animation: scrollRebondLeft 10s ease-in-out infinite alternate !important; }
+        @keyframes scrollRebondLeft { 0% { transform: translateX(0); } 25% { transform: translateX(0); } 75% { transform: translateX(calc(-100% + 100px)); } 100% { transform: translateX(calc(-100% + 100px)); } }
+        .detail-btn { flex-shrink: 0 !important; }
+        .btn-voir-plus-poche { display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; background-color: #007bff !important; color: #ffffff !important; padding: 12px 20px !important; border-radius: 6px !important; font-size: 13px !important; font-weight: bold !important; margin-top: 2px !important; margin-bottom: 10px !important; cursor: pointer !important; border: none !important; width: 100% !important; box-sizing: border-box !important; transition: background 0.2s; }
+        .btn-voir-plus-poche:hover { background-color: #0056b3 !important; }
+        .suite-hidden { display: none !important; }
+        #detailDrawer { position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; max-height: 85vh !important; background: #141414 !important; z-index: 99999 !important; box-shadow: 0 -10px 30px rgba(0,0,0,0.7) !important; border-radius: 20px 20px 0 0 !important; box-sizing: border-box !important; padding-bottom: env(safe-area-inset-bottom); transform: translateY(100%) !important; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important; }
+        #detailDrawer.active { transform: translateY(0) !important; }
+    `;
+    document.head.appendChild(styleStabilisateur);
+
+    let listeEp_Partie1 = [];
+    let listeEp_Partie2 = [];
+
+    function fusionnerEtAfficher() {
+        const tousLesEpisodes = [...listeEp_Partie1, ...listeEp_Partie2];
+        renderEpisodes(tousLesEpisodes);
+    }
+
+    // ÉCOUTEUR PRINCIPAL DU DOCUMENT SERIE / FILM
+    onSnapshot(doc(db, "films", filmId), (snap) => {
+        const data = snap.data(); if(!data) return;
+        currentFilmData = data;
+        
+        document.getElementById('txtTitle').innerText = data.titre || "CongoFlix";
+        descriptionComplete = data.description || "Aucune description disponible.";
+        document.getElementById('txtDesc').innerText = descriptionComplete;
+   
+        document.getElementById('statV').innerText = data.views || 0;
+
+        if(!document.getElementById('playerRoot').innerHTML.trim() && data.url) {
+            document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
         }
 
-        onSnapshot(doc(db, "films", filmId), (snap) => {
-            const data = snap.data(); if(!data) return;
-            currentFilmData = data;
-            
-            document.getElementById('txtTitle').innerText = data.titre || "CongoFlix";
-            descriptionComplete = data.description || "Aucune description disponible.";
-            document.getElementById('txtDesc').innerText = descriptionComplete;
-       
-            document.getElementById('statV').innerText = data.views || 0;
-            const likeList = data.likes || [];
-            document.getElementById('statL').innerText = likeList.length;
-            
-            const likeBtn = document.getElementById('mainLikeBtn');
-            if(currentUser && likeList.includes(userId)) likeBtn.classList.add('is-liked');
-            else likeBtn.classList.remove('is-liked');
+        renderCasting(data);
+        listeEp_Partie1 = data.episodes || data.partie || data.film || data.Saison || data.Saison1 || [];
+        fusionnerEtAfficher();
+    });
 
-            if(!document.getElementById('playerRoot').innerHTML.trim() && data.url) {
-                document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
-            }
+    onSnapshot(doc(db, "films", filmId + "-suite"), (snap) => {
+        if (snap.exists()) {
+            const dataSuite = snap.data();
+            listeEp_Partie2 = dataSuite.episodes || dataSuite.partie || dataSuite.film || dataSuite.Saison || dataSuite.Saison1 || [];
+        } else {
+            listeEp_Partie2 = [];
+        }
+        fusionnerEtAfficher();
+    });
 
-            renderCasting(data);
-            listeEp_Partie1 = data.episodes || data.partie || data.film || data.Saison || data.Saison1 || [];
-            fusionnerEtAfficher();
+    // ÉCOUTEUR EN TEMPS RÉEL DES COMMENTAIRES (STABLE)
+    onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
+        let comms = [];
+        snapshot.forEach((docSnap) => {
+            comms.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        renderComments(comms);
+    });
+
+    // ÉCOUTEUR UNIQUE DU COMPTEUR DE LIKES (SOUS-COLLECTION) + GESTION DE L'ÉTAT DU BOUTON
+    onSnapshot(collection(db, "films", filmId, "likes"), (snapshot) => {
+        const statL = document.getElementById('statL');
+        if (statL) statL.innerText = snapshot.size;
+
+        // On vérifie si l'utilisateur connecté fait partie des documents de la sous-collection
+        const likeBtn = document.getElementById('mainLikeBtn');
+        let userHasLiked = false;
+        snapshot.forEach((docSnap) => {
+            if(docSnap.id === userId) userHasLiked = true;
         });
 
-        onSnapshot(doc(db, "films", filmId + "-suite"), (snap) => {
-            if (snap.exists()) {
-                const dataSuite = snap.data();
-                listeEp_Partie2 = dataSuite.episodes || dataSuite.partie || dataSuite.film || dataSuite.Saison || dataSuite.Saison1 || [];
-            } else {
-                listeEp_Partie2 = [];
-            }
-            fusionnerEtAfficher();
-        });
+        if(currentUser && userHasLiked) {
+            likeBtn.classList.add('is-liked');
+        } else {
+            likeBtn.classList.remove('is-liked');
+        }
+    });
 
-        // ÉCOUTEUR SIMPLE EN TEMPS RÉEL DES COMMENTAIRES (STABLE ET SANS SURCHARGE)
-        onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
-            let comms = [];
-            snapshot.forEach((docSnap) => {
-                comms.push({ id: docSnap.id, ...docSnap.data() });
+    function renderEpisodes(epArray) {
+        const container = document.getElementById('episodesList');
+        let html = ""; let seasons = {};
+        
+        for (let i = 0; i < epArray.length; i += 4) {
+            const img = epArray[i];
+            const title = epArray[i+1];
+            const linkWatch = epArray[i+2];    
+            const linkDownload = epArray[i+3]; 
+            
+            if (!title) continue; 
+
+            let sName = title.includes(':') ? title.split(':')[0].trim() : "Épisodes";
+            if(!seasons[sName]) seasons[sName] = [];
+            seasons[sName].push({img, title, linkWatch, linkDownload});
+        }
+        
+        for (let s in seasons) {
+            let cartesHtml = "";
+            let boutonVoirPlusHtml = "";
+            let modificateursSuite = false;
+
+            seasons[s].forEach((ep, index) => {
+                if (ep.title.toLowerCase().includes("voir plus")) {
+                    modificateursSuite = true;
+                    boutonVoirPlusHtml = `
+                        <button class="btn-voir-plus-poche" id="btn-more-${s}" onclick="afficherLaSuiteDeLaPoche('${s}')">
+                            <i class="fa-solid fa-circle-plus"></i> Voir plus d'épisodes
+                        </button>
+                    `;
+                } else {
+                    let classeCachee = modificateursSuite ? `suite-hidden partie-suite-${s}` : "";
+                    let titreAffiche = ep.title;
+                    if (ep.title.includes(':')) {
+                        const morceaux = ep.title.split(':');
+                        morceaux.shift();
+                        titreAffiche = morceaux.join(':').trim();
+                    }
+
+                    cartesHtml += `
+                        <div class="ep-card ${classeCachee}" onclick="openDetails('${ep.title.replace(/'/g, "\\'")}', '${ep.linkWatch || ''}', '${ep.linkDownload || ''}')">
+                            <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
+                            <div class="ep-info">
+                                <div class="ep-title-wrapper">
+                                    <div class="ep-title">${titreAffiche}</div>
+                                </div>
+                            </div>
+                            <button class="detail-btn">Détails</button>
+                        </div>
+                    `;
+                }
             });
-            renderComments(comms);
+            html += `
+            <div class="season-wrapper" style="margin-bottom: 25px;">
+                <div class="season-pocket" onclick="this.parentElement.classList.toggle('active')">
+                    <span><i class="fa-solid fa-layer-group"></i> ${s}</span> <i class="fa-solid fa-chevron-down"></i>
+                </div>
+                <div class="season-content">
+                    ${cartesHtml}
+                    ${boutonVoirPlusHtml}
+                </div>
+            </div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    window.afficherLaSuiteDeLaPoche = (saisonId) => {
+        const elementsSuite = document.querySelectorAll(`.partie-suite-${saisonId}`);
+        elementsSuite.forEach(el => {
+            el.classList.remove('suite-hidden');
         });
+        const boutonMore = document.getElementById(`btn-more-${saisonId}`);
+        if(boutonMore) boutonMore.style.display = 'none';
+    };
 
-        // ÉCOUTEUR COMPTEUR DE LIKES DU FILM UNIQUE
-        onSnapshot(collection(db, "films", filmId, "likes"), (snapshot) => {
-            const statL = document.getElementById('statL');
-            if (statL) statL.innerText = snapshot.size;
-        });
-
-        function renderEpisodes(epArray) {
-            const container = document.getElementById('episodesList');
-            let html = ""; let seasons = {};
-            
-            for (let i = 0; i < epArray.length; i += 4) {
-                const img = epArray[i];
-                const title = epArray[i+1];
-                const linkWatch = epArray[i+2];    
-                const linkDownload = epArray[i+3]; 
-                
-                if (!title) continue; 
-
-                let sName = title.includes(':') ? title.split(':')[0].trim() : "Épisodes";
-                if(!seasons[sName]) seasons[sName] = [];
-                seasons[sName].push({img, title, linkWatch, linkDownload});
+    window.openDetails = (title, linkWatch, linkDownload) => {
+        document.getElementById('detEpTitle').innerText = title;
+        document.getElementById('modalAdContainer').style.display = 'flex';
+        document.getElementById('modalPlayerContainer').style.display = 'none';
+        document.getElementById('modalPlayerContainer').innerHTML = "";
+        document.getElementById('detailDrawer').classList.add('active');
+        document.getElementById('btnWatchNow').onclick = () => {
+            document.getElementById('modalAdContainer').style.display = 'none';
+            const container = document.getElementById('modalPlayerContainer');
+            container.style.display = 'block';
+            container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen></iframe>`;
+        };
+        document.getElementById('btnDownloadNow').onclick = () => {
+            if(linkDownload) {
+                window.open(linkDownload, '_blank');
+            } else {
+                alert("Lien de téléchargement indisponible");
             }
-            
-            for (let s in seasons) {
-                let cartesHtml = "";
-                let boutonVoirPlusHtml = "";
-                let modificateursSuite = false;
+        };
+    };
 
-                seasons[s].forEach((ep, index) => {
-                    if (ep.title.toLowerCase().includes("voir plus")) {
-                        modificateursSuite = true;
-                        boutonVoirPlusHtml = `
-                            <button class="btn-voir-plus-poche" id="btn-more-${s}" onclick="afficherLaSuiteDeLaPoche('${s}')">
-                                <i class="fa-solid fa-circle-plus"></i> Voir plus d'épisodes
-                            </button>
-                        `;
-                    } else {
-                        let classeCachee = modificateursSuite ? `suite-hidden partie-suite-${s}` : "";
-                        let titreAffiche = ep.title;
-                        if (ep.title.includes(':')) {
-                            const morceaux = ep.title.split(':');
-                            morceaux.shift();
-                            titreAffiche = morceaux.join(':').trim();
-                        }
+    window.closeDetails = () => {
+        document.getElementById('detailDrawer').classList.remove('active');
+        document.getElementById('modalPlayerContainer').innerHTML = "";
+    };
 
-                        cartesHtml += `
-                            <div class="ep-card ${classeCachee}" onclick="openDetails('${ep.title.replace(/'/g, "\\'")}', '${ep.linkWatch || ''}', '${ep.linkDownload || ''}')">
-                                <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
-                                <div class="ep-info">
-                                    <div class="ep-title-wrapper">
-                                        <div class="ep-title">${titreAffiche}</div>
+    window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
+
+    window.handlePost = async () => {
+        if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
+        const f = document.getElementById('tkField');
+        const val = f.value.trim();
+        if(!val) return;
+        
+        try {
+            const uniqueId = "ID-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+            if(targetCommentId) {
+                const replyData = {
+                    id: uniqueId,
+                    nom: userName,
+                    text: val,
+                    photo: userImg,
+                    date: Date.now()
+                };
+                const replyRef = doc(db, "films", filmId, "comments", targetCommentId);
+                await updateDoc(replyRef, {
+                    replies: arrayUnion(replyData)
+                });
+            } else {
+                const newComment = {
+                    id: uniqueId,
+                    nom: userName,
+                    text: val,
+                    photo: userImg,
+                    date: Date.now(),
+                    replies: []
+                };
+                const commentRef = doc(db, "films", filmId, "comments", uniqueId);
+                await setDoc(commentRef, newComment);
+            }
+            f.value = "";
+            targetCommentId = null;
+            f.placeholder = "Ajouter un commentaire...";
+        } catch (err) {
+            console.error("Erreur envoi commentaire : ", err);
+        }
+    };
+
+    window.prepareReply = (cid, name) => {
+        targetCommentId = cid;
+        const field = document.getElementById('tkField');
+        field.placeholder = "Répondre à " + name + "...";
+        field.focus();
+    };
+
+    function renderComments(comms) {
+        const list = document.getElementById('tkList');
+        if(!list) return;
+        
+        document.getElementById('statC').innerText = comms.length;
+        document.getElementById('hCount').innerText = comms.length;
+
+        const commsTries = [...comms].sort((a,b) => b.date - a.date);
+
+        list.innerHTML = commsTries.map(c => {
+            let dateCommentaire = recupererDateFormattee(c.date);
+
+            return `
+            <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start; position:relative;">
+                <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:35px; height:35px; border-radius:50%">
+                <div style="flex:1; padding-right:30px;">
+                    <div style="font-size:12px; color:#999; font-weight:bold">
+                        ${c.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateCommentaire}</span>
+                    </div>
+                    <div style="font-size:14px; color:#eee; margin-top:2px;">${c.text}</div>
+                    <div class="c-foot" style="margin-top:4px;"><span onclick="prepareReply('${c.id}', '${c.nom}')" style="cursor:pointer; color:#777; font-size:12px;">Répondre</span></div>
+                    
+                    ${(c.replies || []).length > 0 ? `
+                        <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher les réponses</div>
+                        <div class="replies-pocket">
+                            ${(c.replies || []).map(r => {
+                                let dateReponse = recupererDateFormattee(r.date);
+
+                                return `
+                                <div style="display:flex; gap:8px; margin-top:12px; position:relative;">
+                                    <img src="${r.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:24px; height:24px; border-radius:50%">
+                                    <div style="flex:1; padding-right:25px;">
+                                        <div style="font-size:11px; color:#777; font-weight:bold">
+                                            ${r.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateReponse}</span>
+                                        </div>
+                                        <div style="font-size:13px; color:#eee; margin-top:1px;">${r.text}</div>
                                     </div>
                                 </div>
-                                <button class="detail-btn">Détails</button>
-                            </div>
-                        `;
-                    }
-                });
-                html += `
-                <div class="season-wrapper" style="margin-bottom: 25px;">
-                    <div class="season-pocket" onclick="this.parentElement.classList.toggle('active')">
-                        <span><i class="fa-solid fa-layer-group"></i> ${s}</span> <i class="fa-solid fa-chevron-down"></i>
-                    </div>
-                    <div class="season-content">
-                        ${cartesHtml}
-                        ${boutonVoirPlusHtml}
-                    </div>
-                </div>`;
-            }
-            container.innerHTML = html;
-        }
-
-        window.afficherLaSuiteDeLaPoche = (saisonId) => {
-            const elementsSuite = document.querySelectorAll(`.partie-suite-${saisonId}`);
-            elementsSuite.forEach(el => {
-                el.classList.remove('suite-hidden');
-            });
-            const boutonMore = document.getElementById(`btn-more-${saisonId}`);
-            if(boutonMore) boutonMore.style.display = 'none';
-        };
-
-        window.openDetails = (title, linkWatch, linkDownload) => {
-            document.getElementById('detEpTitle').innerText = title;
-            document.getElementById('modalAdContainer').style.display = 'flex';
-            document.getElementById('modalPlayerContainer').style.display = 'none';
-            document.getElementById('modalPlayerContainer').innerHTML = "";
-            document.getElementById('detailDrawer').classList.add('active');
-            document.getElementById('btnWatchNow').onclick = () => {
-                document.getElementById('modalAdContainer').style.display = 'none';
-                const container = document.getElementById('modalPlayerContainer');
-                container.style.display = 'block';
-                container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen></iframe>`;
-            };
-            document.getElementById('btnDownloadNow').onclick = () => {
-                if(linkDownload) {
-                    window.open(linkDownload, '_blank');
-                } else {
-                    alert("Lien de téléchargement indisponible");
-                }
-            };
-        };
-
-        window.closeDetails = () => {
-            document.getElementById('detailDrawer').classList.remove('active');
-            document.getElementById('modalPlayerContainer').innerHTML = "";
-        };
-
-        window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
-
-       window.handlePost = async () => {
-            if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
-            const f = document.getElementById('tkField');
-            const val = f.value.trim();
-            if(!val) return;
-            
-            try {
-                const uniqueId = "ID-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-                if(targetCommentId) {
-                    const replyData = {
-                        id: uniqueId,
-                        nom: userName,
-                        text: val,
-                        photo: userImg,
-                        date: Date.now()
-                    };
-                    const replyRef = doc(db, "films", filmId, "comments", targetCommentId);
-                    await updateDoc(replyRef, {
-                        replies: arrayUnion(replyData)
-                    });
-                } else {
-                    const newComment = {
-                        id: uniqueId,
-                        nom: userName,
-                        text: val,
-                        photo: userImg,
-                        date: Date.now(),
-                        replies: []
-                    };
-                    // CORRECTION ICI : On utilise doc() et setDoc() pour forcer Firestore à prendre ton uniqueId
-                    const commentRef = doc(db, "films", filmId, "comments", uniqueId);
-                    await setDoc(commentRef, newComment);
-                }
-                f.value = "";
-                targetCommentId = null;
-                f.placeholder = "Ajouter un commentaire...";
-            } catch (err) {
-                console.error("Erreur envoi commentaire : ", err);
-            }
-        };
-        window.prepareReply = (cid, name) => {
-            targetCommentId = cid;
-            const field = document.getElementById('tkField');
-            field.placeholder = "Répondre à " + name + "...";
-            field.focus();
-        };
-
-        // RENDU DES COMMENTAIRES PROPRE, LIÉ AUX DATES SUR PRINCIPAUX ET RÉPONSES
-        function renderComments(comms) {
-            const list = document.getElementById('tkList');
-            if(!list) return;
-            
-            document.getElementById('statC').innerText = comms.length;
-            document.getElementById('hCount').innerText = comms.length;
-
-            const commsTries = [...comms].sort((a,b) => b.date - a.date);
-
-            list.innerHTML = commsTries.map(c => {
-                let dateCommentaire = recupererDateFormattee(c.date);
-
-                return `
-                <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start; position:relative;">
-                    <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:35px; height:35px; border-radius:50%">
-                    <div style="flex:1; padding-right:30px;">
-                        <div style="font-size:12px; color:#999; font-weight:bold">
-                            ${c.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateCommentaire}</span>
+                                `;
+                            }).join('')}
                         </div>
-                        <div style="font-size:14px; color:#eee; margin-top:2px;">${c.text}</div>
-                        <div class="c-foot" style="margin-top:4px;"><span onclick="prepareReply('${c.id}', '${c.nom}')" style="cursor:pointer; color:#777; font-size:12px;">Répondre</span></div>
-                        
-                        ${(c.replies || []).length > 0 ? `
-                            <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher les réponses</div>
-                            <div class="replies-pocket">
-                                ${(c.replies || []).map(r => {
-                                    let dateReponse = recupererDateFormattee(r.date);
-
-                                    return `
-                                    <div style="display:flex; gap:8px; margin-top:12px; position:relative;">
-                                        <img src="${r.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:24px; height:24px; border-radius:50%">
-                                        <div style="flex:1; padding-right:25px;">
-                                            <div style="font-size:11px; color:#777; font-weight:bold">
-                                                ${r.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateReponse}</span>
-                                            </div>
-                                            <div style="font-size:13px; color:#eee; margin-top:1px;">${r.text}</div>
-                                        </div>
-                                    </div>
-                                    `;
-                                }).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
+                    ` : ''}
                 </div>
-                `;
-            }).join('');
+            </div>
+            `;
+        }).join('');
+    }
+
+    function renderCasting(data) {
+        document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
+        document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || []).map(n => `<div class="cast-name-item"><i class="fa-solid fa-star" style="color:var(--gold); margin-right:10px; font-size: 8px;"></i> ${n}</div>`).join('');
+    }
+
+    document.getElementById('mainLikeBtn').onclick = async () => {
+        if(!currentUser) return showAuthAlert("Connecte-toi pour liker !");
+        const likeRef = doc(db, "films", filmId, "likes", userId);
+        const likeSnap = await getDoc(likeRef);
+
+        if (likeSnap.exists()) {
+            await deleteDoc(likeRef);
+        } else {
+            await setDoc(likeRef, { liked: true });
         }
+    };
 
-        function renderCasting(data) {
-            document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
-            document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || []).map(n => `<div class="cast-name-item"><i class="fa-solid fa-star" style="color:var(--gold); margin-right:10px; font-size: 8px;"></i> ${n}</div>`).join('');
+    document.getElementById('mainFavBtn').onclick = async () => { 
+        if(!currentUser) return showAuthAlert("Connecte-toi pour enregistrer !");
+        const btn = document.getElementById('mainFavBtn');
+        const userRef = doc(db, "users", userId);
+        const favItem = { id: filmId, titre: currentFilmData.titre || filmId, image: currentFilmData.poster || "" };
+        if(btn.classList.contains('is-fav')) {
+            await updateDoc(userRef, { favorites: arrayRemove(favItem) });
+            btn.classList.remove('is-fav');
+            document.getElementById('favText').innerText = "Enregistrer";
+        } else {
+            await updateDoc(userRef, { favorites: arrayUnion(favItem) });
+            btn.classList.add('is-fav');
+            document.getElementById('favText').innerText = "Ma Liste";
         }
+    };
 
-        document.getElementById('mainLikeBtn').onclick = async () => {
-            if(!currentUser) return showAuthAlert("Connecte-toi pour liker !");
-            const likeRef = doc(db, "films", filmId, "likes", userId);
-            const likeSnap = await getDoc(likeRef);
+    window.triggerBackAd = () => { history.back(); };
+    window.showAuthAlert = (m) => { 
+        const a = document.getElementById('authAlert');
+        document.getElementById('authAlertMsg').innerText = m || "Action requise";
+        a.style.display='block'; setTimeout(()=>a.style.display='none', 3000);
+    };
 
-            if (likeSnap.exists()) {
-                await deleteDoc(likeRef);
-            } else {
-                await setDoc(likeRef, { liked: true });
-            }
-        };
-
-        document.getElementById('mainFavBtn').onclick = async () => { 
-            if(!currentUser) return showAuthAlert("Connecte-toi pour enregistrer !");
-            const btn = document.getElementById('mainFavBtn');
-            const userRef = doc(db, "users", userId);
-            const favItem = { id: filmId, titre: currentFilmData.titre || filmId, image: currentFilmData.poster || "" };
-            if(btn.classList.contains('is-fav')) {
-                await updateDoc(userRef, { favorites: arrayRemove(favItem) });
-                btn.classList.remove('is-fav');
-                document.getElementById('favText').innerText = "Enregistrer";
-            } else {
-                await updateDoc(userRef, { favorites: arrayUnion(favItem) });
-                btn.classList.add('is-fav');
-                document.getElementById('favText').innerText = "Ma Liste";
-            }
-        };
-
-        window.triggerBackAd = () => { history.back(); };
-        window.showAuthAlert = (m) => { 
-            const a = document.getElementById('authAlert');
-            document.getElementById('authAlertMsg').innerText = m || "Action requise";
-            a.style.display='block'; setTimeout(()=>a.style.display='none', 3000);
-        };
-
-        // COMPTEUR DE VUES SÉCURISÉ EN ARRIÈRE-PLAN
-        setTimeout(async () => {
-            try {
-                await updateDoc(doc(db, "films", filmId), { views: increment(1) });
-            } catch(e) {
-                console.log("Erreur compteur vue:", e);
-            }
-        }, 1200);
-    </script>
+    // COMPTEUR DE VUES SÉCURISÉ EN ARRIÈRE-PLAN
+    setTimeout(async () => {
+        try {
+            await updateDoc(doc(db, "films", filmId), { views: increment(1) });
+        } catch(e) {
+            console.log("Erreur compteur vue:", e);
+        }
+    }, 1200);
+</script>
     </body>
 </html>
 
