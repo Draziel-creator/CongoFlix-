@@ -396,28 +396,45 @@
             fusionnerEtAfficher();
         });
 
-       // ÉCOUTEUR RE-STABILISÉ ET SÉCURISÉ POUR LES LIKES MULTI-COMPTES
-onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
+      // ÉCOUTEUR DES COMMENTAIRES FLUIDE ET LIÉ AUX VRAIS IDS FIRESTORE
+onSnapshot(collection(db, "films", filmId, "comments"), async (snapshot) => {
     let comms = [];
+    const currentUserId = auth.currentUser ? auth.currentUser.uid : (typeof userId !== 'undefined' ? userId : null);
     
-    // On récupère l'identifiant de session le plus frais possible
-    const currentUserId = auth.currentUser ? auth.currentUser.uid : userId;
-    
+    // Étape A : On liste tous les commentaires avec leur VRAI id Firestore (Ex: 98ZYHI00...)
     snapshot.forEach((docSnap) => {
         let commentData = docSnap.data();
-        
-        // Sécurité : si le document existant n'a pas de champ likes, on crée un tableau vide
-        const commentLikesList = commentData.likes || [];
-        
         comms.push({ 
-            id: docSnap.id, 
+            id: docSnap.id, // ID réel de la colonne 3 de ta capture
             ...commentData, 
-            likesCount: commentLikesList.length,
-            userHasLiked: commentLikesList.includes(currentUserId)
+            likesCount: 0, 
+            userHasLiked: false 
         });
     });
-    
-    renderComments(comms);
+
+    if (currentUserId && comms.length > 0) {
+        // Étape B : On récupère les likes en tâche de fond dans la sous-collection dédiée
+        const promises = comms.map(async (c) => {
+            try {
+                const likesColl = collection(db, "films", filmId, "comments", c.id, "likes");
+                const likesSnap = await getDocs(likesColl);
+                c.likesCount = likesSnap.size;
+                
+                likesSnap.forEach((lDoc) => {
+                    if (lDoc.id === currentUserId) {
+                        c.userHasLiked = true;
+                    }
+                });
+            } catch (err) {
+                console.error("Erreur récupération sous-likes:", err);
+            }
+        });
+
+        await Promise.all(promises);
+        renderComments(comms);
+    } else {
+        renderComments(comms);
+    }
 });
         // ÉCOUTEUR COMPTEUR DE LIKES DU FILM SÉCURISÉ
         onSnapshot(collection(db, "films", filmId, "likes"), (snapshot) => {
@@ -576,13 +593,13 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
 
        function renderComments(comms) {
     const list = document.getElementById('tkList');
-    if(!list) return;
+    if (!list) return;
     
     document.getElementById('statC').innerText = comms.length;
     document.getElementById('hCount').innerText = comms.length;
 
-    // CORRECTION MAJEURE : On trie d'abord le tableau proprement en JavaScript avant de mapper
-    const commsTries = [...comms].sort((a, b) => b.date - a.date);
+    // On trie une copie du tableau pour ne pas casser les liaisons du DOM
+    const commsTries = [...comms].sort((a,b) => b.date - a.date);
 
     list.innerHTML = commsTries.map(c => {
         let dateCommentaire = "";
@@ -592,7 +609,6 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
             dateCommentaire = new Date(c.date).toLocaleDateString();
         }
 
-        // Configuration dynamique du cœur
         const heartColor = c.userHasLiked ? "#ff0050" : "#555"; 
         const heartIcon = c.userHasLiked ? "❤️" : "🤍";
 
@@ -610,24 +626,12 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
                     <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher les réponses</div>
                     <div class="replies-pocket">
                         ${(c.replies || []).map(r => {
-                            let dateReponse = "";
-                            try {
-                                dateReponse = typeof formatDate === 'function' ? formatDate(r.date) : new Date(r.date).toLocaleDateString();
-                            } catch(e) {
-                                dateReponse = new Date(r.date).toLocaleDateString();
-                            }
-
                             return `
                             <div style="display:flex; gap:8px; margin-top:12px; position:relative;">
                                 <img src="${r.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:24px; height:24px; border-radius:50%">
                                 <div style="flex:1; padding-right:25px;">
-                                    <div style="font-size:11px; color:#777; font-weight:bold">
-                                        ${r.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateReponse}</span>
-                                    </div>
+                                    <div style="font-size:11px; color:#777; font-weight:bold">${r.nom}</div>
                                     <div style="font-size:13px; color:#eee; margin-top:1px;">${r.text}</div>
-                                </div>
-                                <div style="position:absolute; right:0; top:2px; color:#555; cursor:pointer; font-size:12px;">
-                                    🤍 <span style="font-size:10px; display:block; text-align:center; color:#555;">0</span>
                                 </div>
                             </div>
                             `;
@@ -635,40 +639,35 @@ onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
                     </div>
                 ` : ''}
             </div>
-            <div style="position:absolute; right:0; top:2px; color:${heartColor}; cursor:pointer; font-size:14px; text-align:center; z-index:10;" onclick="window.toggleLikeComment('${c.id}')">
+            <div style="position:absolute; right:0; top:2px; color:${heartColor}; cursor:pointer; font-size:14px; text-align:center; z-index:100;" onclick="window.toggleLikeComment('${c.id}')">
                 ${heartIcon} <span style="font-size:11px; display:block; text-align:center; color:#999; margin-top:2px;">${c.likesCount || 0}</span>
             </div>
         </div>
         `;
     }).join('');
 }
-     window.toggleLikeComment = async (commentId) => {
-    // Sécurité absolue : On prend l'ID de l'utilisateur connecté via Firebase Auth
+    window.toggleLikeComment = async (commentId) => {
     if (!auth.currentUser) {
         return typeof showAuthAlert === 'function' ? showAuthAlert("Connecte-toi pour liker !") : alert("Connecte-toi pour liker !");
     }
    
-    const currentUserId = auth.currentUser.uid;
-
     try {
-        const commentRef = doc(db, "films", filmId, "comments", commentId);
-        const commentSnap = await getDoc(commentRef);
-        if (!commentSnap.exists()) return;
+        const currentUserId = auth.currentUser.uid;
+        const currentFilmId = filmId;
         
-        const commentData = commentSnap.data();
-        const commentLikesList = commentData.likes || [];
+        if (!currentUserId || !currentFilmId) return;
 
-        if (commentLikesList.includes(currentUserId)) {
-            // Si MON uid est déjà dans le tableau, je l'enlève (sans toucher aux autres)
-            await updateDoc(commentRef, {
-                likes: arrayRemove(currentUserId)
-            });
+        // Référence vers le document de like dans la sous-collection du commentaire
+        const likeRef = doc(db, "films", currentFilmId, "comments", commentId, "likes", currentUserId);
+        const likeSnap = await getDoc(likeRef);
+        
+        if (likeSnap.exists()) {
+            // Si le compte a déjà cliqué, on supprime son document de like unique
+            await deleteDoc(likeRef);
             console.log("Like retiré !");
         } else {
-            // Sinon, j'ajoute MON uid dans le tableau
-            await updateDoc(commentRef, {
-                likes: arrayUnion(currentUserId)
-            });
+            // Sinon, on crée un document vide nommé avec son UID unique
+            await setDoc(likeRef, { liked: true });
             console.log("Like ajouté !");
         }
     } catch (error) {
