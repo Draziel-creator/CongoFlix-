@@ -237,7 +237,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, getDocs, increment, collection, addDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, getDoc, increment, collection, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
@@ -528,7 +528,7 @@
 
         window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
-        window.handlePost = async () => {
+       window.handlePost = async () => {
             if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
             const f = document.getElementById('tkField');
             const val = f.value.trim();
@@ -557,7 +557,9 @@
                         date: Date.now(),
                         replies: []
                     };
-                    await addDoc(collection(db, "films", filmId, "comments"), newComment);
+                    // CORRECTION ICI : On utilise doc() et setDoc() pour forcer Firestore à prendre ton uniqueId
+                    const commentRef = doc(db, "films", filmId, "comments", uniqueId);
+                    await setDoc(commentRef, newComment);
                 }
                 f.value = "";
                 targetCommentId = null;
@@ -566,7 +568,6 @@
                 console.error("Erreur envoi commentaire : ", err);
             }
         };
-
         window.prepareReply = (cid, name) => {
             targetCommentId = cid;
             const field = document.getElementById('tkField');
