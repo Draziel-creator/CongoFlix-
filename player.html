@@ -348,24 +348,79 @@
                 console.log("Erreur récupération profil base de données:", err);
             }
 
-            // ÉTAPE 3 : Enregistrement de l'historique décalé de 2 secondes pour attendre que le film charge
+           // AUTH TRACKING : FIX ABSOLU DE L'AVATAR, DU PROFIL ET DE L'HISTORIQUE COMPATIBLE INDEX
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user; 
+            userId = user.uid;
+            
+            // ÉTAPE 1 : On applique IMMEDIATEMENT les infos de sa session Firebase (Google ou e-mail)
+            userName = user.displayName || user.email.split('@')[0];
+            userImg = user.photoURL || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+            const myAvatarImg = document.getElementById('myAvatar');
+            if(myAvatarImg) myAvatarImg.src = userImg;
+
+            try {
+                // ÉTAPE 2 : On cherche si un profil personnalisé existe dans Firestore collection "users"
+                const snap = await getDoc(doc(db, "users", user.uid));
+                if(snap.exists()){
+                    const d = snap.data();
+                    if(d.name) userName = d.name;
+                    if(d.photoURL) userImg = d.photoURL;
+                    
+                    // On met à jour l'avatar au cas où Firestore a une photo plus récente
+                    if(myAvatarImg) myAvatarImg.src = userImg;
+                    
+                    // Gestion du bouton favoris
+                    if((d.favorites || []).some(f => f.id === filmId)) {
+                        const favBtn = document.getElementById('mainFavBtn');
+                        const favText = document.getElementById('favText');
+                        if(favBtn) favBtn.classList.add('is-fav');
+                        if(favText) favText.innerText = "Ma Liste";
+                    }
+                }
+            } catch(err) {
+                console.log("Erreur récupération profil base de données:", err);
+            }
+
+            // ÉTAPE 3 : Enregistrement de l'historique nettoyé et compatible avec l'index
             setTimeout(async () => {
                 try {
                     const userRef = doc(db, "users", userId);
+                    
+                    // On utilise 'title' et 'poster' pour correspondre exactement à l'index.html !
                     const historyItem = { 
                         id: filmId, 
-                        titre: currentFilmData?.titre || filmId, 
-                        image: currentFilmData?.poster || "",
+                        title: currentFilmData?.titre || filmId, 
+                        poster: currentFilmData?.poster || "",
                         date: Date.now() 
                     };
-                    await updateDoc(userRef, { history: arrayUnion(historyItem) });
+                    
+                    // 1. Récupération de l'historique actuel
+                    const docSnap = await getDoc(userRef);
+                    let currentHistory = [];
+                    if(docSnap.exists()) {
+                        currentHistory = docSnap.data().history || [];
+                    }
+                    
+                    // 2. Supprime l'ancien doublon si la série/film a déjà été vu(e)
+                    currentHistory = currentHistory.filter(item => item.id !== filmId);
+                    
+                    // 3. Place l'élément tout au début de la liste (le plus récent en premier)
+                    currentHistory.unshift(historyItem);
+                    
+                    // 4. Limite à 15 éléments maximum pour ne pas ralentir le chargement
+                    if(currentHistory.length > 15) currentHistory = currentHistory.slice(0, 15);
+                    
+                    // 5. Sauvegarde du tableau mis à jour dans Firestore
+                    await updateDoc(userRef, { history: currentHistory });
                 } catch(e) {
-                    console.log("Erreur enregistrement historique (normal si premier chargement):", e);
+                    console.log("Erreur enregistrement historique :", e);
                 }
             }, 2500);
         }
-    });
-
+    }); // <--- La fermeture correcte et complète est ici !
     // INJECTION DU CSS DE STABILISATION DES ÉPISODES
     const styleStabilisateur = document.createElement('style');
     styleStabilisateur.innerHTML = `
