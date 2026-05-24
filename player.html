@@ -287,16 +287,48 @@
         }
     };
 
-    function lancerMachineAEcrire(texte) {
+   function lancerMachineAEcrire(texte) {
         const txtDesc = document.getElementById('txtDesc');
         txtDesc.innerText = "";
         let i = 0;
         if(globalTimeout) clearTimeout(globalTimeout);
 
+        // Petit générateur de son "clic" mécanique sans fichier externe
+        function jouerSonCode() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'triangle'; // Type de son assez sourd pour imiter une touche
+                osc.frequency.setValueAtTime(120, ctx.currentTime); // Fréquence basse (bruit mécanique)
+                
+                // Extinction ultra rapide du son pour faire un "clic" sec
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.04);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.04);
+            } catch (e) {
+                // Évite de bloquer la page si le navigateur bloque l'audio au démarrage
+                console.log("Audio pas encore autorisé par l'utilisateur");
+            }
+        }
+
         function taper() {
             if (i < texte.length) {
                 let caractereActuel = texte.charAt(i);
                 txtDesc.innerText += caractereActuel;
+                
+                // On joue le son uniquement pour les vrais caractères (pas les espaces)
+                if (caractereActuel !== ' ') {
+                    jouerSonCode();
+                }
+
                 i++;
                 let delai = 70;
                 if (caractereActuel === '.' || caractereActuel === '!') {
@@ -311,7 +343,6 @@
         }
         taper();
     }
-
     // ==========================================
     // UN SEUL ÉCOUTEUR AUTH TRACKING UNIQUE ET PROPRE
     // ==========================================
