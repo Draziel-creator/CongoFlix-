@@ -287,100 +287,91 @@
         }
     };
 
-   // 1. On initialise l'AudioContext UNE SEULE FOIS en dehors de la fonction pour éviter la saturation
+  // 1. Initialisation unique à l'extérieur
     let machineAudioCtx = null;
 
     function lancerMachineAEcrire(texte) {
-        const txtDesc = document.getElementById('txtDesc');
-        txtDesc.innerText = "";
-        let i = 0;
-        if(globalTimeout) clearTimeout(globalTimeout);
+        try {
+            const txtDesc = document.getElementById('txtDesc');
+            if (!txtDesc) return; // Sécurité si l'élément HTML n'existe pas encore
+            
+            txtDesc.innerText = "";
+            let i = 0;
+            if(globalTimeout) clearTimeout(globalTimeout);
 
-        // Initialisation sécurisée au premier clic de l'utilisateur
-        if (!machineAudioCtx) {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) machineAudioCtx = new AudioContextClass();
-        }
-
-        // 1. On initialise l'AudioContext UNE SEULE FOIS en dehors de la fonction pour éviter la saturation
-    let machineAudioCtx = null;
-
-    function lancerMachineAEcrire(texte) {
-        const txtDesc = document.getElementById('txtDesc');
-        txtDesc.innerText = "";
-        let i = 0;
-        if(globalTimeout) clearTimeout(globalTimeout);
-
-        // Initialisation sécurisée au premier clic de l'utilisateur
-        if (!machineAudioCtx) {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) machineAudioCtx = new AudioContextClass();
-        }
-
-        // Simule le "tack" propre d'une vraie touche de clavier
-        function jouerSonClavier() {
-            try {
-                if (!machineAudioCtx) return;
-                if (machineAudioCtx.state === 'suspended') {
-                    machineAudioCtx.resume();
-                }
-
-                // Utilisation d'oscillateurs combinés pour créer le clic mécanique
-                const osc1 = machineAudioCtx.createOscillator();
-                const osc2 = machineAudioCtx.createOscillator();
-                const gainNode = machineAudioCtx.createGain();
-
-                osc1.type = 'sine';
-                osc1.frequency.setValueAtTime(600, machineAudioCtx.currentTime); // Attaque aiguë du clic
-
-                osc2.type = 'triangle';
-                osc2.frequency.setValueAtTime(300, machineAudioCtx.currentTime); // Corps de la touche
-
-                // Enveloppe ultra-courte : le son monte fort et redescend instantanément (anti-bug)
-                gainNode.gain.setValueAtTime(0.5, machineAudioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, machineAudioCtx.currentTime + 0.03);
-
-                osc1.connect(gainNode);
-                osc2.connect(gainNode);
-                gainNode.connect(machineAudioCtx.destination);
-
-                osc1.start();
-                osc2.start();
-                
-                osc1.stop(machineAudioCtx.currentTime + 0.03);
-                osc2.stop(machineAudioCtx.currentTime + 0.03);
-            } catch (e) {
-                console.log("Erreur audio clavier :", e);
+            // Initialisation de l'audio uniquement si supporté
+            if (!machineAudioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) machineAudioCtx = new AudioContextClass();
             }
-        }
 
-        function taper() {
-            if (i < texte.length) {
-                let caractereActuel = texte.charAt(i);
-                txtDesc.innerText += caractereActuel;
-                
-                // SYNCHRONISATION TOTALE : On joue le son pour chaque caractère affiché (lettres ET espaces !)
-                if (caractereActuel !== '\n' && caractereActuel !== '\r') {
-                    jouerSonClavier();
-                }
+            // Fonction interne pour le son de touche mécanique
+            function jouerSonClavier() {
+                try {
+                    if (!machineAudioCtx) return;
+                    if (machineAudioCtx.state === 'suspended') {
+                        machineAudioCtx.resume();
+                    }
 
-                i++;
-                
-                // Vitesse globale grandement diminuée pour un rendu naturel et lisible
-                let delai = 180; 
-                if (caractereActuel === '.' || caractereActuel === '!') {
-                    delai = 950; // Pause marquée aux fins de phrases
-                } else if (caractereActuel === ',') {
-                    delai = 600; // Pause moyenne aux virgules
-                } else if (caractereActuel === ' ') {
-                    delai = 140; // Temps légèrement adapté pour l'espace
+                    const osc1 = machineAudioCtx.createOscillator();
+                    const osc2 = machineAudioCtx.createOscillator();
+                    const gainNode = machineAudioCtx.createGain();
+
+                    osc1.type = 'sine';
+                    osc1.frequency.setValueAtTime(600, machineAudioCtx.currentTime);
+
+                    osc2.type = 'triangle';
+                    osc2.frequency.setValueAtTime(300, machineAudioCtx.currentTime);
+
+                    gainNode.gain.setValueAtTime(0.5, machineAudioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, machineAudioCtx.currentTime + 0.03);
+
+                    osc1.connect(gainNode);
+                    osc2.connect(gainNode);
+                    gainNode.connect(machineAudioCtx.destination);
+
+                    osc1.start();
+                    osc2.start();
+                    
+                    osc1.stop(machineAudioCtx.currentTime + 0.03);
+                    osc2.stop(machineAudioCtx.currentTime + 0.03);
+                } catch (audioErr) {
+                    console.log("Le son n'a pas pu être joué :", audioErr);
                 }
-                
-                globalTimeout = setTimeout(taper, delai);
-            }
+            } // <-- Fermeture correcte de jouerSonClavier
+
+            function taper() {
+                if (i < texte.length) {
+                    let caractereActuel = texte.charAt(i);
+                    txtDesc.innerText += caractereActuel;
+                    
+                    if (caractereActuel !== '\n' && caractereActuel !== '\r') {
+                        jouerSonClavier();
+                    }
+
+                    i++;
+                    
+                    let delai = 180; 
+                    if (caractereActuel === '.' || caractereActuel === '!') {
+                        delai = 950; 
+                    } else if (caractereActuel === ',') {
+                        delai = 600; 
+                    } else if (caractereActuel === ' ') {
+                        delai = 140; 
+                    }
+                    
+                    globalTimeout = setTimeout(taper, delai);
+                }
+            } // <-- Fermeture correcte de taper
+            
+            taper(); // Lance l'écriture
+
+        } catch (globalErr) {
+            // S'il y a la moindre erreur dans tout ce code, elle est capturée ici
+            // et cela N'EMPÊCHE PAS le reste de ta page (likes, commentaires, etc.) de fonctionner !
+            console.error("Erreur générale machine à écrire sécurisée :", globalErr);
         }
-        taper();
-    }
+    } // <-- Fermeture définitive de lancerMachineAEcrire
     // ==========================================
     // UN SEUL ÉCOUTEUR AUTH TRACKING UNIQUE ET PROPRE
     // ==========================================
