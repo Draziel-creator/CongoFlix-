@@ -302,45 +302,55 @@
             if (AudioContextClass) machineAudioCtx = new AudioContextClass();
         }
 
-        // Fonction de claquement ultra-légère et synchronisée
-        function jouerSonMachine() {
+        // 1. On initialise l'AudioContext UNE SEULE FOIS en dehors de la fonction pour éviter la saturation
+    let machineAudioCtx = null;
+
+    function lancerMachineAEcrire(texte) {
+        const txtDesc = document.getElementById('txtDesc');
+        txtDesc.innerText = "";
+        let i = 0;
+        if(globalTimeout) clearTimeout(globalTimeout);
+
+        // Initialisation sécurisée au premier clic de l'utilisateur
+        if (!machineAudioCtx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) machineAudioCtx = new AudioContextClass();
+        }
+
+        // Simule le "tack" propre d'une vraie touche de clavier
+        function jouerSonClavier() {
             try {
                 if (!machineAudioCtx) return;
-                
-                // Si le contexte a été mis en pause par le navigateur, on le réactive
                 if (machineAudioCtx.state === 'suspended') {
                     machineAudioCtx.resume();
                 }
 
-                // Création du bruit blanc (l'impact sec)
-                const bufferSize = machineAudioCtx.sampleRate * 0.02; // Encore plus court pour un "tack" bien net
-                const buffer = machineAudioCtx.createBuffer(1, bufferSize, machineAudioCtx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let j = 0; j < bufferSize; j++) {
-                    data[j] = Math.random() * 2 - 1;
-                }
-                
-                const noise = machineAudioCtx.createBufferSource();
-                noise.buffer = buffer;
-
-                // Filtre pour donner le côté métallique aigu
-                const filter = machineAudioCtx.createBiquadFilter();
-                filter.type = "bandpass";
-                filter.frequency.value = 1600; // Fréquence ajustée pour un "tack" parfait
-
-                // Gestion du volume puissant
+                // Utilisation d'oscillateurs combinés pour créer le clic mécanique
+                const osc1 = machineAudioCtx.createOscillator();
+                const osc2 = machineAudioCtx.createOscillator();
                 const gainNode = machineAudioCtx.createGain();
-                gainNode.gain.setValueAtTime(0.7, machineAudioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, machineAudioCtx.currentTime + 0.02);
 
-                // Connexion directe sans traînée de son
-                noise.connect(filter);
-                filter.connect(gainNode);
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(600, machineAudioCtx.currentTime); // Attaque aiguë du clic
+
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(300, machineAudioCtx.currentTime); // Corps de la touche
+
+                // Enveloppe ultra-courte : le son monte fort et redescend instantanément (anti-bug)
+                gainNode.gain.setValueAtTime(0.5, machineAudioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, machineAudioCtx.currentTime + 0.03);
+
+                osc1.connect(gainNode);
+                osc2.connect(gainNode);
                 gainNode.connect(machineAudioCtx.destination);
 
-                noise.start();
+                osc1.start();
+                osc2.start();
+                
+                osc1.stop(machineAudioCtx.currentTime + 0.03);
+                osc2.stop(machineAudioCtx.currentTime + 0.03);
             } catch (e) {
-                console.log("Erreur audio synchronisation :", e);
+                console.log("Erreur audio clavier :", e);
             }
         }
 
@@ -349,21 +359,21 @@
                 let caractereActuel = texte.charAt(i);
                 txtDesc.innerText += caractereActuel;
                 
-                // SYNCHRONISATION STRICTE : Uniquement si c'est une lettre ou un symbole visible
-                if (caractereActuel !== ' ' && caractereActuel !== '\n' && caractereActuel !== '\r') {
-                    jouerSonMachine();
+                // SYNCHRONISATION TOTALE : On joue le son pour chaque caractère affiché (lettres ET espaces !)
+                if (caractereActuel !== '\n' && caractereActuel !== '\r') {
+                    jouerSonClavier();
                 }
 
                 i++;
                 
-                // Réglage du délai pour coller parfaitement au rythme du claquement
-                let delai = 75; 
+                // Vitesse globale grandement diminuée pour un rendu naturel et lisible
+                let delai = 180; 
                 if (caractereActuel === '.' || caractereActuel === '!') {
-                    delai = 800; // Pause à la fin des phrases
+                    delai = 950; // Pause marquée aux fins de phrases
                 } else if (caractereActuel === ',') {
-                    delai = 500; // Petite pause aux virgules
+                    delai = 600; // Pause moyenne aux virgules
                 } else if (caractereActuel === ' ') {
-                    delai = 40;  // Passage rapide sur les espaces (sans son)
+                    delai = 140; // Temps légèrement adapté pour l'espace
                 }
                 
                 globalTimeout = setTimeout(taper, delai);
