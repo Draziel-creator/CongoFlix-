@@ -260,6 +260,9 @@
     let targetCommentId = null;
     let descriptionComplete = "";
     let globalTimeout = null;
+       // --- VARIABLES DE ROTATION DE PUBLICITÉ (CONGOFLIX) ---
+    let cyclePub = 1; 
+    let pubRotationInterval = null;
 
     // Fonction sécurisée pour récupérer et formater les dates des commentaires et réponses
     function recupererDateFormattee(timestamp) {
@@ -560,17 +563,20 @@
                             <i class="fa-solid fa-circle-plus"></i> Voir plus d'épisodes
                         </button>
                     `;
-                } else {
-                    let classeCachee = modificateursSuite ? `suite-hidden partie-suite-${s}` : "";
-                    let titreAffiche = ep.title;
-                    if (ep.title.includes(':')) {
-                        const morceaux = ep.title.split(':');
-                        morceaux.shift();
-                        titreAffiche = morceaux.join(':').trim();
-                    }
+               } else {
+                        let classeCachee = modificateursSuite ? `suite-hidden partie-suite-${s}` : "";
+                        let titreAffiche = ep.title;
+                        if (ep.title.includes(':')) {
+                            const morceaux = ep.title.split(':');
+                            morceaux.shift();
+                            titreAffiche = morceaux.join(':').trim();
+                        }
 
-                    cartesHtml += `
-                        <div class="ep-card ${classeCachee}" onclick="openDetails('${ep.title.replace(/'/g, "\\'")}', '${ep.linkWatch || ''}', '${ep.linkDownload || ''}')">
+                        // On nettoie le titre ici pour qu'il ne casse pas le HTML
+                        let safeTitle = ep.title.replace(/["']/g, " ");
+
+                        cartesHtml += `
+                            <div class="ep-card ${classeCachee}" onclick="openDetails('${safeTitle}', '${ep.linkWatch || ''}', '${ep.linkDownload || ''}')">
                             <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
                             <div class="ep-info">
                                 <div class="ep-title-wrapper">
@@ -607,16 +613,89 @@
 
     window.openDetails = (title, linkWatch, linkDownload) => {
         document.getElementById('detEpTitle').innerText = title;
-        document.getElementById('modalAdContainer').style.display = 'flex';
+        
+        const adContainer = document.getElementById('modalAdContainer');
+        adContainer.style.display = 'flex';
+        adContainer.innerHTML = ""; // Nettoyage initial
+
+        // On nettoie l'ancien intervalle de rotation automatique s'il tournait encore
+        if (pubRotationInterval) clearInterval(pubRotationInterval);
+
+        // Structure HTML commune pour forcer le centrage chirurgical sur mobile sans aucun décalage
+        const structureDebut = `<div style="width: 100%; display: flex; justify-content: center; align-items: center; padding: 5px 0; overflow: hidden;">`;
+        const structureFin = `</div>`;
+
+        // Définition des 3 blocs publicitaires avec tes vrais scripts
+        const pubs = [
+            // PUB 1 : Adsterra Banner 320x50 standard
+            `${structureDebut}
+                <div style="width: 320px; height: 50px;">
+                    <script type="text/javascript">
+                        atOptions = { 'key' : '7221685de42e37b3b02c60ff0bee506a', 'format' : 'iframe', 'height' : 50, 'width' : 320, 'params' : {} };
+                    <\/script>
+                    <script type="text/javascript" src="https://www.highperformanceformat.com/7221685de42e37b3b02c60ff0bee506a/invoke.js"><\/script>
+                </div>
+            ${structureFin}`,
+
+            // PUB 2 : Adsterra Native Banner (S'adapte dynamiquement sans conteneur fixe bloquant)
+            `${structureDebut}
+                <div style="width: 100%; max-width: 320px; min-height: 50px;" id="container-2488fee72aaf9bf875080b7e81f37d58">
+                    <script async="async" data-cfasync="false" src="https://pl29546534.effectivecpmnetwork.com/2488fee72aaf9bf875080b7e81f37d58/invoke.js"><\/script>
+                </div>
+            ${structureFin}`,
+
+            // PUB 3 : Bloc publicitaire A-ADS (Ton iframe de tracking / monétisation)
+            `${structureDebut}
+                <div style="width: 320px; height: 50px; display: flex; justify-content: center;">
+                    <iframe src="https://ad.a-ads.com/2443411?size=320x50" style="border:0; padding:0; width:320px; height:50px; overflow:hidden; background-color:transparent;"></iframe>
+                </div>
+            ${structureFin}`
+        ];
+
+        // --- STRATÉGIE DE TRAITEMENT DES CONTENEURS (SÉRIE VS FILM UNIQUE) ---
+        const totalCards = document.querySelectorAll('.ep-card').length;
+
+        if (totalCards <= 1) {
+            // CONTEXTE FILM UNIQUE : On fait défiler les 3 pubs très rapidement (toutes les 1.5 secondes)
+            let indexRotation = 0;
+            adContainer.innerHTML = pubs[indexRotation];
+
+            pubRotationInterval = setInterval(() => {
+                indexRotation++;
+                if (indexRotation >= pubs.length) {
+                    clearInterval(pubRotationInterval); // On arrête après avoir montré les 3
+                } else {
+                    adContainer.innerHTML = pubs[indexRotation];
+                }
+            }, 1500); // 1500ms = 1,5 seconde par publicité pour une visibilité totale en 4,5 secondes
+
+        } else {
+            // CONTEXTE SÉRIE : Une pub différente à chaque clic sur un épisode
+            if (cyclePub === 1) {
+                adContainer.innerHTML = pubs[0];
+                cyclePub = 2;
+            } else if (cyclePub === 2) {
+                adContainer.innerHTML = pubs[1];
+                cyclePub = 3;
+            } else {
+                adContainer.innerHTML = pubs[2];
+                cyclePub = 1; // Retour à la première unité
+            }
+        }
+
+        // --- GESTION DU RESTE DE LA MODALE COMPATIBLE AVEC TON CODE DE BASE ---
         document.getElementById('modalPlayerContainer').style.display = 'none';
         document.getElementById('modalPlayerContainer').innerHTML = "";
         document.getElementById('detailDrawer').classList.add('active');
+        
         document.getElementById('btnWatchNow').onclick = () => {
+            if (pubRotationInterval) clearInterval(pubRotationInterval); // Arrêt de sécurité au lancement de la vidéo
             document.getElementById('modalAdContainer').style.display = 'none';
             const container = document.getElementById('modalPlayerContainer');
             container.style.display = 'block';
             container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen></iframe>`;
         };
+        
         document.getElementById('btnDownloadNow').onclick = () => {
             if(linkDownload) {
                 window.open(linkDownload, '_blank');
@@ -626,7 +705,8 @@
         };
     };
 
-    window.closeDetails = () => {
+   window.closeDetails = () => {
+        if (pubRotationInterval) clearInterval(pubRotationInterval); // Stop la rotation de pub immédiatement
         document.getElementById('detailDrawer').classList.remove('active');
         document.getElementById('modalPlayerContainer').innerHTML = "";
     };
