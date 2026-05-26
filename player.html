@@ -618,16 +618,14 @@
     document.getElementById('detEpTitle').innerText = title;
     
     const adContainer = document.getElementById('modalAdContainer');
-    adContainer.style.display = 'flex'; 
+    adContainer.style.setProperty('display', 'flex', 'important'); 
     adContainer.innerHTML = ""; // Nettoyage initial
 
     if (pubRotationInterval) clearInterval(pubRotationInterval);
 
-    // Structure commune : Hauteur à 65px pour éviter les coupures
     const structureDebut = `<div style="width: 100%; height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; box-sizing: border-box; padding: 0; margin: 0;">`;
     const structureFin = `</div>`;
 
-    // Définition des 3 blocs publicitaires
     const pubs = [
         `${structureDebut}<iframe src="adsterra-banner.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>${structureFin}`,
         `${structureDebut}<iframe src="adsterra-native.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>${structureFin}`,
@@ -660,23 +658,23 @@
         }
     }
 
-    // --- LE CORRECTIF DE SÉCURITÉ ICI ---
+    // --- ACTIVATION PROPRE DU TIROIR ---
     const drawer = document.getElementById('detailDrawer');
-    drawer.style.display = 'block'; // Rend le tiroir actif et visible
+    drawer.style.setProperty('display', 'block', 'important'); // On le rend visible
+    drawer.style.setProperty('pointer-events', 'auto', 'important'); // On active les clics internes
     
-    // Un tout petit délai de 10ms pour laisser le navigateur appliquer le display avant de lancer l'animation CSS
     setTimeout(() => {
         drawer.classList.add('active');
     }, 10);
 
-    document.getElementById('modalPlayerContainer').style.display = 'none';
+    document.getElementById('modalPlayerContainer').style.setProperty('display', 'none', 'important');
     document.getElementById('modalPlayerContainer').innerHTML = "";
     
     document.getElementById('btnWatchNow').onclick = () => {
         if (pubRotationInterval) clearInterval(pubRotationInterval);
-        document.getElementById('modalAdContainer').style.display = 'none';
+        document.getElementById('modalAdContainer').style.setProperty('display', 'none', 'important');
         const container = document.getElementById('modalPlayerContainer');
-        container.style.display = 'block';
+        container.style.setProperty('display', 'block', 'important');
         container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen style="width: 100%; height: 210px; border: 0; border-radius: 8px;"></iframe>`;
     };
     
@@ -689,20 +687,20 @@
     };
 };
   window.closeDetails = () => {
-    // 1. On arrête la rotation de pub immédiatement (ton code d'origine)
+    // 1. On arrête la rotation de pub immédiatement
     if (pubRotationInterval) clearInterval(pubRotationInterval); 
     
-    // 2. On nettoie le lecteur vidéo pour couper le son et l'image (ton code d'origine)
+    // 2. On nettoie le lecteur vidéo pour couper le son
     document.getElementById('modalPlayerContainer').innerHTML = "";
     
     // 3. On lance l'animation de descente du tiroir
     const drawer = document.getElementById('detailDrawer');
     drawer.classList.remove('active');
-    drawer.style.pointerEvents = 'none'; // Sécurité pour les clics
+    drawer.style.setProperty('pointer-events', 'none', 'important'); 
     
-    // 4. L'AJOUT MAGIQUE : On attend la fin de l'animation (400ms) pour faire disparaître le bloc
+    // 4. On attend la fin de l'animation (400ms) pour faire disparaître le bloc
     setTimeout(() => {
-        drawer.style.style.setProperty('display', 'none', 'important'); // Fait disparaître la vitre invisible !
+        drawer.style.setProperty('display', 'none', 'important'); // LIBÈRE LES CLICS
     }, 400); 
 };
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
