@@ -612,95 +612,89 @@
     };
 
     window.openDetails = (title, linkWatch, linkDownload) => {
-        document.getElementById('detEpTitle').innerText = title;
-        
-        const adContainer = document.getElementById('modalAdContainer');
-        adContainer.style.display = 'flex';
-        adContainer.innerHTML = ""; // Nettoyage initial
+    document.getElementById('detEpTitle').innerText = title;
+    
+    const adContainer = document.getElementById('modalAdContainer');
+    adContainer.style.display = 'flex';
+    adContainer.innerHTML = ""; // Nettoyage initial
 
-        // On nettoie l'ancien intervalle de rotation automatique s'il tournait encore
-        if (pubRotationInterval) clearInterval(pubRotationInterval);
+    // On nettoie l'ancien intervalle de rotation automatique s'il tournait encore
+    if (pubRotationInterval) clearInterval(pubRotationInterval);
 
-        // Structure HTML commune pour forcer le centrage chirurgical sur mobile sans aucun décalage
-        const structureDebut = `<div style="width: 100%; display: flex; justify-content: center; align-items: center; padding: 5px 0; overflow: hidden;">`;
-        const structureFin = `</div>`;
+    // Structure HTML commune corrigée : hauteur fixée à 50px pour briser la poche noire
+    const structureDebut = `<div style="width: 100%; height: 50px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; box-sizing: border-box;">`;
+    const structureFin = `</div>`;
 
-        // Définition des 3 blocs publicitaires avec tes vrais scripts
-        const pubs = [
-            // PUB 1 : Adsterra Banner 320x50 via fichier externe
-            `${structureDebut}
-                <div style="width: 320px; height: 50px; overflow: hidden; display: flex; justify-content: center;">
-                    <iframe src="adsterra-banner.html" style="border:0; padding:0; width:320px; height:50px; overflow:hidden; background:transparent;"></iframe>
-                </div>
-            ${structureFin}`,
+    // Définition des 3 blocs publicitaires sans les div parasites et blocage du défilement (scrolling="no")
+    const pubs = [
+        // PUB 1 : Adsterra Banner 320x50 via fichier externe
+        `${structureDebut}
+            <iframe src="adsterra-banner.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:50px; overflow:hidden; background:transparent; display:block;"></iframe>
+        ${structureFin}`,
 
-            // PUB 2 : Adsterra Native Banner via fichier externe
-            `${structureDebut}
-                <div style="width: 320px; height: 50px; overflow: hidden; display: flex; justify-content: center;">
-                    <iframe src="adsterra-native.html" style="border:0; padding:0; width:320px; height:50px; overflow:hidden; background:transparent;"></iframe>
-                </div>
-            ${structureFin}`,
+        // PUB 2 : Adsterra Native Banner via fichier externe
+        `${structureDebut}
+            <iframe src="adsterra-native.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:50px; overflow:hidden; background:transparent; display:block;"></iframe>
+        ${structureFin}`,
 
-            // PUB 3 : Bloc publicitaire A-ADS standard
-            `${structureDebut}
-                <div style="width: 320px; height: 50px; display: flex; justify-content: center;">
-                    <iframe src="https://ad.a-ads.com/2443411?size=320x50" style="border:0; padding:0; width:320px; height:50px; overflow:hidden; background-color:transparent;"></iframe>
-                </div>
-            ${structureFin}`
-        ];
-        // --- STRATÉGIE DE TRAITEMENT DES CONTENEURS (SÉRIE VS FILM UNIQUE) ---
-        const totalCards = document.querySelectorAll('.ep-card').length;
+        // PUB 3 : Bloc publicitaire A-ADS standard
+        `${structureDebut}
+            <iframe src="https://ad.a-ads.com/2443411?size=320x50" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:50px; overflow:hidden; background:transparent; display:block;"></iframe>
+        ${structureFin}`
+    ];
 
-        if (totalCards <= 1) {
-            // CONTEXTE FILM UNIQUE : On fait défiler les 3 pubs très rapidement (toutes les 1.5 secondes)
-            let indexRotation = 0;
-            adContainer.innerHTML = pubs[indexRotation];
+    // --- STRATÉGIE DE TRAITEMENT DES CONTENEURS (SÉRIE VS FILM UNIQUE) ---
+    const totalCards = document.querySelectorAll('.ep-card').length;
 
-            pubRotationInterval = setInterval(() => {
-                indexRotation++;
-                if (indexRotation >= pubs.length) {
-                    clearInterval(pubRotationInterval); // On arrête après avoir montré les 3
-                } else {
-                    adContainer.innerHTML = pubs[indexRotation];
-                }
-            }, 1500); // 1500ms = 1,5 seconde par publicité pour une visibilité totale en 4,5 secondes
+    if (totalCards <= 1) {
+        // CONTEXTE FILM UNIQUE : On fait défiler les 3 pubs très rapidement (toutes les 1.5 secondes)
+        let indexRotation = 0;
+        adContainer.innerHTML = pubs[indexRotation];
 
+        pubRotationInterval = setInterval(() => {
+            indexRotation++;
+            if (indexRotation >= pubs.length) {
+                clearInterval(pubRotationInterval); // On arrête après avoir montré les 3
+            } else {
+                adContainer.innerHTML = pubs[indexRotation];
+            }
+        }, 1500); // 1500ms = 1,5 seconde par publicité pour une visibilité totale en 4,5 secondes
+
+    } else {
+        // CONTEXTE SÉRIE : Une pub différente à chaque clic sur un épisode
+        if (cyclePub === 1) {
+            adContainer.innerHTML = pubs[0];
+            cyclePub = 2;
+        } else if (cyclePub === 2) {
+            adContainer.innerHTML = pubs[1];
+            cyclePub = 3;
         } else {
-            // CONTEXTE SÉRIE : Une pub différente à chaque clic sur un épisode
-            if (cyclePub === 1) {
-                adContainer.innerHTML = pubs[0];
-                cyclePub = 2;
-            } else if (cyclePub === 2) {
-                adContainer.innerHTML = pubs[1];
-                cyclePub = 3;
-            } else {
-                adContainer.innerHTML = pubs[2];
-                cyclePub = 1; // Retour à la première unité
-            }
+            adContainer.innerHTML = pubs[2];
+            cyclePub = 1; // Retour à la première unité
         }
+    }
 
-        // --- GESTION DU RESTE DE LA MODALE COMPATIBLE AVEC TON CODE DE BASE ---
-        document.getElementById('modalPlayerContainer').style.display = 'none';
-        document.getElementById('modalPlayerContainer').innerHTML = "";
-        document.getElementById('detailDrawer').classList.add('active');
-        
-        document.getElementById('btnWatchNow').onclick = () => {
-            if (pubRotationInterval) clearInterval(pubRotationInterval); // Arrêt de sécurité au lancement de la vidéo
-            document.getElementById('modalAdContainer').style.display = 'none';
-            const container = document.getElementById('modalPlayerContainer');
-            container.style.display = 'block';
-            container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen></iframe>`;
-        };
-        
-        document.getElementById('btnDownloadNow').onclick = () => {
-            if(linkDownload) {
-                window.open(linkDownload, '_blank');
-            } else {
-                alert("Lien de téléchargement indisponible");
-            }
-        };
+    // --- GESTION DU RESTE DE LA MODALE COMPATIBLE AVEC TON CODE DE BASE ---
+    document.getElementById('modalPlayerContainer').style.display = 'none';
+    document.getElementById('modalPlayerContainer').innerHTML = "";
+    document.getElementById('detailDrawer').classList.add('active');
+    
+    document.getElementById('btnWatchNow').onclick = () => {
+        if (pubRotationInterval) clearInterval(pubRotationInterval); // Arrêt de sécurité au lancement de la vidéo
+        document.getElementById('modalAdContainer').style.display = 'none';
+        const container = document.getElementById('modalPlayerContainer');
+        container.style.display = 'block';
+        container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen></iframe>`;
     };
-
+    
+    document.getElementById('btnDownloadNow').onclick = () => {
+        if(linkDownload) {
+            window.open(linkDownload, '_blank');
+        } else {
+            alert("Lien de téléchargement indisponible");
+        }
+    };
+};
    window.closeDetails = () => {
         if (pubRotationInterval) clearInterval(pubRotationInterval); // Stop la rotation de pub immédiatement
         document.getElementById('detailDrawer').classList.remove('active');
