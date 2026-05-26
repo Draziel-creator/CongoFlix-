@@ -614,94 +614,140 @@
         if(boutonMore) boutonMore.style.display = 'none';
     };
 
-    window.openDetails = (title, linkWatch, linkDownload) => {
-    document.getElementById('detEpTitle').innerText = title;
-    
-    const adContainer = document.getElementById('modalAdContainer');
-    adContainer.style.setProperty('display', 'flex', 'important'); 
-    adContainer.innerHTML = ""; // Nettoyage initial
+    // Étape 1 : Déclaration et sécurisation des variables globales pour éviter les plantages
+if (typeof pubRotationInterval === 'undefined') {
+    var pubRotationInterval = null;
+}
+if (typeof cyclePub === 'undefined') {
+    var cyclePub = 1;
+}
 
-    if (pubRotationInterval) clearInterval(pubRotationInterval);
+// Étape 2 : Ta fonction d'ouverture corrigée et blindée
+window.openDetails = (title, linkWatch, linkDownload) => {
+    try {
+        // Changement immédiat du titre
+        const titleEl = document.getElementById('detEpTitle');
+        if (titleEl) titleEl.innerText = title;
+        
+        const adContainer = document.getElementById('modalAdContainer');
+        if (adContainer) {
+            adContainer.style.setProperty('display', 'flex', 'important'); 
+            adContainer.innerHTML = ""; // Nettoyage initial
+        }
 
-    const structureDebut = `<div style="width: 100%; height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; box-sizing: border-box; padding: 0; margin: 0;">`;
-    const structureFin = `</div>`;
+        // Nettoyage de la rotation pub
+        if (pubRotationInterval) {
+            clearInterval(pubRotationInterval);
+            pubRotationInterval = null;
+        }
 
-    const pubs = [
-        `${structureDebut}<iframe src="adsterra-banner.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>${structureFin}`,
-        `${structureDebut}<iframe src="adsterra-native.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>${structureFin}`,
-        `${structureDebut}<iframe src="https://ad.a-ads.com/2443411?size=320x50" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>${structureFin}`
-    ];
+        // Configuration des bannières sans défilement
+        const structureDebut = `<div style="width: 100%; height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; box-sizing: border-box; padding: 0; margin: 0;">`;
+        const structureFin = `</div>`;
 
-    const totalCards = document.querySelectorAll('.ep-card').length;
+        const pubs = [
+            `${structureDebut}<iframe src="adsterra-banner.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>${structureFin}`,
+            `${structureDebut}<iframe src="adsterra-native.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>${structureFin}`,
+            `${structureDebut}<iframe src="https://ad.a-ads.com/2443411?size=320x50" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>${structureFin}`
+        ];
 
-    if (totalCards <= 1) {
-        let indexRotation = 0;
-        adContainer.innerHTML = pubs[indexRotation];
-        pubRotationInterval = setInterval(() => {
-            indexRotation++;
-            if (indexRotation >= pubs.length) {
-                clearInterval(pubRotationInterval);
-            } else {
+        const totalCards = document.querySelectorAll('.ep-card').length;
+
+        if (adContainer) {
+            if (totalCards <= 1) {
+                let indexRotation = 0;
                 adContainer.innerHTML = pubs[indexRotation];
+                pubRotationInterval = setInterval(() => {
+                    indexRotation++;
+                    if (indexRotation >= pubs.length) {
+                        clearInterval(pubRotationInterval);
+                    } else {
+                        adContainer.innerHTML = pubs[indexRotation];
+                    }
+                }, 1500);
+            } else {
+                if (cyclePub === 1) {
+                    adContainer.innerHTML = pubs[0];
+                    cyclePub = 2;
+                } else if (cyclePub === 2) {
+                    adContainer.innerHTML = pubs[1];
+                    cyclePub = 3;
+                } else {
+                    adContainer.innerHTML = pubs[2];
+                    cyclePub = 1;
+                }
             }
-        }, 1500);
-    } else {
-        if (cyclePub === 1) {
-            adContainer.innerHTML = pubs[0];
-            cyclePub = 2;
-        } else if (cyclePub === 2) {
-            adContainer.innerHTML = pubs[1];
-            cyclePub = 3;
-        } else {
-            adContainer.innerHTML = pubs[2];
-            cyclePub = 1;
         }
+
+        // OUVERTURE ET AFFICHAGE DU TIROIR
+        const drawer = document.getElementById('detailDrawer');
+        if (drawer) {
+            drawer.style.setProperty('display', 'block', 'important'); // Forcé en premier
+            drawer.style.setProperty('pointer-events', 'auto', 'important');
+            
+            // Animation d'apparition progressive
+            setTimeout(() => {
+                drawer.classList.add('active');
+            }, 10);
+        }
+
+        // Reset du lecteur vidéo
+        const playerContainer = document.getElementById('modalPlayerContainer');
+        if (playerContainer) {
+            playerContainer.style.setProperty('display', 'none', 'important');
+            playerContainer.innerHTML = "";
+        }
+        
+        // Gestion des actions au clic sur les boutons internes
+        const btnWatch = document.getElementById('btnWatchNow');
+        if (btnWatch) {
+            btnWatch.onclick = () => {
+                if (pubRotationInterval) clearInterval(pubRotationInterval);
+                if (adContainer) adContainer.style.setProperty('display', 'none', 'important');
+                if (playerContainer) {
+                    playerContainer.style.setProperty('display', 'block', 'important');
+                    playerContainer.innerHTML = `<iframe src="${linkWatch}" allowfullscreen style="width: 100%; height: 210px; border: 0; border-radius: 8px;"></iframe>`;
+                }
+            };
+        }
+        
+        const btnDownload = document.getElementById('btnDownloadNow');
+        if (btnDownload) {
+            btnDownload.onclick = () => {
+                if(linkDownload) {
+                    window.open(linkDownload, '_blank');
+                } else {
+                    alert("Lien de téléchargement indisponible");
+                }
+            };
+        }
+
+    } catch (error) {
+        console.error("Erreur détectée dans openDetails : ", error);
     }
-
-    // --- ACTIVATION PROPRE DU TIROIR ---
-    const drawer = document.getElementById('detailDrawer');
-    drawer.style.setProperty('display', 'block', 'important'); // On le rend visible
-    drawer.style.setProperty('pointer-events', 'auto', 'important'); // On active les clics internes
-    
-    setTimeout(() => {
-        drawer.classList.add('active');
-    }, 10);
-
-    document.getElementById('modalPlayerContainer').style.setProperty('display', 'none', 'important');
-    document.getElementById('modalPlayerContainer').innerHTML = "";
-    
-    document.getElementById('btnWatchNow').onclick = () => {
-        if (pubRotationInterval) clearInterval(pubRotationInterval);
-        document.getElementById('modalAdContainer').style.setProperty('display', 'none', 'important');
-        const container = document.getElementById('modalPlayerContainer');
-        container.style.setProperty('display', 'block', 'important');
-        container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen style="width: 100%; height: 210px; border: 0; border-radius: 8px;"></iframe>`;
-    };
-    
-    document.getElementById('btnDownloadNow').onclick = () => {
-        if(linkDownload) {
-            window.open(linkDownload, '_blank');
-        } else {
-            alert("Lien de téléchargement indisponible");
-        }
-    };
 };
-  window.closeDetails = () => {
-    // 1. On arrête la rotation de pub immédiatement
-    if (pubRotationInterval) clearInterval(pubRotationInterval); 
-    
-    // 2. On nettoie le lecteur vidéo pour couper le son
-    document.getElementById('modalPlayerContainer').innerHTML = "";
-    
-    // 3. On lance l'animation de descente du tiroir
-    const drawer = document.getElementById('detailDrawer');
-    drawer.classList.remove('active');
-    drawer.style.setProperty('pointer-events', 'none', 'important'); 
-    
-    // 4. On attend la fin de l'animation (400ms) pour faire disparaître le bloc
-    setTimeout(() => {
-        drawer.style.setProperty('display', 'none', 'important'); // LIBÈRE LES CLICS
-    }, 400); 
+
+// Étape 3 : Ta fonction de fermeture corrigée et blindée
+window.closeDetails = () => {
+    try {
+        if (pubRotationInterval) clearInterval(pubRotationInterval); 
+        
+        const playerContainer = document.getElementById('modalPlayerContainer');
+        if (playerContainer) playerContainer.innerHTML = "";
+        
+        const drawer = document.getElementById('detailDrawer');
+        if (drawer) {
+            drawer.classList.remove('active');
+            drawer.style.setProperty('pointer-events', 'none', 'important'); 
+            
+            // On le cache complètement après l'animation pour libérer l'écran
+            setTimeout(() => {
+                drawer.style.setProperty('display', 'none', 'important');
+            }, 400); 
+        }
+    } catch (error) {
+        console.error("Erreur détectée dans closeDetails : ", error);
+    }
 };
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
