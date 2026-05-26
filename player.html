@@ -189,7 +189,7 @@
     </div>
 
     <!-- MODAL DE DÉTAILS -->
-   <div id="detailDrawer" style="position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; max-height: 90vh !important; background: #141414 !important; z-index: 99999 !important; box-shadow: 0 -10px 30px rgba(0,0,0,0.8) !important; border-radius: 20px 20px 0 0 !important; box-sizing: border-box !important; padding-bottom: calc(env(safe-area-inset-bottom) + 15px) !important; transform: translateY(100%) !important; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important; display: none;">
+   <div id="detailDrawer" style="position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; max-height: 90vh !important; background: #141414 !important; z-index: 99999 !important; box-shadow: 0 -10px 30px rgba(0,0,0,0.8) !important; border-radius: 20px 20px 0 0 !important; box-sizing: border-box !important; padding-bottom: calc(env(safe-area-inset-bottom) + 15px) !important; transform: translateY(110%) !important; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;">
     
     <div class="drawer-header">
         <div style="display: flex; align-items: center; gap: 12px;">
@@ -211,11 +211,11 @@
         <button class="btn-modal btn-blue" id="btnWatchNow"><i class="fa-solid fa-play"></i> Regarder maintenant</button>
     </div>
 
-    <div class="drawer-media-zone" style="width: 100% !important; height: auto !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center; margin-top: 15px !important; padding: 0 !important;">
+    <div class="drawer-media-zone" style="width: 100% !important; height: auto !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; margin-top: 15px !important; padding: 0 !important;">
         
         <div id="modalPlayerContainer"></div>
         
-        <div id="modalAdContainer" style="width: 100%; height: 65px; min-height: 65px; max-height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; margin-top: 10px; padding: 0; box-sizing: border-box;">
+        <div id="modalAdContainer" style="width: 100% !important; height: 65px !important; min-height: 65px !important; max-height: 65px !important; display: flex !important; justify-content: center !important; align-items: center !important; overflow: hidden !important; background: transparent !important; margin: 10px 0 0 0 !important; padding: 0 !important; box-sizing: border-box !important;">
             <iframe src="https://ad.a-ads.com/2443411?size=320x50" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>
         </div>
 
@@ -614,34 +614,22 @@
         if(boutonMore) boutonMore.style.display = 'none';
     };
 
-    // Étape 1 : Déclaration et sécurisation des variables globales pour éviter les plantages
-if (typeof pubRotationInterval === 'undefined') {
-    var pubRotationInterval = null;
-}
-if (typeof cyclePub === 'undefined') {
-    var cyclePub = 1;
-}
+    if (typeof pubRotationInterval === 'undefined') { var pubRotationInterval = null; }
+if (typeof cyclePub === 'undefined') { var cyclePub = 1; }
 
-// Étape 2 : Ta fonction d'ouverture corrigée et blindée
+// OUVERTURE
 window.openDetails = (title, linkWatch, linkDownload) => {
     try {
-        // Changement immédiat du titre
-        const titleEl = document.getElementById('detEpTitle');
-        if (titleEl) titleEl.innerText = title;
+        document.getElementById('detEpTitle').innerText = title;
         
         const adContainer = document.getElementById('modalAdContainer');
         if (adContainer) {
-            adContainer.style.setProperty('display', 'flex', 'important'); 
-            adContainer.innerHTML = ""; // Nettoyage initial
+            adContainer.style.display = 'flex'; 
+            adContainer.innerHTML = ""; 
         }
 
-        // Nettoyage de la rotation pub
-        if (pubRotationInterval) {
-            clearInterval(pubRotationInterval);
-            pubRotationInterval = null;
-        }
+        if (pubRotationInterval) { clearInterval(pubRotationInterval); pubRotationInterval = null; }
 
-        // Configuration des bannières sans défilement
         const structureDebut = `<div style="width: 100%; height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; box-sizing: border-box; padding: 0; margin: 0;">`;
         const structureFin = `</div>`;
 
@@ -659,53 +647,29 @@ window.openDetails = (title, linkWatch, linkDownload) => {
                 adContainer.innerHTML = pubs[indexRotation];
                 pubRotationInterval = setInterval(() => {
                     indexRotation++;
-                    if (indexRotation >= pubs.length) {
-                        clearInterval(pubRotationInterval);
-                    } else {
-                        adContainer.innerHTML = pubs[indexRotation];
-                    }
+                    if (indexRotation >= pubs.length) { clearInterval(pubRotationInterval); } else { adContainer.innerHTML = pubs[indexRotation]; }
                 }, 1500);
             } else {
-                if (cyclePub === 1) {
-                    adContainer.innerHTML = pubs[0];
-                    cyclePub = 2;
-                } else if (cyclePub === 2) {
-                    adContainer.innerHTML = pubs[1];
-                    cyclePub = 3;
-                } else {
-                    adContainer.innerHTML = pubs[2];
-                    cyclePub = 1;
-                }
+                if (cyclePub === 1) { adContainer.innerHTML = pubs[0]; cyclePub = 2; } 
+                else if (cyclePub === 2) { adContainer.innerHTML = pubs[1]; cyclePub = 3; } 
+                else { adContainer.innerHTML = pubs[2]; cyclePub = 1; }
             }
         }
 
-        // OUVERTURE ET AFFICHAGE DU TIROIR
+        // Actionneur : On fait simplement monter le tiroir
         const drawer = document.getElementById('detailDrawer');
-        if (drawer) {
-            drawer.style.setProperty('display', 'block', 'important'); // Forcé en premier
-            drawer.style.setProperty('pointer-events', 'auto', 'important');
-            
-            // Animation d'apparition progressive
-            setTimeout(() => {
-                drawer.classList.add('active');
-            }, 10);
-        }
+        if (drawer) { drawer.classList.add('active'); }
 
-        // Reset du lecteur vidéo
         const playerContainer = document.getElementById('modalPlayerContainer');
-        if (playerContainer) {
-            playerContainer.style.setProperty('display', 'none', 'important');
-            playerContainer.innerHTML = "";
-        }
+        if (playerContainer) { playerContainer.style.display = 'none'; playerContainer.innerHTML = ""; }
         
-        // Gestion des actions au clic sur les boutons internes
         const btnWatch = document.getElementById('btnWatchNow');
         if (btnWatch) {
             btnWatch.onclick = () => {
                 if (pubRotationInterval) clearInterval(pubRotationInterval);
-                if (adContainer) adContainer.style.setProperty('display', 'none', 'important');
+                if (adContainer) adContainer.style.display = 'none';
                 if (playerContainer) {
-                    playerContainer.style.setProperty('display', 'block', 'important');
+                    playerContainer.style.display = 'block';
                     playerContainer.innerHTML = `<iframe src="${linkWatch}" allowfullscreen style="width: 100%; height: 210px; border: 0; border-radius: 8px;"></iframe>`;
                 }
             };
@@ -714,40 +678,23 @@ window.openDetails = (title, linkWatch, linkDownload) => {
         const btnDownload = document.getElementById('btnDownloadNow');
         if (btnDownload) {
             btnDownload.onclick = () => {
-                if(linkDownload) {
-                    window.open(linkDownload, '_blank');
-                } else {
-                    alert("Lien de téléchargement indisponible");
-                }
+                if(linkDownload) { window.open(linkDownload, '_blank'); } else { alert("Lien de téléchargement indisponible"); }
             };
         }
-
-    } catch (error) {
-        console.error("Erreur détectée dans openDetails : ", error);
-    }
+    } catch (e) { console.error(e); }
 };
 
-// Étape 3 : Ta fonction de fermeture corrigée et blindée
+// FERMETURE
 window.closeDetails = () => {
     try {
         if (pubRotationInterval) clearInterval(pubRotationInterval); 
-        
         const playerContainer = document.getElementById('modalPlayerContainer');
         if (playerContainer) playerContainer.innerHTML = "";
         
+        // Actionneur : On fait redescendre le tiroir sous l'écran
         const drawer = document.getElementById('detailDrawer');
-        if (drawer) {
-            drawer.classList.remove('active');
-            drawer.style.setProperty('pointer-events', 'none', 'important'); 
-            
-            // On le cache complètement après l'animation pour libérer l'écran
-            setTimeout(() => {
-                drawer.style.setProperty('display', 'none', 'important');
-            }, 400); 
-        }
-    } catch (error) {
-        console.error("Erreur détectée dans closeDetails : ", error);
-    }
+        if (drawer) { drawer.classList.remove('active'); }
+    } catch (e) { console.error(e); }
 };
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
