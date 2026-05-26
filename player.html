@@ -189,9 +189,9 @@
     </div>
 
     <!-- MODAL DE DÉTAILS -->
-   <div id="detailDrawer" style="position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; max-height: 90vh !important; background: #141414 !important; z-index: 99999 !important; box-shadow: 0 -10px 30px rgba(0,0,0,0.8) !important; border-radius: 20px 20px 0 0 !important; box-sizing: border-box !important; padding-bottom: calc(env(safe-area-inset-bottom) + 15px) !important; transform: translateY(100%) !important; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important; pointer-events: none !important;">
+   <div id="detailDrawer" style="position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; max-height: 90vh !important; background: #141414 !important; z-index: 99999 !important; box-shadow: 0 -10px 30px rgba(0,0,0,0.8) !important; border-radius: 20px 20px 0 0 !important; box-sizing: border-box !important; padding-bottom: calc(env(safe-area-inset-bottom) + 15px) !important; transform: translateY(100%) !important; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important; display: none;">
     
-    <div class="drawer-header" style="pointer-events: auto !important;">
+    <div class="drawer-header">
         <div style="display: flex; align-items: center; gap: 12px;">
             <i class="fa-solid fa-arrow-down" style="background:#333; padding:8px; border-radius:50%; font-size:12px; color: var(--gold);"></i>
             <div>
@@ -202,16 +202,16 @@
         <i class="fa-solid fa-xmark" style="font-size:22px; color:#999; cursor: pointer;" onclick="closeDetails()"></i>
     </div>
 
-    <div style="padding: 15px 15px 0; font-size: 13px; color: #ccc; pointer-events: auto !important;">
+    <div style="padding: 15px 15px 0; font-size: 13px; color: #ccc;">
         Regardez-le maintenant pendant le téléchargement.
     </div>
 
-    <div class="drawer-buttons" style="pointer-events: auto !important;">
+    <div class="drawer-buttons">
         <button class="btn-modal btn-gray" id="btnDownloadNow"><i class="fa-solid fa-download"></i> Télécharger</button>
         <button class="btn-modal btn-blue" id="btnWatchNow"><i class="fa-solid fa-play"></i> Regarder maintenant</button>
     </div>
 
-    <div class="drawer-media-zone" style="width: 100% !important; height: auto !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center; margin-top: 15px !important; padding: 0 !important; pointer-events: auto !important;">
+    <div class="drawer-media-zone" style="width: 100% !important; height: auto !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center; margin-top: 15px !important; padding: 0 !important;">
         
         <div id="modalPlayerContainer"></div>
         
@@ -618,54 +618,36 @@
     document.getElementById('detEpTitle').innerText = title;
     
     const adContainer = document.getElementById('modalAdContainer');
-    // On s'assure que le conteneur de pub est visible lors de l'ouverture (au cas où il aurait été caché par une lecture précédente)
     adContainer.style.display = 'flex'; 
     adContainer.innerHTML = ""; // Nettoyage initial
 
-    // On nettoie l'ancien intervalle de rotation automatique s'il tournait encore
     if (pubRotationInterval) clearInterval(pubRotationInterval);
 
-    // Structure commune : Hauteur à 65px calée avec ton HTML corrigé
+    // Structure commune : Hauteur à 65px pour éviter les coupures
     const structureDebut = `<div style="width: 100%; height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; box-sizing: border-box; padding: 0; margin: 0;">`;
     const structureFin = `</div>`;
 
-    // Définition des 3 blocs publicitaires sans défilement et parfaitement centrés
+    // Définition des 3 blocs publicitaires
     const pubs = [
-        // PUB 1 : Adsterra Banner 320x50 via fichier externe
-        `${structureDebut}
-            <iframe src="adsterra-banner.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>
-        ${structureFin}`,
-
-        // PUB 2 : Adsterra Native Banner via fichier externe
-        `${structureDebut}
-            <iframe src="adsterra-native.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>
-        ${structureFin}`,
-
-        // PUB 3 : Bloc publicitaire A-ADS standard
-        `${structureDebut}
-            <iframe src="https://ad.a-ads.com/2443411?size=320x50" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>
-        ${structureFin}`
+        `${structureDebut}<iframe src="adsterra-banner.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>${structureFin}`,
+        `${structureDebut}<iframe src="adsterra-native.html" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>${structureFin}`,
+        `${structureDebut}<iframe src="https://ad.a-ads.com/2443411?size=320x50" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>${structureFin}`
     ];
 
-    // --- STRATÉGIE DE TRAITEMENT DES CONTENEURS (SÉRIE VS FILM UNIQUE) ---
     const totalCards = document.querySelectorAll('.ep-card').length;
 
     if (totalCards <= 1) {
-        // CONTEXTE FILM UNIQUE : On fait défiler les 3 pubs très rapidement (toutes les 1.5 secondes)
         let indexRotation = 0;
         adContainer.innerHTML = pubs[indexRotation];
-
         pubRotationInterval = setInterval(() => {
             indexRotation++;
             if (indexRotation >= pubs.length) {
-                clearInterval(pubRotationInterval); // On arrête après avoir montré les 3
+                clearInterval(pubRotationInterval);
             } else {
                 adContainer.innerHTML = pubs[indexRotation];
             }
         }, 1500);
-
     } else {
-        // CONTEXTE SÉRIE : Une pub différente à chaque clic sur un épisode
         if (cyclePub === 1) {
             adContainer.innerHTML = pubs[0];
             cyclePub = 2;
@@ -674,25 +656,27 @@
             cyclePub = 3;
         } else {
             adContainer.innerHTML = pubs[2];
-            cyclePub = 1; // Retour à la première unité
+            cyclePub = 1;
         }
     }
 
-    // --- GESTION DU RESTE DE LA MODALE COMPATIBLE AVEC TON CODE DE BASE ---
+    // --- LE CORRECTIF DE SÉCURITÉ ICI ---
+    const drawer = document.getElementById('detailDrawer');
+    drawer.style.display = 'block'; // Rend le tiroir actif et visible
+    
+    // Un tout petit délai de 10ms pour laisser le navigateur appliquer le display avant de lancer l'animation CSS
+    setTimeout(() => {
+        drawer.classList.add('active');
+    }, 10);
+
     document.getElementById('modalPlayerContainer').style.display = 'none';
     document.getElementById('modalPlayerContainer').innerHTML = "";
-    document.getElementById('detailDrawer').classList.add('active');
-    document.getElementById('detailDrawer').style.pointerEvents = 'auto';
     
     document.getElementById('btnWatchNow').onclick = () => {
-        if (pubRotationInterval) clearInterval(pubRotationInterval); // Arrêt de sécurité au lancement de la vidéo
-        
-        // On cache la pub pour laisser toute la place au lecteur
+        if (pubRotationInterval) clearInterval(pubRotationInterval);
         document.getElementById('modalAdContainer').style.display = 'none';
-        
         const container = document.getElementById('modalPlayerContainer');
         container.style.display = 'block';
-        // Ajout d'un style responsive propre sur l'iframe du lecteur vidéo pour qu'elle s'intègre bien sur mobile
         container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen style="width: 100%; height: 210px; border: 0; border-radius: 8px;"></iframe>`;
     };
     
@@ -704,13 +688,23 @@
         }
     };
 };
-   window.closeDetails = () => {
-        if (pubRotationInterval) clearInterval(pubRotationInterval); // Stop la rotation de pub immédiatement
-        document.getElementById('detailDrawer').classList.remove('active');
-        document.getElementById('detailDrawer').style.pointerEvents = 'none';
-        document.getElementById('modalPlayerContainer').innerHTML = "";
-    };
-
+  window.closeDetails = () => {
+    // 1. On arrête la rotation de pub immédiatement (ton code d'origine)
+    if (pubRotationInterval) clearInterval(pubRotationInterval); 
+    
+    // 2. On nettoie le lecteur vidéo pour couper le son et l'image (ton code d'origine)
+    document.getElementById('modalPlayerContainer').innerHTML = "";
+    
+    // 3. On lance l'animation de descente du tiroir
+    const drawer = document.getElementById('detailDrawer');
+    drawer.classList.remove('active');
+    drawer.style.pointerEvents = 'none'; // Sécurité pour les clics
+    
+    // 4. L'AJOUT MAGIQUE : On attend la fin de l'animation (400ms) pour faire disparaître le bloc
+    setTimeout(() => {
+        drawer.style.style.setProperty('display', 'none', 'important'); // Fait disparaître la vitre invisible !
+    }, 400); 
+};
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
     window.handlePost = async () => {
