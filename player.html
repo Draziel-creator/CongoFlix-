@@ -614,17 +614,18 @@
         if(boutonMore) boutonMore.style.display = 'none';
     };
 
-    if (typeof pubRotationInterval === 'undefined') { var pubRotationInterval = null; }
+    // Sécurisation des variables de pub (si absentes du reste du fichier)
+if (typeof pubRotationInterval === 'undefined') { var pubRotationInterval = null; }
 if (typeof cyclePub === 'undefined') { var cyclePub = 1; }
 
-// FONTION D'OUVERTURE DE LA MODALE
+// 1. LA FONCTION D'OUVERTURE (Zéro blocage d'écran)
 window.openDetails = (title, linkWatch, linkDownload) => {
     try {
-        // 1. Mise à jour du titre
+        // Changement du titre
         const titleEl = document.getElementById('detEpTitle');
         if (titleEl) titleEl.innerText = title;
         
-        // 2. Gestion et nettoyage de la zone de pub
+        // Gestion sécurisée du conteneur de pub
         const adContainer = document.getElementById('modalAdContainer');
         if (adContainer) {
             adContainer.style.display = 'flex'; 
@@ -636,7 +637,7 @@ window.openDetails = (title, linkWatch, linkDownload) => {
             pubRotationInterval = null; 
         }
 
-        // Structure propre de 65px de haut pour la pub
+        // Configuration des bannières pubs (65px de haut max)
         const structureDebut = `<div style="width: 100%; height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; box-sizing: border-box; padding: 0; margin: 0;">`;
         const structureFin = `</div>`;
 
@@ -663,20 +664,20 @@ window.openDetails = (title, linkWatch, linkDownload) => {
             }
         }
 
-        // 3. ON ACTIVE SIMPLEMENT LA MODALE EN AJOUTANT LA CLASSE (Comme ton code de base)
+        // ACTION CONCORDANTE AVEC TON CSS : On ajoute UNIQUEMENT la classe active
         const drawer = document.getElementById('detailDrawer');
         if (drawer) { 
             drawer.classList.add('active'); 
         }
 
-        // 4. Reset du lecteur vidéo
+        // Réinitialisation du lecteur vidéo interne
         const playerContainer = document.getElementById('modalPlayerContainer');
         if (playerContainer) { 
             playerContainer.style.display = 'none'; 
             playerContainer.innerHTML = ""; 
         }
         
-        // 5. Configuration des clics sur les boutons
+        // Clic sur "Regarder maintenant"
         const btnWatch = document.getElementById('btnWatchNow');
         if (btnWatch) {
             btnWatch.onclick = () => {
@@ -689,6 +690,7 @@ window.openDetails = (title, linkWatch, linkDownload) => {
             };
         }
         
+        // Clic sur "Télécharger"
         const btnDownload = document.getElementById('btnDownloadNow');
         if (btnDownload) {
             btnDownload.onclick = () => {
@@ -696,11 +698,11 @@ window.openDetails = (title, linkWatch, linkDownload) => {
             };
         }
     } catch (e) { 
-        console.error("Erreur openDetails évitée : ", e); 
+        console.error("Erreur openDetails interceptée sans bloquer la page : ", e); 
     }
 };
 
-// FONCTION DE FERMETURE DE LA MODALE
+// 2. LA FONCTION DE FERMETURE
 window.closeDetails = () => {
     try {
         if (pubRotationInterval) clearInterval(pubRotationInterval); 
@@ -708,13 +710,13 @@ window.closeDetails = () => {
         const playerContainer = document.getElementById('modalPlayerContainer');
         if (playerContainer) playerContainer.innerHTML = "";
         
-        // ON RETIRE SIMPLEMENT LA CLASSE ACTIVE (Comme ton code de base)
+        // ACTION CONCORDANTE AVEC TON CSS : On retire UNIQUEMENT la classe active
         const drawer = document.getElementById('detailDrawer');
         if (drawer) { 
             drawer.classList.remove('active'); 
         }
     } catch (e) { 
-        console.error("Erreur closeDetails évitée : ", e); 
+        console.error("Erreur closeDetails interceptée sans bloquer la page : ", e); 
     }
 };
     window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
