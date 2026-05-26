@@ -189,7 +189,8 @@
     </div>
 
     <!-- MODAL DE DÉTAILS -->
-    <div id="detailDrawer">
+    <div id="detailDrawer" style="position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; max-height: 90vh !important; background: #141414 !important; z-index: 99999 !important; box-shadow: 0 -10px 30px rgba(0,0,0,0.8) !important; border-radius: 20px 20px 0 0 !important; box-sizing: border-box !important; padding-bottom: calc(env(safe-area-inset-bottom) + 15px) !important; transform: translateY(100%) !important; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;">
+    
     <div class="drawer-header">
         <div style="display: flex; align-items: center; gap: 12px;">
             <i class="fa-solid fa-arrow-down" style="background:#333; padding:8px; border-radius:50%; font-size:12px; color: var(--gold);"></i>
@@ -198,7 +199,7 @@
                 <div id="detEpTitle" style="font-size:11px; color:#999;">Nom de l'épisode</div>
             </div>
         </div>
-        <i class="fa-solid fa-xmark" style="font-size:22px; color:#999" onclick="closeDetails()"></i>
+        <i class="fa-solid fa-xmark" style="font-size:22px; color:#999; cursor: pointer;" onclick="closeDetails()"></i>
     </div>
 
     <div style="padding: 15px 15px 0; font-size: 13px; color: #ccc;">
@@ -210,12 +211,14 @@
         <button class="btn-modal btn-blue" id="btnWatchNow"><i class="fa-solid fa-play"></i> Regarder maintenant</button>
     </div>
 
-    <div class="drawer-media-zone">
+    <div class="drawer-media-zone" style="width: 100% !important; height: auto !important; display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center; margin-top: 15px !important; padding: 0 !important;">
+        
         <div id="modalPlayerContainer"></div>
         
-        <div id="modalAdContainer" style="width: 100%; height: 65px; min-height: 65px; max-height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; margin-top: 10px;">
-            <iframe src="https://ad.a-ads.com/2443411?size=320x50" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block;"></iframe>
+        <div id="modalAdContainer" style="width: 100%; height: 65px; min-height: 65px; max-height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; margin-top: 10px; padding: 0; box-sizing: border-box;">
+            <iframe src="https://ad.a-ads.com/2443411?size=320x50" scrolling="no" style="border:0; padding:0; margin:0; width:320px; height:65px; overflow:hidden; background:transparent; display:block; vertical-align:top;"></iframe>
         </div>
+
     </div>
 </div>
     <!-- TIROIR COMMENTAIRES -->
@@ -615,17 +618,18 @@
     document.getElementById('detEpTitle').innerText = title;
     
     const adContainer = document.getElementById('modalAdContainer');
-    adContainer.style.display = 'flex';
+    // On s'assure que le conteneur de pub est visible lors de l'ouverture (au cas où il aurait été caché par une lecture précédente)
+    adContainer.style.display = 'flex'; 
     adContainer.innerHTML = ""; // Nettoyage initial
 
     // On nettoie l'ancien intervalle de rotation automatique s'il tournait encore
     if (pubRotationInterval) clearInterval(pubRotationInterval);
 
-    // Structure commune : Augmentation à 65px pour éviter que la pub ne soit tronquée en bas
+    // Structure commune : Hauteur à 65px calée avec ton HTML corrigé
     const structureDebut = `<div style="width: 100%; height: 65px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; box-sizing: border-box; padding: 0; margin: 0;">`;
     const structureFin = `</div>`;
 
-    // Définition des 3 blocs publicitaires avec ajustement de la hauteur de l'iframe
+    // Définition des 3 blocs publicitaires sans défilement et parfaitement centrés
     const pubs = [
         // PUB 1 : Adsterra Banner 320x50 via fichier externe
         `${structureDebut}
@@ -658,7 +662,7 @@
             } else {
                 adContainer.innerHTML = pubs[indexRotation];
             }
-        }, 1500); // 1500ms = 1,5 seconde par publicité pour une visibilité totale en 4,5 secondes
+        }, 1500);
 
     } else {
         // CONTEXTE SÉRIE : Une pub différente à chaque clic sur un épisode
@@ -681,10 +685,14 @@
     
     document.getElementById('btnWatchNow').onclick = () => {
         if (pubRotationInterval) clearInterval(pubRotationInterval); // Arrêt de sécurité au lancement de la vidéo
+        
+        // On cache la pub pour laisser toute la place au lecteur
         document.getElementById('modalAdContainer').style.display = 'none';
+        
         const container = document.getElementById('modalPlayerContainer');
         container.style.display = 'block';
-        container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen></iframe>`;
+        // Ajout d'un style responsive propre sur l'iframe du lecteur vidéo pour qu'elle s'intègre bien sur mobile
+        container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen style="width: 100%; height: 210px; border: 0; border-radius: 8px;"></iframe>`;
     };
     
     document.getElementById('btnDownloadNow').onclick = () => {
