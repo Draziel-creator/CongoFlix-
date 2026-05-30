@@ -196,29 +196,31 @@ function preparerFilm(filmId, movieData) {
     document.getElementById('fb-resume').innerText = "Aucun synopsis disponible pour le moment.";
   }
   
-  // Injection dynamique de la liste des acteurs
-  if(movieData.noms_acteurs) {
-    let listeActeurs = movieData.noms_acteurs.split(',').map(a => a.trim()).filter(a => a !== "");
-    document.getElementById('fb-acteurs').innerHTML = listeActeurs.map(nom => `<span class="actor-name">${nom}</span>`).join('');
-  } else {
-    document.getElementById('fb-acteurs').innerHTML = `<span class="actor-name">Casting non spécifié</span>`;
-  }
+  // === RÉCUPÉRATION DU CASTING STRICTEMENT IDENTIQUE A TON LECTEUR ===
+  const zoneActeurs = document.getElementById('fb-acteurs');
+  const zonePhotos = document.getElementById('fb-photos');
   
-  // Gestion sécurisée des images de profil des acteurs
-  if(movieData.acteurs) {
-    let photosHtml = "";
-    if(typeof movieData.acteurs === 'string') {
-      let listePhotos = movieData.acteurs.split(',').map(img => img.trim()).filter(img => img !== "");
-      photosHtml = listePhotos.map(url => `<img src="${url}" class="mini-poster">`).join('');
-    } else if(typeof movieData.acteurs === 'object') {
-      Object.values(movieData.acteurs).forEach(url => {
-        if(url) photosHtml += `<img src="${url}" class="mini-poster">`;
-      });
-    }
-    document.getElementById('fb-photos').innerHTML = photosHtml;
-  }
-}
+  // 1. Récupération des deux tableaux (Arrays) depuis Firestore
+  const listePhotos = movieData.acteurs || [];
+  const listeNoms = movieData.noms_acteurs || [];
 
+  // 2. Injection des photos (exactement comme ton lecteur avec la sécurité onerror)
+  if (Array.isArray(listePhotos) && listePhotos.length > 0) {
+    zonePhotos.innerHTML = listePhotos.map(url => `
+      <img src="${url}" class="mini-poster" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+    `).join('');
+  } else {
+    zonePhotos.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="mini-poster" style="opacity:0.4;">`;
+  }
+
+  // 3. Injection des noms des acteurs (exactement comme ton lecteur)
+  if (Array.isArray(listeNoms) && listeNoms.length > 0) {
+    zoneActeurs.innerHTML = listeNoms.map(nom => `
+      <span class="actor-name">${nom}</span>
+    `).join('');
+  } else {
+    zoneActeurs.innerHTML = `<span class="actor-name" style="color:#666;">Casting non spécifié</span>`;
+  }
 // LIEN DE REDIRECTION VERS TON APPLICATION SMARTPHONE (INCHANGE)
 function ouvrirApp(filmId) {
   window.location.href = "congoflix://play?id=" + filmId;
