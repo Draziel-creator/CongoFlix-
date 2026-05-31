@@ -22,7 +22,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   #pop-film { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 20000; overflow-y: auto; padding-bottom: 60px; }
   .close-pop { color: #ffd700; font-size: 50px; position: fixed; right: 20px; top: 5px; z-index: 20001; cursor: pointer; }
-   
+     
   /* STRUCTURE DU CASTING */
   .casting-container { display: flex; justify-content: flex-start; align-items: flex-start; margin-top: 20px; border-top: 1px solid #333; padding-top: 20px; gap: 25px; }
   .photo-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: auto; max-width: 130px; }
@@ -237,16 +237,12 @@ function preparerFilm(filmId, movieData) {
 }
 
 function ouvrirApp(filmId) {
-  // 1. Tente d'ouvrir le film directement dans l'application via le Deep Link
   window.location.href = "congoflix://play?id=" + filmId;
   
-  // 2. Si l'application n'est pas installée, déclenche le téléchargement direct après 2 secondes
   setTimeout(() => {
      if (!document.hidden) {
-        // Ton lien direct et sécurisé vers le fichier APK
         const lienDirectAPK = "https://apk.e-droid.net/apk/app4001053-wmc7az.apk?v=2"; 
         
-        // Création d'un déclencheur de téléchargement invisible
         let downloadLink = document.createElement('a');
         downloadLink.href = lienDirectAPK;
         downloadLink.download = "CongoFlix.apk";
@@ -280,4 +276,45 @@ function fermerPop() {
   if (deconnecterEcouteurVues) deconnecterEcouteurVues();
   document.getElementById('pop-film').style.display='none'; 
 }
+
+// === CONNEXION AVEC LE SLIDER DYNAMIQUE (VOTRE IDÉE) ===
+window.addEventListener("message", function(event) {
+    // On écoute le signal envoyé par l'Iframe du slider GitHub
+    if (event.data && event.data.action === "OUVRIR_VIA_SLIDER") {
+        let titreRecherche = event.data.titre;
+
+        // 1. On lance ton écran d'attente doré pendant la recherche
+        document.getElementById('loader-congoflix').style.display = "flex";
+
+        // 2. On configure l'état du popup global
+        document.getElementById('nom-prov-title').innerText = titreRecherche;
+        document.getElementById('pop-grid').style.display = 'none';
+        document.getElementById('search-zone').style.display = 'none';
+        document.getElementById('pop-player').style.display = 'none';
+
+        // 3. Requête Firebase par le titre textuel pour trouver le film complet
+        db.collection("films").where("titre", "==", titreRecherche).get().then((querySnapshot) => {
+            // On cache le loader
+            document.getElementById('loader-congoflix').style.display = "none";
+
+            if (!querySnapshot.empty) {
+                // Film trouvé ! On récupère le document et sa clé unique (ID)
+                let doc = querySnapshot.docs[0];
+                let movieKey = doc.id;
+                let movieData = doc.data();
+
+                // On ouvre la structure noire globale
+                document.getElementById('pop-film').style.display = "block";
+
+                // On injecte les données complètes trouvées dans ton lecteur d'extraits natif
+                preparerFilm(movieKey, movieData);
+            } else {
+                alert("Désolé, les détails du film \"" + titreRecherche + "\" n'existent pas dans les provinces.");
+            }
+        }).catch(error => {
+            console.error("Erreur de liaison Slider-Firebase :", error);
+            document.getElementById('loader-congoflix').style.display = "none";
+        });
+    }
+}, false);
 </script>
