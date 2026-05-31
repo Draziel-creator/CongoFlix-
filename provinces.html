@@ -155,6 +155,19 @@ function preparerFilm(filmId, movieData) {
     views: firebase.firestore.FieldValue.increment(1) 
   }).catch(e => console.log("Erreur compteur vue:", e));
 
+  function preparerFilm(filmId, movieData) {
+  let titre = movieData.titre || "Sans titre";
+  let lienVideo = movieData.url || ""; 
+
+  if (deconnecterEcouteurVues) deconnecterEcouteurVues();
+
+  // COMPTEUR DE VUES SÉCURISÉ
+  const filmRef = db.collection("films").doc(filmId);
+  
+  filmRef.update({ 
+    views: firebase.firestore.FieldValue.increment(1) 
+  }).catch(e => console.log("Erreur compteur vue:", e));
+
   // Préparation de la structure du lecteur
   document.getElementById('pop-grid').style.display = 'none';
   document.getElementById('search-zone').style.display = 'none';
@@ -191,7 +204,10 @@ function preparerFilm(filmId, movieData) {
       </div>
     </div>
 
-    <button style="background:#0056b3; color:#fff; padding:15px; border-radius:50px; width:90%; font-family:'Bebas Neue'; border:2px solid #fff; margin:15px 0; font-size:18px; cursor:pointer;" onclick="ouvrirApp('${filmId}')">▶ OBTENIR LE FILM COMPLET DANS L'APPLICATION</button>
+    <!-- LE BOUTON DORÉ LOGIQUE ET SÉCURISÉ -->
+    <button style="background:#111; color:#ffd700; padding:15px; border-radius:50px; width:90%; font-family:'Bebas Neue'; border:2px solid #ffd700; margin:15px 0; font-size:20px; letter-spacing:1px; cursor:pointer; box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); transition: 0.3s;" onclick="ouvrirApp('${filmId}')">
+      ▶ OBTENIR LE FILM COMPLET DANS L'APPLICATION
+    </button>
   `;
 
   // ÉCOUTE EN TEMPS RÉEL SYNCHRONISÉE
@@ -236,14 +252,25 @@ function preparerFilm(filmId, movieData) {
 }
 
 function ouvrirApp(filmId) {
+  // 1. Tente d'ouvrir le film directement dans l'application via le Deep Link
   window.location.href = "congoflix://play?id=" + filmId;
+  
+  // 2. Si l'application n'est pas installée, déclenche le téléchargement direct après 2 secondes
   setTimeout(() => {
-     if(!document.hidden) {
-        alert("Pour regarder le film complet, veuillez installer ou lancer notre application officielle CongoFlix !");
+     if (!document.hidden) {
+        // Ton lien direct et sécurisé vers le fichier APK
+        const lienDirectAPK = "https://apk.e-droid.net/apk/app4001053-wmc7az.apk?v=2"; 
+        
+        // Création d'un déclencheur de téléchargement invisible
+        let downloadLink = document.createElement('a');
+        downloadLink.href = lienDirectAPK;
+        downloadLink.download = "CongoFlix.apk";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
      }
   }, 2000);
 }
-
 function toggleP(id) { 
   let target = document.getElementById(id); 
   let isOpening = (target.style.display !== 'block');
