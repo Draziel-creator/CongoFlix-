@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CongoFlix Dynamic Slider</title>
+  <title>CongoFlix Slider Dynamique</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <style>
     html, body { margin: 0; padding: 0; background: #000; overflow: hidden; width: 100%; height: 100%; }
@@ -43,7 +43,6 @@
       background: #000;
       text-decoration: none;
       position: relative;
-      cursor: pointer;
     }
 
     .individual-slide img {
@@ -51,9 +50,9 @@
       height: 100%;
       object-fit: cover;
       display: block;
+      cursor: pointer;
     }
 
-    /* BANDEAU PUBLICITÉ */
     .ad-label {
       position: absolute;
       top: 15px;
@@ -85,7 +84,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* NAVIGATION */
     .nav-arrow {
       position: absolute;
       top: 50%;
@@ -143,7 +141,7 @@
       <button class="nav-arrow next-arrow" onclick="changeSlide(1)"><i class="fa-solid fa-chevron-right"></i></button>
       
       <div class="slides-wrapper" id="engine-slider">
-        <div style="color: #ffd700; text-align: center; margin: auto; font-weight: bold; font-size: 14px;">Chargement du catalogue...</div>
+        <div style="color: #ffd700; text-align: center; margin: auto; font-weight: bold; font-size: 14px;">Chargement de l'accueil...</div>
       </div>
     </div>
     <div class="dots-nav" id="dots-container"></div>
@@ -153,6 +151,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // METS TES CONFIGURATIONS FIREBASE DE CONGOFLIX ICI :
     const firebaseConfig = { 
         apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY", 
         authDomain: "congo-streaming-51333.firebaseapp.com", 
@@ -168,54 +167,68 @@
     let currentPos = 0;
     let totalSlides = 0;
     let autoTimer;
+    let moviesData = []; 
 
-    const qSlider = query(collection(db, "films"), orderBy("timestamp", "desc"), limit(5));
+    // Écoute les 10 derniers ajouts pour construire la boucle infinie de films + pubs
+    const qSlider = query(collection(db, "films"), orderBy("timestamp", "desc"), limit(10));
     
     onSnapshot(qSlider, (snapshot) => {
+        moviesData = [];
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            // CORRECTION : Lecture depuis le champ Array (Tableau) nommé "site"
+            // site[0] = capture, site[1] = titre
+            if (data.site && Array.isArray(data.site) && data.site.length >= 2) {
+                moviesData.push({
+                    id: doc.id,
+                    capture: data.site[0],
+                    titre: data.site[1]
+                });
+            }
+        });
+        
+        buildSlider();
+    });
+
+    function buildSlider() {
         const wrap = document.getElementById('engine-slider');
         const dotsContainer = document.getElementById('dots-container');
         
         let finalHtml = "";
         let dotsHtml = "";
-        let index = 0;
+        let slideIndex = 0;
 
-        snapshot.forEach((doc) => {
-            const movie = doc.data();
-            const imageSrc = movie.capture || movie.poster || 'https://via.placeholder.com/550x310';
-            const title = movie.titre || "Nouveauté CongoFlix";
-            const targetUrl = `https://draziel-creator.github.io/CongoFlix-/player.html?id=${doc.id}`;
-
-            // Ajoute le film en cours
+        moviesData.forEach((movie, index) => {
+            // 1. Ajouter l'affiche du film
             finalHtml += `
-                <div class="individual-slide" onclick="window.top.location.href='${targetUrl}'">
-                    <img src="${imageSrc}" alt="${title}">
-                    <div class="film-tag">${title.toUpperCase()}</div>
+                <div class="individual-slide" data-type="movie">
+                    <img src="${movie.capture}" alt="${movie.titre}" onclick="window.top.location.href='https://draziel-creator.github.io/CongoFlix-/player.html?id=${movie.id}'">
+                    <div class="film-tag">${movie.titre.toUpperCase()}</div>
                 </div>`;
-            dotsHtml += `<span class="dot-item ${index === 0 ? 'active' : ''}" onclick="goToSlide(${index})"></span>`;
-            index++;
+            dotsHtml += `<span class="dot-item ${slideIndex === 0 ? 'active' : ''}" onclick="goToSlide(${slideIndex})"></span>`;
+            slideIndex++;
 
-            // INJECTION INTELLIGENTE DE PUBLICITÉ TOUTES LES 2 AFFICHES
-            if (index === 2 || index === 4) {
+            // 2. INJECTION INTELLIGENTE : Toutes les 2 affiches, on injecte une publicité
+            if ((index + 1) % 2 === 0 && index !== moviesData.length - 1) {
                 finalHtml += `
-                    <div class="individual-slide">
+                    <div class="individual-slide" data-type="ad" id="ad-slide-${slideIndex}">
                         <div class="ad-label">Publicité</div>
-                        <div style="text-align:center; width:100%; display:flex; justify-content:center;">
-                            <iframe data-aa='2433845' src='//acceptable.a-ads.com/2433845/?size=Adaptive' style='border:0; padding:0; width:320px; height:50px; overflow:hidden;'></iframe>
-                        </div>
+                        <div class="ad-holder" style="text-align:center; width:100%; max-width:468px; height:60px; margin:auto;">
+                           </div>
                     </div>`;
-                dotsHtml += `<span class="dot-item" onclick="goToSlide(${index})"></span>`;
-                index++;
+                dotsHtml += `<span class="dot-item" onclick="goToSlide(${slideIndex})"></span>`;
+                slideIndex++;
             }
         });
 
-        totalSlides = index;
+        totalSlides = slideIndex;
         if(wrap) wrap.innerHTML = finalHtml;
         if(dotsContainer) dotsContainer.innerHTML = dotsHtml;
         
         currentPos = 0;
         updateSliderVisuals();
         resetAutoPlay();
-    });
+    }
 
     window.changeSlide = function(n) {
         if(totalSlides === 0) return;
@@ -235,6 +248,50 @@
         const dots = document.querySelectorAll('.dot-item');
         if(wrap) wrap.style.transform = `translateX(-${currentPos * 100}%)`;
         dots.forEach((d, i) => d.classList.toggle('active', i === currentPos));
+
+        // --- SYSTÈME DE RECHARGE FORCEE POUR LES VUES ADSTERRA ---
+        // On nettoie d'abord toutes les zones publicitaires pour ne pas consommer de mémoire
+        document.querySelectorAll('.individual-slide[data-type="ad"]').forEach(slide => {
+            const holder = slide.querySelector('.ad-holder');
+            if(holder) holder.innerHTML = ""; 
+        });
+
+        // Si l'utilisateur arrive sur une diapositive de publicité, on injecte le script à neuf !
+        const currentSlide = document.getElementById(`ad-slide-${currentPos}`);
+        if (currentSlide) {
+            const holder = currentSlide.querySelector('.ad-holder');
+            if (holder) {
+                // Création d'une iframe invisible isolée pour forcer Adsterra à recalculer une vraie impression
+                const iframe = document.createElement('iframe');
+                iframe.style.border = "0";
+                iframe.style.padding = "0";
+                iframe.style.width = "468px";
+                iframe.style.height = "60px";
+                iframe.style.overflow = "hidden";
+                iframe.scrolling = "no";
+                
+                holder.appendChild(iframe);
+
+                // Écriture des scripts Adsterra directement dans l'iframe pour simuler une nouvelle page rechargée
+                const iframeDoc = iframe.contentWindow.document;
+                iframeDoc.open();
+                iframeDoc.write(`
+                    <body style="margin:0; padding:0; background:transparent; display:flex; justify-content:center; align-items:center;">
+                        <script type="text/javascript">
+                            atOptions = {
+                                'key' : 'f4457d9de2541809ff0cdd731f5f78e2',
+                                'format' : 'iframe',
+                                'height' : 60,
+                                'width' : 468,
+                                'params' : {}
+                            };
+                        <\/script>
+                        <script type="text/javascript" src="//www.highperformanceformat.com/f4457d9de2541809ff0cdd731f5f78e2/invoke.js"><\/script>
+                        </body>
+                `);
+                iframeDoc.close();
+            }
+        }
     }
 
     function resetAutoPlay() {
@@ -243,11 +300,10 @@
             autoTimer = setInterval(() => {
                 currentPos = (currentPos + 1) % totalSlides;
                 updateSliderVisuals();
-            }, 5000);
+            }, 6000); // 6 secondes par affiche/pub
         }
     }
 
-    // Pause au survol
     document.addEventListener('mouseenter', () => clearInterval(autoTimer));
     document.addEventListener('mouseleave', resetAutoPlay);
   </script>
