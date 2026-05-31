@@ -151,14 +151,14 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // METS TES CONFIGURATIONS FIREBASE DE CONGOFLIX ICI :
+    // CONFIGURATIONS FIREBASE DE CONGOFLIX :
     const firebaseConfig = { 
-        apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY", 
+        apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4", 
         authDomain: "congo-streaming-51333.firebaseapp.com", 
         projectId: "congo-streaming-51333", 
         storageBucket: "congo-streaming-51333.firebasestorage.app", 
         messagingSenderId: "304286627819", 
-        appId: "1:304286627819:web:ee606adc4f6b4002054bae" 
+        appId: "1:304286627819:android:36e0b43b8b10508a054bae" 
     };
 
     const app = initializeApp(firebaseConfig);
@@ -169,20 +169,18 @@
     let autoTimer;
     let moviesData = []; 
 
-    // Écoute les 10 derniers ajouts pour construire la boucle infinie de films + pubs
     const qSlider = query(collection(db, "films"), orderBy("timestamp", "desc"), limit(10));
     
     onSnapshot(qSlider, (snapshot) => {
         moviesData = [];
         snapshot.forEach((doc) => {
             const data = doc.data();
-            // CORRECTION : Lecture depuis le champ Array (Tableau) nommé "site"
-            // site[0] = capture, site[1] = titre
+            // On extrait uniquement ce qui est présent dans le document du slider : le tableau "site"
             if (data.site && Array.isArray(data.site) && data.site.length >= 2) {
                 moviesData.push({
                     id: doc.id,
-                    capture: data.site[0],
-                    titre: data.site[1]
+                    capture: data.site[0], // L'URL de l'image
+                    titre: data.site[1]    // Le titre textuel (Ex: "AU BAR RESTO")
                 });
             }
         });
@@ -199,22 +197,21 @@
         let slideIndex = 0;
 
         moviesData.forEach((movie, index) => {
-            // 1. Ajouter l'affiche du film
             finalHtml += `
                 <div class="individual-slide" data-type="movie">
-                    <img src="${movie.capture}" alt="${movie.titre}" onclick="window.top.location.href='https://draziel-creator.github.io/CongoFlix-/player.html?id=${movie.id}'">
+                    <img src="${movie.capture}" alt="${movie.titre}" onclick="handleSliderClick(${index})">
                     <div class="film-tag">${movie.titre.toUpperCase()}</div>
                 </div>`;
             dotsHtml += `<span class="dot-item ${slideIndex === 0 ? 'active' : ''}" onclick="goToSlide(${slideIndex})"></span>`;
             slideIndex++;
 
-            // 2. INJECTION INTELLIGENTE : Toutes les 2 affiches, on injecte une publicité
+            // Injection triple publicité
             if ((index + 1) % 2 === 0 && index !== moviesData.length - 1) {
                 finalHtml += `
                     <div class="individual-slide" data-type="ad" id="ad-slide-${slideIndex}">
                         <div class="ad-label">Publicité</div>
-                        <div class="ad-holder" style="text-align:center; width:100%; max-width:468px; height:60px; margin:auto;">
-                           </div>
+                        <div class="ad-holder" style="text-align:center; width:100%; max-width:468px; height:180px; margin:auto; display:flex; align-items:center; justify-content:center;">
+                        </div>
                     </div>`;
                 dotsHtml += `<span class="dot-item" onclick="goToSlide(${slideIndex})"></span>`;
                 slideIndex++;
@@ -243,51 +240,61 @@
         resetAutoPlay();
     }
 
+    // MODIFICATION SUIVANT TON IDÉE : Envoi du titre du film à la page principale
+    window.handleSliderClick = function(movieIndex) {
+        const selectedMovie = moviesData[movieIndex];
+        const titreDuFilm = selectedMovie.titre;
+
+        // On envoie un signal contenant uniquement l'action et le titre textuel du film
+        if (window.parent) {
+            window.parent.postMessage({ action: "OUVRIR_VIA_SLIDER", titre: titreDuFilm }, "*");
+        }
+    }
+
     function updateSliderVisuals() {
         const wrap = document.getElementById('engine-slider');
         const dots = document.querySelectorAll('.dot-item');
         if(wrap) wrap.style.transform = `translateX(-${currentPos * 100}%)`;
         dots.forEach((d, i) => d.classList.toggle('active', i === currentPos));
 
-        // --- SYSTÈME DE RECHARGE FORCEE POUR LES VUES ADSTERRA ---
-        // On nettoie d'abord toutes les zones publicitaires pour ne pas consommer de mémoire
         document.querySelectorAll('.individual-slide[data-type="ad"]').forEach(slide => {
             const holder = slide.querySelector('.ad-holder');
             if(holder) holder.innerHTML = ""; 
         });
 
-        // Si l'utilisateur arrive sur une diapositive de publicité, on injecte le script à neuf !
         const currentSlide = document.getElementById(`ad-slide-${currentPos}`);
         if (currentSlide) {
             const holder = currentSlide.querySelector('.ad-holder');
             if (holder) {
-                // Création d'une iframe invisible isolée pour forcer Adsterra à recalculer une vraie impression
                 const iframe = document.createElement('iframe');
                 iframe.style.border = "0";
                 iframe.style.padding = "0";
                 iframe.style.width = "468px";
-                iframe.style.height = "60px";
+                iframe.style.height = "180px"; 
                 iframe.style.overflow = "hidden";
                 iframe.scrolling = "no";
                 
                 holder.appendChild(iframe);
 
-                // Écriture des scripts Adsterra directement dans l'iframe pour simuler une nouvelle page rechargée
                 const iframeDoc = iframe.contentWindow.document;
                 iframeDoc.open();
                 iframeDoc.write(`
-                    <body style="margin:0; padding:0; background:transparent; display:flex; justify-content:center; align-items:center;">
+                    <body style="margin:0; padding:0; background:transparent; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:0px;">
                         <script type="text/javascript">
-                            atOptions = {
-                                'key' : 'f4457d9de2541809ff0cdd731f5f78e2',
-                                'format' : 'iframe',
-                                'height' : 60,
-                                'width' : 468,
-                                'params' : {}
-                            };
+                            atOptions = { 'key' : 'MON_CODE_DE_CLE_ADSTERRA_ICI', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
                         <\/script>
-                        <script type="text/javascript" src="//www.highperformanceformat.com/f4457d9de2541809ff0cdd731f5f78e2/invoke.js"><\/script>
-                        </body>
+                        <script type="text/javascript" src="//www.highperformanceformat.com/MON_CODE_DE_CLE_ADSTERRA_ICI/invoke.js"><\/script>
+
+                        <script type="text/javascript">
+                            atOptions = { 'key' : 'MON_CODE_DE_CLE_ADSTERRA_ICI', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
+                        <\/script>
+                        <script type="text/javascript" src="//www.highperformanceformat.com/MON_CODE_DE_CLE_ADSTERRA_ICI/invoke.js"><\/script>
+
+                        <script type="text/javascript">
+                            atOptions = { 'key' : 'MON_CODE_DE_CLE_ADSTERRA_ICI', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} };
+                        <\/script>
+                        <script type="text/javascript" src="//www.highperformanceformat.com/MON_CODE_DE_CLE_ADSTERRA_ICI/invoke.js"><\/script>
+                    </body>
                 `);
                 iframeDoc.close();
             }
@@ -300,7 +307,7 @@
             autoTimer = setInterval(() => {
                 currentPos = (currentPos + 1) % totalSlides;
                 updateSliderVisuals();
-            }, 6000); // 6 secondes par affiche/pub
+            }, 6000);
         }
     }
 
