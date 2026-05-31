@@ -60,7 +60,7 @@
 </div>
 
 <script>
-// CONFIGURATION DE TON FIRESTORE (AUTHENTIFICATION IDENTIQUE ET PROPRE)
+// CONFIGURATION DE TON FIRESTORE
 const firebaseConfig = {
   apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
   authDomain: "congo-streaming-51333.firebaseapp.com",
@@ -71,7 +71,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Variable globale pour couper proprement l'écouteur temps réel
 let deconnecterEcouteurVues = null;
 
 // LES 11 PROVINCES
@@ -144,15 +143,14 @@ function ouvrirPop(provinceId, nomProvince) {
 
 function preparerFilm(filmId, movieData) {
   let titre = movieData.titre || "Sans titre";
-  let dID = movieData.dailymotion || "x8m8w88"; 
+  // CHANGEMENT ICI : On récupère directement la valeur du champ 'url' au lieu de 'dailymotion'
+  let lienVideo = movieData.url || ""; 
 
-  // Déconnexion de l'écouteur précédent s'il existe
   if (deconnecterEcouteurVues) deconnecterEcouteurVues();
 
-  // 1. COMPTEUR DE VUES SÉCURISÉ : Même logique que ton lecteur applicatif (Modifie le champ 'views')
+  // COMPTEUR DE VUES SÉCURISÉ
   const filmRef = db.collection("films").doc(filmId);
   
-  // Utilisation de FieldValue.increment de l'API Compat pour ajouter exactement +1 sur le serveur
   filmRef.update({ 
     views: firebase.firestore.FieldValue.increment(1) 
   }).catch(e => console.log("Erreur compteur vue:", e));
@@ -166,12 +164,12 @@ function preparerFilm(filmId, movieData) {
   p.innerHTML = `
     <button onclick="retour()" style="background:#ffd700; border:none; padding:10px 20px; border-radius:10px; font-weight:bold; margin:15px; cursor:pointer;">← RETOUR</button>
     <div style="color:#ffd700; font-family:'Bebas Neue'; text-align:center; margin-bottom:15px;">
-        <span style="font-size:14px; letter-spacing:2px;">EXTRAIT DE FILM</span><br>
+        <span style="font-size:14px; letter-spacing:2px;">LECTURE DU CONTENU</span><br>
         <span style="font-size:26px; color:#fff;">"${titre}"</span>
     </div>
     
     <div class="player-box">
-      <iframe src="https://geo.dailymotion.com/player.html?video=${dID}" allowfullscreen></iframe>
+      <iframe src="${lienVideo}" allowfullscreen></iframe>
     </div>
 
     <div class="view-counter">
@@ -196,11 +194,10 @@ function preparerFilm(filmId, movieData) {
     <button style="background:#0056b3; color:#fff; padding:15px; border-radius:50px; width:90%; font-family:'Bebas Neue'; border:2px solid #fff; margin:15px 0; font-size:18px; cursor:pointer;" onclick="ouvrirApp('${filmId}')">▶ OBTENIR LE FILM COMPLET DANS L'APPLICATION</button>
   `;
 
-  // 2. ÉCOUTE EN TEMPS RÉEL SYNCHRONISÉE (Même flux onSnapshot que ton code de lecteur)
+  // ÉCOUTE EN TEMPS RÉEL SYNCHRONISÉE
   deconnecterEcouteurVues = filmRef.onSnapshot((docSnapshot) => {
     if (docSnapshot.exists) {
       let dataCommune = docSnapshot.data();
-      // On lit le champ 'views' comme sur ton application
       let vuesSynchronisees = dataCommune.views || 0; 
       let elCompteur = document.getElementById('count-val');
       if (elCompteur) {
@@ -260,7 +257,7 @@ function filtrer() {
 }
 
 function retour() { 
-  if (deconnecterEcouteurVues) deconnecterEcouteurVues(); // Coupe l'écouteur pour économiser les lectures Firebase
+  if (deconnecterEcouteurVues) deconnecterEcouteurVues(); 
   document.getElementById('pop-grid').style.display='flex'; 
   document.getElementById('search-zone').style.display='block'; 
   document.getElementById('pop-player').style.display='none'; 
