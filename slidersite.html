@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CongoFlix Dynamic Slider</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    html, body { margin: 0; padding: 0; background: #000; overflow: hidden; width: 100%; height: 100%; }
+    
+    .force-slider-block {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .slider-main-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slides-wrapper {
+      display: flex;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      height: 100%;
+      width: 100%;
+    }
+
+    .individual-slide {
+      min-width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      text-decoration: none;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .individual-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* BANDEAU PUBLICITÉ */
+    .ad-label {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #ffd700;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: bold;
+      border: 1px solid #ffd700;
+      border-radius: 4px;
+      z-index: 5;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .film-tag {
+      position: absolute;
+      bottom: 25px;
+      left: 15px;
+      background: rgba(0,0,0,0.75);
+      padding: 8px 18px;
+      border-radius: 20px;
+      color: #fff;
+      font-weight: bold;
+      font-size: 13px;
+      z-index: 6;
+      border: 1px solid rgba(255,255,255,0.2);
+      letter-spacing: 0.5px;
+    }
+
+    /* NAVIGATION */
+    .nav-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 215, 0, 0.85);
+      color: #000;
+      border: none;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+      z-index: 10;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: 0.3s;
+    }
+    .nav-arrow:hover { background: #fff; transform: translateY(-50%) scale(1.1); }
+    .prev-arrow { left: 15px; }
+    .next-arrow { right: 15px; }
+
+    .dots-nav {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      z-index: 10;
+    }
+
+    .dot-item {
+      height: 6px;
+      width: 6px;
+      background-color: rgba(255,255,255,0.4);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .dot-item.active {
+      background-color: #ffd700;
+      transform: scale(1.3);
+      width: 14px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="force-slider-block">
+    <div class="slider-main-container">
+      <button class="nav-arrow prev-arrow" onclick="changeSlide(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+      <button class="nav-arrow next-arrow" onclick="changeSlide(1)"><i class="fa-solid fa-chevron-right"></i></button>
+      
+      <div class="slides-wrapper" id="engine-slider">
+        <div style="color: #ffd700; text-align: center; margin: auto; font-weight: bold; font-size: 14px;">Chargement du catalogue...</div>
+      </div>
+    </div>
+    <div class="dots-nav" id="dots-container"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = { 
+        apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY", 
+        authDomain: "congo-streaming-51333.firebaseapp.com", 
+        projectId: "congo-streaming-51333", 
+        storageBucket: "congo-streaming-51333.firebasestorage.app", 
+        messagingSenderId: "304286627819", 
+        appId: "1:304286627819:web:ee606adc4f6b4002054bae" 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let currentPos = 0;
+    let totalSlides = 0;
+    let autoTimer;
+
+    const qSlider = query(collection(db, "films"), orderBy("timestamp", "desc"), limit(5));
+    
+    onSnapshot(qSlider, (snapshot) => {
+        const wrap = document.getElementById('engine-slider');
+        const dotsContainer = document.getElementById('dots-container');
+        
+        let finalHtml = "";
+        let dotsHtml = "";
+        let index = 0;
+
+        snapshot.forEach((doc) => {
+            const movie = doc.data();
+            const imageSrc = movie.capture || movie.poster || 'https://via.placeholder.com/550x310';
+            const title = movie.titre || "Nouveauté CongoFlix";
+            const targetUrl = `https://draziel-creator.github.io/CongoFlix-/player.html?id=${doc.id}`;
+
+            // Ajoute le film en cours
+            finalHtml += `
+                <div class="individual-slide" onclick="window.top.location.href='${targetUrl}'">
+                    <img src="${imageSrc}" alt="${title}">
+                    <div class="film-tag">${title.toUpperCase()}</div>
+                </div>`;
+            dotsHtml += `<span class="dot-item ${index === 0 ? 'active' : ''}" onclick="goToSlide(${index})"></span>`;
+            index++;
+
+            // INJECTION INTELLIGENTE DE PUBLICITÉ TOUTES LES 2 AFFICHES
+            if (index === 2 || index === 4) {
+                finalHtml += `
+                    <div class="individual-slide">
+                        <div class="ad-label">Publicité</div>
+                        <div style="text-align:center; width:100%; display:flex; justify-content:center;">
+                            <iframe data-aa='2433845' src='//acceptable.a-ads.com/2433845/?size=Adaptive' style='border:0; padding:0; width:320px; height:50px; overflow:hidden;'></iframe>
+                        </div>
+                    </div>`;
+                dotsHtml += `<span class="dot-item" onclick="goToSlide(${index})"></span>`;
+                index++;
+            }
+        });
+
+        totalSlides = index;
+        if(wrap) wrap.innerHTML = finalHtml;
+        if(dotsContainer) dotsContainer.innerHTML = dotsHtml;
+        
+        currentPos = 0;
+        updateSliderVisuals();
+        resetAutoPlay();
+    });
+
+    window.changeSlide = function(n) {
+        if(totalSlides === 0) return;
+        currentPos = (currentPos + n + totalSlides) % totalSlides;
+        updateSliderVisuals();
+        resetAutoPlay();
+    }
+
+    window.goToSlide = function(n) {
+        currentPos = n;
+        updateSliderVisuals();
+        resetAutoPlay();
+    }
+
+    function updateSliderVisuals() {
+        const wrap = document.getElementById('engine-slider');
+        const dots = document.querySelectorAll('.dot-item');
+        if(wrap) wrap.style.transform = `translateX(-${currentPos * 100}%)`;
+        dots.forEach((d, i) => d.classList.toggle('active', i === currentPos));
+    }
+
+    function resetAutoPlay() {
+        clearInterval(autoTimer);
+        if(totalSlides > 1) {
+            autoTimer = setInterval(() => {
+                currentPos = (currentPos + 1) % totalSlides;
+                updateSliderVisuals();
+            }, 5000);
+        }
+    }
+
+    // Pause au survol
+    document.addEventListener('mouseenter', () => clearInterval(autoTimer));
+    document.addEventListener('mouseleave', resetAutoPlay);
+  </script>
+</body>
+</html>
