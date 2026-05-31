@@ -22,7 +22,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   #pop-film { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 20000; overflow-y: auto; padding-bottom: 60px; }
   .close-pop { color: #ffd700; font-size: 50px; position: fixed; right: 20px; top: 5px; z-index: 20001; cursor: pointer; }
-  
+   
   /* STRUCTURE DU CASTING */
   .casting-container { display: flex; justify-content: flex-start; align-items: flex-start; margin-top: 20px; border-top: 1px solid #333; padding-top: 20px; gap: 25px; }
   .photo-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: auto; max-width: 130px; }
@@ -143,20 +143,6 @@ function ouvrirPop(provinceId, nomProvince) {
 
 function preparerFilm(filmId, movieData) {
   let titre = movieData.titre || "Sans titre";
-  // CHANGEMENT ICI : On récupère directement la valeur du champ 'url' au lieu de 'dailymotion'
-  let lienVideo = movieData.url || ""; 
-
-  if (deconnecterEcouteurVues) deconnecterEcouteurVues();
-
-  // COMPTEUR DE VUES SÉCURISÉ
-  const filmRef = db.collection("films").doc(filmId);
-  
-  filmRef.update({ 
-    views: firebase.firestore.FieldValue.increment(1) 
-  }).catch(e => console.log("Erreur compteur vue:", e));
-
-  function preparerFilm(filmId, movieData) {
-  let titre = movieData.titre || "Sans titre";
   let lienVideo = movieData.url || ""; 
 
   if (deconnecterEcouteurVues) deconnecterEcouteurVues();
@@ -204,7 +190,6 @@ function preparerFilm(filmId, movieData) {
       </div>
     </div>
 
-    <!-- LE BOUTON DORÉ LOGIQUE ET SÉCURISÉ -->
     <button style="background:#111; color:#ffd700; padding:15px; border-radius:50px; width:90%; font-family:'Bebas Neue'; border:2px solid #ffd700; margin:15px 0; font-size:20px; letter-spacing:1px; cursor:pointer; box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); transition: 0.3s;" onclick="ouvrirApp('${filmId}')">
       ▶ OBTENIR LE FILM COMPLET DANS L'APPLICATION
     </button>
@@ -271,6 +256,7 @@ function ouvrirApp(filmId) {
      }
   }, 2000);
 }
+
 function toggleP(id) { 
   let target = document.getElementById(id); 
   let isOpening = (target.style.display !== 'block');
