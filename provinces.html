@@ -1,6 +1,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;display=swap" rel="stylesheet" />
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <style>
   /* === STYLE GLOBAL CONGOFLIX === */
@@ -23,7 +23,7 @@
   #pop-film { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 20000; overflow-y: auto; padding-bottom: 60px; }
   .close-pop { color: #ffd700; font-size: 50px; position: fixed; right: 20px; top: 5px; z-index: 20001; cursor: pointer; }
   
-  /* STRUCTURE DU CASTING REVOIR SELON TES EXPLICATIONS */
+  /* STRUCTURE DU CASTING */
   .casting-container { display: flex; justify-content: flex-start; align-items: flex-start; margin-top: 20px; border-top: 1px solid #333; padding-top: 20px; gap: 25px; }
   .photo-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: auto; max-width: 130px; }
   .mini-poster { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #ffd700; object-fit: cover; }
@@ -41,7 +41,7 @@
   .f-card { width: 140px; margin: 8px; cursor: pointer; text-align: center; }
   .f-card img { width: 100%; border: 1px solid #ffd700; border-radius: 10px; aspect-ratio: 110/130; object-fit: cover; }
 
-  /* COMPTEUR INTERNATIONAL FIREBASE */
+  /* COMPTEUR DE VUES SYNCHRONISÉ */
   .view-counter { display: flex; align-items: center; justify-content: center; margin: 10px auto; background: rgba(255,215,0,0.1); padding: 5px 15px; border-radius: 20px; border: 1px solid #ffd700; width: fit-content; }
   .eye-icon { width: 20px; height: 20px; margin-right: 8px; fill: #ffd700; }
   .view-text { color: #ffd700; font-family: 'Bebas Neue'; font-size: 16px; letter-spacing: 1.5px; }
@@ -60,18 +60,19 @@
 </div>
 
 <script>
-// CONFIGURATION DE TON VRAI FIRESTORE
+// CONFIGURATION DE TON FIRESTORE (AUTHENTIFICATION IDENTIQUE ET PROPRE)
 const firebaseConfig = {
-  apiKey: "AIzaSyCSdIitm-2_0hC1a01_ssztFUPkEsSA_lY",
+  apiKey: "AIzaSyCoWWXJB7X6_j9A65UhmFse_fqUlk0FGL4",
   authDomain: "congo-streaming-51333.firebaseapp.com",
   projectId: "congo-streaming-51333",
   storageBucket: "congo-streaming-51333.firebasestorage.app",
-  appId: "1:304286627819:web:ee606adc4f6b4002054bae"
+  appId: "1:304286627819:android:36e0b43b8b10508a054bae"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-const adCode = `<div style="margin:10px auto; text-align:center;"><iframe data-aa='2433845' src='//acceptable.a-ads.com/2433845/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; overflow:hidden;'></iframe></div>`;
+// Variable globale pour couper proprement l'écouteur temps réel
+let deconnecterEcouteurVues = null;
 
 // LES 11 PROVINCES
 const provinces = [
@@ -95,7 +96,6 @@ provinces.forEach(p => {
 
 function ouvrirPop(provinceId, nomProvince) {
   document.getElementById('loader-congoflix').style.display = "flex";
-  
   document.getElementById('pop-grid').style.display = 'flex';
   document.getElementById('search-zone').style.display = 'block';
   document.getElementById('pop-player').style.display = 'none';
@@ -146,16 +146,18 @@ function preparerFilm(filmId, movieData) {
   let titre = movieData.titre || "Sans titre";
   let dID = movieData.dailymotion || "x8m8w88"; 
 
-  // 1. INCLEMENTATION ET LECTURE REELLE DES VUES DANS FIRESTORE
-  // Supposons que ton champ s'appelle 'vues' (ou modifie ci-dessous par 'views' si nécessaire)
-  let vuesInitiales = movieData.vues || movieData.views || 0;
-  let nouvellesVues = vuesInitiales + 1;
+  // Déconnexion de l'écouteur précédent s'il existe
+  if (deconnecterEcouteurVues) deconnecterEcouteurVues();
 
-  // Mise à jour asynchrone dans Firestore de manière transparente
-  db.collection("films").doc(filmId).update({
-    vues: nouvellesVues
-  }).catch(e => console.log("Erreur compteur de vues: ", e));
+  // 1. COMPTEUR DE VUES SÉCURISÉ : Même logique que ton lecteur applicatif (Modifie le champ 'views')
+  const filmRef = db.collection("films").doc(filmId);
+  
+  // Utilisation de FieldValue.increment de l'API Compat pour ajouter exactement +1 sur le serveur
+  filmRef.update({ 
+    views: firebase.firestore.FieldValue.increment(1) 
+  }).catch(e => console.log("Erreur compteur vue:", e));
 
+  // Préparation de la structure du lecteur
   document.getElementById('pop-grid').style.display = 'none';
   document.getElementById('search-zone').style.display = 'none';
   let p = document.getElementById('pop-player'); 
@@ -174,7 +176,7 @@ function preparerFilm(filmId, movieData) {
 
     <div class="view-counter">
       <svg class="eye-icon" viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17Z"/></svg>
-      <span class="view-text">VUES : <span id="count-val">${nouvellesVues}</span></span>
+      <span class="view-text">VUES : <span id="count-val">...</span></span>
     </div>
 
     <div class="poche-ext">
@@ -194,6 +196,19 @@ function preparerFilm(filmId, movieData) {
     <button style="background:#0056b3; color:#fff; padding:15px; border-radius:50px; width:90%; font-family:'Bebas Neue'; border:2px solid #fff; margin:15px 0; font-size:18px; cursor:pointer;" onclick="ouvrirApp('${filmId}')">▶ OBTENIR LE FILM COMPLET DANS L'APPLICATION</button>
   `;
 
+  // 2. ÉCOUTE EN TEMPS RÉEL SYNCHRONISÉE (Même flux onSnapshot que ton code de lecteur)
+  deconnecterEcouteurVues = filmRef.onSnapshot((docSnapshot) => {
+    if (docSnapshot.exists) {
+      let dataCommune = docSnapshot.data();
+      // On lit le champ 'views' comme sur ton application
+      let vuesSynchronisees = dataCommune.views || 0; 
+      let elCompteur = document.getElementById('count-val');
+      if (elCompteur) {
+        elCompteur.innerText = vuesSynchronisees;
+      }
+    }
+  });
+
   if(movieData.description) {
     document.getElementById('fb-resume').innerText = movieData.description;
   } else {
@@ -206,7 +221,6 @@ function preparerFilm(filmId, movieData) {
   const listePhotos = movieData.acteurs || [];
   const listeNoms = movieData.noms_acteurs || [];
 
-  // Injecter les miniatures à gauche
   if (Array.isArray(listePhotos) && listePhotos.length > 0) {
     zonePhotos.innerHTML = listePhotos.map(url => `
       <img src="${url}" class="mini-poster" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
@@ -215,7 +229,6 @@ function preparerFilm(filmId, movieData) {
     zonePhotos.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="mini-poster" style="opacity:0.4;">`;
   }
 
-  // Injecter la liste simple des noms décalée à droite avec peu d'espace entre eux (sans liaison par index)
   if (Array.isArray(listeNoms) && listeNoms.length > 0) {
     zoneActeurs.innerHTML = listeNoms.map(nom => `
       <span class="actor-name">${nom}</span>
@@ -227,7 +240,6 @@ function preparerFilm(filmId, movieData) {
 
 function ouvrirApp(filmId) {
   window.location.href = "congoflix://play?id=" + filmId;
-  
   setTimeout(() => {
      if(!document.hidden) {
         alert("Pour regarder le film complet, veuillez installer ou lancer notre application officielle CongoFlix !");
@@ -247,6 +259,15 @@ function filtrer() {
   document.querySelectorAll('.f-card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(v) ? "block" : "none");
 }
 
-function retour() { document.getElementById('pop-grid').style.display='flex'; document.getElementById('search-zone').style.display='block'; document.getElementById('pop-player').style.display='none'; }
-function fermerPop() { document.getElementById('pop-film').style.display='none'; }
+function retour() { 
+  if (deconnecterEcouteurVues) deconnecterEcouteurVues(); // Coupe l'écouteur pour économiser les lectures Firebase
+  document.getElementById('pop-grid').style.display='flex'; 
+  document.getElementById('search-zone').style.display='block'; 
+  document.getElementById('pop-player').style.display='none'; 
+}
+
+function fermerPop() { 
+  if (deconnecterEcouteurVues) deconnecterEcouteurVues();
+  document.getElementById('pop-film').style.display='none'; 
+}
 </script>
