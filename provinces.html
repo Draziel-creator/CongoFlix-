@@ -16,19 +16,20 @@
   .province-item:hover .cadre-p::before { left: 150%; }
   .province-item:hover .cadre-p img { transform: scale(1.15); filter: brightness(1.1); }
 
-  /* CASTING & POPUP MODIFIÉ POUR CORRIGER L'ALIGNEMENT */
+  /* CASTING & POPUP */
   #loader-congoflix { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 30000; flex-direction: column; justify-content: center; align-items: center; }
   .capcut-spinner { width: 60px; height: 60px; border: 4px solid rgba(255, 215, 0, 0.1); border-left-color: #ffd700; border-radius: 50%; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   #pop-film { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 20000; overflow-y: auto; padding-bottom: 60px; }
   .close-pop { color: #ffd700; font-size: 50px; position: fixed; right: 20px; top: 5px; z-index: 20001; cursor: pointer; }
   
-  .casting-container { display: flex; justify-content: flex-start; align-items: flex-start; margin-top: 20px; border-top: 1px solid #333; padding-top: 20px; gap: 20px; }
-  .photo-strip { display: flex; flex-direction: column; gap: 10px; width: auto; min-width: 60px; margin-top: 40px; } /* Décale légèrement pour s'aligner sous le titre ACTEURS */
-  .mini-poster { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #ffd700; object-fit: cover; }
-  .names-list { flex-grow: 1; text-align: left; display: flex; flex-direction: column; }
-  .casting-title { font-family: 'Bebas Neue'; color: #ffd700; font-size: 20px; border-bottom: 1px solid #ffd700; display: inline-block; margin-bottom: 15px; }
-  .actor-name { color: #fff; font-family: 'Bebas Neue'; font-size: 15px; height: 60px; display: flex; align-items: center; margin-bottom: 10px; }
+  /* STRUCTURE DU CASTING REVOIR SELON TES EXPLICATIONS */
+  .casting-container { display: flex; justify-content: flex-start; align-items: flex-start; margin-top: 20px; border-top: 1px solid #333; padding-top: 20px; gap: 25px; }
+  .photo-strip { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: auto; max-width: 130px; }
+  .mini-poster { width: 55px; height: 55px; border-radius: 50%; border: 2px solid #ffd700; object-fit: cover; }
+  .names-list { flex-grow: 1; text-align: left; }
+  .casting-title { font-family: 'Bebas Neue'; color: #ffd700; font-size: 20px; border-bottom: 1px solid #ffd700; display: inline-block; margin-bottom: 12px; }
+  .actor-name { color: #fff; font-family: 'Bebas Neue'; font-size: 15px; margin-bottom: 4px; display: block; letter-spacing: 0.5px; }
 
   /* ELEMENTS DE L'INTERFACE */
   .poche-ext { width: 95%; margin: 15px auto; border: 1px solid #ffd700; border-radius: 12px; background: #0a0a0a; overflow: hidden; }
@@ -145,7 +146,15 @@ function preparerFilm(filmId, movieData) {
   let titre = movieData.titre || "Sans titre";
   let dID = movieData.dailymotion || "x8m8w88"; 
 
-  let vuesSimulees = Math.floor(Math.random() * 400) + 120;
+  // 1. INCLEMENTATION ET LECTURE REELLE DES VUES DANS FIRESTORE
+  // Supposons que ton champ s'appelle 'vues' (ou modifie ci-dessous par 'views' si nécessaire)
+  let vuesInitiales = movieData.vues || movieData.views || 0;
+  let nouvellesVues = vuesInitiales + 1;
+
+  // Mise à jour asynchrone dans Firestore de manière transparente
+  db.collection("films").doc(filmId).update({
+    vues: nouvellesVues
+  }).catch(e => console.log("Erreur compteur de vues: ", e));
 
   document.getElementById('pop-grid').style.display = 'none';
   document.getElementById('search-zone').style.display = 'none';
@@ -165,7 +174,7 @@ function preparerFilm(filmId, movieData) {
 
     <div class="view-counter">
       <svg class="eye-icon" viewBox="0 0 24 24"><path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17Z"/></svg>
-      <span class="view-text">VUES : <span id="count-val">${vuesSimulees}</span></span>
+      <span class="view-text">VUES : <span id="count-val">${nouvellesVues}</span></span>
     </div>
 
     <div class="poche-ext">
@@ -197,6 +206,7 @@ function preparerFilm(filmId, movieData) {
   const listePhotos = movieData.acteurs || [];
   const listeNoms = movieData.noms_acteurs || [];
 
+  // Injecter les miniatures à gauche
   if (Array.isArray(listePhotos) && listePhotos.length > 0) {
     zonePhotos.innerHTML = listePhotos.map(url => `
       <img src="${url}" class="mini-poster" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
@@ -205,6 +215,7 @@ function preparerFilm(filmId, movieData) {
     zonePhotos.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="mini-poster" style="opacity:0.4;">`;
   }
 
+  // Injecter la liste simple des noms décalée à droite avec peu d'espace entre eux (sans liaison par index)
   if (Array.isArray(listeNoms) && listeNoms.length > 0) {
     zoneActeurs.innerHTML = listeNoms.map(nom => `
       <span class="actor-name">${nom}</span>
