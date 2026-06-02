@@ -6,7 +6,6 @@
     <title>CongoFlix - La Vitrine de la RDC</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
         /* --- SYSTÈME DE DESIGN CONGOFLIX --- */
         :root { 
@@ -795,20 +794,20 @@
         try { await updateDoc(doc(db, "films", filmId), { views: increment(1) }); } 
         catch(e) { console.log("Erreur vue:", e); }
     }, 1200);
-    // ==========================================
-// SYNC DE L'IFRAME AVEC TES MODAUX (VERSION OPTIMISÉE)
+   // ==========================================
+// CONTROLE DE L'IFRAME VIRTUELLE INSTANTANÉE
 // ==========================================
 let pubEstPrete = false;
 
-// 1. Écouteur pour le chargement initial d'Adsterra
+// 1. Détection du signal de l'iframe virtuelle
 window.addEventListener("message", (event) => {
-    if (event.data === "pub_chargee") {
+    if (event.data === "pub_ok") {
         pubEstPrete = true;
         verifierVisibilitePub();
     }
 });
 
-// 2. Fonction de vérification (exécutée uniquement en cas de changement)
+// 2. Masquage automatique sous l'écran en cas d'ouverture de modal
 function verifierVisibilitePub() {
     const iframe = document.getElementById("iframePubSocial");
     if (!iframe || !pubEstPrete) return;
@@ -820,32 +819,31 @@ function verifierVisibilitePub() {
     const commsEstOuvert = drawerCommentaires && drawerCommentaires.classList.contains('active');
 
     if (detailsEstOuvert || commsEstOuvert) {
-        iframe.style.transform = "translateY(100%)"; // Cache la pub sous l'écran
+        iframe.style.transform = "translateY(100%)"; // Propulse la pub hors de l'écran
     } else {
         iframe.style.height = "85px";
-        iframe.style.transform = "translateY(0)";   // Réaffiche la pub
+        iframe.style.transform = "translateY(0)";   // Fait remonter la pub proprement
     }
 }
 
-// 3. Écouteur intelligent (MutationObserver) : Remplace le setInterval qui fait ramer
+// 3. Surveillance intelligente des classes de tes modaux
 const observateurModaux = new MutationObserver(() => {
     verifierVisibilitePub();
 });
 
-// On démarre la surveillance dès que la page est prête
 document.addEventListener("DOMContentLoaded", () => {
     const drawerDetails = document.getElementById('detailDrawer');
     const drawerCommentaires = document.getElementById('tkDrawer');
 
-    // On dit à l'observateur de surveiller uniquement les changements de classe sur tes deux modaux
     if (drawerDetails) observateurModaux.observe(drawerDetails, { attributes: true, attributeFilter: ['class'] });
     if (drawerCommentaires) observateurModaux.observe(drawerCommentaires, { attributes: true, attributeFilter: ['class'] });
 });
 </script>
- <iframe 
-    src="https://draziel-creator.github.io/CongoFlix-/social.html" 
+ <!-- IFRAME VIRTUELLE INSTANTANÉE (SÉCURISÉE ET BLOQUÉE EN BAS) -->
+<iframe 
+    src="data:text/html;charset=utf-8,<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:transparent!important;}div[id^='at_sb_'],.at-social-bar,div[class^='adsterra-']{position:fixed!important;bottom:0!important;left:50%!important;transform:translateX(-50%)!important;z-index:999999!important;}</style></head><body><script type='text/javascript' src='https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js' async></script><script>const check=setInterval(()=>{if(document.querySelector('div[id^=%22at_sb_%22],.at-social-bar,div[class^=%22adsterra-%22]')){window.parent.postMessage('pub_ok','*');clearInterval(check);}},300);</script></body></html>"
     id="iframePubSocial"
-    style="position: fixed; bottom: 0; left: 0; width: 100%; height: 0px; border: none; z-index: 999999; background: transparent; transition: transform 0.3s ease, height 0.3s ease;">
+    style="position: fixed; bottom: 0; left: 0; width: 100%; height: 0px; border: none; z-index: 999999; background: transparent; transition: transform 0.2s ease, height 0.2s ease;">
 </iframe>
 </body>
 </html>
