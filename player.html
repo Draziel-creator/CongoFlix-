@@ -454,410 +454,409 @@
         }
     }); // <-- FERMETURE DU BLOC UNIQUE PARFAITEMENT RESPECTÉE ICI
 
-    // INJECTION DU CSS DE STABILISATION DES ÉPISODES (CORRIGÉ ICI POUR SUPPRIMER LE TRUC NOIR)
-    const styleStabilisateur = document.createElement('style');
-    styleStabilisateur.innerHTML = `
-        .ep-card { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 15px !important; width: 100% !important; box-sizing: border-box !important; position: relative !important; margin-bottom: 8px !important; cursor: pointer; }
-        .ep-info { flex: 1 !important; min-width: 0 !important; position: relative !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; overflow: hidden !important; }
-        .ep-title-wrapper { width: 100% !important; max-width: 100% !important; overflow: hidden !important; position: relative !important; display: inline-block !important; }
-        .ep-title { white-space: nowrap !important; font-size: 14px; color: #fff; display: inline-block !important; transform: translateX(0); animation: scrollRebondLeft 10s ease-in-out infinite alternate !important; }
-        @keyframes scrollRebondLeft { 0% { transform: translateX(0); } 25% { transform: translateX(0); } 75% { transform: translateX(calc(-100% + 100px)); } 100% { transform: translateX(calc(-100% + 100px)); } }
-        .detail-btn { flex-shrink: 0 !important; }
-        .btn-voir-plus-poche { display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; background-color: #007bff !important; color: #ffffff !important; padding: 12px 20px !important; border-radius: 6px !important; font-size: 13px !important; font-weight: bold !important; margin-top: 2px !important; margin-bottom: 10px !important; cursor: pointer !important; border: none !important; width: 100% !important; box-sizing: border-box !important; transition: background 0.2s; }
-        .btn-voir-plus-poche:hover { background-color: #0056b3 !important; }
-        .suite-hidden { display: none !important; }
-        #detailDrawer { position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; max-height: 85vh !important; background: #141414 !important; z-index: 99999 !important; box-shadow: 0 -10px 30px rgba(0,0,0,0.7) !important; border-radius: 20px 20px 0 0 !important; box-sizing: border-box !important; padding-bottom: env(safe-area-inset-bottom); transform: translateY(100%) !important; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important; pointer-events: none !important; }
-        #detailDrawer.active { transform: translateY(0) !important; pointer-events: auto !important; }
-    `;
-    document.head.appendChild(styleStabilisateur);
+    // INJECTION DU CSS DE STABILISATION DES ÉPISODES + FORÇAGE PUB ADSTERRA EN BAS
+    const styleStabilisateur = document.createElement('style');
+    styleStabilisateur.innerHTML = `
+        .ep-card { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 15px !important; width: 100% !important; box-sizing: border-box !important; position: relative !important; margin-bottom: 8px !important; cursor: pointer; }
+        .ep-info { flex: 1 !important; min-width: 0 !important; position: relative !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; overflow: hidden !important; }
+        .ep-title-wrapper { width: 100% !important; max-width: 100% !important; overflow: hidden !important; position: relative !important; display: inline-block !important; }
+        .ep-title { white-space: nowrap !important; font-size: 14px; color: #fff; display: inline-block !important; transform: translateX(0); animation: scrollRebondLeft 10s ease-in-out infinite alternate !important; }
+        @keyframes scrollRebondLeft { 0% { transform: translateX(0); } 25% { transform: translateX(0); } 75% { transform: translateX(calc(-100% + 100px)); } 100% { transform: translateX(calc(-100% + 100px)); } }
+        .detail-btn { flex-shrink: 0 !important; }
+        .btn-voir-plus-poche { display: flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; background-color: #007bff !important; color: #ffffff !important; padding: 12px 20px !important; border-radius: 6px !important; font-size: 13px !important; font-weight: bold !important; margin-top: 2px !important; margin-bottom: 10px !important; cursor: pointer !important; border: none !important; width: 100% !important; box-sizing: border-box !important; transition: background 0.2s; }
+        .btn-voir-plus-poche:hover { background-color: #0056b3 !important; }
+        .suite-hidden { display: none !important; }
+        #detailDrawer { position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; height: auto !important; max-height: 85vh !important; background: #141414 !important; z-index: 99999 !important; box-shadow: 0 -10px 30px rgba(0,0,0,0.7) !important; border-radius: 20px 20px 0 0 !important; box-sizing: border-box !important; padding-bottom: env(safe-area-inset-bottom); transform: translateY(100%) !important; transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important; pointer-events: none !important; }
+        #detailDrawer.active { transform: translateY(0) !important; pointer-events: auto !important; }
 
-    let listeEp_Partie1 = [];
-    let listeEp_Partie2 = [];
+        /* --- FORÇAGE DE LA SOCIAL BAR ADSTERRA TOUT EN BAS DE LA PAGE --- */
+        div[id^="at_sb_"], .at-social-bar, div[class^="adsterra-"] {
+            top: auto !important;
+            bottom: 10px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            position: fixed !important;
+            z-index: 9999 !important;
+        }
+    `;
+    document.head.appendChild(styleStabilisateur);
 
-    function fusionnerEtAfficher() {
-        const tousLesEpisodes = [...listeEp_Partie1, ...listeEp_Partie2];
-        renderEpisodes(tousLesEpisodes);
-    }
+    let listeEp_Partie1 = [];
+    let listeEp_Partie2 = [];
 
-    // ÉCOUTEUR PRINCIPAL DU DOCUMENT SERIE / FILM
-    onSnapshot(doc(db, "films", filmId), (snap) => {
-        const data = snap.data(); if(!data) return;
-        currentFilmData = data;
-        
-        document.getElementById('txtTitle').innerText = data.titre || "CongoFlix";
-        descriptionComplete = data.description || "Aucune description disponible.";
-        document.getElementById('txtDesc').innerText = descriptionComplete;
-   
-        document.getElementById('statV').innerText = data.views || 0;
+    function fusionnerEtAfficher() {
+        const tousLesEpisodes = [...listeEp_Partie1, ...listeEp_Partie2];
+        renderEpisodes(tousLesEpisodes);
+    }
 
-        if(!document.getElementById('playerRoot').innerHTML.trim() && data.url) {
-            document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
-        }
+    // ÉCOUTEUR PRINCIPAL DU DOCUMENT SERIE / FILM
+    onSnapshot(doc(db, "films", filmId), (snap) => {
+        const data = snap.data(); if(!data) return;
+        currentFilmData = data;
+        
+        document.getElementById('txtTitle').innerText = data.titre || "CongoFlix";
+        descriptionComplete = data.description || "Aucune description disponible.";
+        document.getElementById('txtDesc').innerText = descriptionComplete;
+   
+        document.getElementById('statV').innerText = data.views || 0;
 
-        renderCasting(data);
-        listeEp_Partie1 = data.episodes || data.partie || data.film || data.Saison || data.Saison1 || [];
-        fusionnerEtAfficher();
-    });
+        if(!document.getElementById('playerRoot').innerHTML.trim() && data.url) {
+            document.getElementById('playerRoot').innerHTML = `<iframe src="${data.url}" allowfullscreen></iframe>`;
+        }
 
-    onSnapshot(doc(db, "films", filmId + "-suite"), (snap) => {
-        if (snap.exists()) {
-            const dataSuite = snap.data();
-            listeEp_Partie2 = dataSuite.episodes || dataSuite.partie || dataSuite.film || dataSuite.Saison || dataSuite.Saison1 || [];
-        } else {
-            listeEp_Partie2 = [];
-        }
-        fusionnerEtAfficher();
-    });
+        renderCasting(data);
+        listeEp_Partie1 = data.episodes || data.partie || data.film || data.Saison || data.Saison1 || [];
+        fusionnerEtAfficher();
+    });
 
-    // ÉCOUTEUR EN TEMPS RÉEL DES COMMENTAIRES (STABLE)
-    onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
-        let comms = [];
-        snapshot.forEach((docSnap) => {
-            comms.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        renderComments(comms);
-    });
+    onSnapshot(doc(db, "films", filmId + "-suite"), (snap) => {
+        if (snap.exists()) {
+            const dataSuite = snap.data();
+            listeEp_Partie2 = dataSuite.episodes || dataSuite.partie || dataSuite.film || dataSuite.Saison || dataSuite.Saison1 || [];
+        } else {
+            listeEp_Partie2 = [];
+        }
+        fusionnerEtAfficher();
+    });
 
-    // ÉCOUTEUR UNIQUE DU COMPTEUR DE LIKES (SOUS-COLLECTION) + GESTION DE L'ÉTAT DU BOUTON
-    onSnapshot(collection(db, "films", filmId, "likes"), (snapshot) => {
-        const statL = document.getElementById('statL');
-        if (statL) statL.innerText = snapshot.size;
+    // ÉCOUTEUR EN TEMPS RÉEL DES COMMENTAIRES (STABLE)
+    onSnapshot(collection(db, "films", filmId, "comments"), (snapshot) => {
+        let comms = [];
+        snapshot.forEach((docSnap) => {
+            comms.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        renderComments(comms);
+    });
 
-        const likeBtn = document.getElementById('mainLikeBtn');
-        let userHasLiked = false;
-        snapshot.forEach((docSnap) => {
-            if(docSnap.id === userId) userHasLiked = true;
-        });
+    // ÉCOUTEUR UNIQUE DU COMPTEUR DE LIKES (SOUS-COLLECTION) + GESTION DE L'ÉTAT DU BOUTON
+    onSnapshot(collection(db, "films", filmId, "likes"), (snapshot) => {
+        const statL = document.getElementById('statL');
+        if (statL) statL.innerText = snapshot.size;
 
-        if(currentUser && userHasLiked) {
-            likeBtn.classList.add('is-liked');
-        } else {
-            likeBtn.classList.remove('is-liked');
-        }
-    });
+        const likeBtn = document.getElementById('mainLikeBtn');
+        let userHasLiked = false;
+        snapshot.forEach((docSnap) => {
+            if(docSnap.id === userId) userHasLiked = true;
+        });
 
-    function renderEpisodes(epArray) {
-        const container = document.getElementById('episodesList');
-        let html = ""; let seasons = {};
-        
-        for (let i = 0; i < epArray.length; i += 4) {
-            const img = epArray[i];
-            const title = epArray[i+1];
-            const linkWatch = epArray[i+2];    
-            const linkDownload = epArray[i+3]; 
-            
-            if (!title) continue; 
+        if(currentUser && userHasLiked) {
+            likeBtn.classList.add('is-liked');
+        } else {
+            likeBtn.classList.remove('is-liked');
+        }
+    });
 
-            let sName = title.includes(':') ? title.split(':')[0].trim() : "Épisodes";
-            if(!seasons[sName]) seasons[sName] = [];
-            seasons[sName].push({img, title, linkWatch, linkDownload});
-        }
-        
-        for (let s in seasons) {
-            let cartesHtml = "";
-            let boutonVoirPlusHtml = "";
-            let modificateursSuite = false;
+    function renderEpisodes(epArray) {
+        const container = document.getElementById('episodesList');
+        let html = ""; let seasons = {};
+        
+        for (let i = 0; i < epArray.length; i += 4) {
+            const img = epArray[i];
+           const title = epArray[i+1];
+            const linkWatch = epArray[i+2];    
+            const linkDownload = epArray[i+3]; 
+            
+            if (!title) continue; 
 
-            seasons[s].forEach((ep, index) => {
-                if (ep.title.toLowerCase().includes("voir plus")) {
-                    modificateursSuite = true;
-                    boutonVoirPlusHtml = `
-                        <button class="btn-voir-plus-poche" id="btn-more-${s}" onclick="afficherLaSuiteDeLaPoche('${s}')">
-                            <i class="fa-solid fa-circle-plus"></i> Voir plus d'épisodes
-                        </button>
-                    `;
-               } else {
-                        let classeCachee = modificateursSuite ? `suite-hidden partie-suite-${s}` : "";
-                        let titreAffiche = ep.title;
-                        if (ep.title.includes(':')) {
-                            const morceaux = ep.title.split(':');
-                            morceaux.shift();
-                            titreAffiche = morceaux.join(':').trim();
-                        }
+            let sName = title.includes(':') ? title.split(':')[0].trim() : "Épisodes";
+            if(!seasons[sName]) seasons[sName] = [];
+            seasons[sName].push({img, title, linkWatch, linkDownload});
+        }
+        
+        for (let s in seasons) {
+            let cartesHtml = "";
+            let boutonVoirPlusHtml = "";
+            let modificateursSuite = false;
 
-                        // On nettoie le titre ici pour qu'il ne casse pas le HTML
-                        let safeTitle = ep.title.replace(/["']/g, " ");
+            seasons[s].forEach((ep, index) => {
+                if (ep.title.toLowerCase().includes("voir plus")) {
+                    modificateursSuite = true;
+                    boutonVoirPlusHtml = `
+                        <button class="btn-voir-plus-poche" id="btn-more-${s}" onclick="afficherLaSuiteDeLaPoche('${s}')">
+                            <i class="fa-solid fa-circle-plus"></i> Voir plus d'épisodes
+                        </button>
+                    `;
+               } else {
+                        let classeCachee = modificateursSuite ? `suite-hidden partie-suite-${s}` : "";
+                        let titreAffiche = ep.title;
+                        if (ep.title.includes(':')) {
+                            const morceaux = ep.title.split(':');
+                            morceaux.shift();
+                            titreAffiche = morceaux.join(':').trim();
+                        }
 
-                        cartesHtml += `
-                            <div class="ep-card ${classeCachee}" onclick="openDetails('${safeTitle}', '${ep.linkWatch || ''}', '${ep.linkDownload || ''}')">
-                            <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
-                            <div class="ep-info">
-                                <div class="ep-title-wrapper">
-                                    <div class="ep-title">${titreAffiche}</div>
-                                </div>
-                            </div>
-                            <button class="detail-btn">Détails</button>
-                        </div>
-                    `;
-                }
-            });
-            html += `
-            <div class="season-wrapper" style="margin-bottom: 25px;">
-                <div class="season-pocket" onclick="this.parentElement.classList.toggle('active')">
-                    <span><i class="fa-solid fa-layer-group"></i> ${s}</span> <i class="fa-solid fa-chevron-down"></i>
-                </div>
-                <div class="season-content">
-                    ${cartesHtml}
-                    ${boutonVoirPlusHtml}
-                </div>
-            </div>`;
-        }
-        container.innerHTML = html;
-    }
+                        let safeTitle = ep.title.replace(/["']/g, " ");
 
-    window.afficherLaSuiteDeLaPoche = (saisonId) => {
-        const elementsSuite = document.querySelectorAll(`.partie-suite-${saisonId}`);
-        elementsSuite.forEach(el => {
-            el.classList.remove('suite-hidden');
-        });
-        const boutonMore = document.getElementById(`btn-more-${saisonId}`);
-        if(boutonMore) boutonMore.style.display = 'none';
-    };
+                        cartesHtml += `
+                            <div class="ep-card ${classeCachee}" onclick="openDetails('${safeTitle}', '${ep.linkWatch || ''}', '${ep.linkDownload || ''}')">
+                            <div class="ep-poster-box"><img src="${ep.img}"><div class="ep-hd-tag">HD</div></div>
+                            <div class="ep-info">
+                                <div class="ep-title-wrapper">
+                                    <div class="ep-title">${titreAffiche}</div>
+                                </div>
+                            </div>
+                            <button class="detail-btn">Détails</button>
+                        </div>
+                    `;
+                }
+            });
+            html += `
+            <div class="season-wrapper" style="margin-bottom: 25px;">
+                <div class="season-pocket" onclick="this.parentElement.classList.toggle('active')">
+                    <span><i class="fa-solid fa-layer-group"></i> ${s}</span> <i class="fa-solid fa-chevron-down"></i>
+                </div>
+                <div class="season-content">
+                    ${cartesHtml}
+                    ${boutonVoirPlusHtml}
+                </div>
+            </div>`;
+        }
+        container.innerHTML = html;
+    }
 
-    window.openDetails = (title, linkWatch, linkDownload) => {
-        document.getElementById('detEpTitle').innerText = title;
-        
-        const adContainer = document.getElementById('modalAdContainer');
-        adContainer.style.display = 'flex';
-        adContainer.innerHTML = ""; // Nettoyage initial
+    window.afficherLaSuiteDeLaPoche = (saisonId) => {
+        const elementsSuite = document.querySelectorAll(`.partie-suite-${saisonId}`);
+        elementsSuite.forEach(el => {
+            el.classList.remove('suite-hidden');
+        });
+        const boutonMore = document.getElementById(`btn-more-${saisonId}`);
+        if(boutonMore) boutonMore.style.display = 'none';
+    };
 
-        // On nettoie l'ancien intervalle de rotation automatique s'il tournait encore
-        if (pubRotationInterval) clearInterval(pubRotationInterval);
+    window.openDetails = (title, linkWatch, linkDownload) => {
+        document.getElementById('detEpTitle').innerText = title;
+        
+        const adContainer = document.getElementById('modalAdContainer');
+        adContainer.style.display = 'flex';
+        adContainer.innerHTML = ""; 
 
-        // Structure HTML commune pour forcer le centrage chirurgical sur mobile sans aucun décalage
-        const structureDebut = `<div style="width: 100%; display: flex; justify-content: center; align-items: center; padding: 5px 0; overflow: hidden;">`;
-        const structureFin = `</div>`;
+        if (pubRotationInterval) clearInterval(pubRotationInterval);
 
-        // Définition des 3 blocs publicitaires avec tes vrais scripts
-        const pubs = [
-            // PUB 1 : Adsterra Banner 320x50 via fichier externe
-            `${structureDebut}
-                <div style="width: 320px; height: 50px; overflow: hidden; display: flex; justify-content: center;">
-                    <iframe src="adsterra-banner.html" style="border:0; padding:0; width:320px; height:50px; overflow:hidden; background:transparent;"></iframe>
-                </div>
-            ${structureFin}`,
+        const structureDebut = `<div style="width: 100%; display: flex; justify-content: center; align-items: center; padding: 5px 0; overflow: hidden;">`;
+        const structureFin = `</div>`;
 
-            // PUB 2 : Adsterra Native Banner via fichier externe
-            `${structureDebut}
-                <div style="width: 320px; height: 50px; overflow: hidden; display: flex; justify-content: center;">
-                    <iframe src="adsterra-native.html" style="border:0; padding:0; width:320px; height:50px; overflow:hidden; background:transparent;"></iframe>
-                </div>
-            ${structureFin}`,
+        const pubs = [
+            `${structureDebut}
+                <div style="width: 320px; height: 50px; overflow: hidden; display: flex; justify-content: center;">
+                    <iframe src="adsterra-banner.html" style="border:0; padding:0; width:320px; height:50px; overflow:hidden; background:transparent;"></iframe>
+                </div>
+            ${structureFin}`,
 
-            // PUB 3 : Bloc publicitaire A-ADS standard
-            `${structureDebut}
-                <div style="width: 320px; height: 50px; display: flex; justify-content: center;">
-                    <iframe src="https://ad.a-ads.com/2443411?size=320x50" style="border:0; padding:0; width:320px; height:50px; overflow:hidden; background-color:transparent;"></iframe>
-                </div>
-            ${structureFin}`
-        ];
-        // --- STRATÉGIE DE TRAITEMENT DES CONTENEURS (SÉRIE VS FILM UNIQUE) ---
-        const totalCards = document.querySelectorAll('.ep-card').length;
+            `${structureDebut}
+                <div style="width: 320px; height: 50px; overflow: hidden; display: flex; justify-content: center;">
+                    <iframe src="adsterra-native.html" style="border:0; padding:0; width:320px; height:50px; overflow:hidden; background:transparent;"></iframe>
+                </div>
+            ${structureFin}`,
 
-        if (totalCards <= 1) {
-            // CONTEXTE FILM UNIQUE : On fait défiler les 3 pubs très rapidement (toutes les 1.5 secondes)
-            let indexRotation = 0;
-            adContainer.innerHTML = pubs[indexRotation];
+            `${structureDebut}
+                <div style="width: 320px; height: 50px; display: flex; justify-content: center;">
+                    <iframe src="https://ad.a-ads.com/2443411?size=320x50" style="border:0; padding:0; width:320px; height:50px; overflow:hidden; background-color:transparent;"></iframe>
+                </div>
+            ${structureFin}`
+        ];
 
-            pubRotationInterval = setInterval(() => {
-                indexRotation++;
-                if (indexRotation >= pubs.length) {
-                    clearInterval(pubRotationInterval); // On arrête après avoir montré les 3
-                } else {
-                    adContainer.innerHTML = pubs[indexRotation];
-                }
-            }, 1500); // 1500ms = 1,5 seconde par publicité pour une visibilité totale en 4,5 secondes
+        const totalCards = document.querySelectorAll('.ep-card').length;
 
-        } else {
-            // CONTEXTE SÉRIE : Une pub différente à chaque clic sur un épisode
-            if (cyclePub === 1) {
-                adContainer.innerHTML = pubs[0];
-                cyclePub = 2;
-            } else if (cyclePub === 2) {
-                adContainer.innerHTML = pubs[1];
-                cyclePub = 3;
-            } else {
-                adContainer.innerHTML = pubs[2];
-                cyclePub = 1; // Retour à la première unité
-            }
-        }
+        if (totalCards <= 1) {
+            let indexRotation = 0;
+            adContainer.innerHTML = pubs[indexRotation];
 
-        // --- GESTION DU RESTE DE LA MODALE COMPATIBLE AVEC TON CODE DE BASE ---
-        document.getElementById('modalPlayerContainer').style.display = 'none';
-        document.getElementById('modalPlayerContainer').innerHTML = "";
-        document.getElementById('detailDrawer').classList.add('active');
-        
-        document.getElementById('btnWatchNow').onclick = () => {
-            if (pubRotationInterval) clearInterval(pubRotationInterval); // Arrêt de sécurité au lancement de la vidéo
-            document.getElementById('modalAdContainer').style.display = 'none';
-            const container = document.getElementById('modalPlayerContainer');
-            container.style.display = 'block';
-            container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen></iframe>`;
-        };
-        
-        document.getElementById('btnDownloadNow').onclick = () => {
-            if(linkDownload) {
-                window.open(linkDownload, '_blank');
-            } else {
-                alert("Lien de téléchargement indisponible");
-            }
-        };
-    };
+            pubRotationInterval = setInterval(() => {
+                indexRotation++;
+                if (indexRotation >= pubs.length) {
+                    clearInterval(pubRotationInterval); 
+                } else {
+                    adContainer.innerHTML = pubs[indexRotation];
+                }
+            }, 1500); 
 
-   window.closeDetails = () => {
-        if (pubRotationInterval) clearInterval(pubRotationInterval); // Stop la rotation de pub immédiatement
-        document.getElementById('detailDrawer').classList.remove('active');
-        document.getElementById('modalPlayerContainer').innerHTML = "";
-    };
+        } else {
+            if (cyclePub === 1) {
+                adContainer.innerHTML = pubs[0];
+                cyclePub = 2;
+            } else if (cyclePub === 2) {
+                adContainer.innerHTML = pubs[1];
+                cyclePub = 3;
+            } else {
+                adContainer.innerHTML = pubs[2];
+                cyclePub = 1; 
+            }
+        }
 
-    window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
+        document.getElementById('modalPlayerContainer').style.display = 'none';
+        document.getElementById('modalPlayerContainer').innerHTML = "";
+        document.getElementById('detailDrawer').classList.add('active');
+        
+        document.getElementById('btnWatchNow').onclick = () => {
+            if (pubRotationInterval) clearInterval(pubRotationInterval); 
+            document.getElementById('modalAdContainer').style.display = 'none';
+            const container = document.getElementById('modalPlayerContainer');
+            container.style.display = 'block';
+            container.innerHTML = `<iframe src="${linkWatch}" allowfullscreen></iframe>`;
+        };
+        
+        document.getElementById('btnDownloadNow').onclick = () => {
+            if(linkDownload) {
+                window.open(linkDownload, '_blank');
+            } else {
+                alert("Lien de téléchargement indisponible");
+            }
+        };
+    };
 
-    window.handlePost = async () => {
-        if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
-        const f = document.getElementById('tkField');
-        const val = f.value.trim();
-        if(!val) return;
-        
-        try {
-            const uniqueId = "ID-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-            if(targetCommentId) {
-                const replyData = {
-                    id: uniqueId,
-                    nom: userName,
-                    text: val,
-                    photo: userImg,
-                    date: Date.now()
-                };
-                const replyRef = doc(db, "films", filmId, "comments", targetCommentId);
-                await updateDoc(replyRef, {
-                    replies: arrayUnion(replyData)
-                });
-            } else {
-                const newComment = {
-                    id: uniqueId,
-                    nom: userName,
-                    text: val,
-                    photo: userImg,
-                    date: Date.now(),
-                    replies: []
-                };
-                const commentRef = doc(db, "films", filmId, "comments", uniqueId);
-                await setDoc(commentRef, newComment);
-            }
-            f.value = "";
-            targetCommentId = null;
-            f.placeholder = "Ajouter un commentaire...";
-        } catch (err) {
-            console.error("Erreur envoi commentaire : ", err);
-        }
-    };
+   window.closeDetails = () => {
+        if (pubRotationInterval) clearInterval(pubRotationInterval); 
+        document.getElementById('detailDrawer').classList.remove('active');
+        document.getElementById('modalPlayerContainer').innerHTML = "";
+    };
 
-    window.prepareReply = (cid, name) => {
-        targetCommentId = cid;
-        const field = document.getElementById('tkField');
-        field.placeholder = "Répondre à " + name + "...";
-        field.focus();
-    };
+    window.toggleTk = () => document.getElementById('tkDrawer').classList.toggle('active');
 
-    function renderComments(comms) {
-        const list = document.getElementById('tkList');
-        if(!list) return;
-        
-        document.getElementById('statC').innerText = comms.length;
-        document.getElementById('hCount').innerText = comms.length;
+    window.handlePost = async () => {
+        if(!currentUser) return showAuthAlert("Connecte-toi pour commenter !");
+        const f = document.getElementById('tkField');
+        const val = f.value.trim();
+        if(!val) return;
+        
+        try {
+            const uniqueId = "ID-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+            if(targetCommentId) {
+                const replyData = {
+                    id: uniqueId,
+                    nom: userName,
+                    text: val,
+                    photo: userImg,
+                    date: Date.now()
+                };
+                const replyRef = doc(db, "films", filmId, "comments", targetCommentId);
+                await updateDoc(replyRef, {
+                    replies: arrayUnion(replyData)
+                });
+            } else {
+                const newComment = {
+                    id: uniqueId,
+                    nom: userName,
+                    text: val,
+                    photo: userImg,
+                    date: Date.now(),
+                    replies: []
+                };
+                const commentRef = doc(db, "films", filmId, "comments", uniqueId);
+                await setDoc(commentRef, newComment);
+            }
+            f.value = "";
+            targetCommentId = null;
+            f.placeholder = "Ajouter un commentaire...";
+        } catch (err) {
+            console.error("Erreur envoi commentaire : ", err);
+        }
+    };
 
-        const commsTries = [...comms].sort((a,b) => b.date - a.date);
+    window.prepareReply = (cid, name) => {
+        targetCommentId = cid;
+        const field = document.getElementById('tkField');
+        field.placeholder = "Répondre à " + name + "...";
+        field.focus();
+    };
 
-        list.innerHTML = commsTries.map(c => {
-            let dateCommentaire = recupererDateFormattee(c.date);
+    function renderComments(comms) {
+        const list = document.getElementById('tkList');
+        if(!list) return;
+        
+        document.getElementById('statC').innerText = comms.length;
+        document.getElementById('hCount').innerText = comms.length;
 
-            return `
-            <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start; position:relative;">
-                <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:35px; height:35px; border-radius:50%">
-                <div style="flex:1; padding-right:30px;">
-                    <div style="font-size:12px; color:#999; font-weight:bold">
-                        ${c.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateCommentaire}</span>
-                    </div>
-                    <div style="font-size:14px; color:#eee; margin-top:2px;">${c.text}</div>
-                    <div class="c-foot" style="margin-top:4px;"><span onclick="prepareReply('${c.id}', '${c.nom}')" style="cursor:pointer; color:#777; font-size:12px;">Répondre</span></div>
-                    
-                    ${(c.replies || []).length > 0 ? `
-                        <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher les réponses</div>
-                        <div class="replies-pocket">
-                            ${(c.replies || []).map(r => {
-                                let dateReponse = recupererDateFormattee(r.date);
+        const commsTries = [...comms].sort((a,b) => b.date - a.date);
 
-                                return `
-                                <div style="display:flex; gap:8px; margin-top:12px; position:relative;">
-                                    <img src="${r.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:24px; height:24px; border-radius:50%">
-                                    <div style="flex:1; padding-right:25px;">
-                                        <div style="font-size:11px; color:#777; font-weight:bold">
-                                            ${r.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateReponse}</span>
-                                        </div>
-                                        <div style="font-size:13px; color:#eee; margin-top:1px;">${r.text}</div>
-                                    </div>
-                                </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-            `;
-        }).join('');
-    }
+        list.innerHTML = commsTries.map(c => {
+            let dateCommentaire = recupererDateFormattee(c.date);
 
-    function renderCasting(data) {
-        document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
-        document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || []).map(n => `<div class="cast-name-item"><i class="fa-solid fa-star" style="color:var(--gold); margin-right:10px; font-size: 8px;"></i> ${n}</div>`).join('');
-    }
+            return `
+            <div style="display:flex; gap:12px; margin-bottom:20px; align-items:flex-start; position:relative;">
+                <img src="${c.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:35px; height:35px; border-radius:50%">
+                <div style="flex:1; padding-right:30px;">
+                    <div style="font-size:12px; color:#999; font-weight:bold">
+                        ${c.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateCommentaire}</span>
+                    </div>
+                    <div style="font-size:14px; color:#eee; margin-top:2px;">${c.text}</div>
+                    <div class="c-foot" style="margin-top:4px;"><span onclick="prepareReply('${c.id}', '${c.nom}')" style="cursor:pointer; color:#777; font-size:12px;">Répondre</span></div>
+                    
+                    ${(c.replies || []).length > 0 ? `
+                        <div style="margin-top:10px; font-size:12px; color:var(--gold); cursor:pointer" onclick="this.nextElementSibling.classList.toggle('open')">——— Afficher les réponses</div>
+                        <div class="replies-pocket">
+                            ${(c.replies || []).map(r => {
+                                let dateReponse = recupererDateFormattee(r.date);
 
-    document.getElementById('mainLikeBtn').onclick = async () => {
-        if(!currentUser) return showAuthAlert("Connecte-toi pour liker !");
-        const likeRef = doc(db, "films", filmId, "likes", userId);
-        const likeSnap = await getDoc(likeRef);
+                                return `
+                                <div style="display:flex; gap:8px; margin-top:12px; position:relative;">
+                                    <img src="${r.photo || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" style="width:24px; height:24px; border-radius:50%">
+                                    <div style="flex:1; padding-right:25px;">
+                                        <div style="font-size:11px; color:#777; font-weight:bold">
+                                            ${r.nom} <span style="font-weight:normal; color:#555; margin-left:6px;">${dateReponse}</span>
+                                        </div>
+                                        <div style="font-size:13px; color:#eee; margin-top:1px;">${r.text}</div>
+                                    </div>
+                                </div>
+                                    `;
+                            }).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            `;
+        }).join('');
+    }
 
-        if (likeSnap.exists()) {
-            await deleteDoc(likeRef);
-        } else {
-            await setDoc(likeRef, { liked: true });
-        }
-    };
+    function renderCasting(data) {
+        document.getElementById('rowCastImgs').innerHTML = (data.acteurs || []).map(url => `<img src="${url}" class="actor-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">`).join('');
+        document.getElementById('listCastNames').innerHTML = (data.noms_acteurs || []).map(n => `<div class="cast-name-item"><i class="fa-solid fa-star" style="color:var(--gold); margin-right:10px; font-size: 8px;"></i> ${n}</div>`).join('');
+    }
 
-    document.getElementById('mainFavBtn').onclick = async () => { 
-        if(!currentUser) return showAuthAlert("Connecte-toi pour enregistrer !");
-        const btn = document.getElementById('mainFavBtn');
-        const userRef = doc(db, "users", userId);
-        const favItem = { id: filmId, titre: currentFilmData.titre || filmId, image: currentFilmData.poster || "" };
-        if(btn.classList.contains('is-fav')) {
-            await updateDoc(userRef, { favorites: arrayRemove(favItem) });
-            btn.classList.remove('is-fav');
-            document.getElementById('favText').innerText = "Enregistrer";
-        } else {
-            await updateDoc(userRef, { favorites: arrayUnion(favItem) });
-            btn.classList.add('is-fav');
-            document.getElementById('favText').innerText = "Ma Liste";
-        }
-    };
+    document.getElementById('mainLikeBtn').onclick = async () => {
+        if(!currentUser) return showAuthAlert("Connecte-toi pour liker !");
+        const likeRef = doc(db, "films", filmId, "likes", userId);
+        const likeSnap = await getDoc(likeRef);
 
-    window.triggerBackAd = () => { history.back(); };
-    window.showAuthAlert = (m) => { 
-        const a = document.getElementById('authAlert');
-        document.getElementById('authAlertMsg').innerText = m || "Action requise";
-        a.style.display='block'; setTimeout(()=>a.style.display='none', 3000);
-    };
+        if (likeSnap.exists()) {
+            await deleteDoc(likeRef);
+        } else {
+            await setDoc(likeRef, { liked: true });
+        }
+    };
 
-    // COMPTEUR DE VUES SÉCURISÉ EN ARRIÈRE-PLAN
-    setTimeout(async () => {
-        try {
-            await updateDoc(doc(db, "films", filmId), { views: increment(1) });
-        } catch(e) {
-            console.log("Erreur compteur vue:", e);
-        }
-    }, 1200);
+    document.getElementById('mainFavBtn').onclick = async () => { 
+        if(!currentUser) return showAuthAlert("Connecte-toi pour enregistrer !");
+        const btn = document.getElementById('mainFavBtn');
+       const userRef = doc(db, "users", userId);
+ inversion = { id: filmId, titre: currentFilmData.titre || filmId, image: currentFilmData.poster || "" };
+        if(btn.classList.contains('is-fav')) {
+            await updateDoc(userRef, { favorites: arrayRemove(inversion) });
+            btn.classList.remove('is-fav');
+            document.getElementById('favText').innerText = "Enregistrer";
+        } else {
+            await updateDoc(userRef, { favorites: arrayUnion(inversion) });
+            btn.classList.add('is-fav');
+            document.getElementById('favText').innerText = "Ma Liste";
+        }
+    };
+
+    window.triggerBackAd = () => { history.back(); };
+    window.showAuthAlert = (m) => { 
+        const a = document.getElementById('authAlert');
+        document.getElementById('authAlertMsg').innerText = m || "Action requise";
+        a.style.display='block'; setTimeout(()=>a.style.display='none', 3000);
+    };
+
+    setTimeout(async () => {
+        try {
+            await updateDoc(doc(db, "films", filmId), { views: increment(1) });
+        } catch(e) {
+            console.log("Erreur compteur vue:", e);
+        }
+    }, 1200);
 </script>
-    <script src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
 
-    </body>
+<script src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js" defer></script>
+
+</body>
 </html>
-
