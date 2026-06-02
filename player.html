@@ -795,62 +795,6 @@
         catch(e) { console.log("Erreur vue:", e); }
     }, 1200);
 </script>
-<!-- BOUTON PERSONNALISÉ POUR FERMER LA PUB ADSTERRA POUR DE BON -->
-<button id="btnFermerPubPourDeBon" onclick="fermerPubDefinitif()" style="position: fixed; bottom: 85px; right: 10px; z-index: 1000000; background: rgba(0, 0, 0, 0.8); color: white; border: 1px solid #ff0000; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; display: none; box-shadow: 0 0 10px rgba(0,0,0,0.5);">
-    ✕ Fermer la pub pour ce film
-</button>
-
-<style>
-    /* Si la pub décide de se caler sur ton lecteur, on prépare une règle de disparition totale */
-    .pub-cachee-pour-de-bon {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        transform: scale(0) !important;
-    }
-</style>
-    <script>
-// Fonction qui s'active quand l'utilisateur clique sur ton bouton personnalisé
-function fermerPubDefinitif() {
-    // On cache le bouton lui-même
-    document.getElementById("btnFermerPubPourDeBon").style.display = "none";
-    
-    // On active le blocage définitif
-    window.pubBloqueePourDeBon = true;
-    
-    // On applique le masquage immédiat
-    appliquerMasquageStrict();
-}
-
-function appliquerMasquageStrict() {
-    const elementsPub = document.querySelectorAll('div[id^="at_sb_"], .at-social-bar, div[class^="adsterra-"]');
-    elementsPub.forEach(pub => {
-        pub.classList.add('pub-cachee-pour-de-bon');
-    });
-}
-
-// Surveillance permanente pour afficher le bouton et bloquer la pub si cliquée
-const observateurAntiRelance = new MutationObserver(() => {
-    const elementsPub = document.querySelectorAll('div[id^="at_sb_"], .at-social-bar, div[class^="adsterra-"]');
-    
-    if (elementsPub.length > 0) {
-        if (window.pubBloqueePourDeBon) {
-            // Si l'utilisateur a cliqué sur "Fermer", on ré-écrase la pub même si elle tente de renaître
-            appliquerMasquageStrict();
-        } else {
-            // Si l'utilisateur n'a pas encore cliqué, on lui montre ton bouton pour le faire
-            document.getElementById("btnFermerPubPourDeBon").style.display = "block";
-        }
-    }
-});
-
-// On lance la machine dès que le site charge
-document.addEventListener("DOMContentLoaded", () => {
-    window.pubBloqueePourDeBon = false;
-    observateurAntiRelance.observe(document.body, { childList: true, subtree: true });
-});
-</script>
     <script type="text/javascript" src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
 </body>
 </html>
