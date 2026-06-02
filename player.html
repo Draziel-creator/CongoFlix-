@@ -795,20 +795,57 @@
         try { await updateDoc(doc(db, "films", filmId), { views: increment(1) }); } 
         catch(e) { console.log("Erreur vue:", e); }
     }, 1200);
-    // Écouteur pour agrandir l'iframe uniquement quand la pub Adsterra est prête
+    // ==========================================
+// SYNC DE L'IFRAME AVEC TES MODAUX (VERSION OPTIMISÉE)
+// ==========================================
+let pubEstPrete = false;
+
+// 1. Écouteur pour le chargement initial d'Adsterra
 window.addEventListener("message", (event) => {
     if (event.data === "pub_chargee") {
-        const iframe = document.getElementById("iframePubSocial");
-        if (iframe) {
-            iframe.style.height = "85px"; // On ne lui donne de la hauteur que maintenant !
-        }
+        pubEstPrete = true;
+        verifierVisibilitePub();
     }
 });
+
+// 2. Fonction de vérification (exécutée uniquement en cas de changement)
+function verifierVisibilitePub() {
+    const iframe = document.getElementById("iframePubSocial");
+    if (!iframe || !pubEstPrete) return;
+
+    const drawerDetails = document.getElementById('detailDrawer');
+    const drawerCommentaires = document.getElementById('tkDrawer');
+
+    const detailsEstOuvert = drawerDetails && drawerDetails.classList.contains('active');
+    const commsEstOuvert = drawerCommentaires && drawerCommentaires.classList.contains('active');
+
+    if (detailsEstOuvert || commsEstOuvert) {
+        iframe.style.transform = "translateY(100%)"; // Cache la pub sous l'écran
+    } else {
+        iframe.style.height = "85px";
+        iframe.style.transform = "translateY(0)";   // Réaffiche la pub
+    }
+}
+
+// 3. Écouteur intelligent (MutationObserver) : Remplace le setInterval qui fait ramer
+const observateurModaux = new MutationObserver(() => {
+    verifierVisibilitePub();
+});
+
+// On démarre la surveillance dès que la page est prête
+document.addEventListener("DOMContentLoaded", () => {
+    const drawerDetails = document.getElementById('detailDrawer');
+    const drawerCommentaires = document.getElementById('tkDrawer');
+
+    // On dit à l'observateur de surveiller uniquement les changements de classe sur tes deux modaux
+    if (drawerDetails) observateurModaux.observe(drawerDetails, { attributes: true, attributeFilter: ['class'] });
+    if (drawerCommentaires) observateurModaux.observe(drawerCommentaires, { attributes: true, attributeFilter: ['class'] });
+});
 </script>
-  <iframe 
+ <iframe 
     src="https://draziel-creator.github.io/CongoFlix-/social.html" 
     id="iframePubSocial"
-    style="position: fixed; bottom: 0; left: 0; width: 100%; height: 0px; border: none; z-index: 999999; background: transparent; transition: height 0.3s ease;">
+    style="position: fixed; bottom: 0; left: 0; width: 100%; height: 0px; border: none; z-index: 999999; background: transparent; transition: transform 0.3s ease, height 0.3s ease;">
 </iframe>
 </body>
 </html>
