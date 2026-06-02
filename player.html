@@ -795,11 +795,20 @@
         try { await updateDoc(doc(db, "films", filmId), { views: increment(1) }); } 
         catch(e) { console.log("Erreur vue:", e); }
     }, 1200);
+    // Écouteur pour agrandir l'iframe uniquement quand la pub Adsterra est prête
+window.addEventListener("message", (event) => {
+    if (event.data === "pub_chargee") {
+        const iframe = document.getElementById("iframePubSocial");
+        if (iframe) {
+            iframe.style.height = "85px"; // On ne lui donne de la hauteur que maintenant !
+        }
+    }
+});
 </script>
-   <iframe 
+  <iframe 
     src="https://draziel-creator.github.io/CongoFlix-/social.html" 
     id="iframePubSocial"
-    style="position: fixed; bottom: 0; left: 0; width: 100%; height: 80px; border: none; z-index: 999999; background: transparent; color-scheme: dark;">
+    style="position: fixed; bottom: 0; left: 0; width: 100%; height: 0px; border: none; z-index: 999999; background: transparent; transition: height 0.3s ease;">
 </iframe>
 </body>
 </html>
