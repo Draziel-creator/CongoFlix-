@@ -794,67 +794,63 @@
         try { await updateDoc(doc(db, "films", filmId), { views: increment(1) }); } 
         catch(e) { console.log("Erreur vue:", e); }
     }, 1200);
-  // ========================================================
-// INTERCEPTEUR ET STABILISATEUR DE SOCIAL BAR (ADSTERRA)
-// ========================================================
-function controlerMasquageAdsterra() {
-    // On cible tous les éléments possibles créés par la Social Bar d'Adsterra
+</script>
+<!-- BOUTON PERSONNALISÉ POUR FERMER LA PUB ADSTERRA POUR DE BON -->
+<button id="btnFermerPubPourDeBon" onclick="fermerPubDefinitif()" style="position: fixed; bottom: 85px; right: 10px; z-index: 1000000; background: rgba(0, 0, 0, 0.8); color: white; border: 1px solid #ff0000; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; display: none; box-shadow: 0 0 10px rgba(0,0,0,0.5);">
+    ✕ Fermer la pub pour ce film
+</button>
+
+<style>
+    /* Si la pub décide de se caler sur ton lecteur, on prépare une règle de disparition totale */
+    .pub-cachee-pour-de-bon {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: scale(0) !important;
+    }
+</style>
+    <script>
+// Fonction qui s'active quand l'utilisateur clique sur ton bouton personnalisé
+function fermerPubDefinitif() {
+    // On cache le bouton lui-même
+    document.getElementById("btnFermerPubPourDeBon").style.display = "none";
+    
+    // On active le blocage définitif
+    window.pubBloqueePourDeBon = true;
+    
+    // On applique le masquage immédiat
+    appliquerMasquageStrict();
+}
+
+function appliquerMasquageStrict() {
     const elementsPub = document.querySelectorAll('div[id^="at_sb_"], .at-social-bar, div[class^="adsterra-"]');
-    if (elementsPub.length === 0) return; // Si la pub n'est pas encore créée, on attend
-
-    const drawerDetails = document.getElementById('detailDrawer');
-    const drawerCommentaires = document.getElementById('tkDrawer');
-
-    // Vérification de l'ouverture de tes deux tiroirs
-    const detailsEstOuvert = drawerDetails && drawerDetails.classList.contains('active');
-    const commsEstOuvert = drawerCommentaires && drawerCommentaires.classList.contains('active');
-
     elementsPub.forEach(pub => {
-        // Force la pub à se stabiliser tout en bas du téléphone quoi qu'il arrive
-        pub.style.setProperty('position', 'fixed', 'important');
-        pub.style.setProperty('left', '50%', 'important');
-        pub.style.setProperty('transform', detailsEstOuvert || commsEstOuvert ? 'translate(-50%, 150%)' : 'translate(-50%, 0)', 'important');
-        pub.style.setProperty('transition', 'transform 0.3s ease', 'important');
-        pub.style.setProperty('z-index', '999999', 'important');
-        
-        // On s'assure que si les modaux sont ouverts, la pub devient invisible et non cliquable
-        if (detailsEstOuvert || commsEstOuvert) {
-            pub.style.setProperty('opacity', '0', 'important');
-            pub.style.setProperty('pointer-events', 'none', 'important');
-        } else {
-            pub.style.setProperty('opacity', '1', 'important');
-            pub.style.setProperty('pointer-events', 'auto', 'important');
-            pub.style.setProperty('bottom', '0px', 'important');
-        }
+        pub.classList.add('pub-cachee-pour-de-bon');
     });
 }
 
-// Observateur global qui surveille TOUT le document pour intercepter la pub au millième de seconde
-const observateurGlobalPub = new MutationObserver(() => {
-    controlerMasquageAdsterra();
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-    // On observe les changements dans tout le body (pour choper l'apparition de la pub)
-    observateurGlobalPub.observe(document.body, { childList: true, subtree: true });
+// Surveillance permanente pour afficher le bouton et bloquer la pub si cliquée
+const observateurAntiRelance = new MutationObserver(() => {
+    const elementsPub = document.querySelectorAll('div[id^="at_sb_"], .at-social-bar, div[class^="adsterra-"]');
     
-    // On observe également les changements de classe de tes tiroirs spécifiques
-    const drawerDetails = document.getElementById('detailDrawer');
-    const drawerCommentaires = document.getElementById('tkDrawer');
-    if (drawerDetails) observateurGlobalPub.observe(drawerDetails, { attributes: true, attributeFilter: ['class'] });
-    if (drawerCommentaires) observateurGlobalPub.observe(drawerCommentaires, { attributes: true, attributeFilter: ['class'] });
+    if (elementsPub.length > 0) {
+        if (window.pubBloqueePourDeBon) {
+            // Si l'utilisateur a cliqué sur "Fermer", on ré-écrase la pub même si elle tente de renaître
+            appliquerMasquageStrict();
+        } else {
+            // Si l'utilisateur n'a pas encore cliqué, on lui montre ton bouton pour le faire
+            document.getElementById("btnFermerPubPourDeBon").style.display = "block";
+        }
+    }
+});
 
-    // Lancement d'un check initial rapide
-    controlerMasquageAdsterra();
+// On lance la machine dès que le site charge
+document.addEventListener("DOMContentLoaded", () => {
+    window.pubBloqueePourDeBon = false;
+    observateurAntiRelance.observe(document.body, { childList: true, subtree: true });
 });
 </script>
- <script type="text/javascript">
-    (function() {
-        var s = document.createElement('script');
-        s.src = "https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js";
-        s.async = true;
-        document.body.appendChild(s);
-    })();
-</script>
+    <script type="text/javascript" src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
 </body>
 </html>
