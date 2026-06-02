@@ -795,47 +795,51 @@
         catch(e) { console.log("Erreur vue:", e); }
     }, 1200);
    // ==========================================
-// CONTROLE DE L'IFRAME VIRTUELLE INSTANTANÉE
+// CONTROLE DU BLOC PUBLICITAIRE DIRECT
 // ==========================================
-
-// Masquage automatique sous l'écran en cas d'ouverture de modal
-function verifierVisibilitePub() {
-    const iframe = document.getElementById("iframePubSocial");
-    if (!iframe) return;
+function gererMasquagePub() {
+    const blocPub = document.getElementById("blocPubAdsterra");
+    if (!blocPub) return;
 
     const drawerDetails = document.getElementById('detailDrawer');
     const drawerCommentaires = document.getElementById('tkDrawer');
 
+    // Vérification de la présence de la classe 'active'
     const detailsEstOuvert = drawerDetails && drawerDetails.classList.contains('active');
     const commsEstOuvert = drawerCommentaires && drawerCommentaires.classList.contains('active');
 
     if (detailsEstOuvert || commsEstOuvert) {
-        iframe.style.transform = "translateY(100%)"; // Propulse la pub hors de l'écran
+        blocPub.style.transform = "translateY(110%)"; // Cache la pub et ses scripts sous l'écran
     } else {
-        iframe.style.transform = "translateY(0)";   // Fait revenir la pub proprement au ras du sol
+        blocPub.style.transform = "translateY(0)";     // Réaffiche la pub au ras du sol
     }
 }
 
-// Surveillance intelligente des classes de tes modaux (MutationObserver)
-const observateurModaux = new MutationObserver(() => {
-    verifierVisibilitePub();
+// Observateur intelligent ultra-léger
+const observateurPourPub = new MutationObserver(() => {
+    gererMasquagePub();
 });
 
 document.addEventListener("DOMContentLoaded", () => {
     const drawerDetails = document.getElementById('detailDrawer');
     const drawerCommentaires = document.getElementById('tkDrawer');
 
-    if (drawerDetails) observateurModaux.observe(drawerDetails, { attributes: true, attributeFilter: ['class'] });
-    if (drawerCommentaires) observateurModaux.observe(drawerCommentaires, { attributes: true, attributeFilter: ['class'] });
+    if (drawerDetails) observateurPourPub.observe(drawerDetails, { attributes: true, attributeFilter: ['class'] });
+    if (drawerCommentaires) observateurPourPub.observe(drawerCommentaires, { attributes: true, attributeFilter: ['class'] });
     
-    // Premier check au chargement au cas où
-    verifierVisibilitePub();
+    // Check initial
+    gererMasquagePub();
 });
 </script>
- <iframe 
-    src="data:text/html;charset=utf-8,<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:transparent!important;}div[id^='at_sb_'],.at-social-bar,div[class^='adsterra-']{position:fixed!important;bottom:0!important;left:50%!important;transform:translateX(-50%)!important;z-index:999999!important;}</style></head><body><script type='text/javascript' src='https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js' async></script></body></html>"
-    id="iframePubSocial"
-    style="position: fixed; bottom: 0; left: 0; width: 100%; height: 85px; border: none; z-index: 999999; background: transparent; transition: transform 0.2s ease;">
-</iframe>
+ <div id="blocPubAdsterra" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 80px; z-index: 999999; background: transparent; transition: transform 0.2s ease; pointer-events: none;">
+    <script type="text/javascript">
+        (function() {
+            var s = document.createElement('script');
+            s.src = "https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js";
+            s.async = true;
+            document.body.appendChild(s);
+        })();
+    </script>
+</div>
 </body>
 </html>
