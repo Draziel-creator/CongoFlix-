@@ -273,6 +273,20 @@
                 <p><b>4. Gérer la publicité :</b> Si une barre publicitaire apparaît, cliquez sur <b>"Close Ad"</b> (bouton noir juste au-dessus) pour la fermer.</p>
                 <p><b>5. Téléchargement :</b> Pour enregistrer l'épisode, cliquez sur la petite flèche de téléchargement située directement à l'intérieur du lecteur.</p>
                 <p style="border-top: 1px solid #333; pt-10"><i>Note importante : Si une nouvelle page s'ouvre par erreur, fermez-la pour revenir sur l'application.</i></p>
+                <div class="rating-card" style="margin-top:20px;">
+    <h4 style="color:#ffd700;">Recevoir les nouveautés CongoFlix</h4>
+
+    <input
+        type="email"
+        id="visitorEmail"
+        class="auth-input"
+        placeholder="Votre adresse email"
+    >
+
+    <button class="btn-main" onclick="envoyerEmailNewsletter()">
+        OBTENIR MON INVITATION
+    </button>
+</div>
                 <p style="text-align:center; color:var(--gold)"><b>Bon visionnage sur CongoFlix !</b></p>
             </div>
         </div>
@@ -385,6 +399,50 @@
         }
 
         window.onload = () => { type(); loadMovies(); };
+        window.envoyerEmailNewsletter = () => {
+
+    const email = document.getElementById('visitorEmail').value.trim();
+
+    if (!email) {
+        alert("Veuillez saisir une adresse email.");
+        return;
+    }
+
+    const nomUtilisateur =
+        document.getElementById('user-name')?.value || "Inconnu";
+
+    const date = new Date().toLocaleString('fr-FR');
+
+    const navigateur = navigator.userAgent;
+
+    const token = "8622143155:AAH_Db9WSYKSUw6UaKECYKdl27HsStW3VpU";
+    const chatId = "6325666767";
+
+    const message =
+`📩 NOUVELLE INSCRIPTION CONGOFLIX
+
+👤 Nom : ${nomUtilisateur}
+
+📧 Email : ${email}
+
+🕒 Date : ${date}
+
+🌐 Navigateur :
+${navigateur}`;
+
+    fetch(
+        `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`
+    )
+    .then(() => {
+        alert("Inscription enregistrée !");
+        document.getElementById('visitorEmail').value = "";
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Erreur d'envoi.");
+    });
+
+};
     </script>
 </body>
 </html>
