@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PUBLICITÉ - Accueil</title>
+    <title>PUBLICITÉ</title>
     <!-- Police Inter pour un style moderne épuré -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -21,27 +21,124 @@
             align-items: center;
         }
 
-        /* --- Conteneur PWA 100% Mobile --- */
+        /* ==========================================================================
+           1. ÉCRAN DE DÉMARRAGE (SPLASH) - 100% VIDE, UNIQUEMENT TON IMAGE
+           ========================================================================== */
+        #custom-splash { 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh8v7lgx-YpaFK3TftDROFcg3921pbDLWfi8La1NGFSA0M8T07et0r0HkXnBp-Uk4Bvd43FPHrIZ_NcbqQ_QFW6LMXh3Omvuj7CYWZRg40epSg1gnB8g9o5hnlTEhM1NXz0weccJNvMafIItTOwBJ3HY3rl8-_k174W6IbXV6ziv-kdNa6RddZyuoyc6cTj/s1600/acuueil%20ppub.png') center/cover no-repeat; 
+            z-index: 30000; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ==========================================================================
+           2. PAGE TRANSITOIRE : TRIPLE PUBLICITÉ ADSTERRA AVEC COMPTEUR
+           ========================================================================== */
+        #pub-page { 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: #000000; 
+            display: none; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 20000; 
+        }
+
+        .pub-box {
+            border: 1px dashed #007aff; 
+            padding: 20px; 
+            border-radius: 15px; 
+            text-align: center;
+            max-height: 90vh;
+            max-width: 95%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #050505;
+        }
+
+        .ad-triple-wrapper {
+            display: flex;
+            flex-direction: row; 
+            justify-content: center;
+            align-items: center;
+            gap: 0px; 
+            margin-top: 15px;
+            margin-bottom: 15px;
+            background-color: #0b0b0b;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .ad-zone-160x600 {
+            width: 160px;
+            height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #skip-container {
+            position: absolute;
+            top: 25px;
+            right: 20px; /* Aligné à droite pour une fermeture plus intuitive */
+            z-index: 25000;
+        }
+
+        .skip-btn {
+            width: 45px;
+            height: 45px;
+            border: 2px solid #007aff;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.8);
+            color: #007aff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+            text-decoration: none;
+            pointer-events: none; 
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+
+        .skip-btn.ready {
+            pointer-events: auto; 
+            background: #007aff;
+            color: #fff;
+            box-shadow: 0 0 15px #007aff;
+            opacity: 1;
+            cursor: pointer;
+        }
+
+        /* ==========================================================================
+           3. APPLICATION PRINCIPALE (L'ACCUEIL APRÈS LA PUB)
+           ========================================================================== */
         .app-container {
             width: 100%;
             height: 100%;
-            max-width: 450px; /* Conserve le format smartphone sur PC */
-            /* Intégration directe de ton image d'accueil */
-            background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh8v7lgx-YpaFK3TftDROFcg3921pbDLWfi8La1NGFSA0M8T07et0r0HkXnBp-Uk4Bvd43FPHrIZ_NcbqQ_QFW6LMXh3Omvuj7CYWZRg40epSg1gnB8g9o5hnlTEhM1NXz0weccJNvMafIItTOwBJ3HY3rl8-_k174W6IbXV6ziv-kdNa6RddZyuoyc6cTj/s1600/acuueil%20ppub.png');
-            background-size: cover;
-            background-position: center;
+            max-width: 450px; 
+            background-color: #0d0d0d; /* Fond noir pour les vidéos du flux */
             position: relative;
-            display: flex;
+            display: none; /* Reste masqué au démarrage */
             flex-direction: column;
             box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            z-index: 10000;
         }
 
-        /* --- Header Transparent (Solde & Barre de confiance) --- */
         .app-header {
             width: 100%;
             padding: 20px;
             box-sizing: border-box;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0));
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0));
             position: relative;
             z-index: 10;
         }
@@ -50,130 +147,121 @@
             justify-content: space-between;
             align-items: center;
         }
-        .balance-box {
-            display: flex;
-            flex-direction: column;
-        }
-        .balance-label { 
-            font-size: 11px; 
-            color: #b0b0b0; 
-            margin: 0; 
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .balance-amount { 
-            font-size: 22px; 
-            font-weight: 700; 
-            color: #2ecc71; 
-            margin: 2px 0 0 0;
-        }
+        .balance-box { display: flex; flex-direction: column; }
+        .balance-label { font-size: 11px; color: #b0b0b0; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;}
+        .balance-amount { font-size: 22px; font-weight: 700; color: #2ecc71; margin: 2px 0 0 0;}
         .activation-status { 
-            font-size: 11px; 
-            color: #ff9f43; 
-            margin: 0;
-            background: rgba(255, 159, 67, 0.1);
-            padding: 6px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 159, 67, 0.2);
+            font-size: 11px; color: #ff9f43; margin: 0;
+            background: rgba(255, 159, 67, 0.1); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255, 159, 67, 0.2);
         }
 
-        /* --- Zone centrale invisible pour laisser voir l'arrière-plan --- */
         .app-feed {
             flex: 1;
             width: 100%;
             position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111; /* Simule l'emplacement de la vidéo ou de la pub plein écran */
         }
 
-        /* --- Écrits en superposition (Style Instagram) --- */
         .insta-overlay {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
+            bottom: 20px; left: 20px; right: 20px;
             z-index: 20;
             pointer-events: none;
         }
-        .insta-partner {
-            font-size: 14px;
-            font-weight: 700;
-            color: #ffffff;
-            margin: 0;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
-        .insta-desc {
-            font-size: 12px;
-            font-weight: 400;
-            color: #f0f0f0;
-            margin: 4px 0 0 0;
-            max-width: 85%;
-            line-height: 1.4;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
+        .insta-partner { font-size: 14px; font-weight: 700; color: #ffffff; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.8);}
+        .insta-desc { font-size: 12px; font-weight: 400; color: #f0f0f0; margin: 4px 0 0 0; max-width: 85%; line-height: 1.4; text-shadow: 0 2px 4px rgba(0,0,0,0.8);}
 
-        /* --- Barre d'action basse (Vues, Likes, Clic) --- */
         .engagement-bar {
-            width: 100%;
-            padding: 20px;
-            box-sizing: border-box;
+            width: 100%; padding: 20px; box-sizing: border-box;
             background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0));
-            position: relative;
-            z-index: 10;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            position: relative; z-index: 10;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .action-group { 
-            display: flex; 
-            align-items: center; 
-            gap: 20px; 
-        }
-        .action-item { 
-            text-align: center; 
-            color: #ffffff; 
-            cursor: pointer; 
-            transition: transform 0.2s;
-        }
-        .action-item:active {
-            transform: scale(0.9);
-        }
-        .action-icon { 
-            font-size: 26px; 
-            display: block;
-        }
-        .action-count { 
-            font-size: 11px; 
-            color: #cccccc; 
-            margin: 4px 0 0 0;
-            font-weight: 500;
-        }
+        .action-group { display: flex; align-items: center; gap: 20px; }
+        .action-item { text-align: center; color: #ffffff; cursor: pointer; transition: transform 0.2s;}
+        .action-item:active { transform: scale(0.9); }
+        .action-icon { font-size: 26px; display: block;}
+        .action-count { font-size: 11px; color: #cccccc; margin: 4px 0 0 0; font-weight: 500;}
 
-        /* --- Bouton principal : LE CLIC RÉMUNÉRATEUR --- */
         .click-action {
-            flex: 1;
-            max-width: 160px;
+            flex: 1; max-width: 160px;
             background: linear-gradient(45deg, #007aff, #00c6ff);
-            padding: 12px 0;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: 700;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,122,255,0.4);
-            transition: transform 0.1s, background 0.2s;
-            margin: 0 15px;
+            padding: 12px 0; border-radius: 25px;
+            font-size: 14px; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 1px;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0,122,255,0.4);
+            transition: transform 0.1s, background 0.2s; margin: 0 15px;
         }
-        .click-action:active { 
-            transform: scale(0.96); 
-        }
+        .click-action:active { transform: scale(0.96); }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
+    <!-- ÉTAPE 1 : Écran de démarrage pur avec ton image -->
+    <div id="custom-splash"></div>
 
-        <!-- Header avec Solde de confiance -->
+    <!-- ÉTAPE 2 : Page intermédiare avec le Triple Bloc Adsterra -->
+    <div id="pub-page">
+        <div id="skip-container">
+            <button id="btn-skip" class="skip-btn">5</button>
+        </div>
+
+        <div class="pub-box">
+            <h2 style="color:#007aff; margin:0; font-family: sans-serif; letter-spacing: 2px;">PUBLICITÉ</h2>
+            <p style="color:#fff; font-size:12px; font-family: sans-serif; margin: 5px 0 0 0;">Annonces Sponsors</p>
+            
+            <div class="ad-triple-wrapper">
+                <!-- Pub 1 -->
+                <div class="ad-zone-160x600">
+                    <script type="text/javascript">
+                        atOptions = {
+                            'key' : '355c9d0ee6ac5ec71d84d7f879fdc153',
+                            'format' : 'iframe',
+                            'height' : 600,
+                            'width' : 160,
+                            'params' : {}
+                        };
+                    </script>
+                    <script type="text/javascript" src="https://www.highperformanceformat.com/355c9d0ee6ac5ec71d84d7f879fdc153/invoke.js"></script>
+                </div>
+
+                <!-- Pub 2 -->
+                <div class="ad-zone-160x600">
+                    <script type="text/javascript">
+                        atOptions = {
+                            'key' : '355c9d0ee6ac5ec71d84d7f879fdc153',
+                            'format' : 'iframe',
+                            'height' : 600,
+                            'width' : 160,
+                            'params' : {}
+                        };
+                    </script>
+                    <script type="text/javascript" src="https://www.highperformanceformat.com/355c9d0ee6ac5ec71d84d7f879fdc153/invoke.js"></script>
+                </div>
+
+                <!-- Pub 3 -->
+                <div class="ad-zone-160x600">
+                    <script type="text/javascript">
+                        atOptions = {
+                            'key' : '355c9d0ee6ac5ec71d84d7f879fdc153',
+                            'format' : 'iframe',
+                            'height' : 600,
+                            'width' : 160,
+                            'params' : {}
+                        };
+                    </script>
+                    <script type="text/javascript" src="https://www.highperformanceformat.com/355c9d0ee6ac5ec71d84d7f879fdc153/invoke.js"></script>
+                </div>
+            </div>
+
+            <div style="color: #555; font-size: 10px; font-family: sans-serif;">Publicité obligatoire de démarrage</div>
+        </div>
+    </div>
+
+    <!-- ÉTAPE 3 : L'interface principale de l'application -->
+    <div class="app-container" id="main-app">
         <header class="app-header">
             <div class="header-content">
                 <div class="balance-box">
@@ -184,16 +272,13 @@
             </div>
         </header>
 
-        <!-- Flux Principal -->
         <div class="app-feed">
-            <!-- Les écrits de la vidéo / pub par-dessus l'arrière-plan -->
             <div class="insta-overlay">
-                <p class="insta-partner">@Annonceur_Officiel</p>
-                <p class="insta-desc">Regardez cette annonce attentivement. Effectuez un clic sur le bouton bleu pour valider vos gains du moment.</p>
+                <p class="insta-partner">@Annonceur_Premium</p>
+                <p class="insta-desc">Regardez cette vidéo. Cliquez sur le bouton central bleu pour augmenter directement votre cagnotte journalière.</p>
             </div>
         </div>
 
-        <!-- Barre d'Engagement Basse -->
         <div class="engagement-bar">
             <div class="action-group">
                 <div class="action-item" id="likeBtn">
@@ -206,7 +291,6 @@
                 </div>
             </div>
 
-            <!-- BOUTON D'ACTION (CLIC ADSTERRA) -->
             <div class="click-action" id="adClick">
                 Cliquer
             </div>
@@ -218,11 +302,46 @@
                 </div>
             </div>
         </div>
-
     </div>
 
+    <!-- LOGIQUE DE TRANSITION ET DE COMPTEUR -->
     <script>
-        // Gestion basique du bouton Like pour l'interactivité
+        const splash = document.getElementById('custom-splash');
+        const pubPage = document.getElementById('pub-page');
+        const mainApp = document.getElementById('main-app');
+        const btnSkip = document.getElementById('btn-skip');
+
+        // 1. Fermeture du Splash Screen vide après 3 secondes et apparition des Pubs
+        setTimeout(() => {
+            splash.style.display = 'none';
+            pubPage.style.display = 'flex';
+            demarrerCompteur();
+        }, 3000);
+
+        // 2. Lancement du compte à rebours de 5 secondes
+        function demarrerCompteur() {
+            let temps = 5;
+            const interval = setInterval(() => {
+                temps--;
+                if (temps > 0) {
+                    btnSkip.innerText = temps;
+                } else {
+                    clearInterval(interval);
+                    btnSkip.innerText = "✕";
+                    btnSkip.classList.add('ready');
+                }
+            }, 1000);
+        }
+
+        // 3. Quand l'utilisateur clique sur la croix "✕", on bascule sur l'application finale
+        btnSkip.addEventListener('click', () => {
+            if (btnSkip.classList.contains('ready')) {
+                pubPage.style.display = 'none';
+                mainApp.style.display = 'flex'; // Affiche l'accueil style TikTok
+            }
+        });
+
+        // Interactions basiques de l'application
         let liked = false;
         const likeBtn = document.getElementById('likeBtn');
         const likeCount = document.getElementById('likeCount');
@@ -236,10 +355,8 @@
             }
         });
 
-        // Event de clic sur le bouton Adsterra (Prêt pour y lier ton script ou popunder)
         document.getElementById('adClick').addEventListener('click', function() {
-            // Ici viendra la redirection ou l'ouverture du lien AdSterra
-            console.log("Clic enregistré, ouverture de la publicité...");
+            console.log("Redirection AdSterra activée.");
         });
     </script>
 </body>
