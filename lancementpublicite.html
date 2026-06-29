@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>PUBLICITÉ - Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Intégration de Font Awesome pour des icônes professionnelles réelles -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -20,26 +22,59 @@
             box-shadow: 0 0 40px rgba(0,0,0,0.8);
         }
 
-        /* --- HEADER (Bienvenue + Solde) --- */
+        /* --- HEADER EN SUPERPOSITION AVEC TON IMAGE --- */
         .app-header {
-            padding: 20px 20px 10px 20px; display: flex;
-            justify-content: space-between; align-items: center;
+            position: relative;
+            padding: 30px 20px 20px 20px; 
+            height: 200px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Pousse les textes vers le bas de l'image */
+            background: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi-pCxzWWscwtmrqtBhAc-5YiQPGaC28kP6kYdDaZJ0aCo0ovYZgMTs8hlHk33FMo90174at3NEJickD6gwhFx2Xnkx8zreeRG9TZf-kGY482sm0nE63w6IMN3XwFlT3T1KffsLZC0yCIpZRI9zF3mEhNfcaoq-a33vmGAkqp2nLLFVXLHsdKu5FlD0YPob/s1600/09d6e226-c1ab-4d0e-845d-759b02e01d26.png') center/cover no-repeat;
         }
-        .user-welcome { font-size: 14px; color: #8e92bc; margin: 0; }
-        .user-title { font-size: 22px; font-weight: 700; margin: 4px 0 0 0; letter-spacing: -0.5px; }
-        .user-title span { color: #00ffcc; } /* Style vert/bleu néon */
 
-        .balance-pill {
-            background: rgba(0, 255, 204, 0.1); border: 1px solid rgba(0, 255, 204, 0.2);
-            padding: 8px 16px; border-radius: 20px; display: flex; align-items: center; gap: 8px;
+        /* Dégradé pour que le bas de l'image s'intègre au fond noir */
+        .app-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0; top: 0;
+            background: linear-gradient(to bottom, rgba(5,5,8,0.2) 0%, rgba(5,5,8,0.8) 85%, #050508 100%);
+            z-index: 1;
         }
-        .balance-amount { font-size: 16px; font-weight: 700; color: #00ffcc; }
-        .balance-plus { background: #00ffcc; color: #000; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; }
+
+        .header-text-group {
+            position: relative;
+            z-index: 2;
+        }
+        .user-welcome { font-size: 13px; color: #00ffcc; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .user-title { font-size: 24px; font-weight: 700; margin: 4px 0 0 0; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .user-title span { color: #00ffcc; }
+
+        /* Pilule de solde en superposition absolue (En haut à droite sur le nuage) */
+        .balance-pill {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 3;
+            background: rgba(0, 0, 0, 0.75); 
+            border: 1px solid rgba(0, 255, 204, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 8px 14px; 
+            border-radius: 20px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.2);
+        }
+        .balance-amount { font-size: 14px; font-weight: 700; color: #00ffcc; letter-spacing: 0.5px; }
+        .balance-plus { background: #00ffcc; color: #000; width: 16px; height: 16px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 11px; }
 
         /* --- BARRE DE SEUIL / PROGRESSION --- */
         .level-card {
             background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
-            margin: 10px 20px; padding: 15px; border-radius: 16px;
+            margin: 5px 20px; padding: 15px; border-radius: 16px;
         }
         .level-info { display: flex; justify-content: space-between; font-size: 12px; color: #b3b6d4; margin-bottom: 8px; }
         .level-progress-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
@@ -50,21 +85,19 @@
             flex: 1; display: flex; flex-direction: column;
             justify-content: center; padding: 10px 20px; box-sizing: border-box;
         }
-        .section-title { font-size: 14px; text-transform: uppercase; color: #9b51e0; font-weight: 600; letter-spacing: 1px; margin-bottom: 12px; }
+        .section-title { font-size: 13px; text-transform: uppercase; color: #9b51e0; font-weight: 600; letter-spacing: 1px; margin-bottom: 10px; }
         
-        /* Carte de la Pub type "Offre Exclusive" */
+        /* Carte de la Pub */
         .ad-card {
-            width: 100%; height: 280px; position: relative; border-radius: 24px; overflow: hidden;
+            width: 100%; height: 250px; position: relative; border-radius: 24px; overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05);
             background: #090a14;
         }
-        /* Image d'illustration de la pub actuelle (Exemple avec des sneakers comme ton image) */
         .ad-image {
             width: 100%; height: 100%; object-fit: cover;
             background: url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=600&auto=format&fit=crop') center/cover;
             opacity: 0.7;
         }
-        /* Contenu textuel style Instagram superposé sur la carte pub */
         .ad-overlay {
             position: absolute; bottom: 0; left: 0; right: 0;
             padding: 20px; background: linear-gradient(to top, rgba(2,3,8,1) 30%, rgba(2,3,8,0) 100%);
@@ -85,34 +118,37 @@
         }
         .btn-action:active { transform: scale(0.98); }
 
-        /* Limiteur quotidien discret sous le bouton */
-        .daily-limit { text-align: center; font-size: 12px; color: #6e729a; margin-top: 10px; }
+        .daily-limit { text-align: center; font-size: 12px; color: #6e729a; margin-top: 10px; margin-bottom: 5px; }
 
-        /* --- NAV BAR DES BAS (Boutons Navigation) --- */
+        /* --- NAV BAR PROFESSIONNELLE STYLE RÉSEAUX SOCIAUX --- */
         .nav-bar {
-            background: #03040b; border-top: 1px solid rgba(255,255,255,0.05);
-            padding: 12px 20px 25px 20px; display: flex; justify-content: space-around; align-items: center;
+            background: #03040b; border-top: 1px solid rgba(255,255,255,0.06);
+            padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center;
         }
         .nav-item {
-            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
             color: #555875; text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer;
+            transition: color 0.2s;
         }
         .nav-item.active { color: #00ffcc; }
-        .nav-icon { font-size: 22px; }
+        .nav-icon { 
+            font-size: 20px; /* Taille optimisée pour les glyphes vectoriels */
+        }
     </style>
 </head>
 <body>
 
     <div class="app-container">
 
+        <!-- En-tête avec superposition de l'image et du solde en haut à droite -->
         <header class="app-header">
-            <div>
-                <p class="user-welcome">Bienvenue 👋</p>
-                <h1 class="user-title">Regarde. <span>Gagne.</span></h1>
-            </div>
             <div class="balance-pill">
                 <span class="balance-amount" id="balanceText">0,00 €</span>
                 <div class="balance-plus">+</div>
+            </div>
+            <div class="header-text-group">
+                <p class="user-welcome">Bienvenue sur votre espace</p>
+                <h1 class="user-title">Regarde. <span>Gagne.</span></h1>
             </div>
         </header>
 
@@ -139,26 +175,27 @@
             </div>
 
             <button class="btn-action" id="watchAdBtn">
-                Regarder et gagner <span>▶</span>
+                Regarder et gagner <i class="fa-solid fa-play" style="font-size: 12px;"></i>
             </button>
             <p class="daily-limit">Tâches du jour accomplies : <strong id="taskCount">0 / 5</strong></p>
         </main>
 
+        <!-- Barre de navigation avec de vraies icônes vectorielles réseaux sociaux -->
         <nav class="nav-bar">
             <div class="nav-item active">
-                <span class="nav-icon">🏠</span>
+                <i class="fa-solid fa-house nav-icon"></i>
                 <span>Accueil</span>
             </div>
             <div class="nav-item">
-                <span class="nav-icon">💬</span>
+                <i class="fa-regular fa-comment-dots nav-icon"></i>
                 <span>Messages</span>
             </div>
             <div class="nav-item" id="goToStats">
-                <span class="nav-icon">📊</span>
-                <span>Statistiques</span>
+                <i class="fa-solid fa-chart-simple nav-icon"></i>
+                <span>Stats</span>
             </div>
             <div class="nav-item">
-                <span class="nav-icon">⚡</span>
+                <i class="fa-solid fa-bolt nav-icon"></i>
                 <span>Activités</span>
             </div>
         </nav>
@@ -173,22 +210,18 @@
         const taskCount = document.getElementById('taskCount');
         const watchAdBtn = document.getElementById('watchAdBtn');
 
-        // Événement au clic sur le bouton de publicité
         watchAdBtn.addEventListener('click', () => {
             if (tasks < 5) {
-                // Simule l'ouverture d'AdSterra
                 console.log("Ouverture du lien AdSterra...");
                 
-                // On incrémente le solde et les tâches
                 balance += 0.45;
                 tasks += 1;
                 
-                // Mise à jour de l'affichage
                 balanceText.innerText = balance.toFixed(2).replace('.', ',') + " €";
                 taskCount.innerText = `${tasks} / 5`;
                 
                 if (tasks === 5) {
-                    watchAdBtn.innerText = "Limite atteinte 🔒";
+                    watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
                     watchAdBtn.style.background = "#222";
                     watchAdBtn.style.color = "#555";
                     watchAdBtn.disabled = true;
@@ -196,7 +229,6 @@
             }
         });
 
-        // Alerte fictive pour le bouton statistique
         document.getElementById('goToStats').addEventListener('click', () => {
             alert("Ici on affichera la page avec TOUTES les statistiques détaillées (Vues, totaux gagnés, graphiques) !");
         });
