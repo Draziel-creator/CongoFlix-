@@ -60,14 +60,15 @@
             border: 1px solid rgba(0, 255, 204, 0.4);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            padding: 8px 14px; 
+            padding: 6px 12px; 
             border-radius: 20px; 
             display: flex; 
             align-items: center; 
             gap: 10px;
             box-shadow: 0 4px 15px rgba(0, 255, 204, 0.2);
         }
-        .balance-amount { font-size: 14px; font-weight: 700; color: #00ffcc; letter-spacing: 0.5px; }
+        .balance-amount { font-size: 14px; font-weight: 700; color: #00ffcc; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px; }
+        .balance-amount i { color: #ffcc00; font-size: 12px; }
         
         /* Bouton plus parfaitement aligné et centré */
         .balance-plus { 
@@ -84,8 +85,22 @@
             cursor: pointer;
         }
         
-        /* Icône de profil professionnelle à droite de l'argent */
-        .profile-avatar { color: #ffffff; font-size: 16px; border-left: 1px solid rgba(255, 255, 255, 0.2); padding-left: 8px; display: flex; align-items: center; }
+        /* Icône de profil professionnelle sous forme de cercle cliquable */
+        .profile-avatar { 
+            border-left: 1px solid rgba(255, 255, 255, 0.2); 
+            padding-left: 8px; 
+            display: flex; 
+            align-items: center; 
+            cursor: pointer;
+        }
+        #nav-user-photo {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #00ffcc;
+            background: #222;
+        }
 
         /* --- BARRE DE SEUIL / PROGRESSION --- */
         .level-card {
@@ -158,14 +173,14 @@
 
         <header class="app-header">
             <div class="balance-pill">
-                <span class="balance-amount" id="balanceText">0,00 €</span>
-                <div class="balance-plus">+</div>
-                <div class="profile-avatar">
-                    <i class="fa-solid fa-circle-user"></i>
+                <span class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="balanceText">0</span></span>
+                <div class="balance-plus" onclick="location.href='activite.html'">+</div>
+                <div class="profile-avatar" id="goToProfil">
+                    <img id="nav-user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profil">
                 </div>
             </div>
             <div class="header-text-group">
-                <p class="user-welcome">Bienvenue sur votre space</p>
+                <p class="user-welcome" id="welcomeText">Chargement...</p>
                 <h1 class="user-title">Regarde. <span>Gagne.</span></h1>
             </div>
         </header>
@@ -186,7 +201,7 @@
             <div class="ad-card">
                 <div class="ad-image"></div>
                 <div class="ad-overlay">
-                    <span class="ad-tag">+0,45 €</span>
+                    <span class="ad-tag">+10 Coins</span>
                     <h3 class="ad-name">Offre Exclusive Nike</h3>
                     <p class="ad-desc">Découvre la nouvelle collection et profite de jusqu'à -50% de réduction immédiate.</p>
                 </div>
@@ -203,7 +218,7 @@
                 <i class="fa-solid fa-house nav-icon"></i>
                 <span>Accueil</span>
             </div>
-            <div class="nav-item">
+            <div class="nav-item" onclick="location.href='messages.html'">
                 <i class="fa-regular fa-comment-dots nav-icon"></i>
                 <span>Messages</span>
             </div>
@@ -211,7 +226,7 @@
                 <i class="fa-solid fa-chart-simple nav-icon"></i>
                 <span>Stats</span>
             </div>
-            <div class="nav-item">
+            <div class="nav-item" onclick="location.href='activite.html'">
                 <i class="fa-solid fa-bolt nav-icon"></i>
                 <span>Activités</span>
             </div>
@@ -219,23 +234,80 @@
 
     </div>
 
-    <script>
-        let balance = 0.00;
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Configuration officielle de ton projet Rewards
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+            authDomain: "publicite-6445c.firebaseapp.com",
+            projectId: "publicite-6445c",
+            storageBucket: "publicite-6445c.firebasestorage.app",
+            messagingSenderId: "663385244466",
+            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
+            measurementId: "G-T37TGB3SR0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentCoins = 0;
         let tasks = 0;
         
         const balanceText = document.getElementById('balanceText');
         const taskCount = document.getElementById('taskCount');
         const watchAdBtn = document.getElementById('watchAdBtn');
+        const welcomeText = document.getElementById('welcomeText');
+        const navUserPhoto = document.getElementById('nav-user-photo');
 
-        watchAdBtn.addEventListener('click', () => {
-            if (tasks < 5) {
+        // Écoute de l'état de connexion de l'utilisateur
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Requête vers la collection isolée de ton application
+                const userDocRef = doc(db, "rewards_users", user.uid);
+                const snap = await getDoc(userDocRef);
+                
+                if (snap.exists()) {
+                    const data = snap.data();
+                    currentCoins = data.coins || 0;
+                    
+                    // Mise à jour de l'interface graphique
+                    balanceText.innerText = currentCoins;
+                    welcomeText.innerText = `Bienvenue, ${data.name || "Utilisateur"}`;
+                    
+                    // Chargement de l'image de profil Firebase si existante
+                    if (data.photoURL) {
+                        navUserPhoto.src = data.photoURL;
+                    }
+                }
+            } else {
+                // Si l'utilisateur n'est pas connecté localement, redirection forcée vers le module d'identification
+                window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
+            }
+        });
+
+        // Gestionnaire du bouton publicitaire
+        watchAdBtn.addEventListener('click', async () => {
+            if (tasks < 5 && auth.currentUser) {
                 console.log("Ouverture du lien AdSterra...");
                 
-                balance += 0.45;
                 tasks += 1;
+                currentCoins += 10; // Ajoute 10 Coins par pub vue
                 
-                balanceText.innerText = balance.toFixed(2).replace('.', ',') + " €";
+                balanceText.innerText = currentCoins;
                 taskCount.innerText = `${tasks} / 5`;
+                
+                // Sauvegarde immédiate du nouveau solde de pièces dans Firestore
+                try {
+                    await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
+                        coins: currentCoins
+                    });
+                } catch (error) {
+                    console.error("Erreur de synchronisation du solde :", error);
+                }
                 
                 if (tasks === 5) {
                     watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
@@ -246,7 +318,12 @@
             }
         });
 
-        // Redirection directe vers ta page de statistiques GitHub Pages au clic sur l'onglet Stats
+        // Redirection au clic sur le cercle de profil
+        document.getElementById('goToProfil').addEventListener('click', () => {
+            window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
+        });
+
+        // Redirection vers l'analytique au clic sur Stats
         document.getElementById('goToStats').addEventListener('click', () => {
             window.location.href = "https://draziel-creator.github.io/CongoFlix-/statpub.html";
         });
