@@ -34,8 +34,9 @@
         .scrollable-content::-webkit-scrollbar { display: none; }
 
         /* --- ÉCRAN D'AUTHENTIFICATION --- */
-        .auth-header { padding: 20px; display: flex; align-items: center; justify-content: flex-start; }
-        .btn-back { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: #fff; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        .auth-header { padding: 20px 25px 0 25px; display: flex; align-items: center; justify-content: flex-start; }
+        .btn-back { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: #fff; width: 38px; height: 38px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
+        .btn-back:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.1); }
         
         .auth-container { padding: 10px 25px 40px 25px; text-align: center; }
         .logo-box { margin-bottom: 30px; }
@@ -83,7 +84,7 @@
         .invite-notice-card { background: rgba(255, 204, 0, 0.03); border: 1px solid rgba(255, 204, 0, 0.15); border-radius: 14px; padding: 14px; font-size: 12px; color: #d1d4f0; line-height: 1.5; }
         .invite-notice-card strong { color: #ffcc00; }
 
-        /* --- TEMPIGNAGES --- */
+        /* --- TEMOIGNAGES --- */
         .reviews-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
         .reviews-scroll::-webkit-scrollbar { display: none; }
         .review-card { min-width: 220px; max-width: 220px; background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 16px; box-sizing: border-box; }
@@ -97,6 +98,12 @@
         .btn-main:active { transform: scale(0.98); }
         .btn-logout { background: none; border: none; color: #41435c; width: 100%; font-weight: 600; font-size: 13px; margin: 20px 0 40px 0; cursor: pointer; transition: color 0.2s; }
         .btn-logout:hover { color: var(--error); }
+
+        /* Navigation Bas Fixe */
+        .nav-bar { background: #03040b; border-top: 1px solid var(--border); padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #555875; text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; }
+        .nav-item.active { color: var(--neon); }
+        .nav-icon { font-size: 20px; }
     </style>
 </head>
 <body>
@@ -105,7 +112,7 @@
 
         <div id="auth-screen" class="scrollable-content hidden">
             <div class="auth-header">
-                <div class="btn-back" onclick="location.href='index.html'"><i class="fa-solid fa-chevron-left"></i></div>
+                <div class="btn-back" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html'"><i class="fa-solid fa-chevron-left"></i></div>
             </div>
             <div class="auth-container">
                 <div class="logo-box">
@@ -137,7 +144,7 @@
             <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
 
             <div class="avatar-container">
-                <div class="avatar-wrapper" onclick="toggleModal('photo-alert-modal')">
+                <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
                     <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
                     <div class="edit-avatar-badge"><i class="fa-solid fa-camera"></i></div>
                 </div>
@@ -206,7 +213,7 @@
         </div>
 
         <nav class="nav-bar">
-            <div class="nav-item" onclick="location.href="https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html">
+            <div class="nav-item" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html'">
                 <i class="fa-solid fa-house nav-icon"></i>
                 <span>Accueil</span>
             </div>
@@ -214,11 +221,11 @@
                 <i class="fa-regular fa-comment-dots nav-icon"></i>
                 <span>Messages</span>
             </div>
-            <div class="nav-item" onclick="location.href="https://draziel-creator.github.io/CongoFlix-/statpub.html">
+            <div class="nav-item" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/statpub.html'">
                 <i class="fa-solid fa-chart-simple nav-icon"></i>
                 <span>Stats</span>
             </div>
-            <div class="nav-item" onclick="location.href="https://draziel-creator.github.io/CongoFlix-/activité.html"'">
+            <div class="nav-item" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/activité.html'">
                 <i class="fa-solid fa-bolt nav-icon"></i>
                 <span>Activités</span>
             </div>
@@ -249,8 +256,6 @@
     const db = getFirestore(app);
 
     let isLoginMode = true;
-
-    window.toggleModal = (id) => document.getElementById(id).classList.toggle('hidden');
 
     window.triggerFileInput = (inputId) => {
         document.getElementById(inputId).click();
@@ -297,7 +302,6 @@
             if(isLoginMode) {
                 await signInWithEmailAndPassword(auth, email, pass);
             } else {
-                // Validation de l'âge obligatoire
                 if (!age) {
                     err.style.display = 'block';
                     err.innerText = "Veuillez renseigner votre âge.";
@@ -335,7 +339,6 @@
                 document.getElementById('user-name').value = d.name || "Utilisateur";
                 document.getElementById('user-coins').innerText = d.coins || 0;
                 
-                // Remplissage du tableau des conditions dynamiquement
                 document.getElementById('table-invite-status').innerText = `${d.invitedCount || 0} / 10`;
                 if ((d.invitedCount || 0) >= 10) {
                     document.getElementById('table-invite-status').className = "badge-status status-ok";
