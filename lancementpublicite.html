@@ -50,7 +50,7 @@
         .user-title { font-size: 24px; font-weight: 700; margin: 4px 0 0 0; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
         .user-title span { color: #00ffcc; }
 
-        /* Pilule de solde et profil en superposition absolue (En haut à droite sur le nuage) */
+        /* Pilule de solde et profil en superposition absolue */
         .balance-pill {
             position: absolute;
             top: 20px;
@@ -70,7 +70,6 @@
         .balance-amount { font-size: 14px; font-weight: 700; color: #00ffcc; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px; }
         .balance-amount i { color: #ffcc00; font-size: 12px; }
         
-        /* Bouton plus parfaitement aligné et centré */
         .balance-plus { 
             background: #00ffcc; 
             color: #000; 
@@ -85,7 +84,6 @@
             cursor: pointer;
         }
         
-        /* Icône de profil professionnelle sous forme de cercle cliquable */
         .profile-avatar { 
             border-left: 1px solid rgba(255, 255, 255, 0.2); 
             padding-left: 8px; 
@@ -111,14 +109,13 @@
         .level-progress-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
         .level-progress-bar { width: 65%; height: 100%; background: linear-gradient(90deg, #9b51e0, #00ffcc); border-radius: 3px; }
 
-        /* --- CORPS CENTRAL : ZONE DE PUBLICITÉ UNIQUE --- */
+        /* --- CORPS CENTRAL --- */
         .main-content {
             flex: 1; display: flex; flex-direction: column;
             justify-content: center; padding: 10px 20px; box-sizing: border-box;
         }
         .section-title { font-size: 13px; text-transform: uppercase; color: #9b51e0; font-weight: 600; letter-spacing: 1px; margin-bottom: 10px; }
         
-        /* Carte de la Pub */
         .ad-card {
             width: 100%; height: 250px; position: relative; border-radius: 24px; overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05);
@@ -138,7 +135,6 @@
         .ad-name { font-size: 18px; font-weight: 700; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .ad-desc { font-size: 12px; color: #cdcee0; margin: 0; line-height: 1.4; }
 
-        /* BOUTON CLIC RÉMUNÉRATEUR */
         .btn-action {
             margin-top: 15px; width: 100%; background: linear-gradient(90deg, #0055ff, #00ffcc);
             padding: 16px 0; border: none; border-radius: 16px; color: #ffffff;
@@ -151,7 +147,7 @@
 
         .daily-limit { text-align: center; font-size: 12px; color: #6e729a; margin-top: 10px; margin-bottom: 5px; }
 
-        /* --- NAV BAR PROFESSIONNELLE STYLE RÉSEAUX SOCIAUX --- */
+        /* --- NAV BAR --- */
         .nav-bar {
             background: #03040b; border-top: 1px solid rgba(255,255,255,0.06);
             padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center;
@@ -162,9 +158,7 @@
             transition: color 0.2s;
         }
         .nav-item.active { color: #00ffcc; }
-        .nav-icon { 
-            font-size: 20px;
-        }
+        .nav-icon { font-size: 20px; }
     </style>
 </head>
 <body>
@@ -174,13 +168,13 @@
         <header class="app-header">
             <div class="balance-pill">
                 <span class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="balanceText">0</span></span>
-                <div class="balance-plus" onclick="location.href='activite.html'">+</div>
+                <div class="balance-plus" id="addCoinsBtn">+</div>
                 <div class="profile-avatar" id="goToProfil">
                     <img id="nav-user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profil">
                 </div>
             </div>
             <div class="header-text-group">
-                <p class="user-welcome" id="welcomeText">Chargement...</p>
+                <p class="user-welcome" id="welcomeText">Bienvenue sur votre espace</p>
                 <h1 class="user-title">Regarde. <span>Gagne.</span></h1>
             </div>
         </header>
@@ -218,7 +212,7 @@
                 <i class="fa-solid fa-house nav-icon"></i>
                 <span>Accueil</span>
             </div>
-            <div class="nav-item" onclick="location.href='messages.html'">
+            <div class="nav-item" onclick="redirectToPage('messages.html')">
                 <i class="fa-regular fa-comment-dots nav-icon"></i>
                 <span>Messages</span>
             </div>
@@ -226,7 +220,7 @@
                 <i class="fa-solid fa-chart-simple nav-icon"></i>
                 <span>Stats</span>
             </div>
-            <div class="nav-item" onclick="location.href='activite.html'">
+            <div class="nav-item" onclick="redirectToPage('activite.html')">
                 <i class="fa-solid fa-bolt nav-icon"></i>
                 <span>Activités</span>
             </div>
@@ -239,7 +233,6 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Configuration officielle de ton projet Rewards
         const firebaseConfig = {
             apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
             authDomain: "publicite-6445c.firebaseapp.com",
@@ -256,6 +249,7 @@
 
         let currentCoins = 0;
         let tasks = 0;
+        let userConnected = false;
         
         const balanceText = document.getElementById('balanceText');
         const taskCount = document.getElementById('taskCount');
@@ -263,10 +257,10 @@
         const welcomeText = document.getElementById('welcomeText');
         const navUserPhoto = document.getElementById('nav-user-photo');
 
-        // Écoute de l'état de connexion de l'utilisateur
+        // Écoute de l'état de connexion de l'utilisateur sans redirection forcée au chargement
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Requête vers la collection isolée de ton application
+                userConnected = true;
                 const userDocRef = doc(db, "rewards_users", user.uid);
                 const snap = await getDoc(userDocRef);
                 
@@ -274,33 +268,54 @@
                     const data = snap.data();
                     currentCoins = data.coins || 0;
                     
-                    // Mise à jour de l'interface graphique
                     balanceText.innerText = currentCoins;
                     welcomeText.innerText = `Bienvenue, ${data.name || "Utilisateur"}`;
                     
-                    // Chargement de l'image de profil Firebase si existante
                     if (data.photoURL) {
                         navUserPhoto.src = data.photoURL;
                     }
                 }
             } else {
-                // Si l'utilisateur n'est pas connecté localement, redirection forcée vers le module d'identification
-                window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
+                userConnected = false;
+                balanceText.innerText = "0";
+                welcomeText.innerText = "Bienvenue sur votre espace";
+                navUserPhoto.src = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
             }
         });
 
-        // Gestionnaire du bouton publicitaire
+        // Demander une connexion si l'utilisateur veut cliquer sur les fonctionnalités
+        function checkAuthOrRedirect() {
+            if (!userConnected) {
+                alert("Vous devez être connecté pour effectuer des missions et gagner de l'argent !");
+                window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
+                return false;
+            }
+            return true;
+        }
+
+        window.redirectToPage = (page) => {
+            if (checkAuthOrRedirect()) {
+                window.location.href = page;
+            }
+        };
+
+        document.getElementById('addCoinsBtn').addEventListener('click', () => {
+            redirectToPage('activite.html');
+        });
+
+        // Gestionnaire du bouton publicitaire avec contrôle de connexion
         watchAdBtn.addEventListener('click', async () => {
+            if (!checkAuthOrRedirect()) return;
+
             if (tasks < 5 && auth.currentUser) {
                 console.log("Ouverture du lien AdSterra...");
                 
                 tasks += 1;
-                currentCoins += 10; // Ajoute 10 Coins par pub vue
+                currentCoins += 10;
                 
                 balanceText.innerText = currentCoins;
                 taskCount.innerText = `${tasks} / 5`;
                 
-                // Sauvegarde immédiate du nouveau solde de pièces dans Firestore
                 try {
                     await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
                         coins: currentCoins
@@ -318,14 +333,15 @@
             }
         });
 
-        // Redirection au clic sur le cercle de profil
+        // Redirection libre au clic sur le profil pour se connecter quand on veut
         document.getElementById('goToProfil').addEventListener('click', () => {
             window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
         });
 
-        // Redirection vers l'analytique au clic sur Stats
         document.getElementById('goToStats').addEventListener('click', () => {
-            window.location.href = "https://draziel-creator.github.io/CongoFlix-/statpub.html";
+            if (checkAuthOrRedirect()) {
+                window.location.href = "https://draziel-creator.github.io/CongoFlix-/statpub.html";
+            }
         });
     </script>
 </body>
