@@ -47,7 +47,7 @@
             margin: 0;
             letter-spacing: -0.3px;
         }
-        .header-spacer { width: 36px; } /* Pour équilibrer le flexbox */
+        .header-spacer { width: 36px; }
 
         /* --- CORPS CENTRAL DEFILLANT --- */
         .scrollable-content {
@@ -56,8 +56,6 @@
             padding: 20px;
             box-sizing: border-box;
         }
-        
-        /* Cacher la barre de défilement standard pour un look app pure */
         .scrollable-content::-webkit-scrollbar { display: none; }
 
         /* --- GRILLE DES CARTES DE STATS (KPIs) --- */
@@ -80,18 +78,20 @@
             font-size: 16px;
             color: #555875;
         }
+        .kpi-icon.coins { color: #ffcc00; }
         .kpi-label {
             font-size: 12px;
             color: #8e92bc;
             margin: 0 0 6px 0;
         }
         .kpi-value {
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 700;
             margin: 0 0 6px 0;
             color: #ffffff;
         }
         .kpi-value.neon { color: #00ffcc; }
+        .kpi-value.gold { color: #ffcc00; }
         .kpi-trend {
             font-size: 11px;
             font-weight: 600;
@@ -101,6 +101,7 @@
         }
         .trend-up { color: #00ff66; }
         .trend-neutral { color: #b3b6d4; }
+        .trend-down { color: #ff3b30; }
 
         /* --- SECTION COMPOSANT GRAPHIQUE --- */
         .chart-section {
@@ -180,15 +181,13 @@
             color: #00ffcc;
             margin-bottom: 2px;
         }
-        .history-status {
-            font-size: 10px;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #00ff66;
-            letter-spacing: 0.5px;
+        .history-coins {
+            font-size: 11px;
+            color: #ffcc00;
+            font-weight: 500;
         }
 
-        /* --- NAV BAR DU BAS (Identique pour cohérence) --- */
+        /* --- NAV BAR DU BAS --- */
         .nav-bar {
             background: #03040b; border-top: 1px solid rgba(255,255,255,0.06);
             padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center;
@@ -216,6 +215,24 @@
             
             <div class="stats-grid">
                 <div class="kpi-card">
+                    <i class="fa-solid fa-coins kpi-icon coins"></i>
+                    <p class="kpi-label">Pièces du jour</p>
+                    <p class="kpi-value gold">90 Coins</p>
+                    <div class="kpi-trend trend-up">
+                        <i class="fa-solid fa-plus"></i> Aujourd'hui
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <i class="fa-solid fa-calculator kpi-icon"></i>
+                    <p class="kpi-label">Valeur Taux</p>
+                    <p class="kpi-value">100 = 0,50 €</p>
+                    <div class="kpi-trend trend-neutral">
+                        <i class="fa-solid fa-bolt" style="color: #ffcc00;"></i> Stable
+                    </div>
+                </div>
+
+                <div class="kpi-card">
                     <i class="fa-solid fa-wallet kpi-icon"></i>
                     <p class="kpi-label">Gains Totaux</p>
                     <p class="kpi-value neon">124,50 €</p>
@@ -228,32 +245,14 @@
                     <i class="fa-solid fa-eye kpi-icon"></i>
                     <p class="kpi-label">Pubs Vues</p>
                     <p class="kpi-value">276</p>
-                    <div class="kpi-trend trend-up">
-                        <i class="fa-solid fa-arrow-trend-up"></i> +8% aujourd'hui
-                    </div>
-                </div>
-
-                <div class="kpi-card">
-                    <i class="fa-solid fa-bolt kpi-icon"></i>
-                    <p class="kpi-label">Taux d'activité</p>
-                    <p class="kpi-value">98.4%</p>
-                    <div class="kpi-trend trend-up">
-                        <i class="fa-solid fa-circle-check"></i> Excellent
-                    </div>
-                </div>
-
-                <div class="kpi-card">
-                    <i class="fa-solid fa-clock-rotate-left kpi-icon"></i>
-                    <p class="kpi-label">Moy. Quotidienne</p>
-                    <p class="kpi-value">4,20 €</p>
-                    <div class="kpi-trend trend-neutral">
-                        <i class="fa-solid fa-minus"></i> Stable
+                    <div class="kpi-trend trend-down">
+                        <i class="fa-solid fa-arrow-trend-down"></i> -4% hier
                     </div>
                 </div>
             </div>
 
             <div class="chart-section">
-                <h3 class="section-heading">Évolution des gains <span class="time-filter">7 derniers jours</span></h3>
+                <h3 class="section-heading">Évolution de la semaine <span class="time-filter">7 derniers jours</span></h3>
                 <canvas id="earningsChart" style="width: 100%; height: 160px;"></canvas>
             </div>
 
@@ -271,7 +270,7 @@
                         </div>
                         <div class="history-right">
                             <div class="history-amount">+0,45 €</div>
-                            <div class="history-status">Validé</div>
+                            <div class="history-coins">90 Coins</div>
                         </div>
                     </div>
 
@@ -280,26 +279,12 @@
                             <div class="icon-wrapper success"><i class="fa-solid fa-play"></i></div>
                             <div class="history-meta">
                                 <h4>Session Vidéo Adidas</h4>
-                                <span>Aujourd'hui à 09:15</span>
+                                <span>Hier à 09:15</span>
                             </div>
                         </div>
                         <div class="history-right">
                             <div class="history-amount">+0,45 €</div>
-                            <div class="history-status">Validé</div>
-                        </div>
-                    </div>
-
-                    <div class="history-item">
-                        <div class="history-left">
-                            <div class="icon-wrapper"><i class="fa-solid fa-gift"></i></div>
-                            <div class="history-meta">
-                                <h4>Bonus de Connexion</h4>
-                                <span>Hier à 23:01</span>
-                            </div>
-                        </div>
-                        <div class="history-right">
-                            <div class="history-amount">+1,00 €</div>
-                            <div class="history-status">Validé</div>
+                            <div class="history-coins">90 Coins</div>
                         </div>
                     </div>
 
@@ -332,27 +317,25 @@
     <script>
         const ctx = document.getElementById('earningsChart').getContext('2d');
         
-        // Création du graphique avec un style néon violet/cyan haut de gamme
         new Chart(ctx, {
             type: 'line',
             data: {
                 labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
                 datasets: [{
                     label: 'Gains (€)',
-                    data: [2.10, 3.45, 1.80, 4.50, 3.90, 5.85, 4.25],
+                    // Simulation : Mercredi = 0.00 (Jour sans travail), puis remontée délicate
+                    data: [2.10, 3.45, 0.00, 1.80, 3.90, 5.85, 4.25],
                     borderColor: '#00ffcc',
                     borderWidth: 3,
                     pointBackgroundColor: '#9b51e0',
                     pointBorderColor: '#ffffff',
                     pointHoverRadius: 6,
-                    tension: 0.4, // Donne de belles courbes fluides
+                    tension: 0.3,
                     fill: true,
                     backgroundColor: function(context) {
                         const chart = context.chart;
                         const {ctx, chartArea} = chart;
                         if (!chartArea) return null;
-                        
-                        // Dégradé sous la courbe
                         const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
                         gradient.addColorStop(0, 'rgba(0, 255, 204, 0.2)');
                         gradient.addColorStop(1, 'rgba(0, 255, 204, 0.0)');
@@ -363,8 +346,17 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                // Gestion parfaite de l'animation linéaire horizontale (Exécutée une seule fois)
+                animation: {
+                    duration: 1200,
+                    easing: 'easeOutQuart',
+                    x: {
+                        from: 0,
+                        duration: 1200
+                    }
+                },
                 plugins: {
-                    legend: { display: false } // Enlève la légende inutile
+                    legend: { display: false }
                 },
                 scales: {
                     x: {
