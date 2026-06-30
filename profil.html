@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PUBLICITÉ - Mon Compte</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --purple: #9b51e0; 
+            --neon: #00ffcc; 
+            --bg: #060713; 
+            --card: rgba(255, 255, 255, 0.03); 
+            --border: rgba(255, 255, 255, 0.06);
+            --error: #ff4d4d; 
+        }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: #010206; color: #fff; font-family: 'Inter', sans-serif; 
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
+        }
+        .hidden { display: none !important; }
+
+        /* Conteneur PWA principal */
+        .app-container {
+            width: 100%; height: 100%; max-width: 450px;
+            background: var(--bg); position: relative;
+            display: flex; flex-direction: column;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        .scrollable-content { flex: 1; overflow-y: auto; box-sizing: border-box; }
+        .scrollable-content::-webkit-scrollbar { display: none; }
+
+        /* --- ÉCRAN D'AUTHENTIFICATION --- */
+        .auth-container { padding: 40px 25px; text-align: center; }
+        .logo-box { margin-top: 50px; margin-bottom: 40px; }
+        .logo-box h2 { font-size: 32px; font-weight: 700; margin: 0; letter-spacing: -1px; background: linear-gradient(45deg, #9b51e0, #00ffcc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo-box p { color: #555875; font-size: 12px; margin: 5px 0 0 0; font-weight: 600; letter-spacing: 2px; }
+        .auth-input { width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,0.02); color: #fff; box-sizing: border-box; font-size: 14px; outline: none; transition: 0.3s; }
+        .auth-input:focus { border-color: var(--purple); background: rgba(155, 81, 224, 0.03); }
+        .pass-group { position: relative; }
+        .toggle-pass { position: absolute; right: 18px; top: 18px; color: #41435c; cursor: pointer; }
+        #error-msg { color: var(--error); font-size: 13px; margin-bottom: 15px; display: none; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.2); }
+        
+        /* --- PROFIL AVEC BANNIÈRE STYLE YOUTUBE --- */
+        .profile-banner-wrapper { position: relative; width: 100%; height: 140px; background: #121324; overflow: hidden; cursor: pointer; }
+        #user-banner { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
+        .edit-banner-badge { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(5px); }
+        
+        .avatar-container { position: relative; margin-top: -55px; text-align: center; margin-bottom: 15px; }
+        .avatar-wrapper { position: relative; display: inline-block; cursor: pointer; border-radius: 50%; box-shadow: 0 0 25px rgba(0, 255, 204, 0.3); }
+        #user-photo { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--neon); object-fit: cover; background: #1a1b2f; }
+        .edit-avatar-badge { position: absolute; bottom: 3px; right: 3px; background: var(--neon); color: #000; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg); font-size: 11px; }
+
+        .user-name-box { font-size: 20px; color: #fff; font-weight: 700; border: 1px solid transparent; background: transparent; text-align: center; width: 80%; display: block; margin: 0 auto; outline: none; transition: 0.3s; border-radius: 8px; }
+        .user-name-box:focus { background: rgba(255,255,255,0.03); border-color: var(--border); }
+
+        /* --- PORTEFEUILLE SOLDE DE COINS --- */
+        .balance-card { background: linear-gradient(135deg, rgba(155, 81, 224, 0.15) 0%, rgba(0, 255, 204, 0.05) 100%); border: 1px solid var(--border); margin: 20px; padding: 20px; border-radius: 20px; text-align: center; }
+        .balance-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #8e92bc; margin-bottom: 5px; }
+        .balance-amount { font-size: 36px; font-weight: 800; color: var(--neon); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .balance-amount i { color: #ffcc00; font-size: 28px; }
+
+        /* --- SECTION TÉMOIGNAGES --- */
+        .section-box { margin: 25px 20px; }
+        .section-title { font-size: 15px; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; color: #8e92bc; }
+        .section-title i { color: var(--purple); }
+        
+        .reviews-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
+        .reviews-scroll::-webkit-scrollbar { display: none; }
+        .review-card { min-width: 220px; max-width: 220px; background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 16px; box-sizing: border-box; }
+        .review-user { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .review-user img { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--neon); }
+        .review-info h5 { margin: 0; font-size: 12px; font-weight: 600; color: #fff; }
+        .review-info span { font-size: 10px; color: var(--neon); font-weight: 500; }
+        .review-text { margin: 0; font-size: 12px; color: #8e92bc; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* Boutons */
+        .btn-main { background: linear-gradient(90deg, var(--purple), #b370f7); color: #fff; border: none; padding: 16px; border-radius: 14px; font-weight: 700; width: 100%; cursor: pointer; font-size: 15px; transition: 0.2s; box-shadow: 0 4px 15px rgba(155, 81, 224, 0.2); }
+        .btn-main:active { transform: scale(0.98); }
+        .btn-logout { background: none; border: none; color: #41435c; width: 100%; font-weight: 600; font-size: 13px; margin: 20px 0 40px 0; cursor: pointer; transition: color 0.2s; }
+        .btn-logout:hover { color: var(--error); }
+
+        /* Modals pop-up */
+        .overlay-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(1, 2, 6, 0.9); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-content { background: #0b0c1e; padding: 25px; border-radius: 24px; border: 1px solid var(--border); width: 85%; max-width: 360px; text-align: center; box-sizing: border-box; }
+        
+        /* Nav Bar Bas */
+        .nav-bar { background: #03040b; border-top: 1px solid var(--border); padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #555875; text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; }
+        .nav-item.active { color: var(--neon); }
+        .nav-icon { font-size: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+
+        <!-- --- FILET AUTHENTIFICATION --- -->
+        <div id="auth-screen" class="scrollable-content hidden">
+            <div class="auth-container">
+                <div class="logo-box">
+                    <h2>PUBLICITÉ</h2>
+                    <p>REWARDS NETWORKS</p>
+                </div>
+                <div id="error-msg"></div>
+                <input type="email" id="email" class="auth-input" placeholder="Adresse Email">
+                <div class="pass-group">
+                    <input type="password" id="password" class="auth-input" placeholder="Mot de passe">
+                    <i class="fa-solid fa-eye toggle-pass" onclick="togglePasswordVisibility()"></i>
+                </div>
+                <button class="btn-main" id="authBtn" onclick="handleAuth()">SE CONNECTER</button>
+                <div style="margin-top:25px; font-size:13px; color:#555875;" id="switchBox">
+                    Nouveau sur la plateforme ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- --- INTERFACE PRINCIPALE DE L'APPLICATION --- -->
+        <div id="main-app" class="scrollable-content hidden">
+            
+            <!-- Profil avec Bannière style YouTube -->
+            <div class="profile-banner-wrapper" onclick="triggerFileInput('bannerInput')">
+                <img id="user-banner" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
+                <div class="edit-banner-badge"><i class="fa-solid fa-pen"></i> Modifier la couverture</div>
+            </div>
+            <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
+
+            <div class="avatar-container">
+                <div class="avatar-wrapper" onclick="toggleModal('photo-alert-modal')">
+                    <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+                    <div class="edit-avatar-badge"><i class="fa-solid fa-camera"></i></div>
+                </div>
+                <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
+                <input type="text" class="user-name-box" id="user-name" value="..." onchange="updateProfileName(this.value)">
+            </div>
+
+            <!-- Solde de Coins -->
+            <div class="balance-card">
+                <div class="balance-label">Votre solde actuel</div>
+                <div class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="user-coins">0</span></div>
+            </div>
+
+            <!-- Témoignages & Preuves de paiement de la communauté -->
+            <div class="section-box">
+                <div class="section-title"><i class="fa-solid fa-circle-check"></i> Preuves de retraits & Avis</div>
+                <div class="reviews-scroll">
+                    <div class="review-card">
+                        <div class="review-user">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Gedeon">
+                            <div class="review-info"><h5>Gédéon D.</h5><span>+5.00 $ Reçus</span></div>
+                        </div>
+                        <p class="review-text">Retrait instantané sur mon compte ! Les offres de vidéos et d'applications de Monlix payent super bien.</p>
+                    </div>
+                    <div class="review-card">
+                        <div class="review-user">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah">
+                            <div class="review-info"><h5>Sarah M.</h5><span>+10.00 $ Reçus</span></div>
+                        </div>
+                        <p class="review-text">Application très sérieuse et honnête. J'ai complété 3 sondages sur Wannads hier soir et j'ai déjà reçu mon paiement.</p>
+                    </div>
+                    <div class="review-card">
+                        <div class="review-user">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix">
+                            <div class="review-info"><h5>Félix K.</h5><span>+2.50 $ Reçus</span></div>
+                        </div>
+                        <p class="review-text">Le système de récompenses par pièces fonctionne parfaitement. Très fluide et service client ultra réactif.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="padding: 0 20px;">
+                <button onclick="logout()" class="btn-logout">SE DÉCONNECTER DU COMPTE</button>
+            </div>
+        </div>
+
+        <!-- Pop-up d'avertissement image -->
+        <div id="photo-alert-modal" class="overlay-modal hidden">
+            <div class="modal-content">
+                <i class="fa-solid fa-image" style="font-size: 38px; color: var(--neon); margin-bottom: 15px;"></i>
+                <h3 style="margin-0; font-weight:700;">Format de l'image</h3>
+                <p style="font-size: 13px; color: #8e92bc; line-height: 1.5; text-align: justify; margin-bottom:20px;">
+                    Pour garantir la fluidité de votre PWA, privilégiez des images légères. Si votre photo provient d'un appareil récent et lourd, faites-en simplement une <b>capture d'écran</b> depuis votre galerie pour réduire son poids sans perte de clarté !
+                </p>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-main" style="background:#121324; color:#fff; box-shadow:none;" onclick="toggleModal('photo-alert-modal')">ANNULER</button>
+                    <button class="btn-main" onclick="triggerFileInput('avatarInput')">CONTINUER</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation fixe du bas de la PWA -->
+        <nav class="nav-bar">
+            <div class="nav-item" onclick="location.href='index.html'">
+                <i class="fa-solid fa-house nav-icon"></i>
+                <span>Accueil</span>
+            </div>
+            <div class="nav-item" onclick="location.href='messages.html'">
+                <i class="fa-regular fa-comment-dots nav-icon"></i>
+                <span>Messages</span>
+            </div>
+            <div class="nav-item" onclick="location.href='stats.html'">
+                <i class="fa-solid fa-chart-simple nav-icon"></i>
+                <span>Stats</span>
+            </div>
+            <div class="nav-item" onclick="location.href='activite.html'">
+                <i class="fa-solid fa-bolt nav-icon"></i>
+                <span>Activités</span>
+            </div>
+            <div class="nav-item active">
+                <i class="fa-solid fa-user nav-icon"></i>
+                <span>Compte</span>
+            </div>
+        </nav>
+
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // REMPLACE CES PARAMÈTRES PAR CEUX DE TON NOUVEAU PROJET FIREBASE REWARDS
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+  authDomain: "publicite-6445c.firebaseapp.com",
+  projectId: "publicite-6445c",
+  storageBucket: "publicite-6445c.firebasestorage.app",
+  messagingSenderId: "663385244466",
+  appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b", 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let isLoginMode = true;
+
+    window.toggleModal = (id) => document.getElementById(id).classList.toggle('hidden');
+
+    window.triggerFileInput = (inputId) => {
+        if(inputId === 'avatarInput') toggleModal('photo-alert-modal');
+        document.getElementById(inputId).click();
+    };
+
+    window.updateProfileName = async (newName) => {
+        if(!newName || newName === "...") return;
+        try {
+            await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { name: newName });
+        } catch (e) { console.error(e); }
+    };
+
+    window.toggleAuthMode = () => {
+        isLoginMode = !isLoginMode;
+        document.getElementById('authBtn').innerText = isLoginMode ? "SE CONNECTER" : "CRÉER MON COMPTE";
+        document.getElementById('switchBox').innerHTML = isLoginMode ? 
+            'Nouveau sur la plateforme ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>' :
+            'Déjà inscrit ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Se connecter</span>';
+    };
+
+    window.togglePasswordVisibility = () => {
+        const p = document.getElementById('password');
+        p.type = p.type === "password" ? "text" : "password";
+    };
+
+    window.handleAuth = async () => {
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('password').value;
+        const err = document.getElementById('error-msg');
+        if(!email || !pass) return;
+        try {
+            if(isLoginMode) {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } else {
+                const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                // On utilise la collection "rewards_users" pour ne pas interférer avec CongoFlix
+                await setDoc(doc(db, "rewards_users", cred.user.uid), { 
+                    name: email.split('@')[0], 
+                    coins: 0, 
+                    photoURL: "", 
+                    bannerURL: "" 
+                });
+            }
+        } catch (e) { 
+            err.style.display = 'block'; 
+            err.innerText = "Email ou mot de passe invalide."; 
+        }
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+        if(user) {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            const snap = await getDoc(doc(db, "rewards_users", user.uid));
+            if(snap.exists()){
+                const d = snap.data();
+                document.getElementById('user-name').value = d.name || "Utilisateur";
+                document.getElementById('user-coins').innerText = d.coins || 0;
+                if(d.photoURL) document.getElementById('user-photo').src = d.photoURL;
+                if(d.bannerURL) document.getElementById('user-banner').src = d.bannerURL;
+            }
+        } else {
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+        }
+    });
+
+    window.uploadImage = (e, type) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            if(type === 'avatar') {
+                document.getElementById('user-photo').src = reader.result;
+                await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { photoURL: reader.result });
+            } else if(type === 'banner') {
+                document.getElementById('user-banner').src = reader.result;
+                await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { bannerURL: reader.result });
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.logout = () => {
+        signOut(auth);
+    };
+</script>
+</body>
+</html>
