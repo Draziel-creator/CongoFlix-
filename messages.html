@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PUBLICITÉ - Messages & Preuves</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            font-family: 'Inter', sans-serif; background-color: #050508; color: #ffffff;
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
+        }
+
+        /* Conteneur principal type Smartphone */
+        .app-container {
+            width: 100%; height: 100%; max-width: 450px;
+            background: linear-gradient(135deg, #060713 0%, #020308 100%);
+            position: relative; display: flex; flex-direction: column;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        /* --- NAVIGATION DES ONGLETS SUPERIEURS --- */
+        .top-tabs {
+            display: flex; background: #03040b;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 10px 10px 0 10px; flex-shrink: 0; z-index: 5;
+        }
+        .tab-item {
+            flex: 1; text-align: center; padding: 12px 0;
+            font-size: 13px; font-weight: 600; color: #555875;
+            cursor: pointer; position: relative; transition: color 0.3s;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .tab-item.active { color: #00ffcc; }
+        
+        /* Ligne indicative sous l'onglet actif */
+        .tab-item::after {
+            content: ''; position: absolute; bottom: 0; left: 25%; right: 25%;
+            height: 3px; background: #00ffcc; border-radius: 3px 3px 0 0;
+            transform: scaleX(0); transition: transform 0.3s ease;
+        }
+        .tab-item.active::after { transform: scaleX(1); }
+
+        /* --- COMPTEURS ROUGES DE NOTIFICATIONS --- */
+        .badge-count {
+            position: absolute; top: 2px; right: 15px;
+            background: #ff3355; color: #ffffff; font-size: 10px;
+            font-weight: 700; min-width: 16px; height: 16px;
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; padding: 0 4px;
+            box-shadow: 0 0 10px rgba(255, 51, 85, 0.6);
+            display: none; /* Caché par défaut, visible si > 0 */
+        }
+
+        /* --- ZONE DE SWIPING DE CONTENU --- */
+        .swiper-wrapper {
+            flex: 1; display: flex; width: 200%; /* Deux pages de large */
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            will-change: transform;
+        }
+
+        /* Chaque page prend exactement la largeur du smartphone */
+        .swiper-page {
+            width: 50%; height: 100%; display: flex; flex-direction: column;
+            overflow-y: auto; padding: 20px; box-sizing: border-box;
+        }
+        .swiper-page::-webkit-scrollbar { display: none; }
+        .swiper-page { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* --- EN-TÊTES DE PAGES INTERNES --- */
+        .page-header-title {
+            font-size: 18px; font-weight: 700; margin: 0 0 15px 0;
+            color: #ffffff; display: flex; align-items: center; gap: 8px;
+        }
+        .page-header-title i { color: #9b51e0; }
+
+        /* --- CARTE MESSAGE SYSTEME --- */
+        .sys-card {
+            background: rgba(155, 81, 224, 0.05);
+            border: 1px solid rgba(155, 81, 224, 0.15);
+            border-radius: 16px; padding: 15px; margin-bottom: 12px;
+            position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .sys-card.important {
+            border-color: rgba(255, 51, 85, 0.3);
+            background: rgba(255, 51, 85, 0.04);
+        }
+        .sys-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .sys-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; }
+        .sys-tag.general { background: rgba(0, 255, 204, 0.15); color: #00ffcc; }
+        .sys-tag.alert { background: rgba(255, 51, 85, 0.15); color: #ff3355; }
+        .sys-time { font-size: 11px; color: #555875; }
+        .sys-title { font-size: 14px; font-weight: 700; margin: 0 0 6px 0; color: #ffffff; }
+        .sys-desc { font-size: 12px; color: #cdcee0; margin: 0; line-height: 1.4; }
+
+        /* --- CARTE TEMOIGNAGE / PREUVE --- */
+        .proof-card {
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 18px; padding: 14px; margin-bottom: 12px;
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .proof-left { display: flex; align-items: center; gap: 12px; flex: 1; }
+        .proof-avatar-box { position: relative; }
+        .proof-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1px solid #9b51e0; }
+        .proof-badge { 
+            position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; 
+            background: #00ffcc; border-radius: 50%; display: flex; align-items: center; 
+            justify-content: center; font-size: 8px; color: #000; border: 2px solid #050508;
+        }
+        .proof-info { display: flex; flex-direction: column; gap: 4px; }
+        .proof-name { font-size: 13px; font-weight: 700; color: #ffffff; margin: 0; }
+        .proof-msg { font-size: 11.5px; color: #b3b6d4; margin: 0; line-height: 1.3; }
+        
+        /* --- BOUTON VIDEO PULSANT (EFFET GLOW) --- */
+        .proof-right { flex-shrink: 0; }
+        .btn-video-pulse {
+            background: linear-gradient(135deg, #9b51e0 0%, #0055ff 100%);
+            border: none; border-radius: 20px; padding: 8px 14px;
+            color: #ffffff; font-size: 11px; font-weight: 700;
+            display: flex; align-items: center; gap: 6px; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            position: relative; animation: glowPulse 2s infinite alternate;
+        }
+        @keyframes glowPulse {
+            0% { box-shadow: 0 0 5px rgba(155, 81, 224, 0.4); transform: scale(1); }
+            100% { box-shadow: 0 0 15px rgba(0, 85, 255, 0.8); transform: scale(1.03); }
+        }
+        .btn-video-pulse i { font-size: 10px; color: #00ffcc; }
+
+        /* --- FENÊTRE MODAL JOLIE POUR VISIONNER LA VIDEO --- */
+        .video-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 3, 8, 0.95); z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .video-modal.show { opacity: 1; pointer-events: auto; }
+        .modal-content { width: 90%; max-width: 380px; position: relative; }
+        .modal-video-element {
+            width: 100%; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);
+            background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .btn-close-modal {
+            position: absolute; top: -45px; right: 0; background: rgba(255,255,255,0.1);
+            border: none; width: 32px; height: 32px; border-radius: 50%; color: #fff;
+            font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* --- CODE SÉCURITÉ / OBLIGATION (FORCER LES PREUVES) --- */
+        .force-banner {
+            background: linear-gradient(90deg, rgba(255,51,85,0.15) 0%, rgba(155,81,224,0.15) 100%);
+            border: 1px dashed rgba(255, 51, 85, 0.4); border-radius: 14px;
+            padding: 12px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;
+        }
+        .force-banner i { font-size: 20px; color: #ff3355; animation: blink 1s infinite alternate; }
+        .force-text { font-size: 11px; line-height: 1.4; color: #e1e1e8; margin: 0; }
+        .force-text strong { color: #ff3355; }
+        @keyframes blink { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        /* --- NAV BAR INFÉRIEURE --- */
+        .nav-bar {
+            background: #03040b; border-top: 1px solid rgba(255,255,255,0.06);
+            padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center;
+            flex-shrink: 0; z-index: 5;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            color: #555875; text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer;
+            transition: color 0.2s;
+        }
+        .nav-item.active { color: #00ffcc; }
+        .nav-icon { font-size: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+
+        <div class="top-tabs">
+            <div class="tab-item active" id="tabSystem" onclick="switchPage(0)">
+                Système
+                <span class="badge-count" id="badgeSystemCount">0</span>
+            </div>
+            <div class="tab-item" id="tabProofs" onclick="switchPage(1)">
+                Preuves de Retrait
+                <span class="badge-count" id="badgeProofsCount">0</span>
+            </div>
+        </div>
+
+        <div class="swiper-wrapper" id="swiperWrapper">
+
+            <div class="swiper-page" id="pageSystem">
+                <h2 class="page-header-title"><i class="fa-solid fa-satellite-dish"></i> Alertes Officielles</h2>
+                <div id="systemContainer">
+                    <div style="color: #6e729a; text-align: center; font-size: 12px; margin-top: 30px;">Connexion au système...</div>
+                </div>
+            </div>
+
+            <div class="swiper-page" id="pageProofs">
+                <div class="force-banner">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <p class="force-text"><strong>Règle de Retrait :</strong> Pour débloquer votre prochain paiement, vous devez téléverser une courte vidéo selfie confirmant la réception de votre argent. Maximisons la confiance collective !</p>
+                </div>
+
+                <h2 class="page-header-title"><i class="fa-solid fa-circle-check"></i> Témoignages en direct</h2>
+                <div id="proofsContainer">
+                    </div>
+            </div>
+
+        </div>
+
+        <div class="video-modal" id="videoModal">
+            <div class="modal-content">
+                <button class="btn-close-modal" id="closeModalBtn"><i class="fa-solid fa-xmark"></i></button>
+                <video class="modal-video-element" id="modalVideoPlayer" controls playsinline></video>
+            </div>
+        </div>
+
+        <nav class="nav-bar">
+            <div class="nav-item" onclick="navigateHome()">
+                <i class="fa-solid fa-house nav-icon"></i>
+                <span>Accueil</span>
+            </div>
+            <div class="nav-item active">
+                <i class="fa-solid fa-comment-dots nav-icon"></i>
+                <span>Messages</span>
+            </div>
+            <div class="nav-item" id="goToStats">
+                <i class="fa-solid fa-chart-simple nav-icon"></i>
+                <span>Stats</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='activite.html'">
+                <i class="fa-solid fa-bolt nav-icon"></i>
+                <span>Activités</span>
+            </div>
+        </nav>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Configuration Firebase (Exactement ton projet)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+            authDomain: "publicite-6445c.firebaseapp.com",
+            projectId: "publicite-6445c",
+            storageBucket: "publicite-6445c.firebasestorage.app",
+            messagingSenderId: "663385244466",
+            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
+            measurementId: "G-T37TGB3SR0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let userConnected = false;
+        let startX = 0;
+        let currentPageIndex = 0;
+
+        const swiperWrapper = document.getElementById('swiperWrapper');
+        const tabSystem = document.getElementById('tabSystem');
+        const tabProofs = document.getElementById('tabProofs');
+        const systemContainer = document.getElementById('systemContainer');
+        const proofsContainer = document.getElementById('proofsContainer');
+        const videoModal = document.getElementById('videoModal');
+        const modalVideoPlayer = document.getElementById('modalVideoPlayer');
+
+        // Sécurité de connexion
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                userConnected = true;
+                loadSystemMessages();
+                loadProofsData();
+            } else {
+                userConnected = false;
+                alert("Veuillez vous connecter pour voir vos messages.");
+                window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
+            }
+        });
+
+        // --- GESTION DU SWIPE MANUEL ET SANS SACCADE (DOIGT GAUCHE/DROITE) ---
+        swiperWrapper.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+        }, { passive: true });
+
+        swiperWrapper.addEventListener('touchend', (e) => {
+            const endX = e.changedTouches[0].clientX;
+            const diffX = startX - endX;
+
+            if (Math.abs(diffX) > 60) { // Seuil minimal de glissement de 60px
+                if (diffX > 0 && currentPageIndex === 0) {
+                    switchPage(1); // Swipe à gauche -> Va à la page 2
+                } else if (diffX < 0 && currentPageIndex === 1) {
+                    switchPage(0); // Swipe à droite -> Retourne à la page 1
+                }
+            }
+        }, { passive: true });
+
+        // Changement d'onglet
+        window.switchPage = (index) => {
+            currentPageIndex = index;
+            if (index === 0) {
+                swiperWrapper.style.transform = "translateX(0%)";
+                tabSystem.classList.add('active');
+                tabProofs.classList.remove('active');
+                document.getElementById('badgeSystemCount').style.display = "none"; // Marqué lu
+            } else {
+                swiperWrapper.style.transform = "translateX(-50%)";
+                tabProofs.classList.add('active');
+                tabSystem.classList.remove('active');
+                document.getElementById('badgeProofsCount').style.display = "none"; // Marqué lu
+            }
+        };
+
+        // --- CHARGEMENT DES DONNÉES DEPUIS FIREBASE ---
+        async function loadSystemMessages() {
+            try {
+                // Collection supposée : system_messages
+                const q = query(collection(db, "system_messages"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                if(querySnapshot.empty) {
+                    systemContainer.innerHTML = `
+                        <div class="sys-card important">
+                            <div class="sys-header">
+                                <span class="sys-tag alert">Important</span>
+                                <span class="sys-time">À l'instant</span>
+                            </div>
+                            <h3 class="sys-title">Configuration Initiale Réussie</h3>
+                            <p class="sys-desc">Bienvenue dans votre centre de communication. Les notifications administratives critiques apparaîtront ici.</p>
+                        </div>`;
+                    return;
+                }
+
+                systemContainer.innerHTML = "";
+                let count = 0;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    count++;
+                    const card = document.createElement('div');
+                    card.className = `sys-card ${data.type === 'alert' ? 'important' : ''}`;
+                    card.innerHTML = `
+                        <div class="sys-header">
+                            <span class="sys-tag ${data.type === 'alert' ? 'alert' : 'general'}">${data.tag || 'Système'}</span>
+                            <span class="sys-time">${data.date || 'Récemment'}</span>
+                        </div>
+                        <h3 class="sys-title">${data.title || 'Message'}</h3>
+                        <p class="sys-desc">${data.message || ''}</p>
+                    `;
+                    systemContainer.appendChild(card);
+                });
+
+                if(count > 0 && currentPageIndex !== 0) {
+                    document.getElementById('badgeSystemCount').innerText = count;
+                    document.getElementById('badgeSystemCount').style.display = "flex";
+                }
+
+            } catch (err) {
+                console.warn("Dossier system_messages absent, affichage mode démo propre.");
+                // Mode de secours stylisé
+                systemContainer.innerHTML = `
+                    <div class="sys-card important">
+                        <div class="sys-header">
+                            <span class="sys-tag alert">Alerte Sécurité</span>
+                            <span class="sys-time">10:42</span>
+                        </div>
+                        <h3 class="sys-title">Avis de conformité obligatoire</h3>
+                        <p class="sys-desc">Attention, toute tentative d'utilisation de robots ou de VPN pour manipuler les visionnages bloquera votre compte définitivement.</p>
+                    </div>
+                    <div class="sys-card">
+                        <div class="sys-header">
+                            <span class="sys-tag general">Mise à jour</span>
+                            <span class="sys-time">Hier</span>
+                        </div>
+                        <h3 class="sys-title">Bonus de parrainage activé</h3>
+                        <p class="sys-desc">Invitez vos proches à utiliser notre plateforme et touchez immédiatement 100 pièces à chaque validation de profil.</p>
+                    </div>`;
+            }
+        }
+
+        async function loadProofsData() {
+            try {
+                // Collection supposée : payment_proofs
+                const q = query(collection(db, "payment_proofs"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    showMockProofs();
+                    return;
+                }
+
+                proofsContainer.innerHTML = "";
+                let count = 0;
+                querySnapshot.forEach((doc) => {
+                    count++;
+                    const data = doc.data();
+                    createProofCard(data.name, data.message, data.avatar, data.videoUrl);
+                });
+
+                if (count > 0 && currentPageIndex !== 1) {
+                    document.getElementById('badgeProofsCount').innerText = count;
+                    document.getElementById('badgeProofsCount').style.display = "flex";
+                }
+
+            } catch (err) {
+                showMockProofs();
+            }
+        }
+
+        function createProofCard(name, text, img, videoUrl) {
+            const card = document.createElement('div');
+            card.className = "proof-card";
+            card.innerHTML = `
+                <div class="proof-left">
+                    <div class="proof-avatar-box">
+                        <img class="proof-img" src="${img || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}" alt="Avatar">
+                        <div class="proof-badge"><i class="fa-solid fa-check"></i></div>
+                    </div>
+                    <div class="proof-info">
+                        <h4 class="proof-name">${name}</h4>
+                        <p class="proof-msg">"${text}"</p>
+                    </div>
+                </div>
+                <div class="proof-right">
+                    <button class="btn-video-pulse" onclick="openVideoPlayer('${videoUrl}')">
+                        <i class="fa-solid fa-play"></i> Vidéo
+                    </button>
+                </div>
+            `;
+            proofsContainer.appendChild(card);
+        }
+
+        // Preuves fictives haut de gamme pour amorcer ta communauté et forcer l'effet de masse
+        function showMockProofs() {
+            proofsContainer.innerHTML = "";
+            const samples = [
+                { name: "Justin K.", text: "Retrait de 25$ reçu par Airtel Money ! Merci beaucoup !", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop", url: "https://www.w3schools.com/html/mov_bbb.mp4" },
+                { name: "Alida M.", text: "Voici ma vidéo de preuve, mon compte Orange a été crédité en 5 min.", img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop", url: "https://www.w3schools.com/html/movie.mp4" },
+                { name: "Gloire B.", text: "Ça marche vraiment bien, déjà mon deuxième retrait validé.", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop", url: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ];
+            samples.forEach(s => createProofCard(s.name, s.text, s.img, s.url));
+            
+            document.getElementById('badgeProofsCount').innerText = "3";
+            document.getElementById('badgeProofsCount').style.display = "flex";
+        }
+
+        // --- OUVERTURE/FERMETURE DU MODAL VIDÉO ---
+        window.openVideoPlayer = (url) => {
+            if(!url || url === "undefined") {
+                alert("Le fichier de ce témoignage est en cours d'optimisation.");
+                return;
+            }
+            modalVideoPlayer.src = url;
+            videoModal.classList.add('show');
+            modalVideoPlayer.play();
+        };
+
+        document.getElementById('closeModalBtn').addEventListener('click', () => {
+            videoModal.classList.remove('show');
+            modalVideoPlayer.pause();
+            modalVideoPlayer.src = "";
+        });
+
+        // Redirections globales
+        window.navigateHome = () => {
+            window.location.href = "index.html"; // Remplace par le nom exact de ta page d'accueil
+        };
+
+        document.getElementById('goToStats').addEventListener('click', () => {
+            if (userConnected) {
+                window.location.href = "https://draziel-creator.github.io/CongoFlix-/statpub.html";
+            }
+        });
+    </script>
+</body>
+</html>
