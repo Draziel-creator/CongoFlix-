@@ -38,7 +38,7 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            z-index: 10;
+            z-index: 100;
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #fff;
@@ -56,16 +56,16 @@
         .floating-back-btn:active { transform: scale(0.95); background: rgba(0, 0, 0, 0.8); }
 
         /* --- ÉCRAN D'AUTHENTIFICATION --- */
-        .auth-header-space { height: 40px; }
+        .auth-header-space { height: 60px; }
         .auth-container { padding: 10px 25px 40px 25px; text-align: center; }
         .logo-box { margin-bottom: 30px; }
         .logo-box h2 { font-size: 32px; font-weight: 700; margin: 0; letter-spacing: -1px; background: linear-gradient(45deg, #9b51e0, #00ffcc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .logo-box p { color: #555875; font-size: 12px; margin: 5px 0 0 0; font-weight: 600; letter-spacing: 2px; }
-        .auth-input { width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,0.02); color: #fff; box-sizing: border-box; font-size: 14px; outline: none; transition: 0.3s; }
+        .auth-input { width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,0.02); color: #fff; box-sizing: border-box; font-size: 14px; outline: none; transition: 0.3s; color-scheme: dark; }
         .auth-input:focus { border-color: var(--purple); background: rgba(155, 81, 224, 0.03); }
         .pass-group { position: relative; }
         .toggle-pass { position: absolute; right: 18px; top: 18px; color: #41435c; cursor: pointer; }
-        #error-msg { color: var(--error); font-size: 13px; margin-bottom: 15px; display: none; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.2); text-align: left; }
+        #error-msg { color: var(--error); font-size: 13px; margin-bottom: 15px; display: none; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.2); text-align: left; line-height: 1.4; }
         
         /* --- PROFIL AVEC BANNIÈRE --- */
         .profile-banner-wrapper { position: relative; width: 100%; height: 140px; background: #121324; overflow: hidden; cursor: pointer; }
@@ -144,7 +144,7 @@
                 
                 <input type="email" id="email" class="auth-input" placeholder="Adresse Email">
                 
-                <input type="number" id="age" class="auth-input hidden" placeholder="Votre Âge (Minimum 18 ans)">
+                <input type="date" id="birthdate" class="auth-input hidden">
                 
                 <div class="pass-group">
                     <input type="password" id="password" class="auth-input" placeholder="Mot de passe">
@@ -225,7 +225,7 @@
                             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah">
                             <div class="review-info"><h5>Sarah M.</h5><span>+10.00 $ Reçus</span></div>
                         </div>
-                        <p class="review-text">Application très sérieuse et honnête. J'ai complété 3 sondages sur Wannads hier soir et j'ai déjà reçu mon paiement.</p>
+                        <p class="review-text">Application très sérieuse et honnête. J'ai completé 3 sondages sur Wannads hier soir et j'ai déjà reçu mon paiement.</p>
                     </div>
                 </div>
             </div>
@@ -263,7 +263,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
@@ -280,6 +280,16 @@
 
     let isLoginMode = true;
 
+    // --- LOGIQUE INVISIBLE ANTI FRAUDE : RECUPE OU GENERE UN DEVICE ID UNIQUE ---
+    function getDeviceID() {
+        let id = localStorage.getItem('app_device_id');
+        if (!id) {
+            id = 'dev_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+            localStorage.setItem('app_device_id', id);
+        }
+        return id;
+    }
+
     window.triggerFileInput = (inputId) => {
         document.getElementById(inputId).click();
     };
@@ -293,7 +303,7 @@
 
     window.toggleAuthMode = () => {
         isLoginMode = !isLoginMode;
-        const ageInput = document.getElementById('age');
+        const ageInput = document.getElementById('birthdate');
         document.getElementById('authBtn').innerText = isLoginMode ? "SE CONNECTER" : "CRÉER MON COMPTE";
         
         if (isLoginMode) {
@@ -313,27 +323,50 @@
     };
 
     window.handleAuth = async () => {
-        const email = document.getElementById('email').value;
+        const email = document.getElementById('email').value.trim();
         const pass = document.getElementById('password').value;
-        const age = document.getElementById('age').value;
+        const birthdateValue = document.getElementById('birthdate').value;
         const err = document.getElementById('error-msg');
-        if(!email || !pass) return;
         
+        if(!email || !pass) return;
         err.style.display = 'none';
+
+        const currentDeviceID = getDeviceID();
 
         try {
             if(isLoginMode) {
                 await signInWithEmailAndPassword(auth, email, pass);
             } else {
-                // Validation stricte de la case d'âge obligatoire
-                if (!age) {
+                // Validation de la date de naissance (Jour, Mois, Année) obligatoire
+                if (!birthdateValue) {
                     err.style.display = 'block';
-                    err.innerText = "Âge obligatoire.";
+                    err.innerText = "Âge obligatoire. Veuillez renseigner votre date de naissance complète (Jour, Mois, Année).";
                     return;
                 }
-                if (parseInt(age) < 18) {
+
+                // Calcul mathématique précis des 18 ans révolus
+                const birthDate = new Date(birthdateValue);
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+
+                if (age < 18) {
                     err.style.display = 'block';
-                    err.innerText = "L'accès et la monétisation sont strictement interdits aux moins de 18 ans.";
+                    err.innerText = "Les moins de 18 ans ne sont pas autorisés à gagner des revenus sur notre plateforme.";
+                    return;
+                }
+
+                // Sécurisation anti-fraude multi-compte : vérification si le Device ID existe déjà
+                const usersRef = collection(db, "rewards_users");
+                const q = query(usersRef, where("deviceID", "==", currentDeviceID));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    err.style.display = 'block';
+                    err.innerText = "Erreur : Un compte a déjà été créé depuis cet appareil. Le multi-compte est strictement interdit.";
                     return;
                 }
 
@@ -341,15 +374,17 @@
                 await setDoc(doc(db, "rewards_users", cred.user.uid), { 
                     name: email.split('@')[0], 
                     coins: 0, 
-                    age: parseInt(age),
+                    birthdate: birthdateValue,
+                    age: age,
                     invitedCount: 0,
                     photoURL: "", 
-                    bannerURL: "" 
+                    bannerURL: "",
+                    deviceID: currentDeviceID
                 });
             }
         } catch (e) { 
             err.style.display = 'block'; 
-            err.innerText = "Email ou mot de passe invalide."; 
+            err.innerText = "Une erreur est survenue. Vérifiez vos identifiants ou si l'e-mail est déjà utilisé."; 
         }
     };
 
