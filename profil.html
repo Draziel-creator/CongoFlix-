@@ -14,6 +14,9 @@
             --card: rgba(255, 255, 255, 0.03); 
             --border: rgba(255, 255, 255, 0.06);
             --error: #ff4d4d; 
+            
+            /* Couleurs dynamiques des rangs */
+            --rank-color: #8e92bc;
         }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -22,7 +25,6 @@
         }
         .hidden { display: none !important; }
 
-        /* Conteneur PWA principal */
         .app-container {
             width: 100%; height: 100%; max-width: 450px;
             background: var(--bg); position: relative;
@@ -33,92 +35,95 @@
         .scrollable-content { flex: 1; overflow-y: auto; box-sizing: border-box; }
         .scrollable-content::-webkit-scrollbar { display: none; }
 
-        /* --- BOUTON RETOUR TRANSPARENT EN SUPERPOSITION --- */
         .floating-back-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            transition: 0.2s;
+            position: absolute; top: 20px; left: 20px; z-index: 100;
+            background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff; width: 38px; height: 38px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); transition: 0.2s;
         }
         .floating-back-btn:active { transform: scale(0.95); background: rgba(0, 0, 0, 0.8); }
 
-        /* --- ÉCRAN D'AUTHENTIFICATION --- */
-        .auth-header-space { height: 60px; }
+        /* --- AUTHENTIFICATION --- */
+        .auth-header-space { height: 40px; }
         .auth-container { padding: 10px 25px 40px 25px; text-align: center; }
-        .logo-box { margin-bottom: 30px; }
+        .logo-box { margin-bottom: 25px; }
         .logo-box h2 { font-size: 32px; font-weight: 700; margin: 0; letter-spacing: -1px; background: linear-gradient(45deg, #9b51e0, #00ffcc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .logo-box p { color: #555875; font-size: 12px; margin: 5px 0 0 0; font-weight: 600; letter-spacing: 2px; }
+        
+        .auth-label { display: block; text-align: left; font-size: 12px; color: #8e92bc; margin: 5px 0 5px 5px; font-weight: 500; }
         .auth-input { width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 14px; border: 1px solid var(--border); background: rgba(255,255,255,0.02); color: #fff; box-sizing: border-box; font-size: 14px; outline: none; transition: 0.3s; color-scheme: dark; }
         .auth-input:focus { border-color: var(--purple); background: rgba(155, 81, 224, 0.03); }
         .pass-group { position: relative; }
         .toggle-pass { position: absolute; right: 18px; top: 18px; color: #41435c; cursor: pointer; }
         #error-msg { color: var(--error); font-size: 13px; margin-bottom: 15px; display: none; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.2); text-align: left; line-height: 1.4; }
         
-        /* --- PROFIL AVEC BANNIÈRE --- */
+        /* --- PROFIL AVEC EFFETS DE RANGS --- */
         .profile-banner-wrapper { position: relative; width: 100%; height: 140px; background: #121324; overflow: hidden; cursor: pointer; }
         #user-banner { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
         .edit-banner-badge { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(5px); }
         
         .avatar-container { position: relative; margin-top: -55px; text-align: center; margin-bottom: 15px; }
-        .avatar-wrapper { position: relative; display: inline-block; cursor: pointer; border-radius: 50%; box-shadow: 0 0 25px rgba(0, 255, 204, 0.3); }
-        #user-photo { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--neon); object-fit: cover; background: #1a1b2f; }
-        .edit-avatar-badge { position: absolute; bottom: 3px; right: 3px; background: var(--neon); color: #000; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg); font-size: 11px; }
+        .avatar-wrapper { position: relative; display: inline-block; cursor: pointer; border-radius: 50%; transition: 0.3s; }
+        
+        /* Contour dynamique déterminé par le script */
+        #user-photo { width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--rank-color); object-fit: cover; background: #1a1b2f; box-shadow: 0 0 20px var(--rank-color); }
+        .edit-avatar-badge { position: absolute; bottom: 3px; right: 3px; background: var(--purple); color: #fff; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg); font-size: 11px; }
 
         .user-name-box { font-size: 20px; color: #fff; font-weight: 700; border: 1px solid transparent; background: transparent; text-align: center; width: 80%; display: block; margin: 0 auto; outline: none; transition: 0.3s; border-radius: 8px; }
         .user-name-box:focus { background: rgba(255,255,255,0.03); border-color: var(--border); }
 
-        /* --- SOLDE --- */
-        .balance-card { background: linear-gradient(135deg, rgba(155, 81, 224, 0.15) 0%, rgba(0, 255, 204, 0.05) 100%); border: 1px solid var(--border); margin: 20px; padding: 20px; border-radius: 20px; text-align: center; }
+        /* --- BADGE DE RANG DE BAS DE PROFIL --- */
+        .rank-status-container { display: flex; flex-direction: column; align-items: center; margin-top: 8px; }
+        .rank-badge-pill { padding: 6px 16px; border-radius: 30px; font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.05); border: 1px solid var(--rank-color); color: #fff; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+
+        /* --- SYSTEME DE SOLDE & CADENAS --- */
+        .balance-card { background: linear-gradient(135deg, rgba(155, 81, 224, 0.15) 0%, rgba(0, 255, 204, 0.05) 100%); border: 1px solid var(--border); margin: 20px; padding: 20px; border-radius: 20px; text-align: center; position: relative; overflow: hidden; }
         .balance-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #8e92bc; margin-bottom: 5px; }
         .balance-amount { font-size: 36px; font-weight: 800; color: var(--neon); display: flex; align-items: center; justify-content: center; gap: 10px; }
         .balance-amount i { color: #ffcc00; font-size: 28px; }
+        
+        /* Cadenas pour le rang 0 */
+        .balance-locked-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(6, 7, 19, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; backdrop-filter: blur(3px); }
+        .balance-locked-overlay i { font-size: 24px; color: var(--error); }
+        .balance-locked-overlay span { font-size: 11px; color: #cdcee0; font-weight: 500; }
 
-        /* --- TABLEAU DES CONDITIONS & PARRAINAGE --- */
+        /* --- PARRAINAGE & ET PARTAGE --- */
+        .share-box-wrapper { background: rgba(155, 81, 224, 0.05); border: 1px solid rgba(155, 81, 224, 0.2); padding: 16px; border-radius: 16px; margin: 20px; }
+        .share-box-title { font-size: 13px; font-weight: 600; color: #b370f7; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .share-link-input-group { display: flex; gap: 10px; }
+        .share-link-display { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 12px; border-radius: 10px; font-size: 12px; color: #cdcee0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 14px; }
+        .btn-copy-share { background: var(--purple); color: #fff; border: none; padding: 0 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .btn-copy-share:active { transform: scale(0.95); }
+
         .section-box { margin: 25px 20px; }
-        .section-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: #8e92bc; text-transform: uppercase; letter-spacing: 0.5px; }
+        .section-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: #8e92bc; text-transform: uppercase; letter-spacing: 0.5px; }
         .section-title i { color: var(--purple); }
         
-        .rules-table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 15px; }
-        .rules-table th, .rules-table td { padding: 12px 15px; text-align: left; font-size: 13px; }
-        .rules-table th { background: rgba(155, 81, 224, 0.1); color: var(--purple); font-weight: 700; border-bottom: 1px solid var(--border); }
-        .rules-table td { border-bottom: 1px solid rgba(255,255,255,0.02); color: #cdcee0; }
+        /* --- MARATHON DES CONDITIONS --- */
+        .rules-table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+        .rules-table th, .rules-table td { padding: 12px 14px; text-align: left; font-size: 12px; }
+        .rules-table th { background: rgba(155, 81, 224, 0.1); color: #b370f7; font-weight: 700; border-bottom: 1px solid var(--border); }
+        .rules-table td { border-bottom: 1px solid rgba(255,255,255,0.02); color: #cdcee0; line-height: 1.4; }
         .rules-table tr:last-child td { border-bottom: none; }
-        .badge-status { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .badge-status { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; }
         .status-ok { background: rgba(0, 255, 204, 0.1); color: var(--neon); }
-        .status-warn { background: rgba(255, 204, 0, 0.1); color: #ffcc00; }
+        .status-warn { background: rgba(255, 77, 77, 0.1); color: var(--error); }
 
-        .invite-notice-card { background: rgba(255, 204, 0, 0.03); border: 1px solid rgba(255, 204, 0, 0.15); border-radius: 14px; padding: 14px; font-size: 12px; color: #d1d4f0; line-height: 1.5; }
-        .invite-notice-card strong { color: #ffcc00; }
-
-        /* --- TEMOIGNAGES --- */
-        .reviews-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
-        .reviews-scroll::-webkit-scrollbar { display: none; }
-        .review-card { min-width: 220px; max-width: 220px; background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 16px; box-sizing: border-box; }
-        .review-user { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .review-user img { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--neon); }
-        .review-info h5 { margin: 0; font-size: 12px; font-weight: 600; color: #fff; }
-        .review-info span { font-size: 10px; color: var(--neon); font-weight: 500; }
-        .review-text { margin: 0; font-size: 12px; color: #8e92bc; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        /* --- TABLEAU HISTORIQUE DES COINS (7J VERTICAL / 4S HORIZONTAL) --- */
+        .history-table-wrapper { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+        .history-table-wrapper::-webkit-scrollbar { display: none; }
+        .history-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 12px; min-width: 380px; }
+        .history-table th, .history-table td { padding: 10px; border: 1px solid rgba(255, 255, 255, 0.03); }
+        .history-table th { background: rgba(0, 0, 0, 0.4); color: #8e92bc; font-weight: 600; }
+        .history-table td.day-label { background: rgba(155, 81, 224, 0.03); color: #cdcee0; font-weight: 500; text-align: left; padding-left: 12px; width: 80px; }
+        .coin-cell { color: var(--neon); font-weight: 600; }
 
         .btn-main { background: linear-gradient(90deg, var(--purple), #b370f7); color: #fff; border: none; padding: 16px; border-radius: 14px; font-weight: 700; width: 100%; cursor: pointer; font-size: 15px; transition: 0.2s; box-shadow: 0 4px 15px rgba(155, 81, 224, 0.2); }
         .btn-main:active { transform: scale(0.98); }
-        .btn-logout { background: none; border: none; color: #41435c; width: 100%; font-weight: 600; font-size: 13px; margin: 20px 0 40px 0; cursor: pointer; transition: color 0.2s; }
+        .btn-logout { background: none; border: none; color: #41435c; width: 100%; font-weight: 600; font-size: 13px; margin: 20px 0 30px 0; cursor: pointer; transition: color 0.2s; }
         .btn-logout:hover { color: var(--error); }
 
-        /* Navigation Bas Fixe */
         .nav-bar { background: #03040b; border-top: 1px solid var(--border); padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #555875; text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; }
         .nav-item.active { color: var(--neon); }
@@ -133,6 +138,7 @@
             <i class="fa-solid fa-chevron-left"></i>
         </div>
 
+        <!-- --- CONFIGURATION ECRAN AUTHENTIFICATION --- -->
         <div id="auth-screen" class="scrollable-content hidden">
             <div class="auth-header-space"></div>
             <div class="auth-container">
@@ -142,12 +148,18 @@
                 </div>
                 <div id="error-msg"></div>
                 
-                <input type="email" id="email" class="auth-input" placeholder="Adresse Email">
+                <span class="auth-label">Adresse Email</span>
+                <input type="email" id="email" class="auth-input" placeholder="exemple@mail.com">
                 
-                <input type="date" id="birthdate" class="auth-input hidden">
+                <!-- Bloc Date de naissance stratégique -->
+                <div id="birthdate-block" class="hidden">
+                    <span class="auth-label">Date de naissance (Obligatoire pour vérification +18 ans)</span>
+                    <input type="date" id="birthdate" class="auth-input">
+                </div>
                 
+                <span class="auth-label">Mot de passe</span>
                 <div class="pass-group">
-                    <input type="password" id="password" class="auth-input" placeholder="Mot de passe">
+                    <input type="password" id="password" class="auth-input" placeholder="••••••••">
                     <i class="fa-solid fa-eye toggle-pass" onclick="togglePasswordVisibility()"></i>
                 </div>
                 
@@ -158,6 +170,7 @@
             </div>
         </div>
 
+        <!-- --- APPLICATION INTERNE --- -->
         <div id="main-app" class="scrollable-content hidden">
             
             <div class="profile-banner-wrapper" onclick="triggerFileInput('bannerInput')">
@@ -173,61 +186,95 @@
                 </div>
                 <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
                 <input type="text" class="user-name-box" id="user-name" value="..." onchange="updateProfileName(this.value)">
+                
+                <!-- Zone d'affichage dynamique du Badge Bas de Profil -->
+                <div class="rank-status-container">
+                    <div class="rank-badge-pill" id="profile-rank-badge">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
+                    </div>
+                </div>
             </div>
 
+            <!-- Solde sécurisé par Cadenas sur Rang 0 -->
             <div class="balance-card">
                 <div class="balance-label">Votre solde actuel</div>
                 <div class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="user-coins">0</span></div>
+                
+                <div id="lock-overlay" class="balance-locked-overlay hidden">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Solde gelé (Terminez la semaine obligatoire du Rang 0)</span>
+                </div>
             </div>
 
+            <!-- Cadre d'invitation et partage natif -->
+            <div class="share-box-wrapper">
+                <div class="share-box-title"><i class="fa-solid fa-share-nodes"></i> Votre lien de parrainage unique</div>
+                <div class="share-link-input-group">
+                    <div class="share-link-display" id="share-link-text">Génération du lien...</div>
+                    <button class="btn-copy-share" onclick="sharePlatform()"><i class="fa-solid fa-paper-plane"></i> Partager</button>
+                </div>
+            </div>
+
+            <!-- Tableau d'Historique Vertical (7 jours) & Horizontal (Semaines) -->
             <div class="section-box">
-                <div class="section-title"><i class="fa-solid fa-gavel"></i> Conditions d'éligibilité</div>
+                <div class="section-title"><i class="fa-solid fa-calendar-days"></i> Historique des Coins collectés</div>
+                <div class="history-table-wrapper">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Jour</th>
+                                <th>Sem. 1</th>
+                                <th>Sem. 2</th>
+                                <th>Sem. 3</th>
+                                <th>Sem. 4</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-rows-container">
+                            <!-- Rempli dynamiquement en boucle JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Marathon des 5 Conditions de Retrait Stratégiques -->
+            <div class="section-box">
+                <div class="section-title"><i class="fa-solid fa-gavel"></i> Marathon de Retrait (5 Conditions)</div>
                 <table class="rules-table">
                     <thead>
                         <tr>
-                            <th>Condition</th>
-                            <th>Requis</th>
-                            <th>Statut</th>
+                            <th>Condition de validation</th>
+                            <th>Seuil requis</th>
+                            <th>Votre Statut</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Âge requis</td>
-                            <td>18 Ans minimum</td>
-                            <td><span class="badge-status status-ok" id="table-age-status">Vérifié</span></td>
+                            <td><strong>1. Majorité Légale</strong><br><span style="font-size:11px;color:#8e92bc;">Vérification de la date de naissance</span></td>
+                            <td>18 Ans révolus</td>
+                            <td><span class="badge-status status-ok" id="m-cond-age">Vérifié</span></td>
                         </tr>
                         <tr>
-                            <td>Membres parrainés</td>
-                            <td>10 Personnes inscrites</td>
-                            <td><span class="badge-status status-warn" id="table-invite-status">0 / 10</span></td>
+                            <td><strong>2. Équipe active parrainée</strong><br><span style="font-size:11px;color:#8e92bc;">Filleuls ayant validé le Rang 0</span></td>
+                            <td>10 Personnes</td>
+                            <td><span class="badge-status status-warn" id="m-cond-invite">0 / 10</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>3. Quota d'offres complétées</strong><br><span style="font-size:11px;color:#8e92bc;">Publicités visionnées au total</span></td>
+                            <td>50 Tâches</td>
+                            <td><span class="badge-status status-warn" id="m-cond-tasks">0 / 50</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>4. Rétention d'ancienneté</strong><br><span style="font-size:11px;color:#8e92bc;">Jours actifs consécutifs requis</span></td>
+                            <td>14 Jours</td>
+                            <td><span class="badge-status status-warn" id="m-cond-days">0 / 14</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>5. Score Anti-Fraude</strong><br><span style="font-size:11px;color:#8e92bc;">Analyse comportementale (No VPN)</span></td>
+                            <td>100% Intègre</td>
+                            <td><span class="badge-status status-ok" id="m-cond-fraud">100% OK</span></td>
                         </tr>
                     </tbody>
                 </table>
-
-                <div class="invite-notice-card">
-                    <i class="fa-solid fa-circle-exclamation" style="color: #ffcc00; margin-right: 4px;"></i>
-                    <strong>Règle importante :</strong> Les personnes que vous invitez doivent <strong>obligatoirement s'inscrire elles-mêmes</strong> via l'interface et valider leur compte. Si elles ne s'inscrivent pas, elles ne seront pas comptées dans vos statistiques d'éligibilité.
-                </div>
-            </div>
-
-            <div class="section-box">
-                <div class="section-title"><i class="fa-solid fa-circle-check"></i> Preuves de retraits & Avis</div>
-                <div class="reviews-scroll">
-                    <div class="review-card">
-                        <div class="review-user">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Gedeon">
-                            <div class="review-info"><h5>Gédéon D.</h5><span>+5.00 $ Reçus</span></div>
-                        </div>
-                        <p class="review-text">Retrait instantané sur mon compte ! Les offres de vidéos et d'applications de Monlix payent super bien.</p>
-                    </div>
-                    <div class="review-card">
-                        <div class="review-user">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah">
-                            <div class="review-info"><h5>Sarah M.</h5><span>+10.00 $ Reçus</span></div>
-                        </div>
-                        <p class="review-text">Application très sérieuse et honnête. J'ai completé 3 sondages sur Wannads hier soir et j'ai déjà reçu mon paiement.</p>
-                    </div>
-                </div>
             </div>
 
             <div style="padding: 0 20px;">
@@ -280,7 +327,22 @@
 
     let isLoginMode = true;
 
-    // --- LOGIQUE INVISIBLE ANTI FRAUDE : RECUPE OU GENERE UN DEVICE ID UNIQUE ---
+    // Base de données de configuration des 10 Rangs
+    const RANKS_METADATA = {
+        0:  { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
+        1:  { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
+        2:  { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
+        3:  { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
+        4:  { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
+        5:  { name: "Saphir", medal: "fa-solid fa-gem", color: "#0f52ba" },
+        6:  { name: "Émeraude", medal: "fa-solid fa-gem", color: "#50c878" },
+        7:  { name: "Rubis", medal: "fa-solid fa-gem", color: "#e0115f" },
+        8:  { name: "Maître", medal: "fa-solid fa-crown", color: "#a23bf7" },
+        9:  { name: "Légende", medal: "fa-solid fa-jedi", color: "#ff3e6c" },
+        10: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
+    };
+
+    // --- LOGIQUE INVISIBLE ANTI-FRAUDE DEVICE ID ---
     function getDeviceID() {
         let id = localStorage.getItem('app_device_id');
         if (!id) {
@@ -288,6 +350,62 @@
             localStorage.setItem('app_device_id', id);
         }
         return id;
+    }
+
+    // Capture de l'ID parrain potentiel dans l'URL
+    function checkReferral() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const refId = urlParams.get('ref');
+        if (refId) {
+            localStorage.setItem('pending_referrer', refId);
+        }
+    }
+    checkReferral();
+
+    // Rendu dynamique du tableau de suivi d'historique 7 jours
+    function generateHistoryUI(userHistoryData = {}) {
+        const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+        const container = document.getElementById('history-rows-container');
+        container.innerHTML = "";
+        
+        days.forEach((day, index) => {
+            const tr = document.createElement('tr');
+            
+            const tdDay = document.createElement('td');
+            tdDay.className = "day-label";
+            tdDay.innerText = day;
+            tr.appendChild(tdDay);
+            
+            for(let w = 1; w <= 4; w++) {
+                const tdWeek = document.createElement('td');
+                tdWeek.className = "coin-cell";
+                const cellKey = `w${w}_d${index + 1}`;
+                tdWeek.innerText = userHistoryData[cellKey] || "0";
+                tr.appendChild(tdWeek);
+            }
+            container.appendChild(tr);
+        });
+    }
+
+    // Gestion dynamique du changement de design en fonction du Rang
+    function applyRankDesign(rankLevel) {
+        const currentRank = RANKS_METADATA[rankLevel] || RANKS_METADATA[0];
+        
+        // Injection de la couleur sur la variable CSS globale (Bordure + Ombre de l'avatar)
+        document.documentElement.style.setProperty('--rank-color', currentRank.color);
+        
+        // Rendu du badge bas de profil
+        const badgeElement = document.getElementById('profile-rank-badge');
+        badgeElement.style.border = `1px solid ${currentRank.color}`;
+        badgeElement.innerHTML = `<i class="${currentRank.medal}" style="color:${currentRank.color}"></i> Rang ${rankLevel} : ${currentRank.name}`;
+        
+        // Gestion de la visibilité du cadenas sur le solde
+        const lockOverlay = document.getElementById('lock-overlay');
+        if(parseInt(rankLevel) === 0) {
+            lockOverlay.classList.remove('hidden');
+        } else {
+            lockOverlay.classList.add('hidden');
+        }
     }
 
     window.triggerFileInput = (inputId) => {
@@ -303,13 +421,13 @@
 
     window.toggleAuthMode = () => {
         isLoginMode = !isLoginMode;
-        const ageInput = document.getElementById('birthdate');
+        const birthdateBlock = document.getElementById('birthdate-block');
         document.getElementById('authBtn').innerText = isLoginMode ? "SE CONNECTER" : "CRÉER MON COMPTE";
         
         if (isLoginMode) {
-            ageInput.classList.add('hidden');
+            birthdateBlock.classList.add('hidden');
         } else {
-            ageInput.classList.remove('hidden');
+            birthdateBlock.classList.remove('hidden');
         }
 
         document.getElementById('switchBox').innerHTML = isLoginMode ? 
@@ -320,6 +438,22 @@
     window.togglePasswordVisibility = () => {
         const p = document.getElementById('password');
         p.type = p.type === "password" ? "text" : "password";
+    };
+
+    window.sharePlatform = async () => {
+        const linkText = document.getElementById('share-link-text').innerText;
+        if(navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'PUBLICITÉ REWARDS',
+                    text: 'Inscris-toi sur la plateforme et commence à gravir les rangs sociaux !',
+                    url: linkText,
+                });
+            } catch(e) { console.log("Partage annulé"); }
+        } else {
+            navigator.clipboard.writeText(linkText);
+            alert("Lien de partage copié dans le presse-papier !");
+        }
     };
 
     window.handleAuth = async () => {
@@ -337,14 +471,13 @@
             if(isLoginMode) {
                 await signInWithEmailAndPassword(auth, email, pass);
             } else {
-                // Validation de la date de naissance (Jour, Mois, Année) obligatoire
+                // Validation de l'âge stricte
                 if (!birthdateValue) {
                     err.style.display = 'block';
-                    err.innerText = "Âge obligatoire. Veuillez renseigner votre date de naissance complète (Jour, Mois, Année).";
+                    err.innerText = "Date de naissance obligatoire. Vous devez renseigner votre jour, mois et année de naissance.";
                     return;
                 }
 
-                // Calcul mathématique précis des 18 ans révolus
                 const birthDate = new Date(birthdateValue);
                 const today = new Date();
                 let age = today.getFullYear() - birthDate.getFullYear();
@@ -355,20 +488,22 @@
 
                 if (age < 18) {
                     err.style.display = 'block';
-                    err.innerText = "Les moins de 18 ans ne sont pas autorisés à gagner des revenus sur notre plateforme.";
+                    err.innerText = "Désolé, l'accès à la plateforme nécessite un âge minimal de 18 ans.";
                     return;
                 }
 
-                // Sécurisation anti-fraude multi-compte : vérification si le Device ID existe déjà
+                // Vérification anti-fraude multi-compte via Device ID
                 const usersRef = collection(db, "rewards_users");
                 const q = query(usersRef, where("deviceID", "==", currentDeviceID));
                 const querySnapshot = await getDocs(q);
 
                 if (!querySnapshot.empty) {
                     err.style.display = 'block';
-                    err.innerText = "Erreur : Un compte a déjà été créé depuis cet appareil. Le multi-compte est strictement interdit.";
+                    err.innerText = "Création refusée : un compte est déjà lié à cet appareil pour éviter la fraude.";
                     return;
                 }
+
+                const referrerId = localStorage.getItem('pending_referrer') || "";
 
                 const cred = await createUserWithEmailAndPassword(auth, email, pass);
                 await setDoc(doc(db, "rewards_users", cred.user.uid), { 
@@ -376,15 +511,25 @@
                     coins: 0, 
                     birthdate: birthdateValue,
                     age: age,
+                    rank: 0,
                     invitedCount: 0,
+                    tasksCompleted: 0,
+                    daysActive: 1,
+                    parrainePar: referrerId,
+                    statutParrainage: referrerId ? "en_attente" : "aucun",
                     photoURL: "", 
                     bannerURL: "",
-                    deviceID: currentDeviceID
+                    deviceID: currentDeviceID,
+                    history: {
+                        w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0
+                    }
                 });
+                
+                localStorage.removeItem('pending_referrer');
             }
         } catch (e) { 
             err.style.display = 'block'; 
-            err.innerText = "Une erreur est survenue. Vérifiez vos identifiants ou si l'e-mail est déjà utilisé."; 
+            err.innerText = "Erreur de connexion/création. Vérifiez les données ou la connexion."; 
         }
     };
 
@@ -392,15 +537,44 @@
         if(user) {
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
+            
+            // Affichage instantané du lien de partage crypté
+            const domain = window.location.origin + window.location.pathname;
+            document.getElementById('share-link-text').innerText = `${domain}?ref=${user.uid}`;
+
             const snap = await getDoc(doc(db, "rewards_users", user.uid));
             if(snap.exists()){
                 const d = snap.data();
                 document.getElementById('user-name').value = d.name || "Utilisateur";
                 document.getElementById('user-coins').innerText = d.coins || 0;
                 
-                document.getElementById('table-invite-status').innerText = `${d.invitedCount || 0} / 10`;
-                if ((d.invitedCount || 0) >= 10) {
-                    document.getElementById('table-invite-status').className = "badge-status status-ok";
+                // Traitement et affichage dynamique du système de rangs
+                const userRank = d.rank !== undefined ? d.rank : 0;
+                applyRankDesign(userRank);
+
+                // Initialisation de la grille d'historique
+                generateHistoryUI(d.history || {});
+
+                // Mise à jour visuelle des 5 règles du Marathon
+                document.getElementById('m-cond-invite').innerText = `${d.invitedCount || 0} / 10`;
+                if((d.invitedCount || 0) >= 10) {
+                    document.getElementById('m-cond-invite').className = "badge-status status-ok";
+                } else {
+                    document.getElementById('m-cond-invite').className = "badge-status status-warn";
+                }
+
+                document.getElementById('m-cond-tasks').innerText = `${d.tasksCompleted || 0} / 50`;
+                if((d.tasksCompleted || 0) >= 50) {
+                    document.getElementById('m-cond-tasks').className = "badge-status status-ok";
+                } else {
+                    document.getElementById('m-cond-tasks').className = "badge-status status-warn";
+                }
+
+                document.getElementById('m-cond-days').innerText = `${d.daysActive || 0} / 14 Jours`;
+                if((d.daysActive || 0) >= 14) {
+                    document.getElementById('m-cond-days').className = "badge-status status-ok";
+                } else {
+                    document.getElementById('m-cond-days').className = "badge-status status-warn";
                 }
                 
                 if(d.photoURL) document.getElementById('user-photo').src = d.photoURL;
