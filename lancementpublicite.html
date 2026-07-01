@@ -21,34 +21,23 @@
             box-shadow: 0 0 40px rgba(0,0,0,0.8);
         }
 
-        /* --- HEADER EN SUPERPOSITION AVEC TON IMAGE --- */
+        /* --- HEADER TOTALEMENT PROPRE (IMAGE LIBRE DE TEXTE) --- */
         .app-header {
             position: relative;
-            padding: 30px 20px 20px 20px; 
-            height: 200px;
+            height: 180px;
             box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end; /* Pousse les textes vers le bas de l'image */
             background: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi-pCxzWWscwtmrqtBhAc-5YiQPGaC28kP6kYdDaZJ0aCo0ovYZgMTs8hlHk33FMo90174at3NEJickD6gwhFx2Xnkx8zreeRG9TZf-kGY482sm0nE63w6IMN3XwFlT3T1KffsLZC0yCIpZRI9zF3mEhNfcaoq-a33vmGAkqp2nLLFVXLHsdKu5FlD0YPob/s1600/09d6e226-c1ab-4d0e-845d-759b02e01d26.png') center/cover no-repeat;
+            flex-shrink: 0;
         }
 
-        /* Dégradé pour que le bas de l'image s'intègre au fond noir */
+        /* Dégradé discret pour le bas du header */
         .app-header::after {
             content: '';
             position: absolute;
             bottom: 0; left: 0; right: 0; top: 0;
-            background: linear-gradient(to bottom, rgba(5,5,8,0.2) 0%, rgba(5,5,8,0.8) 85%, #050508 100%);
+            background: linear-gradient(to bottom, rgba(5,5,8,0) 60%, #050508 100%);
             z-index: 1;
         }
-
-        .header-text-group {
-            position: relative;
-            z-index: 2;
-        }
-        .user-welcome { font-size: 13px; color: #00ffcc; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .user-title { font-size: 24px; font-weight: 700; margin: 4px 0 0 0; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-        .user-title span { color: #00ffcc; }
 
         /* Pilule de solde et profil en superposition absolue */
         .balance-pill {
@@ -100,10 +89,28 @@
             background: #222;
         }
 
+        /* --- ZONE DE BIENVENUE SOUS L'IMAGE --- */
+        .welcome-section {
+            padding: 15px 20px 5px 20px;
+            z-index: 2;
+        }
+        .user-welcome { font-size: 15px; color: #00ffcc; margin: 0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* --- ZONE DE DEFILEMENT PRINCIPALE --- */
+        .scrollable-body {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+            box-sizing: border-box;
+        }
+        /* Masquage de la scrollbar */
+        .scrollable-body::-webkit-scrollbar { display: none; }
+        .scrollable-body { -ms-overflow-style: none; scrollbar-width: none; }
+
         /* --- BARRE DE SEUIL / PROGRESSION --- */
         .level-card {
             background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
-            margin: 5px 20px; padding: 15px; border-radius: 16px;
+            margin: 10px 20px; padding: 15px; border-radius: 16px;
         }
         .level-info { display: flex; justify-content: space-between; font-size: 12px; color: #b3b6d4; margin-bottom: 8px; }
         .level-progress-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
@@ -111,13 +118,12 @@
 
         /* --- CORPS CENTRAL --- */
         .main-content {
-            flex: 1; display: flex; flex-direction: column;
-            justify-content: center; padding: 10px 20px; box-sizing: border-box;
+            padding: 10px 20px; box-sizing: border-box;
         }
-        .section-title { font-size: 13px; text-transform: uppercase; color: #9b51e0; font-weight: 600; letter-spacing: 1px; margin-bottom: 10px; }
+        .section-title { font-size: 13px; text-transform: uppercase; color: #9b51e0; font-weight: 600; letter-spacing: 1px; margin-bottom: 12px; margin-top: 10px; }
         
         .ad-card {
-            width: 100%; height: 250px; position: relative; border-radius: 24px; overflow: hidden;
+            width: 100%; height: 200px; position: relative; border-radius: 24px; overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05);
             background: #090a14;
         }
@@ -147,10 +153,102 @@
 
         .daily-limit { text-align: center; font-size: 12px; color: #6e729a; margin-top: 10px; margin-bottom: 5px; }
 
+        /* --- SECTION TENDANCES (DEFILEMENT HORIZONTAL) --- */
+        .trends-container {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 5px 0 15px 0;
+            box-sizing: border-box;
+        }
+        .trends-container::-webkit-scrollbar { display: none; }
+        .trends-container { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .trend-card {
+            min-width: 140px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .trend-icon {
+            width: 32px; height: 32px; border-radius: 10px;
+            background: rgba(0, 255, 204, 0.1);
+            color: #00ffcc; display: flex; align-items: center; justify-content: center;
+            font-size: 14px;
+        }
+        .trend-title { font-size: 13px; font-weight: 600; color: #ffffff; margin: 0; }
+        .trend-reward { font-size: 11px; font-weight: 700; color: #9b51e0; }
+
+        /* --- TOAST NOTIFICATIONS (STYLE POPPO LIVE) --- */
+        .toast-container {
+            position: absolute;
+            bottom: 95px;
+            left: 20px;
+            right: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .live-toast {
+            background: rgba(6, 7, 19, 0.9);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            padding: 10px 15px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(30px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .live-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast-avatar {
+            width: 20px; height: 20px; border-radius: 50%;
+            background: linear-gradient(135deg, #9b51e0, #00ffcc);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: bold; color: #000;
+        }
+        .toast-msg { font-size: 11px; color: #e1e1e8; margin: 0; font-weight: 500; }
+        .toast-msg span { color: #00ffcc; font-weight: 700; }
+
+        /* --- FIL D'ACTUALITÉ ADM (NEWS TICKER) --- */
+        .ticker-container {
+            background: #090a15;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 6px 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .ticker-text {
+            white-space: nowrap;
+            display: inline-block;
+            animation: ticker linear infinite;
+            padding-left: 100%;
+            font-size: 11px;
+            color: #6e729a;
+            font-weight: 500;
+        }
+        .ticker-text strong { color: #ff5555; }
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
         /* --- NAV BAR --- */
         .nav-bar {
             background: #03040b; border-top: 1px solid rgba(255,255,255,0.06);
             padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center;
+            flex-shrink: 0;
         }
         .nav-item {
             display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -173,39 +271,74 @@
                     <img id="nav-user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profil">
                 </div>
             </div>
-            <div class="header-text-group">
-                <p class="user-welcome" id="welcomeText">Bienvenue sur votre espace</p>
-                <h1 class="user-title">Regarde. <span>Gagne.</span></h1>
-            </div>
         </header>
 
-        <div class="level-card">
-            <div class="level-info">
-                <span>Niveau 1 (Débutant)</span>
-                <span>Seuil de retrait : 65%</span>
-            </div>
-            <div class="level-progress-bg">
-                <div class="level-progress-bar"></div>
-            </div>
+        <div class="welcome-section">
+            <p class="user-welcome" id="welcomeText">Bienvenue sur votre espace</p>
         </div>
 
-        <main class="main-content">
-            <h2 class="section-title">⚡ Publicité du moment</h2>
+        <div class="scrollable-body">
             
-            <div class="ad-card">
-                <div class="ad-image"></div>
-                <div class="ad-overlay">
-                    <span class="ad-tag">+10 Coins</span>
-                    <h3 class="ad-name">Offre Exclusive Nike</h3>
-                    <p class="ad-desc">Découvre la nouvelle collection et profite de jusqu'à -50% de réduction immédiate.</p>
+            <div class="level-card">
+                <div class="level-info">
+                    <span>Niveau 1 (Débutant)</span>
+                    <span>Seuil de retrait : 65%</span>
+                </div>
+                <div class="level-progress-bg">
+                    <div class="level-progress-bar"></div>
                 </div>
             </div>
 
-            <button class="btn-action" id="watchAdBtn">
-                Regarder et gagner <i class="fa-solid fa-play" style="font-size: 12px;"></i>
-            </button>
-            <p class="daily-limit">Tâches du jour accomplies : <strong id="taskCount">0 / 5</strong></p>
-        </main>
+            <main class="main-content">
+                <h2 class="section-title">⚡ Publicité du moment</h2>
+                
+                <div class="ad-card">
+                    <div class="ad-image"></div>
+                    <div class="ad-overlay">
+                        <span class="ad-tag">+10 Coins</span>
+                        <h3 class="ad-name">Offre Exclusive Nike</h3>
+                        <p class="ad-desc">Découvre la nouvelle collection et profite de jusqu'à -50% de réduction immédiate.</p>
+                    </div>
+                </div>
+
+                <button class="btn-action" id="watchAdBtn">
+                    Regarder et gagner <i class="fa-solid fa-play" style="font-size: 12px;"></i>
+                </button>
+                <p class="daily-limit">Tâches du jour accomplies : <strong id="taskCount">0 / 5</strong></p>
+
+                <h2 class="section-title">🔥 Tendances du jour</h2>
+                <div class="trends-container">
+                    <div class="trend-card" onclick="redirectToPage('activite.html')">
+                        <div class="trend-icon"><i class="fa-solid fa-bolt"></i></div>
+                        <p class="trend-title">Pub Flash</p>
+                        <span class="trend-reward">+5 Coins</span>
+                    </div>
+                    <div class="trend-card" onclick="redirectToPage('activite.html')">
+                        <div class="trend-icon"><i class="fa-solid fa-fire"></i></div>
+                        <p class="trend-title">Top Offre</p>
+                        <span class="trend-reward">+50 Coins</span>
+                    </div>
+                    <div class="trend-card" onclick="redirectToPage('profil.html')">
+                        <div class="trend-icon"><i class="fa-solid fa-users"></i></div>
+                        <p class="trend-title">Parrainage</p>
+                        <span class="trend-reward">+100 Coins</span>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div class="toast-container">
+            <div class="live-toast" id="liveToast">
+                <div class="toast-avatar" id="toastLetter">U</div>
+                <p class="toast-msg" id="toastMessage">Chargement des activités...</p>
+            </div>
+        </div>
+
+        <div class="ticker-container">
+            <div class="ticker-text" style="animation-duration: 25s;">
+                ⚠️ <strong>Rappel crucial :</strong> L'utilisation de multi-comptes ou de VPN est strictement interdite sous peine de bannissement définitif. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎉 <strong>Événement :</strong> Les gains sur l'onglet Activités sont augmentés ce week-end ! Profitez-en vite.
+            </div>
+        </div>
 
         <nav class="nav-bar">
             <div class="nav-item active">
@@ -257,7 +390,41 @@
         const welcomeText = document.getElementById('welcomeText');
         const navUserPhoto = document.getElementById('nav-user-photo');
 
-        // Écoute de l'état de connexion de l'utilisateur sans redirection forcée au chargement
+        // Liste de fausses notifications réalistes (Anti-fraude & Économique)
+        const mockActivities = [
+            { name: "Idrissa", action: "regardé une pub flash", reward: "5 Coins" },
+            { name: "Grâce", action: "complété l'Offre Nike", reward: "10 Coins" },
+            { name: "Prince", action: "atteint le Niveau 2 (Bronze)", reward: "Félicitations ! 🎉" },
+            { name: "Anuarite", action: "invité un nouvel ami", reward: "100 Coins" },
+            { name: "Mercia", action: "regardé une vidéo", reward: "10 Coins" },
+            { name: "Dieudonné", action: "retiré ses gains", reward: "Succès ✔️" },
+            { name: "Sarah", action: "complété l'Offre Vedette", reward: "50 Coins" }
+        ];
+
+        // Fonction d'animation du toast (Style PoPo Live)
+        function startLiveToasts() {
+            const toast = document.getElementById('liveToast');
+            const toastLetter = document.getElementById('toastLetter');
+            const toastMessage = document.getElementById('toastMessage');
+
+            setInterval(() => {
+                const randomAct = mockActivities[Math.floor(Math.random() * mockActivities.length)];
+                
+                toastLetter.innerText = randomAct.name.charAt(0);
+                toastMessage.innerHTML = `<span>${randomAct.name}</span> a ${randomAct.action} (<span>${randomAct.reward}</span>)`;
+                
+                toast.classList.add('show');
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000); // Reste visible 3 secondes
+
+            }, 7000); // Se lance toutes les 7 secondes
+        }
+
+        // Démarrage automatique des notifications flash au chargement
+        startLiveToasts();
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 userConnected = true;
@@ -283,7 +450,6 @@
             }
         });
 
-        // Demander une connexion si l'utilisateur veut cliquer sur les fonctionnalités
         function checkAuthOrRedirect() {
             if (!userConnected) {
                 alert("Vous devez être connecté pour effectuer des missions et gagner de l'argent !");
@@ -303,7 +469,6 @@
             redirectToPage('activite.html');
         });
 
-        // Gestionnaire du bouton publicitaire avec contrôle de connexion
         watchAdBtn.addEventListener('click', async () => {
             if (!checkAuthOrRedirect()) return;
 
@@ -333,7 +498,6 @@
             }
         });
 
-        // Redirection libre au clic sur le profil pour se connecter quand on veut
         document.getElementById('goToProfil').addEventListener('click', () => {
             window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
         });
