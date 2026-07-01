@@ -85,11 +85,9 @@
         .balance-locked-overlay i.fa-lock { font-size: 22px; color: var(--error); }
         .balance-locked-overlay span { font-size: 13px; color: #cdcee0; font-weight: 600; letter-spacing: 0.3px; }
         
-        /* Conteneur d'incitation du bouton d'aide */
         .help-trigger-wrapper { position: relative; display: flex; align-items: center; justify-content: center; }
         .help-incitation-tag { position: absolute; top: -16px; background: linear-gradient(45deg, #ff4d4d, #9b51e0); color: #fff; font-size: 8px; font-weight: 800; padding: 2px 5px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; animation: tagBlink 1s infinite alternate; white-space: nowrap; box-shadow: 0 2px 6px rgba(255, 77, 77, 0.4); }
         
-        /* Bouton d'aide pulsant magnifié */
         .btn-pulse-help { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--purple) 0%, #6f2dbd 100%); color: #fff; border: 2px solid rgba(255, 255, 255, 0.2); font-size: 16px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; animation: ultraPulse 1.4s infinite; transition: transform 0.2s; box-shadow: 0 0 12px rgba(155, 81, 224, 0.6); }
         .btn-pulse-help:active { transform: scale(0.9); }
 
@@ -145,6 +143,8 @@
 
         .btn-main { background: linear-gradient(90deg, var(--purple), #b370f7); color: #fff; border: none; padding: 16px; border-radius: 14px; font-weight: 700; width: 100%; cursor: pointer; font-size: 15px; transition: 0.2s; box-shadow: 0 4px 15px rgba(155, 81, 224, 0.2); }
         .btn-main:active { transform: scale(0.98); }
+        .btn-main:disabled { background: #1b1c2e !important; color: #434566 !important; cursor: not-allowed !important; box-shadow: none !important; }
+        
         .btn-logout { background: none; border: none; color: #41435c; width: 100%; font-weight: 600; font-size: 13px; margin: 15px 0 30px 0; cursor: pointer; transition: color 0.2s; }
         .btn-logout:hover { color: var(--error); }
 
@@ -456,22 +456,25 @@
         10: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
     };
 
+    // Générateur d'empreinte numérique unique du téléphone (Sécurité Firebase anti-fraude)
+    function generateDeviceFingerprint() {
+        const hardwareSpecs = [
+            navigator.userAgent,
+            screen.width + "x" + screen.height,
+            screen.colorDepth,
+            navigator.language,
+            navigator.hardwareConcurrency || "unknown",
+            new Date().getTimezoneOffset()
+        ];
+        // Transformation simple en clé texte unique
+        return "fp_" + btoa(hardwareSpecs.join("|")).substring(0, 32).replace(/[^a-zA-Z0-9]/g, "");
+    }
+
     function showPremiumToast(message) {
         const toast = document.getElementById('custom-toast');
         document.getElementById('toast-text').innerText = message;
         toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 2800);
-    }
-
-    function getDeviceID() {
-        let id = localStorage.getItem('app_device_id');
-        if (!id) {
-            id = 'dev_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-            localStorage.setItem('app_device_id', id);
-        }
-        return id;
+        setTimeout(() => { toast.classList.remove('show'); }, 2800);
     }
 
     function checkReferral() {
@@ -532,6 +535,19 @@
         }
     }
 
+    // Gestion de l'état intelligent du bouton d'inscription (LocalStorage + Firebase)
+    function checkLocalStorageDeviceLock() {
+        const err = document.getElementById('error-msg');
+        if(!isLoginMode && localStorage.getItem('account_created_on_device') === 'true') {
+            document.getElementById('authBtn').disabled = true;
+            err.style.display = 'block';
+            err.innerText = "Action refusée : Un compte a déjà été configuré et validé depuis ce téléphone.";
+            return true;
+        }
+        document.getElementById('authBtn').disabled = false;
+        return false;
+    }
+
     window.openRankModal = () => {
         document.getElementById('rank-info-modal').classList.add('active');
     };
@@ -552,15 +568,9 @@
         const linkText = document.getElementById('share-link-text').innerText;
         if (navigator.share) {
             try {
-                // Appel épuré sans texte système intrusif pour déclencher uniquement le tiroir d'applications natif
-                await navigator.share({
-                    url: linkText
-                });
-            } catch(e) {
-                // Gestion silencieuse du refus d'action par l'utilisateur
-            }
+                await navigator.share({ url: linkText });
+            } catch(e) {}
         } else {
-            // Fallback fluide et élégant pour les navigateurs incompatibles
             navigator.clipboard.writeText(linkText);
             showPremiumToast("Lien copié ! (Partage direct indisponible)");
         }
@@ -580,12 +590,17 @@
     window.toggleAuthMode = () => {
         isLoginMode = !isLoginMode;
         const birthdateBlock = document.getElementById('birthdate-block');
+        const err = document.getElementById('error-msg');
+        
         document.getElementById('authBtn').innerText = isLoginMode ? "SE CONNECTER" : "CRÉER MON COMPTE";
+        err.style.display = 'none';
         
         if (isLoginMode) {
             birthdateBlock.classList.add('hidden');
+            document.getElementById('authBtn').disabled = false;
         } else {
             birthdateBlock.classList.remove('hidden');
+            checkLocalStorageDeviceLock(); // Activation de la barrière cache au clic sur "Créer un compte"
         }
 
         document.getElementById('switchBox').innerHTML = isLoginMode ? 
@@ -607,7 +622,8 @@
         if(!email || !pass) return;
         err.style.display = 'none';
 
-        const currentDeviceID = getDeviceID();
+        // 1. Vérification préventive locale
+        if (!isLoginMode && checkLocalStorageDeviceLock()) return;
 
         try {
             if(isLoginMode) {
@@ -623,9 +639,7 @@
                 const today = new Date();
                 let age = today.getFullYear() - birthDate.getFullYear();
                 const monthDiff = today.getMonth() - birthDate.getMonth();
-                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                    age--;
-                }
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) { age--; }
 
                 if (age < 18) {
                     err.style.display = 'block';
@@ -633,19 +647,25 @@
                     return;
                 }
 
+                // 2. Barrière de Sécurité Firebase : Analyse de l'empreinte matérielle du téléphone
+                const phoneFingerprint = generateDeviceFingerprint();
                 const usersRef = collection(db, "rewards_users");
-                const q = query(usersRef, where("deviceID", "==", currentDeviceID));
-                const querySnapshot = await getDocs(q);
+                const fingerprintQuery = query(usersRef, where("deviceFingerprint", "==", phoneFingerprint));
+                const querySnapshot = await getDocs(fingerprintQuery);
 
                 if (!querySnapshot.empty) {
                     err.style.display = 'block';
-                    err.innerText = "Création refusée : un compte est déjà lié à cet appareil pour éviter la fraude.";
+                    err.innerText = "Création refusée : Ce téléphone est déjà associé à un compte actif dans notre base de données.";
+                    // En cas de nettoyage de cache, on remet la sécurité locale
+                    localStorage.setItem('account_created_on_device', 'true');
+                    document.getElementById('authBtn').disabled = true;
                     return;
                 }
 
                 const referrerId = localStorage.getItem('pending_referrer') || "";
                 const cred = await createUserWithEmailAndPassword(auth, email, pass);
                 
+                // Enregistrement des données incluant la signature matérielle unique
                 await setDoc(doc(db, "rewards_users", cred.user.uid), { 
                     name: email.split('@')[0], 
                     coins: 0, 
@@ -659,16 +679,17 @@
                     statutParrainage: referrerId ? "en_attente" : "aucun",
                     photoURL: "", 
                     bannerURL: "",
-                    deviceID: currentDeviceID,
-                    history: {
-                        w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0
-                    }
+                    deviceFingerprint: phoneFingerprint, // Liaison définitive matériel-compte
+                    history: { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 }
                 });
+
+                // Activation du verrou local suite au succès de la création
+                localStorage.setItem('account_created_on_device', 'true');
                 localStorage.removeItem('pending_referrer');
             }
         } catch (e) { 
             err.style.display = 'block'; 
-            err.innerText = "Erreur de connexion/création. Vérifiez les données ou la connexion."; 
+            err.innerText = "Erreur de traitement. Vérifiez vos identifiants ou votre connexion Internet."; 
         }
     };
 
@@ -736,6 +757,8 @@
         } else {
             document.getElementById('auth-screen').classList.remove('hidden');
             document.getElementById('main-app').classList.add('hidden');
+            // Réinitialisation de la sécurité visuelle si déconnecté
+            if(!isLoginMode) checkLocalStorageDeviceLock();
         }
     });
 
