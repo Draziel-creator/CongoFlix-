@@ -33,11 +33,30 @@
         .scrollable-content { flex: 1; overflow-y: auto; box-sizing: border-box; }
         .scrollable-content::-webkit-scrollbar { display: none; }
 
+        /* --- BOUTON RETOUR TRANSPARENT EN SUPERPOSITION --- */
+        .floating-back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            transition: 0.2s;
+        }
+        .floating-back-btn:active { transform: scale(0.95); background: rgba(0, 0, 0, 0.8); }
+
         /* --- ÉCRAN D'AUTHENTIFICATION --- */
-        .auth-header { padding: 20px 25px 0 25px; display: flex; align-items: center; justify-content: flex-start; }
-        .btn-back { background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: #fff; width: 38px; height: 38px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
-        .btn-back:active { transform: scale(0.95); background: rgba(255, 255, 255, 0.1); }
-        
+        .auth-header-space { height: 40px; }
         .auth-container { padding: 10px 25px 40px 25px; text-align: center; }
         .logo-box { margin-bottom: 30px; }
         .logo-box h2 { font-size: 32px; font-weight: 700; margin: 0; letter-spacing: -1px; background: linear-gradient(45deg, #9b51e0, #00ffcc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -110,16 +129,19 @@
 
     <div class="app-container">
 
+        <div class="floating-back-btn" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html'">
+            <i class="fa-solid fa-chevron-left"></i>
+        </div>
+
         <div id="auth-screen" class="scrollable-content hidden">
-            <div class="auth-header">
-                <div class="btn-back" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html'"><i class="fa-solid fa-chevron-left"></i></div>
-            </div>
+            <div class="auth-header-space"></div>
             <div class="auth-container">
                 <div class="logo-box">
                     <h2>PUBLICITÉ</h2>
                     <p>REWARDS NETWORKS</p>
                 </div>
                 <div id="error-msg"></div>
+                
                 <input type="email" id="email" class="auth-input" placeholder="Adresse Email">
                 
                 <input type="number" id="age" class="auth-input hidden" placeholder="Votre Âge (Minimum 18 ans)">
@@ -128,6 +150,7 @@
                     <input type="password" id="password" class="auth-input" placeholder="Mot de passe">
                     <i class="fa-solid fa-eye toggle-pass" onclick="togglePasswordVisibility()"></i>
                 </div>
+                
                 <button class="btn-main" id="authBtn" onclick="handleAuth()">SE CONNECTER</button>
                 <div style="margin-top:25px; font-size:13px; color:#555875;" id="switchBox">
                     Nouveau sur la plateforme ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>
@@ -193,7 +216,7 @@
                     <div class="review-card">
                         <div class="review-user">
                             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Gedeon">
-                            <div class="review-info"><h5>Gédon D.</h5><span>+5.00 $ Reçus</span></div>
+                            <div class="review-info"><h5>Gédéon D.</h5><span>+5.00 $ Reçus</span></div>
                         </div>
                         <p class="review-text">Retrait instantané sur mon compte ! Les offres de vidéos et d'applications de Monlix payent super bien.</p>
                     </div>
@@ -302,9 +325,10 @@
             if(isLoginMode) {
                 await signInWithEmailAndPassword(auth, email, pass);
             } else {
+                // Validation stricte de la case d'âge obligatoire
                 if (!age) {
                     err.style.display = 'block';
-                    err.innerText = "Veuillez renseigner votre âge.";
+                    err.innerText = "Âge obligatoire.";
                     return;
                 }
                 if (parseInt(age) < 18) {
