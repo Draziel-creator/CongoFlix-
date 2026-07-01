@@ -73,24 +73,34 @@
         .rank-status-container { display: flex; flex-direction: column; align-items: center; margin-top: 8px; }
         .rank-badge-pill { padding: 6px 16px; border-radius: 30px; font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.05); border: 1px solid var(--rank-color); color: #fff; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
 
-        /* --- SYSTEME DE SOLDE --- */
+        /* --- SYSTEME DE SOLDE & ENVELOPPE GELEE --- */
         .balance-card { background: linear-gradient(135deg, rgba(155, 81, 224, 0.15) 0%, rgba(0, 255, 204, 0.05) 100%); border: 1px solid var(--border); margin: 20px; padding: 20px; border-radius: 20px; text-align: center; position: relative; overflow: hidden; }
         .balance-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #8e92bc; margin-bottom: 5px; }
         .balance-amount { font-size: 34px; font-weight: 800; color: var(--neon); display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 2px; }
         .balance-amount i { color: #ffcc00; font-size: 26px; }
         .balance-value-converted { font-size: 13px; color: #8e92bc; font-weight: 500; margin-bottom: 4px; }
         
-        .balance-locked-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(6, 7, 19, 0.88); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
-        .lock-text-row { display: flex; align-items: center; gap: 8px; }
+        .balance-locked-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(6, 7, 19, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        .lock-text-row { display: flex; align-items: center; gap: 14px; position: relative; }
         .balance-locked-overlay i.fa-lock { font-size: 22px; color: var(--error); }
-        .balance-locked-overlay span { font-size: 12px; color: #cdcee0; font-weight: 500; }
+        .balance-locked-overlay span { font-size: 13px; color: #cdcee0; font-weight: 600; letter-spacing: 0.3px; }
         
-        /* Bouton d'aide pulsant */
-        .btn-pulse-help { width: 24px; height: 24px; border-radius: 50%; background: var(--purple); color: #fff; border: none; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; animation: helpPulse 1.5s infinite; }
-        @keyframes helpPulse {
-            0% { box-shadow: 0 0 0 0 rgba(155, 81, 224, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(155, 81, 224, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(155, 81, 224, 0); }
+        /* Conteneur d'incitation du bouton d'aide */
+        .help-trigger-wrapper { position: relative; display: flex; align-items: center; justify-content: center; }
+        .help-incitation-tag { position: absolute; top: -16px; background: linear-gradient(45deg, #ff4d4d, #9b51e0); color: #fff; font-size: 8px; font-weight: 800; padding: 2px 5px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; animation: tagBlink 1s infinite alternate; white-space: nowrap; box-shadow: 0 2px 6px rgba(255, 77, 77, 0.4); }
+        
+        /* Bouton d'aide pulsant magnifié */
+        .btn-pulse-help { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--purple) 0%, #6f2dbd 100%); color: #fff; border: 2px solid rgba(255, 255, 255, 0.2); font-size: 16px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; animation: ultraPulse 1.4s infinite; transition: transform 0.2s; box-shadow: 0 0 12px rgba(155, 81, 224, 0.6); }
+        .btn-pulse-help:active { transform: scale(0.9); }
+
+        @keyframes ultraPulse {
+            0% { box-shadow: 0 0 0 0 rgba(155, 81, 224, 0.8), 0 0 10px rgba(0, 255, 204, 0.2); }
+            70% { box-shadow: 0 0 0 14px rgba(155, 81, 224, 0), 0 0 20px rgba(0, 255, 204, 0.6); }
+            100% { box-shadow: 0 0 0 0 rgba(155, 81, 224, 0), 0 0 10px rgba(0, 255, 204, 0.2); }
+        }
+        @keyframes tagBlink {
+            0% { opacity: 0.6; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1.05); }
         }
 
         /* --- PARRAINAGE & DOUBLE BOUTON --- */
@@ -143,6 +153,12 @@
         .nav-item.active { color: var(--neon); }
         .nav-icon { font-size: 20px; }
 
+        /* --- NOTIFICATION TOAST (STYLE GEMINI / APPLI PREMIUM) --- */
+        .premium-toast { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(30px); background: rgba(13, 15, 35, 0.95); border: 1px solid rgba(0, 255, 204, 0.3); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 255, 204, 0.1); padding: 14px 22px; border-radius: 30px; display: flex; align-items: center; gap: 10px; z-index: 500; pointer-events: none; opacity: 0; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .premium-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .premium-toast i { color: var(--neon); font-size: 16px; }
+        .premium-toast span { color: #ffffff; font-size: 13px; font-weight: 600; white-space: nowrap; letter-spacing: 0.2px; }
+
         /* --- FENÊTRE MODALE DES RANGS --- */
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); z-index:200; display:flex; justify-content:center; align-items:center; opacity:0; pointer-events:none; transition: opacity 0.3s ease; }
         .modal-overlay.active { opacity:1; pointer-events:auto; }
@@ -164,7 +180,11 @@
             <i class="fa-solid fa-chevron-left"></i>
         </div>
 
-        <!-- --- ECRAN AUTHENTIFICATION --- -->
+        <div id="custom-toast" class="premium-toast">
+            <i class="fa-solid fa-circle-check"></i>
+            <span id="toast-text">Lien copié dans le presse-papier !</span>
+        </div>
+
         <div id="auth-screen" class="scrollable-content hidden">
             <div class="auth-header-space"></div>
             <div class="auth-container">
@@ -195,7 +215,6 @@
             </div>
         </div>
 
-        <!-- --- APPLICATION INTERNE --- -->
         <div id="main-app" class="scrollable-content hidden">
             
             <div class="profile-banner-wrapper" onclick="triggerFileInput('bannerInput')">
@@ -219,23 +238,23 @@
                 </div>
             </div>
 
-            <!-- Bloc Solde avec conversion monétaire -->
             <div class="balance-card">
                 <div class="balance-label">Votre solde actuel</div>
                 <div class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="user-coins">0</span></div>
                 <div class="balance-value-converted">Valeur estimée : <span id="user-cash-value">$0.00</span></div>
                 
-                <!-- Effet d'arrière-plan de blocage dynamique pour Rang 0 -->
                 <div id="lock-overlay" class="balance-locked-overlay hidden">
                     <div class="lock-text-row">
                         <i class="fa-solid fa-lock"></i>
                         <span>Solde gelé (Rang 0 actif)</span>
-                        <button class="btn-pulse-help" onclick="openRankModal()">?</button>
+                        <div class="help-trigger-wrapper">
+                            <div class="help-incitation-tag">Info</div>
+                            <button class="btn-pulse-help" onclick="openRankModal()">?</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Boite de parrainage scindée en Copier / Partager -->
             <div class="share-box-wrapper">
                 <div class="share-box-title"><i class="fa-solid fa-share-nodes"></i> Votre lien de parrainage unique</div>
                 <div class="share-link-input-group">
@@ -247,7 +266,6 @@
                 </div>
             </div>
 
-            <!-- Tableau d'Historique -->
             <div class="section-box">
                 <div class="section-title"><i class="fa-solid fa-calendar-days"></i> Historique des Coins collectés</div>
                 <div class="history-table-wrapper">
@@ -266,7 +284,6 @@
                 </div>
             </div>
 
-            <!-- Conditions de Retrait -->
             <div class="section-box">
                 <div class="section-title"><i class="fa-solid fa-gavel"></i> Conditions de retrait</div>
                 <table class="rules-table">
@@ -307,7 +324,6 @@
                 </table>
             </div>
 
-            <!-- Espace dédié de redirection pour demande de retrait (Sécurisé) -->
             <div class="withdraw-action-container">
                 <button id="withdraw-gate-button" class="btn-withdraw-gate" disabled onclick="location.href='METS_TON_LIEN_ICI'">
                     <i class="fa-solid fa-wallet"></i> Demander un Retrait
@@ -344,7 +360,6 @@
 
     </div>
 
-    <!-- Modale Information Explicative des Rangs -->
     <div id="rank-info-modal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -352,10 +367,10 @@
                 <button class="btn-close-modal" onclick="closeRankModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="margin-top:0; color:#8e92bc; font-size:12px;">Pourquoi commencer au Rang 0 ?</p>
-                <p>Le <strong>Rang 0 (Novice)</strong> est une phase d'incubation obligatoire de sécurité. Elle sert à valider la conformité de votre profil, empêcher l'usage de robots et confirmer votre intégrité comportementale. Vos gains y sont accumulés mais temporairement verrouillés jusqu'à votre transition.</p>
+                <p style="margin-top:0; color:#ff4d4d; font-size:12px; font-weight:700;">Règle importante du Rang 0 :</p>
+                <p>Le <strong>Rang 0 (Novice)</strong> est une phase d'évaluation technique et de sécurité obligatoire. <strong>Attention : toutes les actions et publicités effectuées pendant que vous êtes au Rang 0 ne sont pas rémunérées.</strong> C'est uniquement lorsque vous atteignez le <strong>Rang 1</strong> que la mention « Solde Gelé » disparaît définitivement, et que l'accumulation de votre argent commence à compter activement.</p>
                 
-                <p style="margin:15px 0 5px 0; color:#8e92bc; font-size:12px;">Limites de tâches publicitaires quotidiennes :</p>
+                <p style="margin:20px 0 5px 0; color:#8e92bc; font-size:12px;">Limites de tâches publicitaires quotidiennes par grade :</p>
                 
                 <div class="rank-explain-row">
                     <span><i class="fa-solid fa-lock" style="color:#6c757d"></i> Rang 0 : Novice</span>
@@ -441,6 +456,15 @@
         10: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
     };
 
+    function showPremiumToast(message) {
+        const toast = document.getElementById('custom-toast');
+        document.getElementById('toast-text').innerText = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2800);
+    }
+
     function getDeviceID() {
         let id = localStorage.getItem('app_device_id');
         if (!id) {
@@ -499,7 +523,6 @@
         evalWithdrawGateStatus();
     }
 
-    // Validation unifiée du bouton final de retrait
     function evalWithdrawGateStatus() {
         const btn = document.getElementById('withdraw-gate-button');
         if(globalConditionsMet && globalUserRank > 0) {
@@ -518,24 +541,28 @@
 
     window.copyLinkOnly = () => {
         const txt = document.getElementById('share-link-text').innerText;
-        navigator.clipboard.writeText(txt);
-        alert("Lien copié dans le presse-papier !");
+        navigator.clipboard.writeText(txt).then(() => {
+            showPremiumToast("Lien copié dans le presse-papier !");
+        }).catch(() => {
+            showPremiumToast("Échec de la copie automatique.");
+        });
     };
 
     window.sharePlatformNative = async () => {
         const linkText = document.getElementById('share-link-text').innerText;
-        if(navigator.share) {
+        if (navigator.share) {
             try {
+                // Appel épuré sans texte système intrusif pour déclencher uniquement le tiroir d'applications natif
                 await navigator.share({
-                    title: 'PUBLICITÉ REWARDS',
-                    text: 'Rejoins-moi sur la plateforme publicitaire pour valider tes rangs !',
-                    url: linkText,
+                    url: linkText
                 });
-            } catch(e) { console.log("Partage annulé"); }
+            } catch(e) {
+                // Gestion silencieuse du refus d'action par l'utilisateur
+            }
         } else {
-            // Fallback si non supporté (ordinateurs)
+            // Fallback fluide et élégant pour les navigateurs incompatibles
             navigator.clipboard.writeText(linkText);
-            alert("Lien de partage copié (Option native indisponible) !");
+            showPremiumToast("Lien copié ! (Partage direct indisponible)");
         }
     };
 
@@ -661,7 +688,6 @@
                 document.getElementById('user-name').value = d.name || "Utilisateur";
                 document.getElementById('user-coins').innerText = totalCoins;
                 
-                // Calcul de valeur indicative (Exemple simple : 1000 Coins = $1.00)
                 const computedCash = (totalCoins * 0.001).toFixed(2);
                 document.getElementById('user-cash-value').innerText = `$${computedCash}`;
                 
@@ -669,7 +695,6 @@
                 applyRankDesign(userRank);
                 generateHistoryUI(d.history || {});
 
-                // Suivi strict des 4 indicateurs variables pour débloquer le bouton
                 let condInv = false;
                 let condTsk = false;
                 let condDay = false;
@@ -698,7 +723,6 @@
                     document.getElementById('m-cond-days').className = "badge-status status-warn";
                 }
                 
-                // Si toutes les conditions internes sont OK
                 if(condInv && condTsk && condDay) {
                     globalConditionsMet = true;
                 } else {
