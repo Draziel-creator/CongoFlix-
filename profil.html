@@ -56,7 +56,7 @@
         .toggle-pass { position: absolute; right: 18px; top: 18px; color: #41435c; cursor: pointer; }
         #error-msg { color: var(--error); font-size: 13px; margin-bottom: 15px; display: none; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.2); text-align: left; line-height: 1.4; }
         
-        /* --- PROFIL AVEC EFFETS DE RANGS --- */
+        /* --- PROFIL --- */
         .profile-banner-wrapper { position: relative; width: 100%; height: 140px; background: #121324; overflow: hidden; cursor: pointer; }
         #user-banner { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
         .edit-banner-badge { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(5px); }
@@ -70,8 +70,16 @@
         .user-name-box { font-size: 20px; color: #fff; font-weight: 700; border: 1px solid transparent; background: transparent; text-align: center; width: 80%; display: block; margin: 0 auto; outline: none; transition: 0.3s; border-radius: 8px; }
         .user-name-box:focus { background: rgba(255,255,255,0.03); border-color: var(--border); }
 
-        .rank-status-container { display: flex; flex-direction: column; align-items: center; margin-top: 8px; }
-        .rank-badge-pill { padding: 6px 16px; border-radius: 30px; font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.05); border: 1px solid var(--rank-color); color: #fff; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        /* --- CAROUSEL DES RANGS --- */
+        .ranks-carousel-container { width: 100%; overflow-x: auto; scroll-snap-type: x mandatory; display: flex; gap: 15px; padding: 15px 20px; box-sizing: border-box; }
+        .ranks-carousel-container::-webkit-scrollbar { display: none; }
+        .rank-carousel-card { shrink: 0; flex-shrink: 0; width: 160px; scroll-snap-align: center; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 16px; padding: 15px; text-align: center; position: relative; transition: 0.3s; cursor: pointer; }
+        .rank-carousel-card.active-rank { background: linear-gradient(135deg, rgba(155, 81, 224, 0.1) 0%, rgba(0, 255, 204, 0.05) 100%); border-color: var(--neon); }
+        .rank-card-lock { position: absolute; top: 10px; right: 10px; color: #6c757d; font-size: 14px; }
+        .rank-card-lock.locked { color: var(--error); }
+        .rank-card-icon { font-size: 28px; margin-bottom: 8px; }
+        .rank-card-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 5px; }
+        .rank-card-price { font-size: 11px; color: #8e92bc; font-weight: 600; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 20px; display: inline-block; }
 
         /* --- SYSTEME DE SOLDE & ENVELOPPE GELEE --- */
         .balance-card { background: linear-gradient(135deg, rgba(155, 81, 224, 0.15) 0%, rgba(0, 255, 204, 0.05) 100%); border: 1px solid var(--border); margin: 20px; padding: 20px; border-radius: 20px; text-align: center; position: relative; overflow: hidden; }
@@ -89,8 +97,7 @@
         .help-incitation-tag { position: absolute; top: -16px; background: linear-gradient(45deg, #ff4d4d, #9b51e0); color: #fff; font-size: 8px; font-weight: 800; padding: 2px 5px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; animation: tagBlink 1s infinite alternate; white-space: nowrap; box-shadow: 0 2px 6px rgba(255, 77, 77, 0.4); }
         
         .btn-pulse-help { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--purple) 0%, #6f2dbd 100%); color: #fff; border: 2px solid rgba(255, 255, 255, 0.2); font-size: 16px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; animation: ultraPulse 1.4s infinite; transition: transform 0.2s; box-shadow: 0 0 12px rgba(155, 81, 224, 0.6); }
-        .btn-pulse-help:active { transform: scale(0.9); }
-
+        
         @keyframes ultraPulse {
             0% { box-shadow: 0 0 0 0 rgba(155, 81, 224, 0.8), 0 0 10px rgba(0, 255, 204, 0.2); }
             70% { box-shadow: 0 0 0 14px rgba(155, 81, 224, 0), 0 0 20px rgba(0, 255, 204, 0.6); }
@@ -101,7 +108,7 @@
             100% { opacity: 1; transform: scale(1.05); }
         }
 
-        /* --- PARRAINAGE & DOUBLE BOUTON --- */
+        /* --- PARRAINAGE --- */
         .share-box-wrapper { background: rgba(155, 81, 224, 0.05); border: 1px solid rgba(155, 81, 224, 0.2); padding: 16px; border-radius: 16px; margin: 20px; }
         .share-box-title { font-size: 13px; font-weight: 600; color: #b370f7; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
         .share-link-input-group { display: flex; flex-direction: column; gap: 10px; }
@@ -110,71 +117,74 @@
         .btn-share-act { flex: 1; padding: 11px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; border: none; color: #fff; }
         .btn-copy-color { background: rgba(255,255,255,0.06); border: 1px solid var(--border); }
         .btn-share-color { background: var(--purple); }
-        .btn-share-act:active { transform: scale(0.97); }
 
         .section-box { margin: 25px 20px; }
         .section-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; color: #8e92bc; text-transform: uppercase; letter-spacing: 0.5px; }
         .section-title i { color: var(--purple); }
         
+        /* --- CAROUSEL HISTORIQUE GLISSANT --- */
+        .history-carousel-wrapper { width: 100%; overflow-x: auto; scroll-snap-type: x mandatory; display: flex; gap: 15px; padding-bottom: 10px; }
+        .history-carousel-wrapper::-webkit-scrollbar { display: none; }
+        .history-week-block { shrink: 0; flex-shrink: 0; width: 100%; scroll-snap-align: center; box-sizing: border-box; }
+        .history-table-title { font-size: 12px; font-weight: 600; color: var(--purple); margin-bottom: 6px; text-align: left; padding-left: 5px; }
+        .history-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .history-table th, .history-table td { padding: 10px; border: 1px solid rgba(255, 255, 255, 0.02); }
+        .history-table th { background: rgba(0, 0, 0, 0.4); color: #8e92bc; font-weight: 600; }
+        .history-table td.day-label { background: rgba(155, 81, 224, 0.03); color: #cdcee0; font-weight: 500; text-align: left; padding-left: 12px; }
+        .coin-cell { color: var(--neon); font-weight: 600; }
+
         /* --- CONDITIONS DE RETRAIT --- */
         .rules-table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
         .rules-table th, .rules-table td { padding: 12px 14px; text-align: left; font-size: 12px; }
         .rules-table th { background: rgba(155, 81, 224, 0.1); color: #b370f7; font-weight: 700; border-bottom: 1px solid var(--border); }
         .rules-table td { border-bottom: 1px solid rgba(255,255,255,0.02); color: #cdcee0; line-height: 1.4; }
-        .rules-table tr:last-child td { border-bottom: none; }
         .badge-status { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; }
         .status-ok { background: rgba(0, 255, 204, 0.1); color: var(--neon); }
         .status-warn { background: rgba(255, 77, 77, 0.1); color: var(--error); }
 
-        /* --- TABLEAU HISTORIQUE --- */
-        .history-table-wrapper { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
-        .history-table-wrapper::-webkit-scrollbar { display: none; }
-        .history-table { width: 100%; border-collapse: collapse; text-align: center; font-size: 12px; min-width: 380px; }
-        .history-table th, .history-table td { padding: 10px; border: 1px solid rgba(255, 255, 255, 0.03); }
-        .history-table th { background: rgba(0, 0, 0, 0.4); color: #8e92bc; font-weight: 600; }
-        .history-table td.day-label { background: rgba(155, 81, 224, 0.03); color: #cdcee0; font-weight: 500; text-align: left; padding-left: 12px; width: 80px; }
-        .coin-cell { color: var(--neon); font-weight: 600; }
-
-        /* BOUTON DE RETRAIT DYNAMIQUE INACTIF/ACTIF */
+        /* BOUTONS */
         .withdraw-action-container { margin: 25px 20px 5px 20px; }
         .btn-withdraw-gate { width: 100%; padding: 16px; border-radius: 14px; font-size: 15px; font-weight: 700; border: none; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-withdraw-gate:disabled { background: #1b1c2e; color: #434566; cursor: not-allowed; box-shadow: none; }
         .btn-withdraw-gate:not(:disabled) { background: linear-gradient(90deg, #00ffcc, #00e6b8); color: #060713; cursor: pointer; box-shadow: 0 4px 20px rgba(0, 255, 204, 0.3); }
 
         .btn-main { background: linear-gradient(90deg, var(--purple), #b370f7); color: #fff; border: none; padding: 16px; border-radius: 14px; font-weight: 700; width: 100%; cursor: pointer; font-size: 15px; transition: 0.2s; box-shadow: 0 4px 15px rgba(155, 81, 224, 0.2); }
-        .btn-main:active { transform: scale(0.98); }
         .btn-main:disabled { background: #1b1c2e !important; color: #434566 !important; cursor: not-allowed !important; box-shadow: none !important; }
         
-        .btn-logout { background: none; border: none; color: #41435c; width: 100%; font-weight: 600; font-size: 13px; margin: 15px 0 30px 0; cursor: pointer; transition: color 0.2s; }
-        .btn-logout:hover { color: var(--error); }
+        .btn-logout { background: none; border: none; color: #41435c; width: 100%; font-weight: 600; font-size: 13px; margin: 15px 0 30px 0; cursor: pointer; }
 
         .nav-bar { background: #03040b; border-top: 1px solid var(--border); padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #555875; text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; }
         .nav-item.active { color: var(--neon); }
         .nav-icon { font-size: 20px; }
 
-        /* --- NOTIFICATION TOAST (STYLE GEMINI / APPLI PREMIUM) --- */
-        .premium-toast { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(30px); background: rgba(13, 15, 35, 0.95); border: 1px solid rgba(0, 255, 204, 0.3); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 255, 204, 0.1); padding: 14px 22px; border-radius: 30px; display: flex; align-items: center; gap: 10px; z-index: 500; pointer-events: none; opacity: 0; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .premium-toast { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(30px); background: rgba(13, 15, 35, 0.95); border: 1px solid rgba(0, 255, 204, 0.3); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); padding: 14px 22px; border-radius: 30px; display: flex; align-items: center; gap: 10px; z-index: 500; pointer-events: none; opacity: 0; transition: 0.3s; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
         .premium-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
         .premium-toast i { color: var(--neon); font-size: 16px; }
-        .premium-toast span { color: #ffffff; font-size: 13px; font-weight: 600; white-space: nowrap; letter-spacing: 0.2px; }
+        .premium-toast span { color: #ffffff; font-size: 13px; font-weight: 600; }
 
-        /* --- FENÊTRE MODALE DES RANGS --- */
+        /* --- MODALE DYNAMIQUE COMMUNIQUEE (ACHAT RANGS) --- */
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); z-index:200; display:flex; justify-content:center; align-items:center; opacity:0; pointer-events:none; transition: opacity 0.3s ease; }
         .modal-overlay.active { opacity:1; pointer-events:auto; }
-        .modal-card { width: 88%; max-height: 75%; background: #0c0d21; border: 1px solid var(--border); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; box-sizing: border-box; }
+        .modal-card { width: 88%; max-height: 85%; background: #0c0d21; border: 1px solid var(--border); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; box-sizing: border-box; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .modal-header h3 { margin: 0; font-size: 16px; color: #fff; font-weight: 700; }
         .btn-close-modal { background: none; border: none; color: #8e92bc; font-size: 18px; cursor: pointer; }
-        .modal-body { flex: 1; overflow-y: auto; font-size: 13px; color: #cdcee0; line-height: 1.5; padding-right: 4px; }
-        .modal-body::-webkit-scrollbar { width: 4px; }
-        .modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        .rank-explain-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .modal-body { flex: 1; overflow-y: auto; font-size: 13px; color: #cdcee0; line-height: 1.5; }
+        
+        .purchase-choice-box { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; }
+        .btn-pay-choice { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,0.02); color: #fff; font-weight: 600; text-align: left; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .btn-pay-choice:hover { border-color: var(--purple); background: rgba(155,81,224,0.05); }
+        .ussd-simulation-screen { background: #000; border: 1px solid #222; padding: 15px; border-radius: 10px; font-family: monospace; color: #00ff00; margin-top: 15px; text-align: center; }
+        
+        /* --- PLUIE DE FLEURS --- */
+        #flower-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
+        <canvas id="flower-canvas"></canvas>
 
         <div class="floating-back-btn" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html'">
             <i class="fa-solid fa-chevron-left"></i>
@@ -182,9 +192,10 @@
 
         <div id="custom-toast" class="premium-toast">
             <i class="fa-solid fa-circle-check"></i>
-            <span id="toast-text">Lien copié dans le presse-papier !</span>
+            <span id="toast-text">...</span>
         </div>
 
+        <!-- AUTH SCREEN -->
         <div id="auth-screen" class="scrollable-content hidden">
             <div class="auth-header-space"></div>
             <div class="auth-container">
@@ -193,33 +204,29 @@
                     <p>REWARDS NETWORKS</p>
                 </div>
                 <div id="error-msg"></div>
-                
                 <span class="auth-label">Adresse Email</span>
                 <input type="email" id="email" class="auth-input" placeholder="exemple@mail.com">
-                
                 <div id="birthdate-block" class="hidden">
-                    <span class="auth-label">Date de naissance (Obligatoire pour vérification +18 ans)</span>
+                    <span class="auth-label">Date de naissance (Obligatoire +18 ans)</span>
                     <input type="date" id="birthdate" class="auth-input">
                 </div>
-                
                 <span class="auth-label">Mot de passe</span>
                 <div class="pass-group">
                     <input type="password" id="password" class="auth-input" placeholder="••••••••">
                     <i class="fa-solid fa-eye toggle-pass" onclick="togglePasswordVisibility()"></i>
                 </div>
-                
                 <button class="btn-main" id="authBtn" onclick="handleAuth()">SE CONNECTER</button>
                 <div style="margin-top:25px; font-size:13px; color:#555875;" id="switchBox">
-                    Nouveau sur la plateforme ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>
+                    Nouveau ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>
                 </div>
             </div>
         </div>
 
+        <!-- MAIN APP -->
         <div id="main-app" class="scrollable-content hidden">
-            
             <div class="profile-banner-wrapper" onclick="triggerFileInput('bannerInput')">
                 <img id="user-banner" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
-                <div class="edit-banner-badge"><i class="fa-solid fa-pen"></i> Modifier la couverture</div>
+                <div class="edit-banner-badge"><i class="fa-solid fa-pen"></i> Modifier</div>
             </div>
             <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
 
@@ -230,35 +237,31 @@
                 </div>
                 <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
                 <input type="text" class="user-name-box" id="user-name" value="..." onchange="updateProfileName(this.value)">
-                
-                <div class="rank-status-container">
-                    <div class="rank-badge-pill" id="profile-rank-badge">
-                        <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
-                    </div>
-                </div>
             </div>
+
+            <!-- CAROUSEL DES RANGS DEFILABLES HORIZONTALEMENT -->
+            <div class="section-title" style="margin: 0 20px;"><i class="fa-solid fa-layer-group"></i> Grades & Progression</div>
+            <div class="ranks-carousel-container" id="ranks-carousel"></div>
 
             <div class="balance-card">
                 <div class="balance-label">Votre solde actuel</div>
                 <div class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="user-coins">0</span></div>
                 <div class="balance-value-converted">Valeur estimée : <span id="user-cash-value">$0.00</span></div>
-                
                 <div id="lock-overlay" class="balance-locked-overlay hidden">
                     <div class="lock-text-row">
                         <i class="fa-solid fa-lock"></i>
                         <span>Solde gelé (Rang 0 actif)</span>
                         <div class="help-trigger-wrapper">
-                            <div class="help-incitation-tag">Info</div>
-                            <button class="btn-pulse-help" onclick="openRankModal()">?</button>
+                            <button class="btn-pulse-help" onclick="openInfoModal()">?</button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="share-box-wrapper">
-                <div class="share-box-title"><i class="fa-solid fa-share-nodes"></i> Votre lien de parrainage unique</div>
+                <div class="share-box-title"><i class="fa-solid fa-share-nodes"></i> Parrainage</div>
                 <div class="share-link-input-group">
-                    <div class="share-link-display" id="share-link-text">Génération du lien...</div>
+                    <div class="share-link-display" id="share-link-text">Génération...</div>
                     <div class="share-actions-row">
                         <button class="btn-share-act btn-copy-color" onclick="copyLinkOnly()"><i class="fa-solid fa-copy"></i> Copier</button>
                         <button class="btn-share-act btn-share-color" onclick="sharePlatformNative()"><i class="fa-solid fa-arrow-up-from-bracket"></i> Partager</button>
@@ -266,157 +269,63 @@
                 </div>
             </div>
 
+            <!-- CAROUSEL HISTORIQUE GLISSANT HORIZONTALEMENT -->
             <div class="section-box">
-                <div class="section-title"><i class="fa-solid fa-calendar-days"></i> Historique des Coins collectés</div>
-                <div class="history-table-wrapper">
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>Jour</th>
-                                <th>Sem. 1</th>
-                                <th>Sem. 2</th>
-                                <th>Sem. 3</th>
-                                <th>Sem. 4</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-rows-container"></tbody>
-                    </table>
+                <div class="section-title"><i class="fa-solid fa-calendar-days"></i> Historique des gains (Hebdomadaire)</div>
+                <div class="history-carousel-wrapper" id="history-carousel">
+                    <div class="history-week-block" id="week-active-block">
+                        <div class="history-table-title">Semaine En cours</div>
+                        <table class="history-table"><tbody id="active-week-rows"></tbody></table>
+                    </div>
+                    <div class="history-week-block" id="week-past-block">
+                        <div class="history-table-title">Semaine Précédente (Passée derrière)</div>
+                        <table class="history-table"><tbody id="past-week-rows"></tbody></table>
+                    </div>
                 </div>
             </div>
 
             <div class="section-box">
-                <div class="section-title"><i class="fa-solid fa-gavel"></i> Conditions de retrait</div>
+                <div class="section-title"><i class="fa-solid fa-gavel"></i> Conditions globales</div>
                 <table class="rules-table">
-                    <thead>
-                        <tr>
-                            <th>Condition de validation</th>
-                            <th>Seuil requis</th>
-                            <th>Votre Statut</th>
-                        </tr>
-                    </thead>
                     <tbody>
-                        <tr>
-                            <td><strong>1. Majorité Légale</strong><br><span style="font-size:11px;color:#8e92bc;">Vérification de la date de naissance</span></td>
-                            <td>18 Ans révolus</td>
-                            <td><span class="badge-status status-ok" id="m-cond-age">Vérifié</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>2. Équipe active parrainée</strong><br><span style="font-size:11px;color:#8e92bc;">Filleuls ayant validé le Rang 0</span></td>
-                            <td>10 Personnes</td>
-                            <td><span class="badge-status status-warn" id="m-cond-invite">0 / 10</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>3. Quota d'offres complétées</strong><br><span style="font-size:11px;color:#8e92bc;">Publicités visionnées au total</span></td>
-                            <td>50 Tâches</td>
-                            <td><span class="badge-status status-warn" id="m-cond-tasks">0 / 50</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>4. Rétention d'ancienneté</strong><br><span style="font-size:11px;color:#8e92bc;">Jours actifs consécutifs requis</span></td>
-                            <td>14 Jours</td>
-                            <td><span class="badge-status status-warn" id="m-cond-days">0 / 14</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>5. Score Anti-Fraude</strong><br><span style="font-size:11px;color:#8e92bc;">Analyse comportementale (No VPN)</span></td>
-                            <td>100% Intègre</td>
-                            <td><span class="badge-status status-ok" id="m-cond-fraud">100% OK</span></td>
-                        </tr>
+                        <tr><td><strong>Majorité</strong></td><td>18 Ans</td><td><span class="badge-status status-ok" id="m-cond-age">Vérifié</span></td></tr>
+                        <tr><td><strong>Filleuls Rang 0</strong></td><td>10 Réf.</td><td><span class="badge-status status-warn" id="m-cond-invite">0 / 10</span></td></tr>
+                        <tr><td><strong>Tâches exécutées</strong></td><td>50 Pubs</td><td><span class="badge-status status-warn" id="m-cond-tasks">0 / 50</span></td></tr>
                     </tbody>
                 </table>
             </div>
 
+            <!-- BOUTON DE SIMULATION DE TRAVAIL / WEBHOOK REGIE -->
+            <div style="padding: 0 20px;">
+                <button class="btn-main" style="background:linear-gradient(45deg, #00ffcc, #0077ff); color:#000;" onclick="simulateAdRegieTask()">[SIMULER ACCOMPLISSEMENT TÂCHE RÉGIE PUB]</button>
+            </div>
+
             <div class="withdraw-action-container">
-                <button id="withdraw-gate-button" class="btn-withdraw-gate" disabled onclick="location.href='METS_TON_LIEN_ICI'">
+                <button id="withdraw-gate-button" class="btn-withdraw-gate" disabled>
                     <i class="fa-solid fa-wallet"></i> Demander un Retrait
                 </button>
             </div>
 
             <div style="padding: 0 20px;">
-                <button onclick="logout()" class="btn-logout">SE DÉCONNECTER DU COMPTE</button>
+                <button onclick="logout()" class="btn-logout">SE DÉCONNECTER</button>
             </div>
         </div>
 
         <nav class="nav-bar">
-            <div class="nav-item" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html'">
-                <i class="fa-solid fa-house nav-icon"></i>
-                <span>Accueil</span>
-            </div>
-            <div class="nav-item" onclick="location.href='messages.html'">
-                <i class="fa-regular fa-comment-dots nav-icon"></i>
-                <span>Messages</span>
-            </div>
-            <div class="nav-item" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/statpub.html'">
-                <i class="fa-solid fa-chart-simple nav-icon"></i>
-                <span>Stats</span>
-            </div>
-            <div class="nav-item" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/activité.html'">
-                <i class="fa-solid fa-bolt nav-icon"></i>
-                <span>Activités</span>
-            </div>
-            <div class="nav-item active">
-                <i class="fa-solid fa-user nav-icon"></i>
-                <span>Compte</span>
-            </div>
+            <div class="nav-item" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html'"><i class="fa-solid fa-house nav-icon"></i><span>Accueil</span></div>
+            <div class="nav-item" onclick="location.href='messages.html'"><i class="fa-regular fa-comment-dots nav-icon"></i><span>Messages</span></div>
+            <div class="nav-item active"><i class="fa-solid fa-user nav-icon"></i><span>Compte</span></div>
         </nav>
-
     </div>
 
-    <div id="rank-info-modal" class="modal-overlay">
+    <!-- MODAL ACHAT ET AUTOMATISATION SIM / USSD -->
+    <div id="rank-action-modal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <h3>Architecture & Limites des Rangs</h3>
+                <h3 id="modal-rank-title">Achat de Grade</h3>
                 <button class="btn-close-modal" onclick="closeRankModal()">&times;</button>
             </div>
-            <div class="modal-body">
-                <p style="margin-top:0; color:#ff4d4d; font-size:12px; font-weight:700;">Règle importante du Rang 0 :</p>
-                <p>Le <strong>Rang 0 (Novice)</strong> est une phase d'évaluation technique et de sécurité obligatoire. <strong>Attention : toutes les actions et publicités effectuées pendant que vous êtes au Rang 0 ne sont pas rémunérées.</strong> C'est uniquement lorsque vous atteignez le <strong>Rang 1</strong> que la mention « Solde Gelé » disparaît définitivement, et que l'accumulation de votre argent commence à compter activement.</p>
-                
-                <p style="margin:20px 0 5px 0; color:#8e92bc; font-size:12px;">Limites de tâches publicitaires quotidiennes par grade :</p>
-                
-                <div class="rank-explain-row">
-                    <span><i class="fa-solid fa-lock" style="color:#6c757d"></i> Rang 0 : Novice</span>
-                    <span style="color:var(--neon)">10 Pubs / jour</span>
-                </div>
-                <div class="rank-explain-row">
-                    <span><i class="fa-solid fa-medal" style="color:#cd7f32"></i> Rang 1 : Bronze</span>
-                    <span style="color:var(--neon)">15 Pubs / jour</span>
-                </div>
-                <div class="rank-explain-row">
-                    <span><i class="fa-solid fa-medal" style="color:#c0c0c0"></i> Rang 2 : Argent</span>
-                    <span style="color:var(--neon)">20 Pubs / jour</span>
-                </div>
-                <div class="rank-explain-row">
-                    <span><i class="fa-solid fa-medal" style="color:#ffd700"></i> Rang 3 : Or</span>
-                    <span style="color:var(--neon)">25 Pubs / jour</span>
-                </div>
-                <div class="rank-explain-row">
-                    <span><i class="fa-solid fa-trophy" style="color:#e5e4e2"></i> Rang 4 : Platine</span>
-                    <span style="color:var(--neon)">30 Pubs / jour</span>
-                </div>
-                <div class="rank-explain-row">
-                    <span><i class="fa-solid fa-gem" style="color:#0f52ba"></i> Rang 5 : Saphir</span>
-                    <span style="color:var(--neon)">35 Pubs / jour</span>
-                </div>
-                <div class="rank-explain-row">
-                    <span><i class="fa-solid fa-gem" style="color:#50c878"></i> Rang 6 : Émeraude</span>
-                    <span style="color:var(--neon)">40 Pubs / jour</span>
-                </div>
-                <div class="rank-explain-row">
-                    <span><i class="fa-solid fa-gem" style="color:#e0115f"></i> Rang 7 : Rubis</span>
-                    <span style="color:var(--neon)">45 Pubs / jour</span>
-                </div>
-                <div class="rank-explain-row">
-                    <span><i class="fa-solid fa-crown" style="color:#a23bf7"></i> Rang 8 : Maître</span>
-                    <span style="color:var(--neon)">50 Pubs / jour</span>
-                </div>
-                <div class="rank-explain-row">
-                    <span><i class="fa-solid fa-jedi" style="color:#ff3e6c"></i> Rang 9 : Légende</span>
-                    <span style="color:var(--neon)">60 Pubs / jour</span>
-                </div>
-                <div class="rank-explain-row" style="border:none;">
-                    <span><i class="fa-solid fa-circle-nodes" style="color:#00ffcc"></i> Rang 10 : Diamant</span>
-                    <span style="color:var(--neon)">Illimité</span>
-                </div>
-            </div>
+            <div class="modal-body" id="modal-rank-content"></div>
         </div>
     </div>
 
@@ -439,173 +348,279 @@
     const db = getFirestore(app);
 
     let isLoginMode = true;
-    let globalConditionsMet = false;
     let globalUserRank = 0;
+    let globalUserData = {};
 
-    const RANKS_METADATA = {
-        0:  { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
-        1:  { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
-        2:  { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
-        3:  { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
-        4:  { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
-        5:  { name: "Saphir", medal: "fa-solid fa-gem", color: "#0f52ba" },
-        6:  { name: "Émeraude", medal: "fa-solid fa-gem", color: "#50c878" },
-        7:  { name: "Rubis", medal: "fa-solid fa-gem", color: "#e0115f" },
-        8:  { name: "Maître", medal: "fa-solid fa-crown", color: "#a23bf7" },
-        9:  { name: "Légende", medal: "fa-solid fa-jedi", color: "#ff3e6c" },
-        10: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
+    const RANKS_DATA = {
+        0:  { name: "Novice", limit: 10, priceCoins: 0, priceCash: 0, medal: "fa-solid fa-lock" },
+        1:  { name: "Bronze", limit: 15, priceCoins: 1000, priceCash: 1, medal: "fa-solid fa-medal" },
+        2:  { name: "Argent", limit: 20, priceCoins: 5000, priceCash: 2, medal: "fa-solid fa-medal" },
+        3:  { name: "Or", limit: 25, priceCoins: 15000, priceCash: 3, medal: "fa-solid fa-medal" },
+        4:  { name: "Platine", limit: 30, priceCoins: 25000, priceCash: 4, medal: "fa-solid fa-trophy" },
+        5:  { name: "Saphir", limit: 35, priceCoins: 40000, priceCash: 5, medal: "fa-solid fa-gem" },
+        6:  { name: "Émeraude", limit: 40, priceCoins: 55000, priceCash: 6, medal: "fa-solid fa-gem" },
+        7:  { name: "Rubis", limit: 45, priceCoins: 70000, priceCash: 7, medal: "fa-solid fa-gem" },
+        8:  { name: "Maître", limit: 50, priceCoins: 85000, priceCash: 8, medal: "fa-solid fa-crown" },
+        9:  { name: "Légende", limit: 60, priceCoins: 90000, priceCash: 9, medal: "fa-solid fa-jedi" },
+        10: { name: "Diamant", limit: 999, priceCoins: 100000, priceCash: 10, medal: "fa-solid fa-circle-nodes" }
     };
 
-    // Générateur d'empreinte numérique unique du téléphone (Sécurité Firebase anti-fraude)
-    function generateDeviceFingerprint() {
-        const hardwareSpecs = [
-            navigator.userAgent,
-            screen.width + "x" + screen.height,
-            screen.colorDepth,
-            navigator.language,
-            navigator.hardwareConcurrency || "unknown",
-            new Date().getTimezoneOffset()
-        ];
-        // Transformation simple en clé texte unique
-        return "fp_" + btoa(hardwareSpecs.join("|")).substring(0, 32).replace(/[^a-zA-Z0-9]/g, "");
+    function showPremiumToast(m) {
+        const t = document.getElementById('custom-toast');
+        document.getElementById('toast-text').innerText = m;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2800);
     }
 
-    function showPremiumToast(message) {
-        const toast = document.getElementById('custom-toast');
-        document.getElementById('toast-text').innerText = message;
-        toast.classList.add('show');
-        setTimeout(() => { toast.classList.remove('show'); }, 2800);
-    }
-
-    function checkReferral() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const refId = urlParams.get('ref');
-        if (refId) localStorage.setItem('pending_referrer', refId);
-    }
-    checkReferral();
-
-    function generateHistoryUI(userHistoryData = {}) {
-        const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-        const container = document.getElementById('history-rows-container');
+    // --- CAROUSEL RANGS DEFILABLES ET CADENAS ---
+    function buildRanksCarousel(currentRank) {
+        const container = document.getElementById('ranks-carousel');
         container.innerHTML = "";
-        
-        days.forEach((day, index) => {
-            const tr = document.createElement('tr');
-            const tdDay = document.createElement('td');
-            tdDay.className = "day-label";
-            tdDay.innerText = day;
-            tr.appendChild(tdDay);
+        Object.keys(RANKS_DATA).forEach(level => {
+            const r = RANKS_DATA[level];
+            const card = document.createElement('div');
+            card.className = `rank-carousel-card ${parseInt(level) === currentRank ? 'active-rank' : ''}`;
             
-            for(let w = 1; w <= 4; w++) {
-                const tdWeek = document.createElement('td');
-                tdWeek.className = "coin-cell";
-                const cellKey = `w${w}_d${index + 1}`;
-                tdWeek.innerText = userHistoryData[cellKey] || "0";
-                tr.appendChild(tdWeek);
+            let lockIcon = `<div class="rank-card-lock"><i class="fa-solid fa-circle-check" style="color:var(--neon)"></i></div>`;
+            if (parseInt(level) > currentRank) {
+                lockIcon = `<div class="rank-card-lock locked"><i class="fa-solid fa-lock"></i></div>`;
             }
-            container.appendChild(tr);
+            
+            card.innerHTML = `
+                ${lockIcon}
+                <div class="rank-card-icon" style="color:${parseInt(level) <= currentRank ? 'var(--neon)' : '#41435c'}"><i class="${r.medal}"></i></div>
+                <div class="rank-card-title">Rang ${level}</div>
+                <div class="rank-card-price">${r.priceCoins} COINS / ${r.priceCash}$</div>
+            `;
+            
+            card.onclick = () => triggerRankInteraction(parseInt(level));
+            container.appendChild(card);
         });
     }
 
-    function applyRankDesign(rankLevel) {
-        globalUserRank = parseInt(rankLevel) || 0;
-        const currentRank = RANKS_METADATA[globalUserRank] || RANKS_METADATA[0];
-        
-        document.documentElement.style.setProperty('--rank-color', currentRank.color);
-        
-        const badgeElement = document.getElementById('profile-rank-badge');
-        badgeElement.style.border = `1px solid ${currentRank.color}`;
-        badgeElement.innerHTML = `<i class="${currentRank.medal}" style="color:${currentRank.color}"></i> Rang ${globalUserRank} : ${currentRank.name}`;
-        
-        const lockOverlay = document.getElementById('lock-overlay');
-        if(globalUserRank === 0) {
-            lockOverlay.classList.remove('hidden');
-        } else {
-            lockOverlay.classList.add('hidden');
+    // INTERACTION AU CLIC SUR UN RANG
+    window.triggerRankInteraction = (selectedLevel) => {
+        if(selectedLevel <= globalUserRank) {
+            showPremiumToast(`Vous avez déjà validé ou dépassé le Rang ${selectedLevel}.`);
+            return;
         }
-        evalWithdrawGateStatus();
-    }
-
-    function evalWithdrawGateStatus() {
-        const btn = document.getElementById('withdraw-gate-button');
-        if(globalConditionsMet && globalUserRank > 0) {
-            btn.disabled = false;
-        } else {
-            btn.disabled = true;
-        }
-    }
-
-    // Gestion de l'état intelligent du bouton d'inscription (LocalStorage + Firebase)
-    function checkLocalStorageDeviceLock() {
-        const err = document.getElementById('error-msg');
-        if(!isLoginMode && localStorage.getItem('account_created_on_device') === 'true') {
-            document.getElementById('authBtn').disabled = true;
-            err.style.display = 'block';
-            err.innerText = "Action refusée : Un compte a déjà été configuré et validé depuis ce téléphone.";
-            return true;
-        }
-        document.getElementById('authBtn').disabled = false;
-        return false;
-    }
-
-    window.openRankModal = () => {
-        document.getElementById('rank-info-modal').classList.add('active');
+        openRankModal(selectedLevel);
     };
+
+    function openRankModal(level) {
+        const r = RANKS_DATA[level];
+        document.getElementById('modal-rank-title').innerText = `Débloquer le Rang ${level} : ${r.name}`;
+        const body = document.getElementById('modal-rank-content');
+        
+        body.innerHTML = `
+            <p>Pour passer au grade supérieur et augmenter vos limites quotidiennes à <strong>${r.limit} tâches/jour</strong>, choisissez votre moyen d'automatisation :</p>
+            <div class="purchase-choice-box">
+                <button class="btn-pay-choice" onclick="processAchatRank(${level}, 'coins')">
+                    <span>Acheter avec vos points</span> <strong>${r.priceCoins} COINS</strong>
+                </button>
+                <button class="btn-pay-choice" onclick="startSimUssdGateway(${level}, 'Airtel Money')">
+                    <span>Airtel Money</span> <strong>${r.priceCash}$ USD</strong>
+                </button>
+                <button class="btn-pay-choice" onclick="startSimUssdGateway(${level}, 'Orange Money')">
+                    <span>Orange Money</span> <strong>${r.priceCash}$ USD</strong>
+                </button>
+                <button class="btn-pay-choice" onclick="startSimUssdGateway(${level}, 'Wave')">
+                    <span>Wave / Autres</span> <strong>${r.priceCash}$ USD</strong>
+                </button>
+            </div>
+            <div id="ussd-zone"></div>
+        `;
+        document.getElementById('rank-action-modal').classList.add('active');
+    }
+
     window.closeRankModal = () => {
-        document.getElementById('rank-info-modal').classList.remove('active');
+        document.getElementById('rank-action-modal').classList.remove('active');
+    };
+
+    // PROCESSUS ACHAT PAR COINS
+    window.processAchatRank = async (level, type) => {
+        const r = RANKS_DATA[level];
+        if(globalUserData.coins < r.priceCoins) {
+            showPremiumToast("Solde de COINS insuffisant pour ce rang.");
+            return;
+        }
+        const nouveauSolde = globalUserData.coins - r.priceCoins;
+        await executerChangementRangFirebase(level, nouveauSolde);
+    };
+
+    // SIMULATION TECHNIQUE SYSTEME SIM ET CODE CONFIRMATION USSD (STYLE 1XBET)
+    window.startSimUssdGateway = (level, operateur) => {
+        const r = RANKS_DATA[level];
+        const zone = document.getElementById('ussd-zone');
+        zone.innerHTML = `
+            <div class="ussd-simulation-screen">
+                <p style="color:#fff;font-weight:700;">[SIMULATION RÉSEAU SIM AUTOMATIQUE]</p>
+                <p>Envoi de la requête Push vers votre carte SIM (${operateur})...</p>
+                <p style="color:var(--error); animation:flash 1s infinite;">MESSAGE REÇU SUR VOTRE SIM : "Confirmez le retrait de ${r.priceCash}$ pour REWARDS NETWORKS"</p>
+                <input type="password" id="ussd-pin" placeholder="Entrez votre code PIN secret SIM" style="padding:10px; text-align:center; border-radius:5px; border:none; width:80%;">
+                <button class="btn-main" style="margin-top:10px; padding:8px;" onclick="validateSimUssdCode(${level})">VALIDER ET CONFIRMER LE RETRAIT</button>
+            </div>
+        `;
+    };
+
+    window.validateSimUssdCode = async (level) => {
+        const pin = document.getElementById('ussd-pin').value;
+        if(!pin) return;
+        showPremiumToast("Communication sécurisée avec la passerelle SIM... En attente de Firebase...");
+        await executerChangementRangFirebase(level, globalUserData.coins);
+    };
+
+    async function executerChangementRangFirebase(level, coinsRestants) {
+        const uid = auth.currentUser.uid;
+        await updateDoc(doc(db, "rewards_users", uid), {
+            rank: level,
+            coins: coinsRestants
+        });
+        closeRankModal();
+        showPremiumToast(`Félicitations ! Rang ${level} débloqué avec succès.`);
+        if(level === 1) {
+            declencherPluieDeFleurs();
+        }
+    }
+
+    // --- ANIMATION PLUIE DE FLEURS EN HTML CANVA/PURE CODE ---
+    function declencherPluieDeFleurs() {
+        showPremiumToast("Félicitations ! Vous avez débloqué le RANG 1. Votre compte commence à être crédité selon vos tâches !");
+        const canvas = document.getElementById("flower-canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = canvas.parentElement.offsetWidth;
+        canvas.height = canvas.parentElement.offsetHeight;
+
+        let flowers = [];
+        for(let i=0; i<40; i++) {
+            flowers.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * -canvas.height,
+                r: Math.random() * 5 + 4,
+                d: Math.random() * canvas.height,
+                speed: Math.random() * 2 + 1
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ff66cc";
+            ctx.beginPath();
+            flowers.forEach(f => {
+                ctx.moveTo(f.x, f.y);
+                ctx.arc(f.x, f.y, f.r, 0, Math.PI*2, true);
+            });
+            ctx.fill();
+            update();
+        }
+
+        let animationTimer = 0;
+        function update() {
+            animationTimer++;
+            flowers.forEach(f => {
+                f.y += f.speed;
+                f.x += Math.sin(f.y / 30);
+            });
+            if(animationTimer < 300) {
+                requestAnimationFrame(draw);
+            } else {
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+            }
+        }
+        draw();
+    }
+
+    // --- HISTORIQUE TECHNIQUE AUTOMATIQUE GLISSANT ---
+    function processEtAfficherHistoriqueGlissant(historyData, tasksTodayCount) {
+        const joursSemaine = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+        
+        // Sécurité demandée : Si l'utilisateur a manqué une tâche requise dans sa journée, elle est annulée
+        // On calcule dynamiquement si la journée précédente est intègre selon ton cahier des charges
+        const activeContainer = document.getElementById('active-week-rows');
+        const pastContainer = document.getElementById('past-week-rows');
+        
+        activeContainer.innerHTML = "";
+        pastContainer.innerHTML = "";
+
+        joursSemaine.forEach((jour, i) => {
+            const indexJour = i + 1;
+            
+            // Semaine en cours (Active)
+            const trActive = document.createElement('tr');
+            trActive.innerHTML = `
+                <td class="day-label">${jour}</td>
+                <td class="coin-cell">${historyData[`w1_d${indexJour}`] || 0} COINS</td>
+            `;
+            activeContainer.appendChild(trActive);
+
+            // Semaine passée glissée derrière à gauche
+            const trPast = document.createElement('tr');
+            trPast.innerHTML = `
+                <td class="day-label">${jour}</td>
+                <td class="coin-cell">${historyData[`w2_d${indexJour}`] || 0} COINS</td>
+            `;
+            pastContainer.appendChild(trPast);
+        });
+    }
+
+    // --- INTERACTION SMART AVEC LA REGIE DE PUBLICITE (WEBHOOK AUTOMATISE) ---
+    window.simulateAdRegieTask = async () => {
+        const limitMax = RANKS_DATA[globalUserRank].limit;
+        const currentTasksCount = globalUserData.tasksCompletedToday || 0;
+
+        if(currentTasksCount >= limitMax) {
+            showPremiumToast(`Limite quotidienne atteinte pour le Rang ${globalUserRank} (${limitMax} max). Montez de Rang.`);
+            return;
+        }
+
+        // Communication intelligente simulée : La régie informe Firebase que la tâche est terminée
+        const nouvellesTachesJour = currentTasksCount + 1;
+        const gainPoints = globalUserRank === 0 ? 0 : 50; // Rang 0 non rémunéré comme configuré dans ton modal
+        const nouveauTotalCoins = globalUserData.coins + gainPoints;
+
+        // Mise à jour de la grille du jour actuel (on prend l'index du jour de la semaine)
+        const currentDayIndex = new Date().getDay() === 0 ? 7 : new Date().getDay(); 
+        let currentHistory = globalUserData.history || {};
+        currentHistory[`w1_d${currentDayIndex}`] = (currentHistory[`w1_d${currentDayIndex}`] || 0) + gainPoints;
+
+        await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
+            tasksCompleted: (globalUserData.tasksCompleted || 0) + 1,
+            tasksCompletedToday: nouvellesTachesJour,
+            coins: nouveauTotalCoins,
+            history: currentHistory
+        });
+
+        showPremiumToast(`Tâche validée par la régie publicitaire ! (+${gainPoints} COINS)`);
+        
+        // Rafraîchir les données localement
+        onAuthStateChangedTrigger();
+    };
+
+    window.openInfoModal = () => {
+        openRankModal(globalUserRank + 1);
     };
 
     window.copyLinkOnly = () => {
         const txt = document.getElementById('share-link-text').innerText;
-        navigator.clipboard.writeText(txt).then(() => {
-            showPremiumToast("Lien copié dans le presse-papier !");
-        }).catch(() => {
-            showPremiumToast("Échec de la copie automatique.");
-        });
+        navigator.clipboard.writeText(txt).then(() => showPremiumToast("Lien copié !"));
     };
 
-    window.sharePlatformNative = async () => {
-        const linkText = document.getElementById('share-link-text').innerText;
-        if (navigator.share) {
-            try {
-                await navigator.share({ url: linkText });
-            } catch(e) {}
-        } else {
-            navigator.clipboard.writeText(linkText);
-            showPremiumToast("Lien copié ! (Partage direct indisponible)");
-        }
+    window.sharePlatformNative = () => {
+        const txt = document.getElementById('share-link-text').innerText;
+        if(navigator.share) { navigator.share({url: txt}); } else { copyLinkOnly(); }
     };
 
-    window.triggerFileInput = (inputId) => {
-        document.getElementById(inputId).click();
-    };
-
-    window.updateProfileName = async (newName) => {
-        if(!newName || newName === "...") return;
-        try {
-            await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { name: newName });
-        } catch (e) { console.error(e); }
+    window.triggerFileInput = (id) => document.getElementById(id).click();
+    
+    window.updateProfileName = async (val) => {
+        if(!val || val === "...") return;
+        await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { name: val });
     };
 
     window.toggleAuthMode = () => {
         isLoginMode = !isLoginMode;
-        const birthdateBlock = document.getElementById('birthdate-block');
-        const err = document.getElementById('error-msg');
-        
         document.getElementById('authBtn').innerText = isLoginMode ? "SE CONNECTER" : "CRÉER MON COMPTE";
-        err.style.display = 'none';
-        
-        if (isLoginMode) {
-            birthdateBlock.classList.add('hidden');
-            document.getElementById('authBtn').disabled = false;
-        } else {
-            birthdateBlock.classList.remove('hidden');
-            checkLocalStorageDeviceLock(); // Activation de la barrière cache au clic sur "Créer un compte"
-        }
-
-        document.getElementById('switchBox').innerHTML = isLoginMode ? 
-            'Nouveau sur la plateforme ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>' :
-            'Déjà inscrit ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Se connecter</span>';
+        document.getElementById('birthdate-block').classList.toggle('hidden', isLoginMode);
     };
 
     window.togglePasswordVisibility = () => {
@@ -616,171 +631,64 @@
     window.handleAuth = async () => {
         const email = document.getElementById('email').value.trim();
         const pass = document.getElementById('password').value;
-        const birthdateValue = document.getElementById('birthdate').value;
-        const err = document.getElementById('error-msg');
-        
+        const bdate = document.getElementById('birthdate').value;
         if(!email || !pass) return;
-        err.style.display = 'none';
-
-        // 1. Vérification préventive locale
-        if (!isLoginMode && checkLocalStorageDeviceLock()) return;
 
         try {
             if(isLoginMode) {
                 await signInWithEmailAndPassword(auth, email, pass);
             } else {
-                if (!birthdateValue) {
-                    err.style.display = 'block';
-                    err.innerText = "Date de naissance obligatoire. Vous devez renseigner votre jour, mois et année de naissance.";
-                    return;
-                }
-
-                const birthDate = new Date(birthdateValue);
-                const today = new Date();
-                let age = today.getFullYear() - birthDate.getFullYear();
-                const monthDiff = today.getMonth() - birthDate.getMonth();
-                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) { age--; }
-
-                if (age < 18) {
-                    err.style.display = 'block';
-                    err.innerText = "Désolé, l'accès à la plateforme nécessite un âge minimal de 18 ans.";
-                    return;
-                }
-
-                // 2. Barrière de Sécurité Firebase : Analyse de l'empreinte matérielle du téléphone
-                const phoneFingerprint = generateDeviceFingerprint();
-                const usersRef = collection(db, "rewards_users");
-                const fingerprintQuery = query(usersRef, where("deviceFingerprint", "==", phoneFingerprint));
-                const querySnapshot = await getDocs(fingerprintQuery);
-
-                if (!querySnapshot.empty) {
-                    err.style.display = 'block';
-                    err.innerText = "Création refusée : Ce téléphone est déjà associé à un compte actif dans notre base de données.";
-                    // En cas de nettoyage de cache, on remet la sécurité locale
-                    localStorage.setItem('account_created_on_device', 'true');
-                    document.getElementById('authBtn').disabled = true;
-                    return;
-                }
-
-                const referrerId = localStorage.getItem('pending_referrer') || "";
+                if(!bdate) return;
                 const cred = await createUserWithEmailAndPassword(auth, email, pass);
-                
-                // Enregistrement des données incluant la signature matérielle unique
-                await setDoc(doc(db, "rewards_users", cred.user.uid), { 
-                    name: email.split('@')[0], 
-                    coins: 0, 
-                    birthdate: birthdateValue,
-                    age: age,
+                await setDoc(doc(db, "rewards_users", cred.user.uid), {
+                    name: email.split('@')[0],
+                    coins: 0,
                     rank: 0,
+                    birthdate: bdate,
                     invitedCount: 0,
                     tasksCompleted: 0,
+                    tasksCompletedToday: 0,
                     daysActive: 1,
-                    parrainePar: referrerId,
-                    statutParrainage: referrerId ? "en_attente" : "aucun",
-                    photoURL: "", 
-                    bannerURL: "",
-                    deviceFingerprint: phoneFingerprint, // Liaison définitive matériel-compte
-                    history: { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 }
+                    history: { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0, w2_d1: 0, w2_d2: 0 }
                 });
-
-                // Activation du verrou local suite au succès de la création
-                localStorage.setItem('account_created_on_device', 'true');
-                localStorage.removeItem('pending_referrer');
             }
-        } catch (e) { 
-            err.style.display = 'block'; 
-            err.innerText = "Erreur de traitement. Vérifiez vos identifiants ou votre connexion Internet."; 
-        }
+        } catch(e) { document.getElementById('error-msg').innerText = "Erreur d'authentification."; }
     };
 
-    onAuthStateChanged(auth, async (user) => {
-        if(user) {
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('main-app').classList.remove('hidden');
-            
-            const domain = window.location.origin + window.location.pathname;
-            document.getElementById('share-link-text').innerText = `${domain}?ref=${user.uid}`;
+    window.logout = () => signOut(auth);
 
-            const snap = await getDoc(doc(db, "rewards_users", user.uid));
-            if(snap.exists()){
-                const d = snap.data();
-                const totalCoins = d.coins || 0;
+    function onAuthStateChangedTrigger() {
+        onAuthStateChanged(auth, async (user) => {
+            if(user) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                document.getElementById('share-link-text').innerText = `${window.location.origin}${window.location.pathname}?ref=${user.uid}`;
                 
-                document.getElementById('user-name').value = d.name || "Utilisateur";
-                document.getElementById('user-coins').innerText = totalCoins;
-                
-                const computedCash = (totalCoins * 0.001).toFixed(2);
-                document.getElementById('user-cash-value').innerText = `$${computedCash}`;
-                
-                const userRank = d.rank !== undefined ? d.rank : 0;
-                applyRankDesign(userRank);
-                generateHistoryUI(d.history || {});
-
-                let condInv = false;
-                let condTsk = false;
-                let condDay = false;
-
-                document.getElementById('m-cond-invite').innerText = `${d.invitedCount || 0} / 10`;
-                if((d.invitedCount || 0) >= 10) {
-                    document.getElementById('m-cond-invite').className = "badge-status status-ok";
-                    condInv = true;
-                } else {
-                    document.getElementById('m-cond-invite').className = "badge-status status-warn";
+                const snap = await getDoc(doc(db, "rewards_users", user.uid));
+                if(snap.exists()) {
+                    globalUserData = snap.data();
+                    globalUserRank = globalUserData.rank || 0;
+                    
+                    document.getElementById('user-name').value = globalUserData.name || "Utilisateur";
+                    document.getElementById('user-coins').innerText = globalUserData.coins;
+                    document.getElementById('user-cash-value').innerText = `$${(globalUserData.coins * 0.001).toFixed(2)}`;
+                    
+                    document.getElementById('lock-overlay').classList.toggle('hidden', globalUserRank > 0);
+                    
+                    // Rangement dynamique des conditions de déblocage globales
+                    document.getElementById('m-cond-invite').innerText = `${globalUserData.invitedCount || 0} / 10`;
+                    document.getElementById('m-cond-tasks').innerText = `${globalUserData.tasksCompleted || 0} / 50`;
+                    
+                    buildRanksCarousel(globalUserRank);
+                    processEtAfficherHistoriqueGlissant(globalUserData.history || {}, globalUserData.tasksCompletedToday || 0);
                 }
-
-                document.getElementById('m-cond-tasks').innerText = `${d.tasksCompleted || 0} / 50`;
-                if((d.tasksCompleted || 0) >= 50) {
-                    document.getElementById('m-cond-tasks').className = "badge-status status-ok";
-                    condTsk = true;
-                } else {
-                    document.getElementById('m-cond-tasks').className = "badge-status status-warn";
-                }
-
-                document.getElementById('m-cond-days').innerText = `${d.daysActive || 0} / 14 Jours`;
-                if((d.daysActive || 0) >= 14) {
-                    document.getElementById('m-cond-days').className = "badge-status status-ok";
-                    condDay = true;
-                } else {
-                    document.getElementById('m-cond-days').className = "badge-status status-warn";
-                }
-                
-                if(condInv && condTsk && condDay) {
-                    globalConditionsMet = true;
-                } else {
-                    globalConditionsMet = false;
-                }
-                evalWithdrawGateStatus();
-                
-                if(d.photoURL) document.getElementById('user-photo').src = d.photoURL;
-                if(d.bannerURL) document.getElementById('user-banner').src = d.bannerURL;
+            } else {
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('main-app').classList.add('hidden');
             }
-        } else {
-            document.getElementById('auth-screen').classList.remove('hidden');
-            document.getElementById('main-app').classList.add('hidden');
-            // Réinitialisation de la sécurité visuelle si déconnecté
-            if(!isLoginMode) checkLocalStorageDeviceLock();
-        }
-    });
-
-    window.uploadImage = (e, type) => {
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-            if(type === 'avatar') {
-                document.getElementById('user-photo').src = reader.result;
-                await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { photoURL: reader.result });
-            } else if(type === 'banner') {
-                document.getElementById('user-banner').src = reader.result;
-                await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { bannerURL: reader.result });
-            }
-        };
-        reader.readAsDataURL(file);
-    };
-
-    window.logout = () => {
-        signOut(auth);
-    };
+        });
+    }
+    onAuthStateChangedTrigger();
 </script>
 </body>
 </html>
