@@ -62,7 +62,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 25px;
+            gap: 20px;
             padding: 20px;
             z-index: 5;
             overflow-y: auto;
@@ -72,7 +72,7 @@
         .wall-btn {
             width: 100%;
             max-width: 340px;
-            padding: 25px 20px;
+            padding: 20px 20px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
@@ -88,7 +88,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             animation: pulse-glow 3s infinite ease-in-out;
         }
 
@@ -96,9 +96,10 @@
             transform: scale(0.97);
         }
 
-        /* Différentes couleurs de pulsation pour MyLead vs OGAds */
+        /* Couleurs de pulsation et bordures */
         .btn-mylead { animation-delay: 0s; border-color: rgba(0, 255, 204, 0.2); }
-        .btn-ogads { animation-delay: 1.5s; border-color: rgba(155, 81, 224, 0.2); }
+        .btn-ogads { animation-delay: 1s; border-color: rgba(155, 81, 224, 0.2); }
+        .btn-cpagrip { animation-delay: 2s; border-color: rgba(39, 174, 96, 0.2); }
 
         /* Effet Miroir / Reflet qui passe à travers le bouton */
         .wall-btn::before {
@@ -111,23 +112,25 @@
             animation: shine 4s infinite linear;
         }
         .btn-mylead::before { animation-delay: 0s; }
-        .btn-ogads::before { animation-delay: 2s; }
+        .btn-ogads::before { animation-delay: 1.3s; }
+        .btn-cpagrip::before { animation-delay: 2.6s; }
 
         .wall-btn i {
-            font-size: 35px;
-            margin-bottom: 5px;
+            font-size: 32px;
+            margin-bottom: 3px;
         }
         .btn-mylead i { color: #00ffcc; text-shadow: 0 0 15px rgba(0,255,204,0.4); }
         .btn-ogads i { color: #9b51e0; text-shadow: 0 0 15px rgba(155,81,224,0.4); }
+        .btn-cpagrip i { color: #27ae60; text-shadow: 0 0 15px rgba(39,174,96,0.4); }
 
         .wall-btn h2 {
-            margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.5px;
+            margin: 0; font-size: 17px; font-weight: 700; letter-spacing: 0.5px;
         }
         .wall-btn p {
             margin: 0; font-size: 12px; color: #8a8d9f; font-weight: 400;
         }
 
-        /* --- CONTENEUR D'IFRAME PLEIN ÉCRAN (CACHÉ PAR DÉFAUT) --- */
+        /* --- CONTENEUR D'IFRAME PLEIN ÉCRAN --- */
         .fullscreen-overlay {
             position: absolute;
             top: 67px; /* Juste en dessous du header */
@@ -135,7 +138,7 @@
             bottom: 65px; /* Juste au-dessus de la nav bar */
             background: #050508;
             z-index: 100;
-            display: none; /* Masqué */
+            display: none;
             flex-direction: column;
         }
 
@@ -146,12 +149,12 @@
             background: #050508;
         }
 
-        /* Bouton flotant discret pour fermer l'Iframe */
+        /* Bouton discret pour fermer l'Iframe */
         .btn-close-wall {
             position: absolute;
             bottom: 20px;
             right: 20px;
-            background: rgba(255, 4a, 4a, 0.9);
+            background: rgba(255, 74, 74, 0.9);
             color: white;
             border: none;
             padding: 12px 20px;
@@ -174,7 +177,7 @@
         }
         @keyframes pulse-glow {
             0% { transform: scale(1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
-            50% { transform: scale(1.02); box-shadow: 0 8px 40px 0 rgba(0, 255, 204, 0.1); }
+            50% { transform: scale(1.02); box-shadow: 0 8px 40px 0 rgba(255, 255, 255, 0.05); }
             100% { transform: scale(1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
         }
         
@@ -209,7 +212,7 @@
             <div style="width: 36px;"></div>
         </header>
 
-        <!-- Menu de sélection avec gros boutons style miroir / vitrine -->
+        <!-- Menu de sélection avec 3 gros boutons vitrines -->
         <div class="selection-menu" id="selection-menu">
             
             <div class="wall-btn btn-mylead" onclick="openWall('mylead')">
@@ -222,6 +225,12 @@
                 <i class="fa-solid fa-bolt"></i>
                 <h2>Gagner avec OGAds</h2>
                 <p>Installez des applications et des jeux</p>
+            </div>
+
+            <div class="wall-btn btn-cpagrip" onclick="openWall('cpagrip')">
+                <i class="fa-solid fa-star"></i>
+                <h2>Gagner avec CPAGrip</h2>
+                <p>Vidéos, offres spéciales et tâches</p>
             </div>
 
         </div>
@@ -288,15 +297,12 @@
             const mainTitle = document.getElementById('wall-title');
             const backBtn = document.getElementById('header-back-btn');
 
-            // Si l'utilisateur n'est pas connecté
             if (!currentUserUid) {
                 alert("Veuillez d'abord vous connecter pour ouvrir les missions et stocker vos points.");
                 return;
             }
 
             overlay.style.display = 'flex';
-            
-            // On modifie l'action du bouton retour physique du header pour fermer le mur
             backBtn.setAttribute('onclick', 'closeWall()');
 
             if (type === 'mylead') {
@@ -318,6 +324,46 @@
                         onload="document.getElementById('loader-node').style.display='none'">
                     </iframe>
                 `;
+            } else if (type === 'cpagrip') {
+                mainTitle.innerText = "CPAGrip Offres";
+                
+                // Pour CPAGrip (Script locker), on construit dynamiquement une iframe HTML propre 
+                // et on y injecte ton script avec ton tracking_id (passé dans l'URL pour ton postback global)
+                const trackingParam = `&tracking_id=${currentUserUid}`;
+                const srcScript = `https://getafilenow.com/script_include.php?id=1904067${trackingParam}`;
+                
+                iframeArea.innerHTML = `
+                    <div class="loading-placeholder" id="loader-node" style="color:#27ae60;"><i class="fa-solid fa-circle-notch fa-spin" style="color:#27ae60;"></i> Initialisation de CPAGrip...</div>
+                    <iframe id="cpagrip-iframe" sandbox="allow-top-navigation allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+                `;
+
+                const iframe = document.getElementById('cpagrip-iframe');
+                const iframeContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="utf-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <style>
+                            body, html { margin:0; padding:0; width:100%; height:100%; background:#050508; overflow:hidden; }
+                        </style>
+                    </head>
+                    <body>
+                        <script type="text/javascript" src="${srcScript}"><\/script>
+                    </body>
+                    </html>
+                `;
+                
+                iframe.src = "about:blank";
+                iframe.contentWindow.document.open();
+                iframe.contentWindow.document.write(iframeContent);
+                iframe.contentWindow.document.close();
+                
+                // Masquer le placeholder après une seconde (le temps que le script s'injecte)
+                setTimeout(() => {
+                    const loader = document.getElementById('loader-node');
+                    if(loader) loader.style.display = 'none';
+                }, 1200);
             }
         }
 
@@ -326,8 +372,6 @@
             document.getElementById('wall-overlay').style.display = 'none';
             document.getElementById('iframe-area').innerHTML = '';
             document.getElementById('wall-title').innerText = "Publicité+ Missions";
-            
-            // Remettre le bouton retour du header à sa fonction d'origine (historique précédent)
             document.getElementById('header-back-btn').setAttribute('onclick', 'window.history.back()');
         }
     </script>
