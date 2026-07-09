@@ -26,7 +26,7 @@
             box-shadow: 0 0 40px rgba(0,0,0,0.8);
         }
 
-        /* --- HEADER PUR ET DISCRET --- */
+        /* --- HEADER --- */
         .app-header {
             padding: 15px 20px;
             display: flex;
@@ -55,55 +55,134 @@
             color: #00ffcc;
         }
 
-        /* --- ZONE CARROUSEL AVEC SWIPE CORRIGÉ --- */
-        .offerwall-slider {
+        /* --- ZONE DE SÉLECTION (BOUTONS VITRINE ET MIROIR) --- */
+        .selection-menu {
             flex: 1;
             display: flex;
-            width: 100%;
-            overflow-x: scroll; /* Activé explicitement pour le swipe */
-            overflow-y: hidden;
-            scroll-snap-type: x mandatory;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch; /* Fluidité swipe sur iOS/Android */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            padding: 20px;
+            z-index: 5;
+            overflow-y: auto;
         }
-        /* Masquer la barre de défilement tout en gardant le swipe actif */
-        .offerwall-slider::-webkit-scrollbar { display: none; }
 
-        /* Chaque slide est forcé à prendre exactement 100% de la largeur disponible */
-        .slide {
-            min-width: 100%;
+        /* Bouton avec effet miroir, verre (Glassmorphic) et pulsation */
+        .wall-btn {
             width: 100%;
-            max-width: 100%;
-            height: 100%;
-            scroll-snap-align: start;
-            scroll-snap-stop: always;
-            box-sizing: border-box;
+            max-width: 340px;
+            padding: 25px 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            animation: pulse-glow 3s infinite ease-in-out;
+        }
+
+        .wall-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Différentes couleurs de pulsation pour MyLead vs OGAds */
+        .btn-mylead { animation-delay: 0s; border-color: rgba(0, 255, 204, 0.2); }
+        .btn-ogads { animation-delay: 1.5s; border-color: rgba(155, 81, 224, 0.2); }
+
+        /* Effet Miroir / Reflet qui passe à travers le bouton */
+        .wall-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%;
+            width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transform: skewX(-25deg);
+            animation: shine 4s infinite linear;
+        }
+        .btn-mylead::before { animation-delay: 0s; }
+        .btn-ogads::before { animation-delay: 2s; }
+
+        .wall-btn i {
+            font-size: 35px;
+            margin-bottom: 5px;
+        }
+        .btn-mylead i { color: #00ffcc; text-shadow: 0 0 15px rgba(0,255,204,0.4); }
+        .btn-ogads i { color: #9b51e0; text-shadow: 0 0 15px rgba(155,81,224,0.4); }
+
+        .wall-btn h2 {
+            margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.5px;
+        }
+        .wall-btn p {
+            margin: 0; font-size: 12px; color: #8a8d9f; font-weight: 400;
+        }
+
+        /* --- CONTENEUR D'IFRAME PLEIN ÉCRAN (CACHÉ PAR DÉFAUT) --- */
+        .fullscreen-overlay {
+            position: absolute;
+            top: 67px; /* Juste en dessous du header */
+            left: 0; width: 100%;
+            bottom: 65px; /* Juste au-dessus de la nav bar */
+            background: #050508;
+            z-index: 100;
+            display: none; /* Masqué */
             flex-direction: column;
         }
 
-        /* Ajustement plein écran des iframes */
         iframe {
             width: 100%;
             flex: 1;
             border: none;
             background: #050508;
         }
+
+        /* Bouton flotant discret pour fermer l'Iframe */
+        .btn-close-wall {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 4a, 4a, 0.9);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 74, 74, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 101;
+        }
+
+        /* Animations */
+        @keyframes shine {
+            0% { left: -150%; }
+            50% { left: 150%; }
+            100% { left: 150%; }
+        }
+        @keyframes pulse-glow {
+            0% { transform: scale(1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+            50% { transform: scale(1.02); box-shadow: 0 8px 40px 0 rgba(0, 255, 204, 0.1); }
+            100% { transform: scale(1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        }
         
         .loading-placeholder {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: #555875;
-            font-size: 14px;
+            flex: 1; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: #555875; font-size: 14px;
         }
-        .loading-placeholder i {
-            font-size: 32px;
-            margin-bottom: 12px;
-            color: #9b51e0;
-        }
+        .loading-placeholder i { font-size: 32px; margin-bottom: 12px; color: #00ffcc; }
 
         /* --- NAV BAR DU BAS --- */
         .nav-bar {
@@ -125,30 +204,34 @@
 
         <!-- En-tête -->
         <header class="app-header">
-            <div class="btn-back" onclick="window.history.back()"><i class="fa-solid fa-chevron-left"></i></div>
-            <h1 class="header-title" id="wall-title">MyLead Pub</h1>
+            <div class="btn-back" id="header-back-btn" onclick="window.history.back()"><i class="fa-solid fa-chevron-left"></i></div>
+            <h1 class="header-title" id="wall-title">Publicité+ Missions</h1>
             <div style="width: 36px;"></div>
         </header>
 
-        <!-- Conteneur coulissant (Swipe) -->
-        <div class="offerwall-slider" id="slider">
+        <!-- Menu de sélection avec gros boutons style miroir / vitrine -->
+        <div class="selection-menu" id="selection-menu">
             
-            <!-- MUR 1 : MYLEAD -->
-            <div class="slide" data-title="MyLead Pub">
-                <div id="mylead-target" class="loading-placeholder">
-                    <i class="fa-solid fa-circle-notch fa-spin"></i>
-                    Initialisation MyLead sécurisée...
-                </div>
+            <div class="wall-btn btn-mylead" onclick="openWall('mylead')">
+                <i class="fa-solid fa-wallet"></i>
+                <h2>Gagner avec MyLead</h2>
+                <p>Complétez des offres et sondages rapides</p>
             </div>
 
-            <!-- MUR 2 : OGADS -->
-            <div class="slide" data-title="OGAds Missions">
-                <div id="ogads-target" class="loading-placeholder">
-                    <i class="fa-solid fa-circle-notch fa-spin"></i>
-                    Initialisation OGAds...
-                </div>
+            <div class="wall-btn btn-ogads" onclick="openWall('ogads')">
+                <i class="fa-solid fa-bolt"></i>
+                <h2>Gagner avec OGAds</h2>
+                <p>Installez des applications et des jeux</p>
             </div>
 
+        </div>
+
+        <!-- Zone d'affichage plein écran dynamique pour l'Iframe active -->
+        <div class="fullscreen-overlay" id="wall-overlay">
+            <div id="iframe-area" style="width:100%; height:100%; display:flex; flex-direction:column;">
+                <!-- Injecté dynamiquement par JavaScript -->
+            </div>
+            <button class="btn-close-wall" onclick="closeWall()"><i class="fa-solid fa-xmark"></i> Quitter le mur</button>
         </div>
 
         <!-- Navigation -->
@@ -187,56 +270,66 @@
 
         firebase.initializeApp(firebaseConfig);
 
-        // Détection de l'utilisateur et injection des Iframes
+        let currentUserUid = null;
+
+        // Écoute de l'état d'authentification
         firebase.auth().onAuthStateChanged((user) => {
-            const myleadContainer = document.getElementById('mylead-target');
-            const ogadsContainer = document.getElementById('ogads-target');
-            
             if (user) {
-                const playerUid = user.uid;
-                
-                // Injection MyLead
-                myleadContainer.outerHTML = `
-                    <iframe 
-                        src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${playerUid}" 
-                        sandbox="allow-top-navigation allow-scripts allow-same-origin allow-popups allow-forms">
-                    </iframe>
-                `;
-
-                // Injection OGAds
-                ogadsContainer.outerHTML = `
-                    <iframe 
-                        src="https://appsave.online/cl/i/grjgep?aff_sub=${playerUid}">
-                    </iframe>
-                `;
+                currentUserUid = user.uid;
             } else {
-                const lockHTML = `
-                    <div class="loading-placeholder" style="color: #ff4a4a;">
-                        <i class="fa-solid fa-lock" style="color: #ff4a4a;"></i>
-                        Veuillez vous connecter pour accéder aux tâches.
-                    </div>
+                currentUserUid = null;
+            }
+        });
+
+        // Fonction pour ouvrir un mur en plein écran
+        function openWall(type) {
+            const overlay = document.getElementById('wall-overlay');
+            const iframeArea = document.getElementById('iframe-area');
+            const mainTitle = document.getElementById('wall-title');
+            const backBtn = document.getElementById('header-back-btn');
+
+            // Si l'utilisateur n'est pas connecté
+            if (!currentUserUid) {
+                alert("Veuillez d'abord vous connecter pour ouvrir les missions et stocker vos points.");
+                return;
+            }
+
+            overlay.style.display = 'flex';
+            
+            // On modifie l'action du bouton retour physique du header pour fermer le mur
+            backBtn.setAttribute('onclick', 'closeWall()');
+
+            if (type === 'mylead') {
+                mainTitle.innerText = "MyLead Pub";
+                iframeArea.innerHTML = `
+                    <div class="loading-placeholder" id="loader-node"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement sécurisé de MyLead...</div>
+                    <iframe 
+                        src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${currentUserUid}" 
+                        sandbox="allow-top-navigation allow-scripts allow-same-origin allow-popups allow-forms"
+                        onload="document.getElementById('loader-node').style.display='none'">
+                    </iframe>
                 `;
-                myleadContainer.innerHTML = lockHTML;
-                ogadsContainer.innerHTML = lockHTML;
+            } else if (type === 'ogads') {
+                mainTitle.innerText = "OGAds Missions";
+                iframeArea.innerHTML = `
+                    <div class="loading-placeholder" id="loader-node" style="color:#9b51e0;"><i class="fa-solid fa-circle-notch fa-spin" style="color:#9b51e0;"></i> Connexion au serveur OGAds...</div>
+                    <iframe 
+                        src="https://appsave.online/cl/i/grjgep?aff_sub=${currentUserUid}"
+                        onload="document.getElementById('loader-node').style.display='none'">
+                    </iframe>
+                `;
             }
-        });
+        }
 
-        // Changement de titre dynamique lors du swipe
-        const slider = document.getElementById('slider');
-        const wallTitle = document.getElementById('wall-title');
-
-        slider.addEventListener('scroll', () => {
-            const position = slider.scrollLeft;
-            const slideWidth = slider.clientWidth;
+        // Fonction pour fermer le mur actif et revenir aux boutons
+        function closeWall() {
+            document.getElementById('wall-overlay').style.display = 'none';
+            document.getElementById('iframe-area').innerHTML = '';
+            document.getElementById('wall-title').innerText = "Publicité+ Missions";
             
-            // Calcul précis de l'index de la slide visible
-            const index = Math.round(position / slideWidth);
-            const activeSlide = slider.querySelectorAll('.slide')[index];
-            
-            if(activeSlide) {
-                wallTitle.innerText = activeSlide.getAttribute('data-title');
-            }
-        });
+            // Remettre le bouton retour du header à sa fonction d'origine (historique précédent)
+            document.getElementById('header-back-btn').setAttribute('onclick', 'window.history.back()');
+        }
     </script>
 
 </body>
