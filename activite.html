@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PUBLICITÉ - Activités</title>
+    <title>PUBLICITÉ - Activités & Boost</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Scripts Firebase obligatoires -->
+    <!-- Scripts Firebase v9 Compat -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
         body, html {
@@ -18,7 +19,6 @@
             overflow: hidden; display: flex; justify-content: center; align-items: center;
         }
 
-        /* Conteneur Smartphone PWA */
         .app-container {
             width: 100%; height: 100%; max-width: 450px;
             background: #020308;
@@ -29,174 +29,142 @@
         /* --- HEADER --- */
         .app-header {
             padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #060713;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex; align-items: center; justify-content: space-between;
+            background: #060713; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             z-index: 10;
         }
         .btn-back {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-            width: 36px; height: 36px;
-            border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer;
-            font-size: 14px;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff; width: 36px; height: 36px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 14px;
         }
         .header-title {
-            font-size: 16px;
-            font-weight: 700;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 16px; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; color: #00ffcc;
+        }
+
+        /* --- SYSTEME D'ONGLETS SANS SWIPE BRUT --- */
+        .tabs-nav {
+            display: flex; background: #060713; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .tab-link {
+            flex: 1; text-align: center; padding: 15px 0; font-size: 13px; font-weight: 600;
+            color: #555875; cursor: pointer; transition: all 0.3s ease; position: relative;
+        }
+        .tab-link.active {
             color: #00ffcc;
         }
-
-        /* --- ZONE DE SÉLECTION (BOUTONS VITRINE ET MIROIR) --- */
-        .selection-menu {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            padding: 20px;
-            z-index: 5;
-            overflow-y: auto;
+        .tab-link.active::after {
+            content: ''; position: absolute; bottom: 0; left: 20%; right: 20%; height: 3px;
+            background: #00ffcc; border-radius: 3px 3px 0 0; box-shadow: 0 -2px 10px rgba(0,255,204,0.4);
         }
 
-        /* Bouton avec effet miroir, verre (Glassmorphic) et pulsation */
+        /* Conteneurs de pages changeants */
+        .tab-content {
+            flex: 1; display: none; flex-direction: column; overflow-y: auto; padding: 20px; gap: 20px;
+        }
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* --- BOUTONS OFFRES CPA --- */
         .wall-btn {
-            width: 100%;
-            max-width: 340px;
-            padding: 20px 20px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            color: white;
-            text-align: center;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.3s ease, border-color 0.3s ease;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            animation: pulse-glow 3s infinite ease-in-out;
+            width: 100%; padding: 20px; background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); color: white; cursor: pointer; position: relative;
+            overflow: hidden; transition: transform 0.2s ease; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
         }
+        .wall-btn:active { transform: scale(0.98); }
+        .btn-mylead { border-color: rgba(0, 255, 204, 0.2); }
+        .btn-ogads { border-color: rgba(155, 81, 224, 0.2); }
+        .btn-cpagrip { border-color: rgba(39, 174, 96, 0.2); }
 
-        .wall-btn:active {
-            transform: scale(0.97);
-        }
-
-        /* Couleurs de pulsation et bordures */
-        .btn-mylead { animation-delay: 0s; border-color: rgba(0, 255, 204, 0.2); }
-        .btn-ogads { animation-delay: 1s; border-color: rgba(155, 81, 224, 0.2); }
-        .btn-cpagrip { animation-delay: 2s; border-color: rgba(39, 174, 96, 0.2); }
-
-        /* Effet Miroir / Reflet qui passe à travers le bouton */
         .wall-btn::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -150%;
-            width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-            transform: skewX(-25deg);
-            animation: shine 4s infinite linear;
+            content: ''; position: absolute; top: 0; left: -150%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: skewX(-25deg); animation: shine 4s infinite linear;
         }
-        .btn-mylead::before { animation-delay: 0s; }
-        .btn-ogads::before { animation-delay: 1.3s; }
-        .btn-cpagrip::before { animation-delay: 2.6s; }
-
-        .wall-btn i {
-            font-size: 32px;
-            margin-bottom: 3px;
-        }
+        .wall-btn i { font-size: 30px; }
         .btn-mylead i { color: #00ffcc; text-shadow: 0 0 15px rgba(0,255,204,0.4); }
         .btn-ogads i { color: #9b51e0; text-shadow: 0 0 15px rgba(155,81,224,0.4); }
         .btn-cpagrip i { color: #27ae60; text-shadow: 0 0 15px rgba(39,174,96,0.4); }
+        .wall-btn h2 { margin: 0; font-size: 16px; font-weight: 700; }
+        .wall-btn p { margin: 0; font-size: 12px; color: #8a8d9f; }
 
-        .wall-btn h2 {
-            margin: 0; font-size: 17px; font-weight: 700; letter-spacing: 0.5px;
+        /* --- INTERFACE DE PROMOTION ULTRA PRO --- */
+        .promo-section {
+            background: #090b18; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 15px;
         }
-        .wall-btn p {
-            margin: 0; font-size: 12px; color: #8a8d9f; font-weight: 400;
+        .promo-section h3 {
+            margin: 0 0 12px 0; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+        }
+        .input-group {
+            position: relative; margin-bottom: 12px;
+        }
+        .input-group i {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #555875; font-size: 14px;
+        }
+        .promo-input {
+            width: 100%; background: #03040b; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+            padding: 12px 12px 12px 38px; color: white; font-size: 13px; box-sizing: border-box; transition: all 0.3s;
+        }
+        .promo-input:focus {
+            border-color: #00ffcc; outline: none; box-shadow: 0 0 10px rgba(0,255,204,0.1);
+        }
+        .btn-promo {
+            width: 100%; border: none; padding: 12px; border-radius: 10px; font-weight: 600; font-size: 13px;
+            cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: background 0.2s;
+        }
+        .btn-tiktok { background: #ff0050; color: white; }
+        .btn-youtube { background: #ff0000; color: white; }
+        .btn-promo:active { transform: scale(0.98); }
+
+        /* --- FORMAT FLUX SHORTS (ACCUEIL COMMUNAUTÉ) --- */
+        .video-feed-title {
+            font-size: 14px; font-weight: 700; color: #8a8d9f; text-transform: uppercase; margin-top: 10px; letter-spacing: 0.5px;
+        }
+        .shorts-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        }
+        .short-card {
+            background: #090b18; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04);
+            display: flex; flex-direction: column; position: relative;
+        }
+        .short-frame-container {
+            width: 100%; aspect-ratio: 9 / 16; background: #000; position: relative;
+        }
+        .short-frame-container iframe {
+            width: 100%; height: 100%; border: none;
+        }
+        .reward-bar {
+            padding: 10px; display: flex; flex-direction: column; gap: 6px; background: #060713;
+        }
+        .btn-claim {
+            width: 100%; background: #222; color: #555; border: none; padding: 8px; font-size: 11px;
+            font-weight: 700; border-radius: 6px; cursor: not-allowed; text-transform: uppercase;
         }
 
-        /* --- CONTENEUR D'IFRAME PLEIN ÉCRAN --- */
+        /* --- OVERLAY DE L'IFRAME RECOUVREMENT --- */
         .fullscreen-overlay {
-            position: absolute;
-            top: 67px; /* Juste en dessous du header */
-            left: 0; width: 100%;
-            bottom: 65px; /* Juste au-dessus de la nav bar */
-            background: #050508;
-            z-index: 100;
-            display: none;
-            flex-direction: column;
+            position: absolute; top: 67px; left: 0; width: 100%; bottom: 65px; background: #050508; z-index: 100;
+            display: none; flex-direction: column;
         }
-
-        iframe {
-            width: 100%;
-            flex: 1;
-            border: none;
-            background: #050508;
-        }
-
-        /* Bouton discret pour fermer l'Iframe */
         .btn-close-wall {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(255, 74, 74, 0.9);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 30px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(255, 74, 74, 0.4);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 101;
+            position: absolute; bottom: 20px; right: 20px; background: rgba(255, 74, 74, 0.95);
+            color: white; border: none; padding: 12px 20px; border-radius: 30px; font-size: 13px; font-weight: 600;
+            cursor: pointer; box-shadow: 0 5px 15px rgba(255, 74, 74, 0.4); z-index: 101; display: flex; align-items: center; gap: 8px;
         }
 
-        /* Animations */
-        @keyframes shine {
-            0% { left: -150%; }
-            50% { left: 150%; }
-            100% { left: 150%; }
-        }
-        @keyframes pulse-glow {
-            0% { transform: scale(1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
-            50% { transform: scale(1.02); box-shadow: 0 8px 40px 0 rgba(255, 255, 255, 0.05); }
-            100% { transform: scale(1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
-        }
-        
-        .loading-placeholder {
-            flex: 1; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; color: #555875; font-size: 14px;
-        }
+        @keyframes shine { 0% { left: -150%; } 50% { left: 150%; } 100% { left: 150%; } }
+        .loading-placeholder { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #555875; font-size: 14px; }
         .loading-placeholder i { font-size: 32px; margin-bottom: 12px; color: #00ffcc; }
 
-        /* --- NAV BAR DU BAS --- */
+        /* --- BOTTOM NAV --- */
         .nav-bar {
             background: #03040b; border-top: 1px solid rgba(255,255,255,0.06);
-            padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center;
-            z-index: 10;
+            padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center; z-index: 10;
         }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; gap: 6px;
-            color: #555875; text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer;
-        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #555875; text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; }
         .nav-item.active { color: #00ffcc; }
         .nav-icon { font-size: 20px; }
     </style>
@@ -212,9 +180,14 @@
             <div style="width: 36px;"></div>
         </header>
 
-        <!-- Menu de sélection avec 3 gros boutons vitrines -->
-        <div class="selection-menu" id="selection-menu">
-            
+        <!-- Onglets Navigation -->
+        <div class="tabs-nav">
+            <div class="tab-link active" onclick="switchTab('offres')"><i class="fa-solid fa-star"></i> Missions CPA</div>
+            <div class="tab-link" onclick="switchTab('promote')"><i class="fa-solid fa-rocket"></i> Propulser Vidéo</div>
+        </div>
+
+        <!-- ZONE D'ONGLET 1 : MISSIONS CPA -->
+        <div class="tab-content active" id="content-offres">
             <div class="wall-btn btn-mylead" onclick="openWall('mylead')">
                 <i class="fa-solid fa-wallet"></i>
                 <h2>Gagner avec MyLead</h2>
@@ -232,41 +205,55 @@
                 <h2>Gagner avec CPAGrip</h2>
                 <p>Vidéos, offres spéciales et tâches</p>
             </div>
-
         </div>
 
-        <!-- Zone d'affichage plein écran dynamique pour l'Iframe active -->
-        <div class="fullscreen-overlay" id="wall-overlay">
-            <div id="iframe-area" style="width:100%; height:100%; display:flex; flex-direction:column;">
-                <!-- Injecté dynamiquement par JavaScript -->
+        <!-- ZONE D'ONGLET 2 : PROMOUVOIR SES SHORTS & FLUX -->
+        <div class="tab-content" id="content-promote">
+            
+            <!-- Formulaire TikTok Shorts -->
+            <div class="promo-section">
+                <h3 style="color: #ff0050;"><i class="fa-brands fa-tiktok"></i> Booster un TikTok Short</h3>
+                <div class="input-group">
+                    <i class="fa-solid fa-link"></i>
+                    <input type="url" id="url-tiktok" class="promo-input" placeholder="Lien de votre TikTok Short...">
+                </div>
+                <button class="btn-promo btn-tiktok" onclick="soumettreVideo('tiktok')"><i class="fa-solid fa-paper-plane"></i> Propulser (Retire 5000 Pts)</button>
             </div>
+
+            <!-- Formulaire YouTube Shorts -->
+            <div class="promo-section">
+                <h3 style="color: #ff0000;"><i class="fa-brands fa-youtube"></i> Booster un YouTube Short</h3>
+                <div class="input-group">
+                    <i class="fa-solid fa-link"></i>
+                    <input type="url" id="url-youtube" class="promo-input" placeholder="https://youtube.com/shorts/...">
+                </div>
+                <button class="btn-promo btn-youtube" onclick="soumettreVideo('youtube')"><i class="fa-solid fa-paper-plane"></i> Propulser (Retire 5000 Pts)</button>
+            </div>
+
+            <!-- Flux des tendances de la communauté -->
+            <div class="video-feed-title">🔥 Vidéos Tendances</div>
+            <div class="shorts-grid" id="zone-feed-shorts">
+                <!-- Chargé de manière dynamique depuis Firestore -->
+            </div>
+        </div>
+
+        <!-- Zone d'affichage d'Iframe CPA -->
+        <div class="fullscreen-overlay" id="wall-overlay">
+            <div id="iframe-area" style="width:100%; height:100%; display:flex; flex-direction:column;"></div>
             <button class="btn-close-wall" onclick="closeWall()"><i class="fa-solid fa-xmark"></i> Quitter le mur</button>
         </div>
 
-        <!-- Navigation -->
+        <!-- Barre de navigation -->
         <nav class="nav-bar">
-            <div class="nav-item" onclick="location.href='index.html'">
-                <i class="fa-solid fa-house nav-icon"></i>
-                <span>Accueil</span>
-            </div>
-            <div class="nav-item" onclick="location.href='messages.html'">
-                <i class="fa-regular fa-comment-dots nav-icon"></i>
-                <span>Messages</span>
-            </div>
-            <div class="nav-item" onclick="location.href='stats.html'">
-                <i class="fa-solid fa-chart-simple nav-icon"></i>
-                <span>Stats</span>
-            </div>
-            <div class="nav-item active">
-                <i class="fa-solid fa-bolt nav-icon"></i>
-                <span>Activités</span>
-            </div>
+            <div class="nav-item" onclick="location.href='index.html'"><i class="fa-solid fa-house nav-icon"></i><span>Accueil</span></div>
+            <div class="nav-item" onclick="location.href='messages.html'"><i class="fa-regular fa-comment-dots nav-icon"></i><span>Messages</span></div>
+            <div class="nav-item" onclick="location.href='stats.html'"><i class="fa-solid fa-chart-simple nav-icon"></i><span>Stats</span></div>
+            <div class="nav-item active"><i class="fa-solid fa-bolt nav-icon"></i><span>Activités</span></div>
         </nav>
 
     </div>
 
     <script>
-        // Configuration Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
             authDomain: "publicite-6445c.firebaseapp.com",
@@ -278,96 +265,185 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-
+        const db = firebase.firestore();
         let currentUserUid = null;
 
-        // Écoute de l'état d'authentification
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
                 currentUserUid = user.uid;
+                chargerFluxShorts();
             } else {
                 currentUserUid = null;
             }
         });
 
-        // Fonction pour ouvrir un mur en plein écran
+        // Gestion du changement d'onglet
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-link').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            
+            if(tab === 'offres') {
+                document.querySelectorAll('.tab-link')[0].classList.add('active');
+                document.getElementById('content-offres').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-link')[1].classList.add('active');
+                document.getElementById('content-promote').classList.add('active');
+                chargerFluxShorts();
+            }
+        }
+
+        // Validation stricte Regex & Conversion en structure d'Iframe Embed
+        function validerEtConvertirLien(url, plateforme) {
+            if (plateforme === 'youtube') {
+                // Détecte obligatoirement "shorts/"
+                const regexYT = /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/;
+                const match = url.match(regexYT);
+                if (match && match[1]) {
+                    return `https://www.youtube.com/embed/${match[1]}`;
+                }
+            } else if (plateforme === 'tiktok') {
+                // Détecte les formats d'URL TikTok de type Shorts / Vidéo mobile
+                if (url.includes("tiktok.com/")) {
+                    if (url.includes("/video/")) {
+                        const idVid = url.split("/video/")[1].split("?")[0];
+                        return `https://www.tiktok.com/embed/v2/${idVid}`;
+                    }
+                    // Tolère et renvoie le lien de partage court pour traitement
+                    return url;
+                }
+            }
+            return null;
+        }
+
+        // Envoi et soumission de la vidéo vers Firestore avec retrait de points
+        function soumettreVideo(plateforme) {
+            if (!currentUserUid) { return alert("Veuillez vous connecter."); }
+            
+            const inputField = document.getElementById(`url-${plateforme}`);
+            const urlBrute = inputField.value.trim();
+            const lienEmbed = validerEtConvertirLien(urlBrute, plateforme);
+
+            if (!lienEmbed) {
+                alert(`Lien invalide ! Seuls les formats de vidéos VERTICALES (Shorts) de ${plateforme} sont acceptés.`);
+                return;
+            }
+
+            const userRef = db.collection("users").doc(currentUserUid);
+            
+            // Vérification et prélèvement automatique du solde Firebase de l'utilisateur
+            userRef.get().then((doc) => {
+                if (doc.exists && doc.data().points >= 5000) {
+                    userRef.update({
+                        points: firebase.firestore.FieldValue.increment(-5000)
+                    }).then(() => {
+                        db.collection("videos_pub").add({
+                            url_embed: lienEmbed,
+                            plateforme: plateforme,
+                            proprio: currentUserUid,
+                            date: firebase.firestore.FieldValue.serverTimestamp(),
+                            points_restants: 3000, // Budget total distribuable
+                            statut: "actif"
+                        }).then(() => {
+                            alert("Votre Short a été propulsé en Tendance ! 5000 points débités.");
+                            inputField.value = "";
+                            chargerFluxShorts();
+                        });
+                    });
+                } else {
+                    alert("Solde insuffisant ! Il vous faut 5000 points pour propulser votre Short.");
+                }
+            });
+        }
+
+        // Chargement automatique du flux des tendances communautaires
+        function chargerFluxShorts() {
+            db.collection("videos_pub").where("statut", "==", "actif").limit(10).get().then((querySnapshot) => {
+                const grid = document.getElementById('zone-feed-shorts');
+                grid.innerHTML = "";
+                
+                if(querySnapshot.empty) {
+                    grid.innerHTML = "<p style='grid-column:1/3; color:#555875; font-size:12px; text-align:center;'>Aucun Short sponsorisé pour le moment.</p>";
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const video = doc.data();
+                    const videoId = doc.id;
+
+                    const cardHtml = `
+                        <div class="short-card">
+                            <div class="short-frame-container">
+                                <iframe src="${video.url_embed}" allowfullscreen></iframe>
+                            </div>
+                            <div class="reward-bar">
+                                <button class="btn-claim" id="btn-${videoId}" onclick="lancerVisionnage('${videoId}')">Regarder (30s)</button>
+                            </div>
+                        </div>
+                    `;
+                    grid.innerHTML += cardHtml;
+                });
+            });
+        }
+
+        // Compte à rebours interne interactif "Watch-to-Earn" pour sécuriser la récompense
+        function lancerVisionnage(videoId) {
+            const btn = document.getElementById(`btn-${videoId}`);
+            if(btn.disabled || btn.innerText === "REÇU") return;
+
+            let temps = 30;
+            btn.disabled = true;
+            btn.style.background = "#ffcc00";
+            btn.style.color = "#000";
+
+            const timer = setInterval(() => {
+                temps--;
+                btn.innerText = `${temps}s...`;
+                
+                if (temps <= 0) {
+                    clearInterval(timer);
+                    // Attribution des récompenses Firebase directes
+                    db.collection("users").doc(currentUserUid).update({
+                        points: firebase.firestore.FieldValue.increment(150)
+                    }).then(() => {
+                        btn.innerText = "REÇU";
+                        btn.style.background = "#00ffcc";
+                        btn.style.color = "#020308";
+                        alert("Félicitations ! +150 points ajoutés pour votre visionnage.");
+                    });
+                }
+            }, 1000);
+        }
+
+        // Ouverture Mur CPA standard
         function openWall(type) {
             const overlay = document.getElementById('wall-overlay');
             const iframeArea = document.getElementById('iframe-area');
             const mainTitle = document.getElementById('wall-title');
             const backBtn = document.getElementById('header-back-btn');
 
-            if (!currentUserUid) {
-                alert("Veuillez d'abord vous connecter pour ouvrir les missions et stocker vos points.");
-                return;
-            }
+            if (!currentUserUid) { return alert("Veuillez vous connecter."); }
 
             overlay.style.display = 'flex';
             backBtn.setAttribute('onclick', 'closeWall()');
 
             if (type === 'mylead') {
                 mainTitle.innerText = "MyLead Pub";
-                iframeArea.innerHTML = `
-                    <div class="loading-placeholder" id="loader-node"><i class="fa-solid fa-circle-notch fa-spin"></i> Chargement sécurisé de MyLead...</div>
-                    <iframe 
-                        src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${currentUserUid}" 
-                        sandbox="allow-top-navigation allow-scripts allow-same-origin allow-popups allow-forms"
-                        onload="document.getElementById('loader-node').style.display='none'">
-                    </iframe>
-                `;
+                iframeArea.innerHTML = `<iframe src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${currentUserUid}"></iframe>`;
             } else if (type === 'ogads') {
                 mainTitle.innerText = "OGAds Missions";
-                iframeArea.innerHTML = `
-                    <div class="loading-placeholder" id="loader-node" style="color:#9b51e0;"><i class="fa-solid fa-circle-notch fa-spin" style="color:#9b51e0;"></i> Connexion au serveur OGAds...</div>
-                    <iframe 
-                        src="https://appsave.online/cl/i/grjgep?aff_sub=${currentUserUid}"
-                        onload="document.getElementById('loader-node').style.display='none'">
-                    </iframe>
-                `;
+                iframeArea.innerHTML = `<iframe src="https://appsave.online/cl/i/grjgep?aff_sub=${currentUserUid}"></iframe>`;
             } else if (type === 'cpagrip') {
                 mainTitle.innerText = "CPAGrip Offres";
-                
-                // Pour CPAGrip (Script locker), on construit dynamiquement une iframe HTML propre 
-                // et on y injecte ton script avec ton tracking_id (passé dans l'URL pour ton postback global)
-                const trackingParam = `&tracking_id=${currentUserUid}`;
-                const srcScript = `https://getafilenow.com/script_include.php?id=1904067${trackingParam}`;
-                
-                iframeArea.innerHTML = `
-                    <div class="loading-placeholder" id="loader-node" style="color:#27ae60;"><i class="fa-solid fa-circle-notch fa-spin" style="color:#27ae60;"></i> Initialisation de CPAGrip...</div>
-                    <iframe id="cpagrip-iframe" sandbox="allow-top-navigation allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
-                `;
-
+                const srcScript = `https://getafilenow.com/script_include.php?id=1904067&tracking_id=${currentUserUid}`;
+                iframeArea.innerHTML = `<iframe id="cpagrip-iframe"></iframe>`;
                 const iframe = document.getElementById('cpagrip-iframe');
-                const iframeContent = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="utf-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <style>
-                            body, html { margin:0; padding:0; width:100%; height:100%; background:#050508; overflow:hidden; }
-                        </style>
-                    </head>
-                    <body>
-                        <script type="text/javascript" src="${srcScript}"><\/script>
-                    </body>
-                    </html>
-                `;
-                
-                iframe.src = "about:blank";
+                const iframeContent = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0; background:#050508;"><script src="${srcScript}"><\/script></body></html>`;
                 iframe.contentWindow.document.open();
                 iframe.contentWindow.document.write(iframeContent);
                 iframe.contentWindow.document.close();
-                
-                // Masquer le placeholder après une seconde (le temps que le script s'injecte)
-                setTimeout(() => {
-                    const loader = document.getElementById('loader-node');
-                    if(loader) loader.style.display = 'none';
-                }, 1200);
             }
         }
 
-        // Fonction pour fermer le mur actif et revenir aux boutons
         function closeWall() {
             document.getElementById('wall-overlay').style.display = 'none';
             document.getElementById('iframe-area').innerHTML = '';
@@ -375,6 +451,5 @@
             document.getElementById('header-back-btn').setAttribute('onclick', 'window.history.back()');
         }
     </script>
-
 </body>
 </html>
