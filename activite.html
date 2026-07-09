@@ -55,30 +55,34 @@
             color: #00ffcc;
         }
 
-        /* --- ZONE CARROUSEL PLEIN ÉCRAN POUR LES IFRAMES --- */
+        /* --- ZONE CARROUSEL AVEC SWIPE CORRIGÉ --- */
         .offerwall-slider {
             flex: 1;
             display: flex;
             width: 100%;
-            overflow-x: auto;
+            overflow-x: scroll; /* Activé explicitement pour le swipe */
+            overflow-y: hidden;
             scroll-snap-type: x mandatory;
             scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch; /* Fluidité swipe sur iOS/Android */
         }
-        /* Masquer la barre de défilement du carrousel */
+        /* Masquer la barre de défilement tout en gardant le swipe actif */
         .offerwall-slider::-webkit-scrollbar { display: none; }
 
-        /* Chaque élément du slider prend 100% de la zone disponible */
+        /* Chaque slide est forcé à prendre exactement 100% de la largeur disponible */
         .slide {
             min-width: 100%;
+            width: 100%;
             max-width: 100%;
             height: 100%;
             scroll-snap-align: start;
+            scroll-snap-stop: always;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
         }
 
-        /* L'Iframe respire enfin en plein écran total */
+        /* Ajustement plein écran des iframes */
         iframe {
             width: 100%;
             flex: 1;
@@ -119,14 +123,14 @@
 
     <div class="app-container">
 
-        <!-- En-tête avec bouton retour et titre mis à jour dynamiquement selon le mur actif -->
+        <!-- En-tête -->
         <header class="app-header">
             <div class="btn-back" onclick="window.history.back()"><i class="fa-solid fa-chevron-left"></i></div>
             <h1 class="header-title" id="wall-title">MyLead Pub</h1>
-            <div style="width: 36px;"></div> <!-- Équilibreur visuel -->
+            <div style="width: 36px;"></div>
         </header>
 
-        <!-- Conteneur coulissant (Swipe) pour accueillir les différents sites -->
+        <!-- Conteneur coulissant (Swipe) -->
         <div class="offerwall-slider" id="slider">
             
             <!-- MUR 1 : MYLEAD -->
@@ -147,7 +151,7 @@
 
         </div>
 
-        <!-- Navigation de base -->
+        <!-- Navigation -->
         <nav class="nav-bar">
             <div class="nav-item" onclick="location.href='index.html'">
                 <i class="fa-solid fa-house nav-icon"></i>
@@ -183,7 +187,7 @@
 
         firebase.initializeApp(firebaseConfig);
 
-        // Détection de l'utilisateur et injection des Iframes plein écran
+        // Détection de l'utilisateur et injection des Iframes
         firebase.auth().onAuthStateChanged((user) => {
             const myleadContainer = document.getElementById('mylead-target');
             const ogadsContainer = document.getElementById('ogads-target');
@@ -191,7 +195,7 @@
             if (user) {
                 const playerUid = user.uid;
                 
-                // Injection MyLead Plein Écran
+                // Injection MyLead
                 myleadContainer.outerHTML = `
                     <iframe 
                         src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${playerUid}" 
@@ -199,7 +203,7 @@
                     </iframe>
                 `;
 
-                // Injection OGAds Plein Écran avec transmission sécurisée du subid
+                // Injection OGAds
                 ogadsContainer.outerHTML = `
                     <iframe 
                         src="https://appsave.online/cl/i/grjgep?aff_sub=${playerUid}">
@@ -217,13 +221,18 @@
             }
         });
 
-        // Script intelligent pour changer le titre du Header quand l'utilisateur glisse le doigt (Swipe)
+        // Changement de titre dynamique lors du swipe
         const slider = document.getElementById('slider');
         const wallTitle = document.getElementById('wall-title');
 
         slider.addEventListener('scroll', () => {
-            const index = Math.round(slider.scrollLeft / slider.clientWidth);
+            const position = slider.scrollLeft;
+            const slideWidth = slider.clientWidth;
+            
+            // Calcul précis de l'index de la slide visible
+            const index = Math.round(position / slideWidth);
             const activeSlide = slider.querySelectorAll('.slide')[index];
+            
             if(activeSlide) {
                 wallTitle.innerText = activeSlide.getAttribute('data-title');
             }
