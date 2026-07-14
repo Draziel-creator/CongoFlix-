@@ -12,25 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-    <!-- ========================================================= -->
-    <!-- INJECTION DES SCRIPTS DE FOND (SANS EFFETS VISUELS) -->
-    <!-- ========================================================= -->
-    <!-- Clicadilla: Web Push (Dossier GitHub) -->
-    <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447732"></script>
-    <!-- Clicadilla: Centraliseur Bannières -->
-    <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447738"></script>
-    <!-- Clicadilla: Popunder Central -->
-    <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447731"></script>
-    <!-- Clicadilla: Sticky Bas de page -->
-    <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447739"></script>
-    
-    <!-- Advertica: Popup -->
-    <script type="text/javascript" src="//data527.click/fe77c0017a3a26cb73ec/a36db4224e/?placementName=default"></script>
-
-    <!-- Adsterra: Popunder -->
-    <script src="https://pl30313217.effectivecpmnetwork.com/de/ac/ef/deacefeb17116ee3bc546f4b5ba4c252.js"></script>
-    <!-- Adsterra: Barre Sociale -->
-    <script src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
+    <!-- NOTE: Les scripts de popunder/popup globaux qui bloquaient le défilement ont été retirés pour assainir la page -->
 
     <style>
         body, html {
@@ -66,6 +48,7 @@
         .content-scroll {
             flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px;
             padding-bottom: 90px;
+            -webkit-overflow-scrolling: touch; /* Force la fluidité sur mobile */
         }
 
         /* --- WALLET & SOLDE --- */
@@ -83,21 +66,17 @@
         }
         .section-title {
             font-size: 13px; font-weight: 700; color: #555875; text-transform: uppercase; letter-spacing: 0.5px;
+            margin-top: 10px;
         }
         .how-it-works {
             font-size: 12px; font-weight: 600; color: #00ffcc; display: flex; align-items: center; gap: 6px; cursor: pointer;
-        }
-        .how-it-works i {
-            animation: pulse-ring 1.5s infinite; background: rgba(0, 255, 204, 0.1); border-radius: 50%; padding: 4px;
         }
 
         /* --- CARTES MISSIONS --- */
         .task-card {
             background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 20px; padding: 15px; display: flex; align-items: center; justify-content: space-between;
-            transition: transform 0.2s;
         }
-        .task-card:active { transform: scale(0.98); }
         .task-info { display: flex; align-items: center; gap: 15px; }
         .task-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 20px; }
         
@@ -118,22 +97,15 @@
         .wall-btn {
             width: 100%; padding: 20px; background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; backdrop-filter: blur(12px);
-            color: white; cursor: pointer; position: relative; overflow: hidden; transition: transform 0.2s ease;
-            display: flex; flex-direction: column; align-items: center; gap: 8px; box-sizing: border-box;
+            color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; box-sizing: border-box;
         }
-        .wall-btn:active { transform: scale(0.98); }
         .btn-mylead { border-color: rgba(0, 255, 204, 0.2); }
         .btn-ogads { border-color: rgba(155, 81, 224, 0.2); }
         .btn-cpagrip { border-color: rgba(39, 174, 96, 0.2); }
-        .wall-btn::before {
-            content: ''; position: absolute; top: 0; left: -150%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transform: skewX(-25deg); animation: shine 4s infinite linear;
-        }
         .wall-btn i { font-size: 30px; }
-        .btn-mylead i { color: #00ffcc; text-shadow: 0 0 15px rgba(0,255,204,0.4); }
-        .btn-ogads i { color: #9b51e0; text-shadow: 0 0 15px rgba(155,81,224,0.4); }
-        .btn-cpagrip i { color: #27ae60; text-shadow: 0 0 15px rgba(39,174,96,0.4); }
+        .btn-mylead i { color: #00ffcc; }
+        .btn-ogads i { color: #9b51e0; }
+        .btn-cpagrip i { color: #27ae60; }
         .wall-btn h2 { margin: 0; font-size: 16px; font-weight: 700; }
         .wall-btn p { margin: 0; font-size: 12px; color: #8a8d9f; }
 
@@ -146,15 +118,14 @@
             background: radial-gradient(circle, #1a0033 0%, #050508 100%);
             box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; text-decoration: none; transition: transform 0.2s;
+            cursor: pointer; text-decoration: none;
         }
-        .floating-bonus:active { transform: scale(0.9); }
         .floating-bonus i { font-size: 16px; color: #ffcc00; }
         .floating-bonus span { font-size: 8px; font-weight: 700; text-transform: uppercase; margin-top: 2px; color: #ffffff; }
         .fb-adv { border-color: #00ffcc; box-shadow: 0 0 15px rgba(0, 255, 204, 0.4); }
         .fb-adv i { color: #00ffcc; }
 
-        /* --- MODALE CARRÉE STYLÉE --- */
+        /* --- MODALE CARRÉE --- */
         .modal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(2, 3, 8, 0.95); z-index: 1000;
@@ -164,7 +135,6 @@
             width: 100%; max-width: 330px; background: #070814;
             border: 2px solid rgba(0, 255, 204, 0.3); border-radius: 24px;
             padding: 20px; display: flex; flex-direction: column; gap: 15px; position: relative;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
         .btn-close-modal {
             position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.05);
@@ -172,7 +142,6 @@
             display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1001;
         }
         
-        /* Conteneur carré forcé (Tout ce qui dépasse est masqué, pas de déformation) */
         .square-container {
             width: 100%; aspect-ratio: 1 / 1; background: #000; border-radius: 16px;
             overflow: hidden; display: flex; justify-content: center; align-items: center;
@@ -203,14 +172,7 @@
         .btn-close-wall {
             position: absolute; bottom: 20px; right: 20px; background: rgba(255, 74, 74, 0.95);
             color: white; border: none; padding: 12px 20px; border-radius: 30px; font-size: 13px; font-weight: 600;
-            cursor: pointer; box-shadow: 0 5px 15px rgba(255, 74, 74, 0.4); z-index: 101; display: flex; align-items: center; gap: 8px;
-        }
-
-        @keyframes shine { 0% { left: -150%; } 50% { left: 150%; } 100% { left: 150%; } }
-        @keyframes pulse-ring {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 204, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(0, 255, 204, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 204, 0); }
+            cursor: pointer; z-index: 101; display: flex; align-items: center; gap: 8px;
         }
 
         .nav-bar {
@@ -228,15 +190,15 @@
 
         <!-- HEADER -->
         <header class="app-header">
-            <div class="btn-back" id="header-back-btn" onclick="window.history.back()"><i class="fa-solid fa-chevron-left"></i></div>
-            <h1 class="header-title" id="wall-title">Gagne des Points</h1>
+            <div class="btn-back" onclick="window.history.back()"><i class="fa-solid fa-chevron-left"></i></div>
+            <h1 class="header-title">Gagne des Points</h1>
             <div style="width: 36px;"></div>
         </header>
 
         <!-- CONTENU SCROLLABLE -->
         <div class="content-scroll">
             
-            <!-- STATS / SOLDE COINS -->
+            <!-- SOLDE COINS -->
             <div class="wallet-card">
                 <div class="wallet-info">
                     <h4>Points du jour</h4>
@@ -244,228 +206,77 @@
                 </div>
             </div>
 
-            <!-- COMMENT ÇA MARCHE ET TITRE -->
             <div class="section-header">
                 <div class="section-title">🎬 Activités Vidéos (Clicadilla)</div>
-                <div class="how-it-works" onclick="ouvrirAide()"><i class="fa-solid fa-question"></i> Comment ça marche ?</div>
+                <div class="how-it-works" onclick="ouvrirAide()"><i class="fa-solid fa-question"></i> Aide</div>
             </div>
 
-            <!-- ========================================================= -->
-            <!-- MISSIONS VIDÉO INDIVIDUELLES (CLICADILLA) -->
-            <!-- ========================================================= -->
+            <!-- MISSIONS VIDÉO (CLICADILLA) -->
             <div class="task-card">
                 <div class="task-info">
                     <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail">
-                        <h4>Vidéo Flash N°1</h4>
-                        <p>Flux vidéo interactif sécurisé</p>
-                    </div>
+                    <div class="task-detail"><h4>Vidéo Flash N°1</h4><p>Flux interactif</p></div>
                 </div>
                 <div class="task-action">
                     <span class="task-points">+20 Pts</span>
-                    <button class="btn-claim" onclick="chargerPubUnique('447672', 20)">Lancer</button>
+                    <button class="btn-claim" onclick="chargerClicadillaVrai('447672', 20)">Lancer</button>
                 </div>
             </div>
 
             <div class="task-card">
                 <div class="task-info">
                     <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail">
-                        <h4>Vidéo Flash N°2</h4>
-                        <p>Contenu promotionnel accéléré</p>
-                    </div>
+                    <div class="task-detail"><h4>Vidéo Flash N°2</h4><p>Flux accéléré</p></div>
                 </div>
                 <div class="task-action">
                     <span class="task-points">+20 Pts</span>
-                    <button class="btn-claim" onclick="chargerPubUnique('447741', 20)">Lancer</button>
+                    <button class="btn-claim" onclick="chargerClicadillaVrai('447741', 20)">Lancer</button>
                 </div>
             </div>
 
             <div class="task-card">
                 <div class="task-info">
                     <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail">
-                        <h4>Vidéo Flash N°3</h4>
-                        <p>Annonces partenaires instantanées</p>
-                    </div>
+                    <div class="task-detail"><h4>Vidéo Flash N°3</h4><p>Annonces instantanées</p></div>
                 </div>
                 <div class="task-action">
                     <span class="task-points">+20 Pts</span>
-                    <button class="btn-claim" onclick="chargerPubUnique('447743', 20)">Lancer</button>
+                    <button class="btn-claim" onclick="chargerClicadillaVrai('447743', 20)">Lancer</button>
                 </div>
             </div>
 
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail">
-                        <h4>Vidéo Flash N°4</h4>
-                        <p>Court métrage promotionnel</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+25 Pts</span>
-                    <button class="btn-claim" onclick="chargerPubUnique('447744', 25)">Lancer</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail">
-                        <h4>Vidéo Flash N°5</h4>
-                        <p>Divertissement sponsorisé</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+25 Pts</span>
-                    <button class="btn-claim" onclick="chargerPubUnique('447745', 25)">Lancer</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail">
-                        <h4>Vidéo Flash N°6</h4>
-                        <p>Spot publicitaire de marque</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+25 Pts</span>
-                    <button class="btn-claim" onclick="chargerPubUnique('447746', 25)">Lancer</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail">
-                        <h4>Vidéo Flash N°7</h4>
-                        <p>Nouveau concept média</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+30 Pts</span>
-                    <button class="btn-claim" onclick="chargerPubUnique('447748', 30)">Lancer</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail">
-                        <h4>Vidéo Flash N°8</h4>
-                        <p>Média à récompense rapide</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+30 Pts</span>
-                    <button class="btn-claim" onclick="chargerPubUnique('447749', 30)">Lancer</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail">
-                        <h4>Vidéo Flash N°9</h4>
-                        <p>Mini flux dynamique</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+30 Pts</span>
-                    <button class="btn-claim" onclick="chargerPubUnique('447750', 30)">Lancer</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail">
-                        <h4>Vidéo Flash N°10</h4>
-                        <p>Palier final d'engagement</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+35 Pts</span>
-                    <button class="btn-claim" onclick="chargerPubUnique('447751', 35)">Lancer</button>
-                </div>
-            </div>
-
-            <!-- ========================================================= -->
-            <!-- REGIE CLICADILLA: BANNIÈRES CENTRALES -->
-            <!-- ========================================================= -->
+            <!-- BANNIÈRES CENTRALES CLICADILLA -->
             <div class="section-title">📊 Affiches Partenaires (Clicadilla Bannières)</div>
 
             <div class="task-card">
                 <div class="task-info">
                     <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Bannière Clicadilla 1</h4>
-                        <p>ID Placement : 1496058</p>
-                    </div>
+                    <div class="task-detail"><h4>Bannière A</h4><p>ID : 1496058</p></div>
                 </div>
                 <div class="task-action">
                     <span class="task-points">+15 Pts</span>
-                    <button class="btn-claim" onclick="chargerBanniereClicadilla('1496058', 15)">Afficher</button>
+                    <button class="btn-claim" onclick="chargerClicadillaVrai('447738', 15, '1496058')">Afficher</button>
                 </div>
             </div>
 
             <div class="task-card">
                 <div class="task-info">
                     <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Bannière Clicadilla 2</h4>
-                        <p>ID Placement : 1496059</p>
-                    </div>
+                    <div class="task-detail"><h4>Bannière B</h4><p>ID : 1496059</p></div>
                 </div>
                 <div class="task-action">
                     <span class="task-points">+15 Pts</span>
-                    <button class="btn-claim" onclick="chargerBanniereClicadilla('1496059', 15)">Afficher</button>
+                    <button class="btn-claim" onclick="chargerClicadillaVrai('447738', 15, '1496059')">Afficher</button>
                 </div>
             </div>
+
+            <!-- REGIE ADVERTICA / ADSTERRA -->
+            <div class="section-title">✨ Affichages (Advertica & Adsterra)</div>
 
             <div class="task-card">
                 <div class="task-info">
                     <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Bannière Clicadilla 3</h4>
-                        <p>ID Placement : 1496060</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+15 Pts</span>
-                    <button class="btn-claim" onclick="chargerBanniereClicadilla('1496060', 15)">Afficher</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Bannière Clicadilla 4</h4>
-                        <p>ID Placement : 1496061</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+15 Pts</span>
-                    <button class="btn-claim" onclick="chargerBanniereClicadilla('1496061', 15)">Afficher</button>
-                </div>
-            </div>
-
-            <!-- ========================================================= -->
-            <!-- REGIE ADVERTICA -->
-            <!-- ========================================================= -->
-            <div class="section-title">✨ Affichages Alternatifs (Advertica)</div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Bannière Advertica 300x250</h4>
-                        <p>Intégration d'encart réactif</p>
-                    </div>
+                    <div class="task-detail"><h4>Bannière Advertica 300x250</h4><p>Encart réactif</p></div>
                 </div>
                 <div class="task-action">
                     <span class="task-points">+20 Pts</span>
@@ -473,88 +284,10 @@
                 </div>
             </div>
 
-            <!-- ========================================================= -->
-            <!-- REGIE ADSTERRA : TOUTES LES BANNIÈRES -->
-            <!-- ========================================================= -->
-            <div class="section-title">🌟 Récompenses Mixtes (Adsterra)</div>
-
             <div class="task-card">
                 <div class="task-info">
                     <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Bannière Native Adsterra</h4>
-                        <p>Flux d'annonces personnalisées</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+20 Pts</span>
-                    <button class="btn-claim" onclick="chargerBanniereNativeAdsterra(20)">Afficher</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Format 160x300</h4>
-                        <p>Affiche verticale</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+20 Pts</span>
-                    <button class="btn-claim" onclick="chargerAdsterraDynamique('f37eede0de06b709e6c6db90820d116e', 160, 300, 20)">Afficher</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Format 320x50</h4>
-                        <p>Affiche mobile slim</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+15 Pts</span>
-                    <button class="btn-claim" onclick="chargerAdsterraDynamique('7221685de42e37b3b02c60ff0bee506a', 320, 50, 15)">Afficher</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Format Leaderboard 728x90</h4>
-                        <p>Large format optimisé</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+25 Pts</span>
-                    <button class="btn-claim" onclick="chargerAdsterraDynamique('1facbab7132cdcadf3fe0ead26074277', 728, 90, 25)">Afficher</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Format 468x60</h4>
-                        <p>Bannière classique</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+15 Pts</span>
-                    <button class="btn-claim" onclick="chargerAdsterraDynamique('f4457d9de2541809ff0cdd731f5f78e2', 468, 60, 15)">Afficher</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Format Pavé 300x250</h4>
-                        <p>Encart d'engagement standard</p>
-                    </div>
+                    <div class="task-detail"><h4>Format Pavé Adsterra 300x250</h4><p>Standard d'engagement</p></div>
                 </div>
                 <div class="task-action">
                     <span class="task-points">+20 Pts</span>
@@ -562,100 +295,56 @@
                 </div>
             </div>
 
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail">
-                        <h4>Format Sky 160x600</h4>
-                        <p>Grande colonne verticale</p>
-                    </div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+25 Pts</span>
-                    <button class="btn-claim" onclick="chargerAdsterraDynamique('355c9d0ee6ac5ec71d84d7f879fdc153', 160, 600, 25)">Afficher</button>
-                </div>
-            </div>
-
-            <!-- ========================================================= -->
-            <!-- PARTIE MURS D'OFFRES VIP -->
-            <!-- ========================================================= -->
+            <!-- MURS D'OFFRES VIP -->
             <div class="section-title">👑 Espace VIP - Murs d'Offres</div>
-            <div style="font-size: 11px; color:#8a8d9f; margin-top:-5px; line-height: 1.4;">
-                Ici, vous pouvez générer plus de 5000 points selon les offres du jour. Suivez attentivement les instructions de chaque régie avant d'accomplir une tâche.
-            </div>
             
             <div class="wall-btn btn-mylead" onclick="openWall('mylead')">
                 <i class="fa-solid fa-wallet"></i>
                 <h2>Gagner avec MyLead</h2>
-                <p>Complétez des offres et sondages rapides</p>
             </div>
 
             <div class="wall-btn btn-ogads" onclick="openWall('ogads')">
                 <i class="fa-solid fa-bolt"></i>
                 <h2>Gagner avec OGAds</h2>
-                <p>Installez des applications et des jeux</p>
-            </div>
-
-            <div class="wall-btn btn-cpagrip" onclick="openWall('cpagrip')">
-                <i class="fa-solid fa-star"></i>
-                <h2>Gagner avec CPAGrip</h2>
-                <p>Vidéos, offres spéciales et tâches</p>
             </div>
 
         </div>
 
-        <!-- CODES CACHÉS DES COMPOSANTS DIRECTS -->
-        <div style="display:none;">
-            <div id="container-2488fee72aaf9bf875080b7e81f37d58"></div>
-        </div>
-
-        <!-- DIRECT LINKS (CERCLES FLOTTANTS MODERNE) -->
+        <!-- DIRECT LINKS (CERCLES FIXES FLOTTANTS) -->
         <div class="floating-bonus-container">
             <a class="floating-bonus fb-adv" href="https://data527.click/8db930650dc1e3bc4df6/8bdc6ee564/?placementName=link" target="_blank" onclick="validerDirectLink(45)">
-                <i class="fa-solid fa-fire-flame-simple"></i>
-                <span>Bonus 1</span>
+                <i class="fa-solid fa-fire-flame-simple"></i><span>Bonus 1</span>
             </a>
             <a class="floating-bonus" href="https://www.effectivecpmnetwork.com/uc21ey6tf?key=2f113ae182b0d7d4aeeff282e07b95be" target="_blank" onclick="validerDirectLink(45)">
-                <i class="fa-solid fa-bolt-lightning"></i>
-                <span>Bonus 2</span>
+                <i class="fa-solid fa-bolt-lightning"></i><span>Bonus 2</span>
             </a>
         </div>
 
-        <!-- MODALE UNIQUE CARRÉE STYLÉE (ANTI-TRICHE & PROTECTION) -->
+        <!-- MODALE UNIQUEMENT SÉCURISÉE SANS TRICHE -->
         <div class="modal-overlay" id="pub-modal">
             <div class="square-modal">
                 <button class="btn-close-modal" onclick="fermerModale()"><i class="fa-solid fa-xmark"></i></button>
                 
-                <!-- Zone Carrée Strict -->
+                <!-- Zone d'affichage isolée -->
                 <div class="square-container" id="modal-ad-zone"></div>
 
                 <div class="modal-buttons">
-                    <!-- Bouton Récupération Standard -->
-                    <button class="m-btn btn-timer15" id="btn-claim-base" disabled onclick="recupererPointsBase()">
-                        Patientez 15s...
-                    </button>
-                    <!-- Bouton Multiplicateur / Gagner plus -->
-                    <button class="m-btn btn-timer30" id="btn-claim-bonus" disabled onclick="cliquerGagnerPlus()">
-                        <i class="fa-solid fa-gift"></i> Gagner plus sur cette affiche (+30s)
-                    </button>
+                    <button class="m-btn btn-timer15" id="btn-claim-base" disabled onclick="recupererPointsBase()">Patientez 15s...</button>
+                    <button class="m-btn btn-timer30" id="btn-claim-bonus" disabled onclick="cliquerGagnerPlus()"><i class="fa-solid fa-gift"></i> Gagner plus sur cette affiche (+30s)</button>
                 </div>
-                <div class="info-box" id="info-box-text">
-                    <strong>Instructions :</strong> Restez au moins 30 secondes complètes sur le site partenaire. Nos algorithmes analysent votre comportement. Tout retour anticipé annulera l'ajout du multiplicateur de points !
-                </div>
+                <div class="info-box">Restez 30s sur le site partenaire sans fermer pour obtenir le bonus.</div>
             </div>
         </div>
 
         <!-- OVERLAY MURS CPA -->
         <div class="fullscreen-overlay" id="wall-overlay">
             <div id="iframe-area" style="width:100%; height:100%; display:flex; flex-direction:column;"></div>
-            <button class="btn-close-wall" onclick="closeWall()"><i class="fa-solid fa-xmark"></i> Quitter le mur</button>
+            <button class="btn-close-wall" onclick="closeWall()"><i class="fa-solid fa-xmark"></i> Quitter</button>
         </div>
 
         <!-- BOTTOM NAVIGATION -->
         <nav class="nav-bar">
-            <div class="nav-item" onclick="location.href='index.html'"><i class="fa-solid fa-house nav-icon"></i><span>Accueil</span></div>
-            <div class="nav-item" onclick="location.href='messages.html'"><i class="fa-regular fa-comment-dots nav-icon"></i><span>Messages</span></div>
-            <div class="nav-item" onclick="location.href='stats.html'"><i class="fa-solid fa-chart-simple nav-icon"></i><span>Stats</span></div>
+            <div class="nav-item"><i class="fa-solid fa-house nav-icon"></i><span>Accueil</span></div>
             <div class="nav-item active"><i class="fa-solid fa-bolt nav-icon"></i><span>Activités</span></div>
         </nav>
 
@@ -669,57 +358,37 @@
             projectId: "publicite-6445c",
             storageBucket: "publicite-6445c.firebasestorage.app",
             messagingSenderId: "663385244466",
-            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
-            measurementId: "G-T37TGB3SR0"
+            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b"
         };
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         let currentUserUid = null;
 
         firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                currentUserUid = user.uid;
-                ecouterSoldePoints();
-            } else {
-                currentUserUid = null;
-            }
+            if (user) { currentUserUid = user.uid; ecouterSoldePoints(); }
         });
 
         function ecouterSoldePoints() {
             if (!currentUserUid) return;
             db.collection("users").doc(currentUserUid).onSnapshot((doc) => {
                 if (doc.exists) {
-                    const points = doc.data().points || 0;
-                    document.getElementById('user-points').innerText = points.toLocaleString();
+                    document.getElementById('user-points').innerText = (doc.data().points || 0).toLocaleString();
                 }
             });
         }
 
-        // --- ENREGISTREMENTS VARIABLES EN COURS ---
-        let pointsCibles = 0;
-        let timer15 = null;
-        let timer30 = null;
-        let sec15 = 15;
-        let sec30 = 30;
-        let verificationActive = false;
-        let lienPartenaireSelectionne = "";
+        let pointsCibles = 0, timer15 = null, timer30 = null, sec15 = 15, sec30 = 30;
+        let verificationActive = false, lienPartenaireSelectionne = "";
 
-        // --- SYSTÈME D'OUVERTURE DE LA MODALE CARRÉE ---
-        function preparerModale(points) {
+        function preparerModale(points, lienFallback) {
             pointsCibles = points;
-            const modal = document.getElementById('pub-modal');
+            lienPartenaireSelectionne = lienFallback;
+            document.getElementById('pub-modal').style.display = 'flex';
             const zone = document.getElementById('modal-ad-zone');
+            zone.innerHTML = '';
             
-            zone.innerHTML = ''; // Reset total
-            modal.style.display = 'flex';
-            
-            clearInterval(timer15);
-            clearInterval(timer30);
-            
-            sec15 = 15;
-            sec30 = 30;
-            verificationActive = false;
+            clearInterval(timer15); clearInterval(timer30);
+            sec15 = 15; sec30 = 30; verificationActive = false;
 
             document.getElementById('btn-claim-base').disabled = true;
             document.getElementById('btn-claim-base').innerText = "Patientez 15s...";
@@ -741,241 +410,117 @@
             }, 1000);
         }
 
-        // --- INJECTIONS DES CRÉATIVES DANS LE CADRE CARRÉ ---
-        
-        // 1. Clickadilla Vidéos
-        function chargerPubUnique(admpid, points) {
-            if (!currentUserUid) return alert("Connectez-vous pour gagner.");
-            preparerModale(points);
-
-            const zone = document.getElementById('modal-ad-zone');
-            const scr = document.createElement('script');
-            scr.async = true;
-            scr.src = "https://js.wpadmngr.com/static/adManager.js";
-            scr.setAttribute('data-admpid', admpid);
-            zone.appendChild(scr);
-
-            lienPartenaireSelectionne = "https://js.wpadmngr.com/static/adManager.js";
-            lancerDecompte15();
-        }
-
-        // 2. Clickadilla Bannières Centralisées (Balises data-banner-id)
-        function chargerBanniereClicadilla(bannerId, points) {
-            if (!currentUserUid) return alert("Connectez-vous pour gagner.");
-            preparerModale(points);
-
-            const zone = document.getElementById('modal-ad-zone');
-            const wrapper = document.createElement('div');
-            wrapper.setAttribute('data-banner-id', bannerId);
-            zone.appendChild(wrapper);
-
-            // Déclencher le manager de bannières Clicadilla
-            const scr = document.createElement('script');
-            scr.async = true;
-            scr.src = "https://js.wpadmngr.com/static/adManager.js";
-            scr.setAttribute('data-admpid', '447738');
-            zone.appendChild(scr);
-
-            lienPartenaireSelectionne = "https://js.wpadmngr.com/static/adManager.js";
-            lancerDecompte15();
-        }
-
-        // 3. Advertica
-        function chargerBanniereAdvertica(points) {
-            if (!currentUserUid) return alert("Connectez-vous pour gagner.");
-            preparerModale(points);
+        // --- CORRECTION CLICADILLA INJECTION SÉCURISÉE ---
+        function chargerClicadillaVrai(admpid, points, bannerId = null) {
+            if (!currentUserUid) return alert("Connectez-vous.");
+            preparerModale(points, "https://clicadilla.com");
 
             const zone = document.getElementById('modal-ad-zone');
             
+            // Création propre de la cible publicitaire pour éviter le remplacement d'écran
+            const containerPub = document.createElement('div');
+            containerPub.style.width = "100%";
+            containerPub.style.height = "100%";
+            
+            if(bannerId) {
+                containerPub.setAttribute('data-banner-id', bannerId);
+            }
+
+            const scriptPub = document.createElement('script');
+            scriptPub.async = true;
+            scriptPub.src = "https://js.wpadmngr.com/static/adManager.js";
+            scriptPub.setAttribute('data-admpid', admpid);
+
+            zone.appendChild(containerPub);
+            zone.appendChild(scriptPub);
+
+            lancerDecompte15();
+        }
+
+        // --- ADVERTICA ---
+        function chargerBanniereAdvertica(points) {
+            if (!currentUserUid) return alert("Connectez-vous.");
+            preparerModale(points, "https://data527.click");
+
+            const zone = document.getElementById('modal-ad-zone');
             const ins = document.createElement('ins');
             ins.className = "z44a27d7180";
-            ins.style.cssText = "width:300px; height:250px;";
-            ins.setAttribute('data-width', '300');
-            ins.setAttribute('data-height', '250');
+            ins.setAttribute('data-width', '300'); ins.setAttribute('data-height', '250');
             ins.setAttribute('data-domain', '//data527.click');
             ins.setAttribute('data-affquery', '/0f96f9f42a0c9fc3d824/44a27d7180/?placementName=baniere');
             
             const scr = document.createElement('script');
-            scr.src = "//data527.click/js/responsive.js";
-            scr.async = true;
+            scr.src = "//data527.click/js/responsive.js"; scr.async = true;
 
-            zone.appendChild(ins);
-            zone.appendChild(scr);
-
-            lienPartenaireSelectionne = "https://data527.click";
+            zone.appendChild(ins); zone.appendChild(scr);
             lancerDecompte15();
         }
 
-        // 4. Adsterra Native
-        function chargerBanniereNativeAdsterra(points) {
-            if (!currentUserUid) return alert("Connectez-vous pour gagner.");
-            preparerModale(points);
-
-            const zone = document.getElementById('modal-ad-zone');
-            const wrapper = document.createElement('div');
-            wrapper.id = "container-2488fee72aaf9bf875080b7e81f37d58";
-            
-            const scr = document.createElement('script');
-            scr.async = true;
-            scr.setAttribute('data-cfasync', 'false');
-            scr.src = "https://pl29546534.effectivecpmnetwork.com/2488fee72aaf9bf875080b7e81f37d58/invoke.js";
-
-            zone.appendChild(wrapper);
-            zone.appendChild(scr);
-
-            lienPartenaireSelectionne = "https://www.effectivecpmnetwork.com";
-            lancerDecompte15();
-        }
-
-        // 5. Adsterra Formats Dynamiques (Iframe forcée)
+        // --- ADSTERRA ---
         function chargerAdsterraDynamique(key, width, height, points) {
-            if (!currentUserUid) return alert("Connectez-vous pour gagner.");
-            preparerModale(points);
+            if (!currentUserUid) return alert("Connectez-vous.");
+            preparerModale(points, "https://www.highperformanceformat.com");
 
             const zone = document.getElementById('modal-ad-zone');
-            
-            // Pour Adsterra, on crée une sandbox iframe propre pour ne pas interférer avec le design principal
             const adIframe = document.createElement('iframe');
-            adIframe.style.width = "100%";
-            adIframe.style.height = "100%";
             zone.appendChild(adIframe);
 
             const doc = adIframe.contentWindow.document;
-            const content = `
-                <html>
-                <body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; background:#000;">
-                    <script>
-                        atOptions = {
-                            'key' : '${key}',
-                            'format' : 'iframe',
-                            'height' : ${height},
-                            'width' : ${width},
-                            'params' : {}
-                        };
-                    <\/script>
-                    <script src="https://www.highperformanceformat.com/${key}/invoke.js"><\/script>
-                </body>
-                </html>
-            `;
-            doc.open();
-            doc.write(content);
-            doc.close();
+            const content = `<html><body style="margin:0; display:flex; justify-content:center; align-items:center; background:#000;"><script>atOptions={'key':'${key}','format':'iframe','height':${height},'width':${width},'params':{}};\<\/script><script src="https://www.highperformanceformat.com/${key}/invoke.js"><\/script></body></html>`;
+            doc.open(); doc.write(content); doc.close();
 
-            lienPartenaireSelectionne = "https://www.highperformanceformat.com";
             lancerDecompte15();
         }
 
-        // --- RÉCUPÉRATION STANDARD (15S) ---
+        // --- DISTRIBUTIONS DES RECOMPENSES ---
         function recupererPointsBase() {
-            if (!currentUserUid) return;
             db.collection("users").doc(currentUserUid).update({
                 points: firebase.firestore.FieldValue.increment(pointsCibles)
-            }).then(() => {
-                alert(`Crédité : +${pointsCibles} points de base ajoutés à votre solde !`);
-                fermerModale();
-            });
+            }).then(() => { alert(`+${pointsCibles} points ajoutés !`); fermerModale(); });
         }
 
-        // --- GESTION DU MULTIPLICATEUR (30S ANTI-TRICHE) ---
         function cliquerGagnerPlus() {
             const btnBonus = document.getElementById('btn-claim-bonus');
             btnBonus.disabled = true;
-
-            // Ouvrir l'offre de la régie
             window.open(lienPartenaireSelectionne, '_blank');
 
             verificationActive = true;
-            sec30 = 30;
-            btnBonus.innerText = `Robot d'écoute actif : 30s`;
-
             timer30 = setInterval(() => {
                 sec30--;
-
-                // Si l'utilisateur quitte le focus actif de l'application pendant la vérification
                 if (document.hidden && verificationActive) {
                     clearInterval(timer30);
-                    alert("⚠️ ALERTE TRICHE : Vous avez quitté la page du partenaire ! Le bonus est annulé.");
+                    alert("⚠️ Bonus annulé : vous avez quitté la page.");
                     fermerModale();
                     return;
                 }
-
                 if (sec30 > 0) {
-                    btnBonus.innerText = `Robot d'écoute actif : ${sec30}s`;
+                    btnBonus.innerText = `Vérification : ${sec30}s`;
                 } else {
                     clearInterval(timer30);
-                    btnBonus.innerText = "Validation réussie !";
-                    verificationActive = false;
-                    attribuerMultiplicateurBonus();
+                    db.collection("users").doc(currentUserUid).update({
+                        points: firebase.firestore.FieldValue.increment(Math.round(pointsCibles * 2))
+                    }).then(() => { alert("🔥 Multiplicateur validé !"); fermerModale(); });
                 }
             }, 1000);
         }
 
-        function attribuerMultiplicateurBonus() {
-            if (!currentUserUid) return;
-            // Attribution de sécurité (points augmentés × 2 sans risque de faillite)
-            const gainTotal = Math.round(pointsCibles * 2);
-
-            db.collection("users").doc(currentUserUid).update({
-                points: firebase.firestore.FieldValue.increment(gainTotal)
-            }).then(() => {
-                alert(`🔥 Énorme ! Votre bonus est validé : +${gainTotal} points d'activité crédités !`);
-                fermerModale();
-            });
-        }
-
-        // --- FERMETURE SECURE ---
         function fermerModale() {
-            clearInterval(timer15);
-            clearInterval(timer30);
+            clearInterval(timer15); clearInterval(timer30);
             document.getElementById('pub-modal').style.display = 'none';
             document.getElementById('modal-ad-zone').innerHTML = '';
         }
 
-        // --- MURS CPA ---
         function openWall(type) {
-            if (!currentUserUid) return alert("Veuillez vous connecter.");
             const overlay = document.getElementById('wall-overlay');
             const area = document.getElementById('iframe-area');
-            area.innerHTML = '';
-            overlay.style.display = 'flex';
-
-            let src = "";
-            if (type === 'mylead') {
-                src = `https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${currentUserUid}`;
-            } else if (type === 'ogads') {
-                src = `https://appsave.online/cl/i/grjgep?aff_sub=${currentUserUid}`;
-            } else if (type === 'cpagrip') {
-                src = `https://getafilenow.com/script_include.php?id=1904067&tracking_id=${currentUserUid}`;
-                area.innerHTML = `<iframe id="cpagrip-iframe"></iframe>`;
-                const iframe = document.getElementById('cpagrip-iframe');
-                const frameContent = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0; background:#050508;"><script src="${src}"><\/script></body></html>`;
-                iframe.contentWindow.document.open();
-                iframe.contentWindow.document.write(frameContent);
-                iframe.contentWindow.document.close();
-                return;
-            }
+            area.innerHTML = ''; overlay.style.display = 'flex';
+            let src = (type === 'mylead') ? `https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${currentUserUid}` : `https://appsave.online/cl/i/grjgep?aff_sub=${currentUserUid}`;
             area.innerHTML = `<iframe src="${src}"></iframe>`;
         }
 
-        function closeWall() {
-            document.getElementById('wall-overlay').style.display = 'none';
-            document.getElementById('iframe-area').innerHTML = '';
-        }
-
-        // --- DIRECT LINKS (BUBBLES) ---
-        function validerDirectLink(pts) {
-            if (!currentUserUid) return;
-            db.collection("users").doc(currentUserUid).update({
-                points: firebase.firestore.FieldValue.increment(pts)
-            }).then(() => {
-                console.log(`Direct link validé : +${pts} Pts`);
-            });
-        }
-
-        // --- AIDE MODALE PULSANTE ---
-        function ouvrirAide() {
-            alert("💡 Guide des gains d'activités :\n\n- Lancez une mission publicitaire.\n- Regardez l'affiche dans le cadre sécurisé sans la fermer pendant 15s pour obtenir vos points de base.\n- Utilisez le bouton Booster : visitez le site partenaire pendant 30s. Si vous quittez ou trichez, les robots de contrôle annuleront le crédit bonus.\n\n⚠️ Important : Récupérez votre solde quotidiennement avant minuit, sinon vos gains accumulés de la journée expireront !");
-        }
+        function closeWall() { document.getElementById('wall-overlay').style.display = 'none'; }
+        function validerDirectLink(pts) { if(currentUserUid) db.collection("users").doc(currentUserUid).update({ points: firebase.firestore.FieldValue.increment(pts) }); }
+        function ouvrirAide() { alert("Regardez la pub pendant 15s pour obtenir la récompense standard."); }
     </script>
 </body>
 </html>
