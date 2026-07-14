@@ -7,18 +7,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase SDK Compat -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-    <!-- NOTE: Les scripts de popunder/popup globaux qui bloquaient le défilement ont été retirés pour assainir la page -->
 
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             font-family: 'Inter', sans-serif; background-color: #050508; color: #ffffff;
-            overflow-x: hidden; display: flex; justify-content: center; align-items: center;
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
         }
 
         .app-container {
@@ -44,60 +41,69 @@
             font-size: 16px; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; color: #00ffcc;
         }
 
-        /* --- CONTENU DEFILEMENT --- */
+        /* --- SOUFFLEUR DE FILE D'ATTENTE --- */
         .content-scroll {
             flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px;
-            padding-bottom: 90px;
-            -webkit-overflow-scrolling: touch; /* Force la fluidité sur mobile */
+            padding-bottom: 100px;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* --- WALLET & SOLDE --- */
+        .section-title {
+            font-size: 13px; font-weight: 700; color: #555875; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: -5px;
+            margin-top: 10px;
+        }
+
+        /* --- CARD WALLET & SYSTEME D'AIDE --- */
         .wallet-card {
             background: linear-gradient(135deg, #0f1026 0%, #070814 100%);
             border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 10px;
         }
         .wallet-info h4 { margin: 0; font-size: 13px; color: #8a8d9f; font-weight: 500; }
-        .wallet-info h2 { margin: 5px 0 0 0; font-size: 32px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .wallet-info h2 span { color: #ffcc00; }
+        .wallet-info h2 { margin: 5px 0 0 0; font-size: 32px; font-weight: 700; color: #ffcc00; }
         
-        .section-header {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: -5px;
+        .help-pulse-zone {
+            display: flex; align-items: center; gap: 8px; margin-top: 5px; cursor: pointer; width: fit-content;
         }
-        .section-title {
-            font-size: 13px; font-weight: 700; color: #555875; text-transform: uppercase; letter-spacing: 0.5px;
-            margin-top: 10px;
+        .pulse-icon {
+            width: 20px; height: 20px; background: #00ffcc; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; color: #020308;
+            font-size: 11px; font-weight: 700; animation: pulseGlow 2s infinite;
         }
-        .how-it-works {
-            font-size: 12px; font-weight: 600; color: #00ffcc; display: flex; align-items: center; gap: 6px; cursor: pointer;
+        .help-text { font-size: 12px; color: #00ffcc; font-weight: 600; }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 204, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 204, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 204, 0); }
         }
 
-        /* --- CARTES MISSIONS --- */
+        /* --- TASK CARDS DESIGN --- */
         .task-card {
             background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 20px; padding: 15px; display: flex; align-items: center; justify-content: space-between;
+            border-radius: 20px; padding: 14px; display: flex; align-items: center; justify-content: space-between;
         }
-        .task-info { display: flex; align-items: center; gap: 15px; }
-        .task-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 20px; }
-        
-        .task-icon.video { background: rgba(0, 102, 255, 0.1); color: #0066ff; }
+        .task-info { display: flex; align-items: center; gap: 12px; }
+        .task-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 18px; }
+        .task-icon.video { background: rgba(255, 204, 0, 0.1); color: #ffcc00; }
         .task-icon.banner { background: rgba(0, 255, 204, 0.1); color: #00ffcc; }
-
-        .task-detail h4 { margin: 0 0 4px 0; font-size: 14px; font-weight: 600; }
+        
+        .task-detail h4 { margin: 0 0 3px 0; font-size: 13px; font-weight: 600; }
         .task-detail p { margin: 0; font-size: 11px; color: #8a8d9f; }
         
-        .task-action { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+        .task-action { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
         .task-points { font-size: 12px; font-weight: 700; color: #ffcc00; }
         .btn-claim {
-            background: #0052cc; color: white; border: none; padding: 8px 16px; border-radius: 12px;
-            font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
+            background: #0052cc; color: white; border: none; padding: 6px 12px; border-radius: 10px;
+            font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;
         }
 
-        /* --- MURS VIP --- */
+        /* --- WALL VIP BUTTONS --- */
         .wall-btn {
             width: 100%; padding: 20px; background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; backdrop-filter: blur(12px);
-            color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; box-sizing: border-box;
+            -webkit-backdrop-filter: blur(12px); color: white; cursor: pointer; position: relative;
+            overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: 8px; box-sizing: border-box;
         }
         .btn-mylead { border-color: rgba(0, 255, 204, 0.2); }
         .btn-ogads { border-color: rgba(155, 81, 224, 0.2); }
@@ -106,75 +112,74 @@
         .btn-mylead i { color: #00ffcc; }
         .btn-ogads i { color: #9b51e0; }
         .btn-cpagrip i { color: #27ae60; }
-        .wall-btn h2 { margin: 0; font-size: 16px; font-weight: 700; }
-        .wall-btn p { margin: 0; font-size: 12px; color: #8a8d9f; }
+        .wall-btn h2 { margin: 0; font-size: 15px; font-weight: 700; }
+        .wall-btn p { margin: 0; font-size: 11px; color: #8a8d9f; text-align: center; }
 
         /* --- CERCLES FIXES FLOTTANTS (DIRECT LINKS) --- */
         .floating-bonus-container {
             position: fixed; bottom: 85px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 99;
         }
         .floating-bonus {
-            width: 55px; height: 55px; border-radius: 50%; border: 2px solid #ffcc00;
+            width: 52px; height: 52px; border-radius: 50%; border: 2px solid #ffcc00;
             background: radial-gradient(circle, #1a0033 0%, #050508 100%);
             box-shadow: 0 0 15px rgba(255, 204, 0, 0.4);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             cursor: pointer; text-decoration: none;
         }
-        .floating-bonus i { font-size: 16px; color: #ffcc00; }
-        .floating-bonus span { font-size: 8px; font-weight: 700; text-transform: uppercase; margin-top: 2px; color: #ffffff; }
+        .floating-bonus i { font-size: 15px; color: #ffcc00; }
+        .floating-bonus span { font-size: 8px; font-weight: 700; text-transform: uppercase; margin-top: 1px; color: #ffffff; }
         .fb-adv { border-color: #00ffcc; box-shadow: 0 0 15px rgba(0, 255, 204, 0.4); }
         .fb-adv i { color: #00ffcc; }
 
-        /* --- MODALE CARRÉE --- */
+        /* --- MODALE CARRÉE PARFAITE & FLUIDE --- */
         .modal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(2, 3, 8, 0.95); z-index: 1000;
+            background: rgba(2, 3, 8, 0.96); z-index: 1000;
             display: none; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;
         }
         .square-modal {
-            width: 100%; max-width: 330px; background: #070814;
+            width: 100%; max-width: 340px; background: #070814;
             border: 2px solid rgba(0, 255, 204, 0.3); border-radius: 24px;
-            padding: 20px; display: flex; flex-direction: column; gap: 15px; position: relative;
+            padding: 16px; display: flex; flex-direction: column; gap: 12px; position: relative;
         }
         .btn-close-modal {
-            position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.05);
-            border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1001;
+            position: absolute; top: 12px; right: 12px; background: rgba(255,255,74,0.1);
+            border: none; color: #ff4a4a; width: 28px; height: 28px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1002;
         }
         
         .square-container {
             width: 100%; aspect-ratio: 1 / 1; background: #000; border-radius: 16px;
             overflow: hidden; display: flex; justify-content: center; align-items: center;
-            border: 1px solid rgba(255,255,255,0.1); position: relative;
+            border: 1px solid rgba(255,255,255,0.08); position: relative;
         }
-        .square-container iframe, .square-container div, .square-container ins {
-            width: 100% !important; height: 100% !important; border: none !important;
+        .square-container iframe {
+            width: 100% !important; height: 100% !important; border: none !important; background: #000;
         }
         
-        .modal-buttons { display: flex; flex-direction: column; gap: 10px; }
+        .modal-buttons { display: flex; flex-direction: column; gap: 8px; }
         .m-btn {
-            width: 100%; padding: 12px; border: none; border-radius: 12px; font-weight: 700;
-            font-size: 13px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;
+            width: 100%; padding: 11px; border: none; border-radius: 12px; font-weight: 700;
+            font-size: 12px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px;
         }
         .btn-timer15 { background: #00ffcc; color: #020308; }
-        .btn-timer15:disabled { background: #222; color: #555; cursor: not-allowed; }
-        .btn-timer30 { background: rgba(255, 204, 0, 0.1); color: #ffcc00; border: 1px solid #ffcc00; }
-        .btn-timer30:disabled { background: #222; color: #555; border: none; cursor: not-allowed; }
+        .btn-timer15:disabled { background: #1a1a24; color: #44475a; cursor: not-allowed; }
+        .btn-timer30 { background: rgba(255, 204, 0, 0.08); color: #ffcc00; border: 1px solid #ffcc00; }
+        .btn-timer30:disabled { background: #1a1a24; color: #44475a; border: none; cursor: not-allowed; }
+        .info-box { font-size: 10px; color: #8a8d9f; text-align: center; line-height: 1.3; background: rgba(255,255,255,0.01); padding: 6px; border-radius: 8px; }
 
-        .info-box { font-size: 11px; color: #8a8d9f; text-align: center; line-height: 1.4; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 8px; }
-
-        /* --- FULLSCREEN OVERLAY POUR LES MURS CPA --- */
+        /* --- FULLSCREEN CPA OVERLAY --- */
         .fullscreen-overlay {
             position: absolute; top: 67px; left: 0; width: 100%; bottom: 65px; background: #050508; z-index: 100;
             display: none; flex-direction: column;
         }
-        iframe { width: 100%; flex: 1; border: none; background: #050508; }
         .btn-close-wall {
             position: absolute; bottom: 20px; right: 20px; background: rgba(255, 74, 74, 0.95);
             color: white; border: none; padding: 12px 20px; border-radius: 30px; font-size: 13px; font-weight: 600;
             cursor: pointer; z-index: 101; display: flex; align-items: center; gap: 8px;
         }
 
+        /* --- BARRE DE NAVIGATION BASE --- */
         .nav-bar {
             background: #03040b; border-top: 1px solid rgba(255,255,255,0.06);
             padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center; z-index: 10;
@@ -191,160 +196,371 @@
         <!-- HEADER -->
         <header class="app-header">
             <div class="btn-back" onclick="window.history.back()"><i class="fa-solid fa-chevron-left"></i></div>
-            <h1 class="header-title">Gagne des Points</h1>
+            <h1 class="header-title">Espace Activités</h1>
             <div style="width: 36px;"></div>
         </header>
 
-        <!-- CONTENU SCROLLABLE -->
+        <!-- ZONE DE DEFILEMENT SECURISEE -->
         <div class="content-scroll">
             
-            <!-- SOLDE COINS -->
+            <!-- COINS CARD AVEC L'INFOBULLE PULSANTE -->
             <div class="wallet-card">
                 <div class="wallet-info">
-                    <h4>Points du jour</h4>
-                    <h2><span id="user-points">0</span> <i class="fa-solid fa-coins" style="color:#ffcc00;"></i></h2>
+                    <h4>Solde Cumulé du Jour</h4>
+                    <h2><span id="user-points">0</span> <i class="fa-solid fa-coins"></i></h2>
+                </div>
+                <div class="help-pulse-zone" onclick="declencherExpliAide()">
+                    <div class="pulse-icon">?</div>
+                    <div class="help-text">Comment ça marche ?</div>
                 </div>
             </div>
 
-            <div class="section-header">
-                <div class="section-title">🎬 Activités Vidéos (Clicadilla)</div>
-                <div class="how-it-works" onclick="ouvrirAide()"><i class="fa-solid fa-question"></i> Aide</div>
-            </div>
-
-            <!-- MISSIONS VIDÉO (CLICADILLA) -->
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail"><h4>Vidéo Flash N°1</h4><p>Flux interactif</p></div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+20 Pts</span>
-                    <button class="btn-claim" onclick="chargerClicadillaVrai('447672', 20)">Lancer</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail"><h4>Vidéo Flash N°2</h4><p>Flux accéléré</p></div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+20 Pts</span>
-                    <button class="btn-claim" onclick="chargerClicadillaVrai('447741', 20)">Lancer</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
-                    <div class="task-detail"><h4>Vidéo Flash N°3</h4><p>Annonces instantanées</p></div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+20 Pts</span>
-                    <button class="btn-claim" onclick="chargerClicadillaVrai('447743', 20)">Lancer</button>
-                </div>
-            </div>
-
-            <!-- BANNIÈRES CENTRALES CLICADILLA -->
-            <div class="section-title">📊 Affiches Partenaires (Clicadilla Bannières)</div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail"><h4>Bannière A</h4><p>ID : 1496058</p></div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+15 Pts</span>
-                    <button class="btn-claim" onclick="chargerClicadillaVrai('447738', 15, '1496058')">Afficher</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail"><h4>Bannière B</h4><p>ID : 1496059</p></div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+15 Pts</span>
-                    <button class="btn-claim" onclick="chargerClicadillaVrai('447738', 15, '1496059')">Afficher</button>
-                </div>
-            </div>
-
-            <!-- REGIE ADVERTICA / ADSTERRA -->
-            <div class="section-title">✨ Affichages (Advertica & Adsterra)</div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail"><h4>Bannière Advertica 300x250</h4><p>Encart réactif</p></div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+20 Pts</span>
-                    <button class="btn-claim" onclick="chargerBanniereAdvertica(20)">Afficher</button>
-                </div>
-            </div>
-
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
-                    <div class="task-detail"><h4>Format Pavé Adsterra 300x250</h4><p>Standard d'engagement</p></div>
-                </div>
-                <div class="task-action">
-                    <span class="task-points">+20 Pts</span>
-                    <button class="btn-claim" onclick="chargerAdsterraDynamique('e86dd4055cd86d43aa42fbae392c77d2', 300, 250, 20)">Afficher</button>
-                </div>
-            </div>
-
-            <!-- MURS D'OFFRES VIP -->
-            <div class="section-title">👑 Espace VIP - Murs d'Offres</div>
+            <!-- REGIE CLICADILLA VIDEOS -->
+            <div class="section-title">🎬 Clicadilla - Flux Vidéos (+20 Pts)</div>
             
+            <!-- Boucle propre des 10 Unités de Vidéo de Clicadilla -->
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
+                    <div class="task-detail"><h4>Vidéo Flash N°1</h4><p>ID: 447672</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="executerConfinementClicadilla('447672', 20, 'https://clicadilla.com')">Lancer</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
+                    <div class="task-detail"><h4>Vidéo Flash N°2</h4><p>ID: 447741</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="executerConfinementClicadilla('447741', 20, 'https://clicadilla.com')">Lancer</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
+                    <div class="task-detail"><h4>Vidéo Flash N°3</h4><p>ID: 447743</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="executerConfinementClicadilla('447743', 20, 'https://clicadilla.com')">Lancer</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
+                    <div class="task-detail"><h4>Vidéo Flash N°4</h4><p>ID: 447744</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="executerConfinementClicadilla('447744', 20, 'https://clicadilla.com')">Lancer</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
+                    <div class="task-detail"><h4>Vidéo Flash N°5</h4><p>ID: 447745</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="executerConfinementClicadilla('447745', 20, 'https://clicadilla.com')">Lancer</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
+                    <div class="task-detail"><h4>Vidéo Flash N°6</h4><p>ID: 447746</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="executerConfinementClicadilla('447746', 20, 'https://clicadilla.com')">Lancer</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
+                    <div class="task-detail"><h4>Vidéo Flash N°7</h4><p>ID: 447748</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="executerConfinementClicadilla('447748', 20, 'https://clicadilla.com')">Lancer</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
+                    <div class="task-detail"><h4>Vidéo Flash N°8</h4><p>ID: 447749</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="executerConfinementClicadilla('447749', 20, 'https://clicadilla.com')">Lancer</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
+                    <div class="task-detail"><h4>Vidéo Flash N°9</h4><p>ID: 447750</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="executerConfinementClicadilla('447750', 20, 'https://clicadilla.com')">Lancer</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon video"><i class="fa-solid fa-play"></i></div>
+                    <div class="task-detail"><h4>Vidéo Flash N°10</h4><p>ID: 447751</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="executerConfinementClicadilla('447751', 20, 'https://clicadilla.com')">Lancer</button>
+                </div>
+            </div>
+
+            <!-- REGIE CLICADILLA BANNIERES CENTRALISEES -->
+            <div class="section-title">📊 Clicadilla - Enseignes Nobles (+15 Pts)</div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
+                    <div class="task-detail"><h4>Bannière Alpha</h4><p>ID Zone: 1496058</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+15 Pts</span>
+                    <button class="btn-claim" onclick="lancerBanniereCentraleClicadilla('1496058', 15)">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
+                    <div class="task-detail"><h4>Bannière Beta</h4><p>ID Zone: 1496059</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+15 Pts</span>
+                    <button class="btn-claim" onclick="lancerBanniereCentraleClicadilla('1496059', 15)">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
+                    <div class="task-detail"><h4>Bannière Gamma</h4><p>ID Zone: 1496060</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+15 Pts</span>
+                    <button class="btn-claim" onclick="lancerBanniereCentraleClicadilla('1496060', 15)">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-regular fa-image"></i></div>
+                    <div class="task-detail"><h4>Bannière Delta</h4><p>ID Zone: 1496061</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+15 Pts</span>
+                    <button class="btn-claim" onclick="lancerBanniereCentraleClicadilla('1496061', 15)">Afficher</button>
+                </div>
+            </div>
+
+            <!-- BOUTON CONFINÉ POPUNDER CLICADILLA -->
+            <div class="section-title">🔗 Clicadilla - Onglet Interactif (+30 Pts)</div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+                    <div class="task-detail"><h4>Popunder Réseau</h4><p>ID: 447731</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+30 Pts</span>
+                    <button class="btn-claim" onclick="executerConfinementClicadilla('447731', 30, 'https://clicadilla.com')">Déclencher</button>
+                </div>
+            </div>
+
+            <!-- REGIE ADVERTICA -->
+            <div class="section-title">🔷 Réseau Advertica Partenaires (+20 Pts)</div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-rectangle-ad"></i></div>
+                    <div class="task-detail"><h4>Bannière 300x250</h4><p>Responsive.js</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="lancerIframeAdverticaBanniere()">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-window-restore"></i></div>
+                    <div class="task-detail"><h4>Format Popup</h4><p>Placement: Default</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="lancerIframeAdverticaPopup()">Afficher</button>
+                </div>
+            </div>
+
+            <!-- REGIE ADSTERRA CACHE EN IFRAME -->
+            <div class="section-title">⭐ Réseau Adsterra Premium (+20 Pts)</div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-link"></i></div>
+                    <div class="task-detail"><h4>Popunder Secrétisé</h4><p>Deacefeb.js</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="lancerIframeAdsterraBrute('https://pl30313217.effectivecpmnetwork.com/de/ac/ef/deacefeb17116ee3bc546f4b5ba4c252.js', 20, 'https://pl30313217.effectivecpmnetwork.com')">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-border-all"></i></div>
+                    <div class="task-detail"><h4>Bannière Native</h4><p>ID Container</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="lancerIframeAdsterraNative()">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-arrows-up-down"></i></div>
+                    <div class="task-detail"><h4>Format 160x300</h4><p>Iframe Key: f37eede0</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="lancerIframeAdsterraStandard('f37eede0de06b709e6c6db90820d116e', 160, 300, 20)">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-comment-dots"></i></div>
+                    <div class="task-detail"><h4>Barre Sociale</h4><p>Interactions</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="lancerIframeAdsterraBrute('https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js', 20, 'https://pl29315759.effectivecpmnetwork.com')">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-window-minimize"></i></div>
+                    <div class="task-detail"><h4>Bannière 320x50</h4><p>Iframe Key: 7221685d</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="lancerIframeAdsterraStandard('7221685de42e37b3b02c60ff0bee506a', 320, 50, 20)">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-grip-lines"></i></div>
+                    <div class="task-detail"><h4>Bannière 728x90</h4><p>Iframe Key: 1facbab7</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="lancerIframeAdsterraStandard('1facbab7132cdcadf3fe0ead26074277', 728, 90, 20)">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-minus"></i></div>
+                    <div class="task-detail"><h4>Bannière 468x60</h4><p>Iframe Key: f4457d9d</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="lancerIframeAdsterraStandard('f4457d9de2541809ff0cdd731f5f78e2', 468, 60, 20)">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-table-cells-large"></i></div>
+                    <div class="task-detail"><h4>Bannière 300x250</h4><p>Iframe Key: e86dd405</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="lancerIframeAdsterraStandard('e86dd4055cd86d43aa42fbae392c77d2', 300, 250, 20)">Afficher</button>
+                </div>
+            </div>
+            <div class="task-card">
+                <div class="task-info">
+                    <div class="task-icon banner"><i class="fa-solid fa-box"></i></div>
+                    <div class="task-detail"><h4>Bannière 160x600</h4><p>Iframe Key: 355c9d0e</p></div>
+                </div>
+                <div class="task-action">
+                    <span class="task-points">+20 Pts</span>
+                    <button class="btn-claim" onclick="lancerIframeAdsterraStandard('355c9d0ee6ac5ec71d84d7f879fdc153', 160, 600, 20)">Afficher</button>
+                </div>
+            </div>
+
+            <!-- ESPACE VIP DE RENDEMENT MAXIMUM -->
+            <div class="section-title">👑 Espace VIP - Murs d'Offres</div>
+            <div style="font-size: 11px; color:#8a8d9f; margin-bottom: 5px; line-height: 1.4;">
+                Ici vous pouvez générer plus de 5000 points selon les offres du jour se trouvant dans les régies. Surtout suivez bien les instructions des régies avant d'accomplir une tâche. Lorsque vous cliquez sur une mission, vous devez impérativement lire les instructions pour recevoir vos points.
+            </div>
+
             <div class="wall-btn btn-mylead" onclick="openWall('mylead')">
                 <i class="fa-solid fa-wallet"></i>
                 <h2>Gagner avec MyLead</h2>
+                <p>Complétez des offres et sondages rapides</p>
             </div>
 
             <div class="wall-btn btn-ogads" onclick="openWall('ogads')">
                 <i class="fa-solid fa-bolt"></i>
                 <h2>Gagner avec OGAds</h2>
+                <p>Installez des applications et des jeux</p>
+            </div>
+
+            <div class="wall-btn btn-cpagrip" onclick="openWall('cpagrip')">
+                <i class="fa-solid fa-star"></i>
+                <h2>Gagner avec CPAGrip</h2>
+                <p>Vidéos, offres spéciales et tâches</p>
             </div>
 
         </div>
 
-        <!-- DIRECT LINKS (CERCLES FIXES FLOTTANTS) -->
+        <!-- CERCLES MODERNE PROPRE FLOTTANTS (DIRECT LINKS) -->
         <div class="floating-bonus-container">
-            <a class="floating-bonus fb-adv" href="https://data527.click/8db930650dc1e3bc4df6/8bdc6ee564/?placementName=link" target="_blank" onclick="validerDirectLink(45)">
-                <i class="fa-solid fa-fire-flame-simple"></i><span>Bonus 1</span>
+            <a class="floating-bonus fb-adv" href="https://data527.click/8db930650dc1e3bc4df6/8bdc6ee564/?placementName=link" target="_blank" onclick="validerBonusDirectLink(45)">
+                <i class="fa-solid fa-gift"></i><span>Bonus 1</span>
             </a>
-            <a class="floating-bonus" href="https://www.effectivecpmnetwork.com/uc21ey6tf?key=2f113ae182b0d7d4aeeff282e07b95be" target="_blank" onclick="validerDirectLink(45)">
+            <a class="floating-bonus" href="https://www.effectivecpmnetwork.com/uc21ey6tf?key=2f113ae182b0d7d4aeeff282e07b95be" target="_blank" onclick="validerBonusDirectLink(45)">
                 <i class="fa-solid fa-bolt-lightning"></i><span>Bonus 2</span>
             </a>
         </div>
 
-        <!-- MODALE UNIQUEMENT SÉCURISÉE SANS TRICHE -->
+        <!-- ENCART DU PUSH NOTIF ET ADMPID FONDS DE PAGE DE CLICADILLA -->
+        <div id="zone-invisible-push-clicadilla" style="display:none;"></div>
+
+        <!-- MODALE SECURISEE AVEC EMBED CONFINEMENT COMPLET -->
         <div class="modal-overlay" id="pub-modal">
             <div class="square-modal">
-                <button class="btn-close-modal" onclick="fermerModale()"><i class="fa-solid fa-xmark"></i></button>
+                <button class="btn-close-modal" onclick="fermerFenetreModale()"><i class="fa-solid fa-xmark"></i></button>
                 
-                <!-- Zone d'affichage isolée -->
-                <div class="square-container" id="modal-ad-zone"></div>
+                <!-- Le fameux Carré Stylé de confinement publicitaire -->
+                <div class="square-container" id="modal-ad-sandbox"></div>
 
                 <div class="modal-buttons">
-                    <button class="m-btn btn-timer15" id="btn-claim-base" disabled onclick="recupererPointsBase()">Patientez 15s...</button>
-                    <button class="m-btn btn-timer30" id="btn-claim-bonus" disabled onclick="cliquerGagnerPlus()"><i class="fa-solid fa-gift"></i> Gagner plus sur cette affiche (+30s)</button>
+                    <button class="m-btn btn-timer15" id="btn-claim-base" disabled onclick="crediterPointsBase()">Patientez 15s...</button>
+                    <button class="m-btn btn-timer30" id="btn-claim-bonus" disabled onclick="enclencherBonusLien()"><i class="fa-solid fa-gift"></i> Gagner plus sur cette affiche (+30s)</button>
                 </div>
-                <div class="info-box">Restez 30s sur le site partenaire sans fermer pour obtenir le bonus.</div>
+                <div class="info-box">Lorsque vous allez cliquer sur ce bouton, un compte à rebours va se déclencher de 30s. Nos robots vont détecter si vous avez bien passé 30s sur le site, sinon vous n'allez pas recevoir vos points.</div>
             </div>
         </div>
 
-        <!-- OVERLAY MURS CPA -->
+        <!-- OVERLAY DES CONTENEURS CPA -->
         <div class="fullscreen-overlay" id="wall-overlay">
             <div id="iframe-area" style="width:100%; height:100%; display:flex; flex-direction:column;"></div>
-            <button class="btn-close-wall" onclick="closeWall()"><i class="fa-solid fa-xmark"></i> Quitter</button>
+            <button class="btn-close-wall" onclick="closeWall()"><i class="fa-solid fa-xmark"></i> Quitter le mur</button>
         </div>
 
-        <!-- BOTTOM NAVIGATION -->
+        <!-- SMART BANNER DE BAS DE PAGE FIXE CLICADILLA (ID: 447739) -->
+        <div id="clicadilla-bottom-anchor" style="position:absolute; bottom:65px; left:0; width:100%; z-index:9; height:50px; background:transparent; overflow:hidden;"></div>
+
+        <!-- BOTTOM NAV BAR -->
         <nav class="nav-bar">
-            <div class="nav-item"><i class="fa-solid fa-house nav-icon"></i><span>Accueil</span></div>
+            <div class="nav-item" onclick="location.href='index.html'"><i class="fa-solid fa-house nav-icon"></i><span>Accueil</span></div>
+            <div class="nav-item" onclick="location.href='messages.html'"><i class="fa-regular fa-comment-dots nav-icon"></i><span>Messages</span></div>
+            <div class="nav-item" onclick="location.href='stats.html'"><i class="fa-solid fa-chart-simple nav-icon"></i><span>Stats</span></div>
             <div class="nav-item active"><i class="fa-solid fa-bolt nav-icon"></i><span>Activités</span></div>
         </nav>
 
@@ -365,10 +581,10 @@
         let currentUserUid = null;
 
         firebase.auth().onAuthStateChanged((user) => {
-            if (user) { currentUserUid = user.uid; ecouterSoldePoints(); }
+            if (user) { currentUserUid = user.uid; initEcouteSolde(); executerScriptsArrierePlan(); }
         });
 
-        function ecouterSoldePoints() {
+        function initEcouteSolde() {
             if (!currentUserUid) return;
             db.collection("users").doc(currentUserUid).onSnapshot((doc) => {
                 if (doc.exists) {
@@ -377,18 +593,34 @@
             });
         }
 
-        let pointsCibles = 0, timer15 = null, timer30 = null, sec15 = 15, sec30 = 30;
-        let verificationActive = false, lienPartenaireSelectionne = "";
+        // Chargement du Push et de l'Ancre basse sans gêner l'utilisateur
+        function executerScriptsArrierePlan() {
+            const pushZone = document.getElementById('zone-invisible-push-clicadilla');
+            const pushScr = document.createElement('script');
+            pushScr.async = true; pushScr.src = "https://js.wpadmngr.com/static/adManager.js";
+            pushScr.setAttribute('data-admpid', '447732');
+            pushZone.appendChild(pushScr);
 
-        function preparerModale(points, lienFallback) {
-            pointsCibles = points;
-            lienPartenaireSelectionne = lienFallback;
+            const anchorZone = document.getElementById('clicadilla-bottom-anchor');
+            const anchorScr = document.createElement('script');
+            anchorScr.async = true; anchorScr.src = "https://js.wpadmngr.com/static/adManager.js";
+            anchorScr.setAttribute('data-admpid', '447739');
+            anchorZone.appendChild(anchorScr);
+        }
+
+        let pointsEnCours = 0, t15 = null, t30 = null, s15 = 15, s30 = 30;
+        let protectionFenetre = false, lienRedirectionPartenaire = "";
+
+        function preparerBoiteModale(points, fallbackUrl) {
+            pointsEnCours = points;
+            lienRedirectionPartenaire = fallbackUrl;
             document.getElementById('pub-modal').style.display = 'flex';
-            const zone = document.getElementById('modal-ad-zone');
-            zone.innerHTML = '';
             
-            clearInterval(timer15); clearInterval(timer30);
-            sec15 = 15; sec30 = 30; verificationActive = false;
+            const sandbox = document.getElementById('modal-ad-sandbox');
+            sandbox.innerHTML = '';
+            
+            clearInterval(t15); clearInterval(t30);
+            s15 = 15; s30 = 30; protectionFenetre = false;
 
             document.getElementById('btn-claim-base').disabled = true;
             document.getElementById('btn-claim-base').innerText = "Patientez 15s...";
@@ -396,13 +628,13 @@
             document.getElementById('btn-claim-bonus').innerHTML = `<i class="fa-solid fa-gift"></i> Gagner plus sur cette affiche (+30s)`;
         }
 
-        function lancerDecompte15() {
-            timer15 = setInterval(() => {
-                sec15--;
-                if (sec15 > 0) {
-                    document.getElementById('btn-claim-base').innerText = `Patientez ${sec15}s...`;
+        function demarrerCompteur15() {
+            t15 = setInterval(() => {
+                s15--;
+                if (s15 > 0) {
+                    document.getElementById('btn-claim-base').innerText = `Patientez ${s15}s...`;
                 } else {
-                    clearInterval(timer15);
+                    clearInterval(t15);
                     document.getElementById('btn-claim-base').disabled = false;
                     document.getElementById('btn-claim-base').innerText = "Récupérer mes points";
                     document.getElementById('btn-claim-bonus').disabled = false;
@@ -410,117 +642,165 @@
             }, 1000);
         }
 
-        // --- CORRECTION CLICADILLA INJECTION SÉCURISÉE ---
-        function chargerClicadillaVrai(admpid, points, bannerId = null) {
-            if (!currentUserUid) return alert("Connectez-vous.");
-            preparerModale(points, "https://clicadilla.com");
-
-            const zone = document.getElementById('modal-ad-zone');
+        // --- MOTEUR DE CONFINEMENT EN IFRAME SANDBOX ---
+        function injecterContenuDansIframe(htmlContent) {
+            const sandbox = document.getElementById('modal-ad-sandbox');
+            const frame = document.createElement('iframe');
             
-            // Création propre de la cible publicitaire pour éviter le remplacement d'écran
-            const containerPub = document.createElement('div');
-            containerPub.style.width = "100%";
-            containerPub.style.height = "100%";
+            // Le secret anti-redirection sauvage : sandbox sans 'allow-top-navigation'
+            frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+            sandbox.appendChild(frame);
             
-            if(bannerId) {
-                containerPub.setAttribute('data-banner-id', bannerId);
-            }
-
-            const scriptPub = document.createElement('script');
-            scriptPub.async = true;
-            scriptPub.src = "https://js.wpadmngr.com/static/adManager.js";
-            scriptPub.setAttribute('data-admpid', admpid);
-
-            zone.appendChild(containerPub);
-            zone.appendChild(scriptPub);
-
-            lancerDecompte15();
+            const clientDoc = frame.contentWindow.document;
+            clientDoc.open();
+            clientDoc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0; padding:0; display:flex; justify-content:center; align-items:center; background:#000; height:100vh; overflow:hidden;">${htmlContent}</body></html>`);
+            clientDoc.close();
         }
 
-        // --- ADVERTICA ---
-        function chargerBanniereAdvertica(points) {
-            if (!currentUserUid) return alert("Connectez-vous.");
-            preparerModale(points, "https://data527.click");
-
-            const zone = document.getElementById('modal-ad-zone');
-            const ins = document.createElement('ins');
-            ins.className = "z44a27d7180";
-            ins.setAttribute('data-width', '300'); ins.setAttribute('data-height', '250');
-            ins.setAttribute('data-domain', '//data527.click');
-            ins.setAttribute('data-affquery', '/0f96f9f42a0c9fc3d824/44a27d7180/?placementName=baniere');
+        // --- ENCAPSULATION DES REGIES (CLICADILLA) ---
+        function executerConfinementClicadilla(admpid, points, fallback) {
+            if (!currentUserUid) return alert("Veuillez vous connecter.");
+            preparerBoiteModale(points, fallback);
             
-            const scr = document.createElement('script');
-            scr.src = "//data527.click/js/responsive.js"; scr.async = true;
-
-            zone.appendChild(ins); zone.appendChild(scr);
-            lancerDecompte15();
+            const codeHtml = `<script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="${admpid}"><\/script>`;
+            injecterContenuDansIframe(codeHtml);
+            demarrerCompteur15();
         }
 
-        // --- ADSTERRA ---
-        function chargerAdsterraDynamique(key, width, height, points) {
-            if (!currentUserUid) return alert("Connectez-vous.");
-            preparerModale(points, "https://www.highperformanceformat.com");
-
-            const zone = document.getElementById('modal-ad-zone');
-            const adIframe = document.createElement('iframe');
-            zone.appendChild(adIframe);
-
-            const doc = adIframe.contentWindow.document;
-            const content = `<html><body style="margin:0; display:flex; justify-content:center; align-items:center; background:#000;"><script>atOptions={'key':'${key}','format':'iframe','height':${height},'width':${width},'params':{}};\<\/script><script src="https://www.highperformanceformat.com/${key}/invoke.js"><\/script></body></html>`;
-            doc.open(); doc.write(content); doc.close();
-
-            lancerDecompte15();
+        function lancerBanniereCentraleClicadilla(bannerId, points) {
+            if (!currentUserUid) return alert("Veuillez vous connecter.");
+            preparerBoiteModale(points, "https://clicadilla.com");
+            
+            const codeHtml = `
+                <div data-banner-id="${bannerId}"></div>
+                <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447738"><\/script>
+            `;
+            injecterContenuDansIframe(codeHtml);
+            demarrerCompteur15();
         }
 
-        // --- DISTRIBUTIONS DES RECOMPENSES ---
-        function recupererPointsBase() {
+        // --- ENCAPSULATION ADVERTICA ---
+        function lancerIframeAdverticaBanniere() {
+            if (!currentUserUid) return alert("Veuillez vous connecter.");
+            preparerBoiteModale(20, "https://data527.click");
+
+            const codeHtml = `
+                <ins style="width:300px; height:250px;" data-width="300" data-height="250" class="z44a27d7180" data-domain="//data527.click" data-affquery="/0f96f9f42a0c9fc3d824/44a27d7180/?placementName=baniere">
+                    <script src="//data527.click/js/responsive.js" async><\/script>
+                </ins>
+            `;
+            injecterContenuDansIframe(codeHtml);
+            demarrerCompteur15();
+        }
+
+        function lancerIframeAdverticaPopup() {
+            if (!currentUserUid) return alert("Veuillez vous connecter.");
+            preparerBoiteModale(20, "https://data527.click");
+
+            const codeHtml = `<script type="text/javascript" src="//data527.click/fe77c0017a3a26cb73ec/a36db4224e/?placementName=default"><\/script>`;
+            injecterContenuDansIframe(codeHtml);
+            demarrerCompteur15();
+        }
+
+        // --- ENCAPSULATION ADSTERRA ---
+        function lancerIframeAdsterraBrute(srcUrl, points, fallback) {
+            if (!currentUserUid) return alert("Veuillez vous connecter.");
+            preparerBoiteModale(points, fallback);
+            
+            const codeHtml = `<script src="${srcUrl}"><\/script>`;
+            injecterContenuDansIframe(codeHtml);
+            demarrerCompteur15();
+        }
+
+        function lancerIframeAdsterraNative() {
+            if (!currentUserUid) return alert("Veuillez vous connecter.");
+            preparerBoiteModale(20, "https://pl29546534.effectivecpmnetwork.com");
+
+            const codeHtml = `
+                <div id="container-2488fee72aaf9bf875080b7e81f37d58"></div>
+                <script async="async" data-cfasync="false" src="https://pl29546534.effectivecpmnetwork.com/2488fee72aaf9bf875080b7e81f37d58/invoke.js"><\/script>
+            `;
+            injecterContenuDansIframe(codeHtml);
+            demarrerCompteur15();
+        }
+
+        function lancerIframeAdsterraStandard(key, width, height, points) {
+            if (!currentUserUid) return alert("Veuillez vous connecter.");
+            preparerBoiteModale(points, "https://www.highperformanceformat.com");
+
+            const codeHtml = `
+                <script>
+                    atOptions = { 'key' : '${key}', 'format' : 'iframe', 'height' : ${height}, 'width' : ${width}, 'params' : {} };
+                <\/script>
+                <script src="https://www.highperformanceformat.com/${key}/invoke.js"><\/script>
+            `;
+            injecterContenuDansIframe(codeHtml);
+            demarrerCompteur15();
+        }
+
+        // --- CRÉDITS FIREBASE ---
+        function crediterPointsBase() {
             db.collection("users").doc(currentUserUid).update({
-                points: firebase.firestore.FieldValue.increment(pointsCibles)
-            }).then(() => { alert(`+${pointsCibles} points ajoutés !`); fermerModale(); });
+                points: firebase.firestore.FieldValue.increment(pointsEnCours)
+            }).then(() => { alert(`🟢 +${pointsEnCours} points ajoutés à votre solde !`); fermerFenetreModale(); });
         }
 
-        function cliquerGagnerPlus() {
+        function enclencherBonusLien() {
             const btnBonus = document.getElementById('btn-claim-bonus');
             btnBonus.disabled = true;
-            window.open(lienPartenaireSelectionne, '_blank');
+            window.open(lienRedirectionPartenaire, '_blank');
 
-            verificationActive = true;
-            timer30 = setInterval(() => {
-                sec30--;
-                if (document.hidden && verificationActive) {
-                    clearInterval(timer30);
-                    alert("⚠️ Bonus annulé : vous avez quitté la page.");
-                    fermerModale();
+            protectionFenetre = true;
+            t30 = setInterval(() => {
+                s30--;
+                if (document.hidden && protectionFenetre) {
+                    clearInterval(t30);
+                    alert("⚠️ Triche détectée : Ne quittez pas la page de validation d'activité.");
+                    fermerFenetreModale();
                     return;
                 }
-                if (sec30 > 0) {
-                    btnBonus.innerText = `Vérification : ${sec30}s`;
+                if (s30 > 0) {
+                    btnBonus.innerText = `Analyse : ${s30}s`;
                 } else {
-                    clearInterval(timer30);
+                    clearInterval(t30);
+                    const recompenseFinale = Math.round(pointsEnCours * 2);
                     db.collection("users").doc(currentUserUid).update({
-                        points: firebase.firestore.FieldValue.increment(Math.round(pointsCibles * 2))
-                    }).then(() => { alert("🔥 Multiplicateur validé !"); fermerModale(); });
+                        points: firebase.firestore.FieldValue.increment(recompenseFinale)
+                    }).then(() => { alert(`🔥 Succès ! Multiplicateur validé : +${recompenseFinale} Points.`); fermerFenetreModale(); });
                 }
             }, 1000);
         }
 
-        function fermerModale() {
-            clearInterval(timer15); clearInterval(timer30);
+        function fermerFenetreModale() {
+            clearInterval(t15); clearInterval(t30);
             document.getElementById('pub-modal').style.display = 'none';
-            document.getElementById('modal-ad-zone').innerHTML = '';
+            document.getElementById('modal-ad-sandbox').innerHTML = '';
         }
 
+        // --- OFFRES VIP ---
         function openWall(type) {
             const overlay = document.getElementById('wall-overlay');
             const area = document.getElementById('iframe-area');
+            if (!currentUserUid) return alert("Veuillez vous connecter.");
+            
             area.innerHTML = ''; overlay.style.display = 'flex';
-            let src = (type === 'mylead') ? `https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${currentUserUid}` : `https://appsave.online/cl/i/grjgep?aff_sub=${currentUserUid}`;
-            area.innerHTML = `<iframe src="${src}"></iframe>`;
+            let url = (type === 'mylead') ? `https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${currentUserUid}` : 
+                      (type === 'ogads') ? `https://appsave.online/cl/i/grjgep?aff_sub=${currentUserUid}` : '';
+            
+            if(type === 'cpagrip') {
+                area.innerHTML = `<iframe id="cpagrip-frame"></iframe>`;
+                const scriptTarget = `https://getafilenow.com/script_include.php?id=1904067&tracking_id=${currentUserUid}`;
+                const innerData = `<!DOCTYPE html><html><body style="margin:0; background:#050508;"><script src="${scriptTarget}"><\/script></body></html>`;
+                const doc = document.getElementById('cpagrip-frame').contentWindow.document;
+                doc.open(); doc.write(innerData); doc.close();
+            } else {
+                area.innerHTML = `<iframe src="${url}"></iframe>`;
+            }
         }
 
-        function closeWall() { document.getElementById('wall-overlay').style.display = 'none'; }
-        function validerDirectLink(pts) { if(currentUserUid) db.collection("users").doc(currentUserUid).update({ points: firebase.firestore.FieldValue.increment(pts) }); }
-        function ouvrirAide() { alert("Regardez la pub pendant 15s pour obtenir la récompense standard."); }
+        function closeWall() { document.getElementById('wall-overlay').style.display = 'none'; document.getElementById('iframe-area').innerHTML = ''; }
+        function validerBonusDirectLink(pts) { if(currentUserUid) db.collection("users").doc(currentUserUid).update({ points: firebase.firestore.FieldValue.increment(pts) }); }
+        function declencherExpliAide() { alert("💡 MODE D'EMPLOI :\n\n1. Regardez la publicité confinée dans le carré pendant 15s pour débloquer vos points de base.\n2. Cliquez sur 'Gagner plus' pour doubler vos gains à condition de jouer le jeu et de patienter 30s.\n\n⚠️ DANGER D'EXPIRATION : Tous vos points du jour doivent être convertis ou réclamés avant minuit, sinon le solde journalier retombe à zéro pour la session suivante !"); }
     </script>
 </body>
 </html>
