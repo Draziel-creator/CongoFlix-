@@ -11,12 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-    <!-- [SCRIPT MAÎTRE] Clickadilla - Chargement des bannières -->
-    <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447738"></script>
-    
-    <!-- [SCRIPT] Adsterra Social Bar -->
-    <script src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
-
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
@@ -50,23 +44,13 @@
         /* --- CONTENU CONTENEUR GLOBAL --- */
         .content-scroll {
             flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px;
-            padding-bottom: 80px;
         }
 
         .section-title {
-            font-size: 13px; font-weight: 700; color: #555875; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 10px; margin-bottom: -5px;
+            font-size: 13px; font-weight: 700; color: #555875; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: -5px;
         }
 
-        /* --- ZONE SOLDE --- */
-        .points-card {
-            background: linear-gradient(135deg, #090b18 0%, #060713 100%);
-            border: 1px solid rgba(0, 255, 204, 0.15); border-radius: 20px; padding: 15px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .points-val { font-size: 24px; font-weight: 800; color: #ffffff; }
-        .points-val span { color: #ffcc00; }
-
-        /* --- BOUTON DE RÉCOMPENSE VIDÉO (MÉTHODE COMPATIBLE ORIGINAL) --- */
+        /* --- BOUTON DE RÉCOMPENSE VIDÉO (CLICKADILLA) --- */
         .video-reward-card {
             background: linear-gradient(135deg, #090b18 0%, #060713 100%);
             border: 1px solid rgba(0, 255, 204, 0.2); border-radius: 20px; padding: 20px;
@@ -81,10 +65,11 @@
         .video-reward-text h3 { margin: 0 0 4px 0; font-size: 16px; font-weight: 700; }
         .video-reward-text p { margin: 0; font-size: 12px; color: #8a8d9f; }
         
-        /* C'est ICI que ClickADilla pose sa vidéo */
+        /* Conteneur où ClickADilla va poser sa pub */
         #zone-pub-video {
             width: 100%; background: #000; border-radius: 12px; overflow: hidden;
-            display: none; aspect-ratio: 16 / 9;
+            display: none; /* Masqué par défaut, apparaît quand on lance la pub */
+            aspect-ratio: 16 / 9;
         }
 
         .btn-watch-video {
@@ -94,19 +79,6 @@
         }
         .btn-watch-video:disabled {
             background: #222; color: #555; cursor: not-allowed;
-        }
-
-        /* Selector de choix de vidéo */
-        .video-selector {
-            width: 100%; background: #060713; border: 1px solid rgba(255,255,255,0.1);
-            color: #fff; padding: 10px; border-radius: 8px; font-size: 12px;
-        }
-
-        /* --- CONTENEURS BANNIÈRES STATIQUES (S'affichent automatiquement si le script maître est présent) --- */
-        .banner-container-box {
-            width: 100%; display: flex; justify-content: center; align-items: center;
-            background: rgba(255,255,255,0.01); border-radius: 12px; padding: 10px 0;
-            border: 1px dashed rgba(255, 255, 255, 0.05); min-height: 100px;
         }
 
         /* --- BOUTONS OFFRES CPA --- */
@@ -133,17 +105,6 @@
         .btn-cpagrip i { color: #27ae60; text-shadow: 0 0 15px rgba(39,174,96,0.4); }
         .wall-btn h2 { margin: 0; font-size: 16px; font-weight: 700; }
         .wall-btn p { margin: 0; font-size: 12px; color: #8a8d9f; }
-
-        /* --- BOUTON DE FLUX POUR LES LIENS DIRECTS --- */
-        .direct-link-center {
-            display: flex; gap: 10px; width: 100%;
-        }
-        .btn-direct {
-            flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 700;
-            font-size: 12px; text-transform: uppercase; cursor: pointer; text-align: center;
-        }
-        .btn-direct.advertica { background: #00ffcc; color: #020308; }
-        .btn-direct.adsterra { background: #ffcc00; color: #020308; }
 
         /* --- OVERLAY DE L'IFRAME RECOUVREMENT --- */
         .fullscreen-overlay {
@@ -181,86 +142,22 @@
         </header>
 
         <div class="content-scroll">
-
-            <!-- SOLDE DE POINTS -->
-            <div class="points-card">
-                <div>
-                    <span style="font-size: 11px; color:#8a8d9f;">Mes Points</span>
-                    <div class="points-val" id="points-display">Chargement... <span>★</span></div>
-                </div>
-                <div style="font-size: 28px;">💎</div>
-            </div>
             
-            <!-- SECTION VIDÉO CLICKADILLA (L'exacte copie de ta méthode fonctionnelle) -->
-            <div class="section-title">🎬 Cinéma Récompense (Clickadilla)</div>
+            <div class="section-title">🎬 Cinéma Récompense</div>
             <div class="video-reward-card">
                 <div class="video-reward-info">
                     <i class="fa-solid fa-circle-play"></i>
                     <div class="video-reward-text">
-                        <h3>Mission Vidéo</h3>
-                        <p>Choisissez une vidéo, regardez et gagnez +100 points</p>
+                        <h3>Mission Vidéo Flash</h3>
+                        <p>Regardez une courte pub pour obtenir +100 points</p>
                     </div>
                 </div>
-
-                <!-- Sélecteur de chaîne vidéo (1 à 10) -->
-                <select class="video-selector" id="video-id-chooser">
-                    <option value="447672">Vidéo Flash #1</option>
-                    <option value="447741">Vidéo Flash #2</option>
-                    <option value="447743">Vidéo Flash #3</option>
-                    <option value="447744">Vidéo Flash #4</option>
-                    <option value="447745">Vidéo Flash #5</option>
-                    <option value="447746">Vidéo Flash #6</option>
-                    <option value="447748">Vidéo Flash #7</option>
-                    <option value="447749">Vidéo Flash #8</option>
-                    <option value="447750">Vidéo Flash #9</option>
-                    <option value="447751">Vidéo Flash #10</option>
-                </select>
                 
-                <!-- Zone de rendu d'origine -->
                 <div id="zone-pub-video"></div>
 
                 <button class="btn-watch-video" id="action-btn-video" onclick="declencherPubVideo()">
                     <i class="fa-solid fa-play"></i> Lancer la vidéo (+100 Pts)
                 </button>
-            </div>
-
-            <!-- SECTION DIRECT LINKS (Actions Instantanées) -->
-            <div class="section-title">🚀 Liens Directs Bonus</div>
-            <div class="direct-link-center">
-                <button class="btn-direct advertica" onclick="lancerDirectLink('https://data527.click/8db930650dc1e3bc4df6/8bdc6ee564/?placementName=link', 80)">
-                    Advertica (+80 Pts)
-                </button>
-                <button class="btn-direct adsterra" onclick="lancerDirectLink('https://www.effectivecpmnetwork.com/uc21ey6tf?key=2f113ae182b0d7d4aeeff282e07b95be', 100)">
-                    Adsterra (+100 Pts)
-                </button>
-            </div>
-
-            <!-- SECTION BANNIÈRES SÉCURISÉES (Sans injection JS bloquante) -->
-            <div class="section-title">🖼️ Bannières Partenaires (Clickadilla)</div>
-            
-            <div class="banner-container-box">
-                <!-- Bannière 1 -->
-                <div data-banner-id="1496058"></div>
-            </div>
-
-            <div class="banner-container-box">
-                <!-- Bannière 2 -->
-                <div data-banner-id="1496059"></div>
-            </div>
-
-            <!-- SECTION BANNIÈRES ADSTERRA & ADVERTICA (Intégration HTML Directe) -->
-            <div class="section-title">⭐ Autres Bannières</div>
-
-            <!-- Adsterra 300x250 -->
-            <div class="banner-container-box" style="min-height: 250px;">
-                <iframe src="about:blank" id="adsterra-frame-300" style="width:300px; height:250px; border:none; background:transparent;"></iframe>
-            </div>
-
-            <!-- Advertica 300x250 -->
-            <div class="banner-container-box" style="min-height: 250px;">
-                <ins style="width: 300px; height:250px" data-width="300" data-height="250" class="z44a27d7180" data-domain="//data527.click" data-affquery="/0f96f9f42a0c9fc3d824/44a27d7180/?placementName=baniere">
-                    <script src="//data527.click/js/responsive.js" async></script>
-                </ins>
             </div>
 
             <div class="section-title">💼 Murs Offres Partenaires</div>
@@ -290,11 +187,6 @@
             <button class="btn-close-wall" onclick="closeWall()"><i class="fa-solid fa-xmark"></i> Quitter le mur</button>
         </div>
 
-        <!-- STICKY FOOTER AD (Clickadilla 447739) - S'affiche proprement en bas -->
-        <div style="width: 100%; height: 50px; background: #000; display: flex; justify-content: center; align-items: center; z-index: 10;">
-            <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447739"></script>
-        </div>
-
         <nav class="nav-bar">
             <div class="nav-item" onclick="location.href='index.html'"><i class="fa-solid fa-house nav-icon"></i><span>Accueil</span></div>
             <div class="nav-item" onclick="location.href='messages.html'"><i class="fa-regular fa-comment-dots nav-icon"></i><span>Messages</span></div>
@@ -322,23 +214,12 @@
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
                 currentUserUid = user.uid;
-                ecouterPoints();
             } else {
                 currentUserUid = null;
-                document.getElementById('points-display').innerHTML = "0 <span>★</span>";
             }
         });
 
-        function ecouterPoints() {
-            if (!currentUserUid) return;
-            db.collection("users").doc(currentUserUid).onSnapshot((doc) => {
-                if (doc.exists && doc.data().points !== undefined) {
-                    document.getElementById('points-display').innerHTML = `${doc.data().points.toLocaleString()} <span>★</span>`;
-                }
-            });
-        }
-
-        // --- GESTION DU BOUTON DE PUB VIDÉO D'ORIGINE ---
+        // --- GESTION DU BOUTON DE PUB VIDÉO CLICKADILLA ---
         function declencherPubVideo() {
             if (!currentUserUid) { 
                 return alert("Veuillez vous connecter pour accumuler vos points."); 
@@ -346,21 +227,19 @@
 
             const boxPub = document.getElementById('zone-pub-video');
             const btnVideo = document.getElementById('action-btn-video');
-            const videoId = document.getElementById('video-id-chooser').value; // Récupère l'ID sélectionné
 
-            boxPub.innerHTML = ''; // Nettoyage préalable
-            boxPub.style.display = 'block'; 
-            btnVideo.disabled = true;       
+            boxPub.style.display = 'block'; // Fait apparaître la boîte de pub
+            btnVideo.disabled = true;       // Désactive le bouton immédiatement pour éviter la triche
 
-            // 1. Injection dynamique stricte selon ton modèle d'origine qui marche
+            // 1. Injection dynamique du script officiel ClickADilla fourni dans la boîte prévue à cet effet
             const scriptPub = document.createElement('script');
             scriptPub.async = true;
             scriptPub.src = "https://js.wpadmngr.com/static/adManager.js";
-            scriptPub.setAttribute('data-admpid', videoId);
+            scriptPub.setAttribute('data-admpid', '447672');
             boxPub.appendChild(scriptPub);
 
-            // 2. Compteur obligatoire de visionnage
-            let compteARebours = 15;
+            // 2. Simulation sécurisée du compteur de visionnage obligatoire de 10 secondes (Skip Time régie)
+            let compteARebours = 10;
             const timer = setInterval(() => {
                 compteARebours--;
                 btnVideo.innerText = `Analyse du flux (${compteARebours}s)...`;
@@ -368,7 +247,7 @@
                 if (compteARebours <= 0) {
                     clearInterval(timer);
                     
-                    // 3. Crédit direct des points
+                    // 3. Crédit direct des points sur Firebase dès la fin réglementaire de la pub
                     db.collection("users").doc(currentUserUid).update({
                         points: firebase.firestore.FieldValue.increment(100)
                     }).then(() => {
@@ -377,6 +256,7 @@
                         btnVideo.style.color = "#020308";
                         alert("Félicitations ! Votre attention a été récompensée de +100 points.");
                         
+                        // Nettoyage visuel après 5 secondes pour remettre la zone au propre
                         setTimeout(() => {
                             boxPub.style.display = 'none';
                             boxPub.innerHTML = '';
@@ -390,44 +270,7 @@
             }, 1000);
         }
 
-        // --- DIRECT LINKS ---
-        function lancerDirectLink(url, points) {
-            window.open(url, '_blank');
-            if (currentUserUid) {
-                db.collection("users").doc(currentUserUid).update({
-                    points: firebase.firestore.FieldValue.increment(points)
-                });
-            }
-        }
-
-        // --- CHARGEMENT SÉCURISÉ ADSTERRA IFRAME SANS CORRUPTION ---
-        window.onload = function() {
-            const frame = document.getElementById('adsterra-frame-300');
-            if (frame) {
-                const doc = frame.contentWindow.document;
-                const content = `
-                    <html>
-                    <body style="margin:0; background:transparent; display:flex; justify-content:center; align-items:center;">
-                        <script>
-                            atOptions = {
-                                'key' : 'e86dd4055cd86d43aa42fbae392c77d2',
-                                'format' : 'iframe',
-                                'height' : 250,
-                                'width' : 300,
-                                'params' : {}
-                            };
-                        <\/script>
-                        <script src="https://www.highperformanceformat.com/e86dd4055cd86d43aa42fbae392c77d2/invoke.js"><\/script>
-                    </body>
-                    </html>
-                `;
-                doc.open();
-                doc.write(content);
-                doc.close();
-            }
-        };
-
-        // --- OFFRES CPA ---
+        // --- OUVERTURE DE L'OVERLAY POUR LES MURS CPA ---
         function openWall(type) {
             const overlay = document.getElementById('wall-overlay');
             const iframeArea = document.getElementById('iframe-area');
