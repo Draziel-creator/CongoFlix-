@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>PUBLICITÉ - Activités & Boost</title>
+    <title>CONGOFLIX - Zone Activités & Boost</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-    <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447738"></script>
-    
+    <!-- Scripts de Régie Globaux & Push (ClickADilla Web Push) -->
     <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447732"></script>
-
+    <!-- Script Popunder Adsterra -->
+    <script src="https://pl30313217.effectivecpmnetwork.com/de/ac/ef/deacefeb17116ee3bc546f4b5ba4c252.js"></script>
+    <!-- Script Social Bar Adsterra -->
     <script src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
 
     <style>
@@ -47,184 +49,155 @@
             font-size: 16px; font-weight: 700; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; color: #00ffcc;
         }
 
-        /* --- CONTENU DEFILANT --- */
+        /* --- CONTENU --- */
         .content-scroll {
             flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px;
-            padding-bottom: 90px;
+            padding-bottom: 80px; /* Espace pour la sticky banner */
         }
 
         .section-title {
-            font-size: 13px; font-weight: 700; color: #555875; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 10px; margin-bottom: -5px;
-        }
-
-        /* --- ZONE SOLDE --- */
-        .points-card-wrapper {
-            display: flex; flex-direction: column; gap: 8px;
-        }
-        .points-card {
-            background: linear-gradient(135deg, #090b18 0%, #060713 100%);
-            border: 1px solid rgba(0, 255, 204, 0.15); border-radius: 20px; padding: 15px;
+            font-size: 13px; font-weight: 700; color: #555875; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: -5px;
             display: flex; justify-content: space-between; align-items: center;
         }
-        .points-val { font-size: 24px; font-weight: 800; color: #ffffff; }
-        .points-val span { color: #ffcc00; }
 
-        /* Infos / Question Pulsant */
-        .help-trigger {
-            display: flex; align-items: center; gap: 8px; font-size: 11px; color: #8a8d9f; cursor: pointer; align-self: flex-start;
+        /* --- DASHBOARD POINTS & INFO PULSE --- */
+        .points-dashboard {
+            background: linear-gradient(135deg, #0d0f22 0%, #070817 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .help-trigger i {
-            color: #ffcc00; font-size: 14px;
-            animation: pulse-icon 1.5s infinite alternate;
+        .points-val {
+            font-size: 24px; font-weight: 800; color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.3);
         }
-
-        @keyframes pulse-icon {
-            0% { transform: scale(1); text-shadow: 0 0 0px rgba(255,204,0,0); }
-            100% { transform: scale(1.2); text-shadow: 0 0 8px rgba(255,204,0,0.6); }
-        }
-
-        /* --- BOUTON DE RECOMPENSE VIDEO --- */
-        .video-reward-card {
-            background: linear-gradient(135deg, #090b18 0%, #060713 100%);
-            border: 1px solid rgba(0, 255, 204, 0.2); border-radius: 20px; padding: 20px;
-            display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5);
-        }
-        .video-reward-info {
-            display: flex; align-items: center; gap: 15px;
-        }
-        .video-reward-info i {
-            font-size: 32px; color: #ffcc00; text-shadow: 0 0 15px rgba(255,204,0,0.4);
-        }
-        .video-reward-text h3 { margin: 0 0 4px 0; font-size: 16px; font-weight: 700; }
-        .video-reward-text p { margin: 0; font-size: 12px; color: #8a8d9f; }
-        
-        .video-selector {
-            width: 100%; background: #060713; border: 1px solid rgba(255,255,255,0.1);
-            color: #fff; padding: 12px; border-radius: 10px; font-size: 13px; outline: none;
+        .info-pulse-btn {
+            background: rgba(255, 204, 0, 0.1); border: 1px solid #ffcc00; color: #ffcc00;
+            width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center;
+            align-items: center; cursor: pointer; font-size: 16px; font-weight: bold;
+            animation: pulse-yellow 2s infinite;
         }
 
-        .btn-watch-video {
-            width: 100%; background: #ffcc00; color: #020308; border: none; padding: 14px;
-            border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer;
-            display: flex; justify-content: center; align-items: center; gap: 8px; transition: all 0.2s;
-        }
-        .btn-watch-video:disabled {
-            background: #222; color: #555; cursor: not-allowed;
+        @keyframes pulse-yellow {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.4); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 204, 0, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 204, 0, 0); }
         }
 
-        /* --- CONTENEURS BANNIERES --- */
-        .banner-container-box {
-            width: 100%; display: flex; justify-content: center; align-items: center;
-            background: rgba(255,255,255,0.01); border-radius: 12px; padding: 10px 0;
-            border: 1px dashed rgba(255, 255, 255, 0.05); min-height: 100px; overflow: hidden;
+        /* --- BOUTONS BONUS FLOTTANTS DIRECT LINKS --- */
+        .floating-bonus-container {
+            position: absolute; right: 20px; top: 120px; display: flex; flex-direction: column; gap: 15px; z-index: 99;
+        }
+        .bonus-badge {
+            width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, #ff0055 0%, #9b00ff 100%);
+            border: 2px solid #ffffff; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-shadow: 0 8px 20px rgba(255,0,85,0.4); cursor: pointer; animation: pulse-pink 2.5s infinite;
+            text-decoration: none; color: white;
+        }
+        .bonus-badge.adsterra-link {
+            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            box-shadow: 0 8px 20px rgba(0,114,255,0.4);
+        }
+        .bonus-badge span { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .bonus-badge i { font-size: 16px; margin-bottom: 2px; }
+
+        @keyframes pulse-pink {
+            0% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-5px) scale(1.05); }
+            100% { transform: translateY(0) scale(1); }
         }
 
-        /* --- BOUTONS OFFRES CPA & AUTRES POPUNDERS --- */
-        .grid-buttons {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+        /* --- FORMATS GRILLES BOUTONS MISSIONS --- */
+        .missions-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
         }
-        .btn-action-small {
-            padding: 15px 10px; background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px;
-            color: white; font-size: 12px; font-weight: 600; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
-        }
-        .btn-action-small i { font-size: 18px; color: #00ffcc; }
 
-        /* --- WALL BUTTONS --- */
+        .btn-mission-video {
+            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px; padding: 15px 10px; display: flex; flex-direction: column; align-items: center;
+            gap: 10px; cursor: pointer; transition: all 0.2s ease; text-align: center;
+        }
+        .btn-mission-video:hover {
+            border-color: #ffcc00; background: rgba(255,204,0,0.03); transform: translateY(-2px);
+        }
+        .btn-mission-video i { font-size: 24px; color: #ffcc00; }
+        .btn-mission-video span { font-size: 12px; font-weight: 600; }
+        .btn-mission-video .pts-badge {
+            background: rgba(0,255,204,0.1); color: #00ffcc; font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700;
+        }
+
+        /* --- UNIFICATION CARREE DU MODAL PUB --- */
+        .modal-pub-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2,3,8,0.95);
+            z-index: 500; display: none; justify-content: center; align-items: center; flex-direction: column; padding: 20px;
+            box-sizing: border-box;
+        }
+        .pub-square-box {
+            width: 100%; max-width: 320px; aspect-ratio: 1 / 1; background: #000; border-radius: 24px;
+            border: 2px solid #00ffcc; overflow: hidden; position: relative; margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,255,204,0.2); display: flex; justify-content: center; align-items: center;
+        }
+        .pub-square-box iframe {
+            width: 100%; height: 100%; border: none;
+        }
+        .close-modal-btn {
+            position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); border: none;
+            color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px;
+            display: flex; justify-content: center; align-items: center; z-index: 510;
+        }
+
+        .modal-actions {
+            width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 10px;
+        }
+        .btn-modal-action {
+            width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 13px; border: none;
+            cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; transition: all 0.2s;
+        }
+        .btn-claim { background: #ffcc00; color: #020308; }
+        .btn-claim:disabled { background: #222; color: #555; cursor: not-allowed; }
+        .btn-boost { background: #9b51e0; color: white; }
+
+        /* Instructions anti-triche */
+        .boost-instructions {
+            font-size: 11px; color: #8a8d9f; text-align: center; margin-top: 5px; line-height: 1.4;
+        }
+
+        /* --- AUTRES MURS CPA & VIP --- */
         .wall-btn {
-            width: 100%; padding: 20px; background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px); color: white; cursor: pointer; position: relative;
-            overflow: hidden; transition: transform 0.2s ease; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            display: flex; flex-direction: column; align-items: center; gap: 8px; box-sizing: border-box;
+            width: 100%; padding: 18px; background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; color: white; cursor: pointer;
+            position: relative; overflow: hidden; transition: transform 0.2s ease; display: flex; align-items: center; gap: 15px;
         }
-        .wall-btn:active { transform: scale(0.98); }
-        .btn-mylead { border-color: rgba(0, 255, 204, 0.2); }
-        .btn-ogads { border-color: rgba(155, 81, 224, 0.2); }
-        .btn-cpagrip { border-color: rgba(39, 174, 96, 0.2); }
-        .wall-btn i { font-size: 30px; }
+        .wall-btn i { font-size: 24px; }
         .btn-mylead i { color: #00ffcc; }
         .btn-ogads i { color: #9b51e0; }
         .btn-cpagrip i { color: #27ae60; }
-        .wall-btn h2 { margin: 0; font-size: 16px; font-weight: 700; }
-        .wall-btn p { margin: 0; font-size: 12px; color: #8a8d9f; }
+        .wall-btn h2 { margin: 0; font-size: 14px; font-weight: 700; }
+        .wall-btn p { margin: 0; font-size: 11px; color: #8a8d9f; }
 
-        /* --- BOUTON FLOTTANT MODERN (CERCLE DIRECT LINKS) --- */
-        .floating-direct-container {
-            position: absolute; bottom: 120px; right: 20px; z-index: 99;
+        /* Espace VIP */
+        .vip-section {
+            background: linear-gradient(135deg, #18090f 0%, #0e0508 100%);
+            border: 1px solid rgba(255, 0, 85, 0.2); border-radius: 24px; padding: 20px;
+            display: flex; flex-direction: column; gap: 15px; margin-top: 10px;
         }
-        .btn-floating-circle {
-            width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle, #ffcc00 0%, #ff9900 100%);
-            border: 2px solid #ffffff; box-shadow: 0 4px 20px rgba(255, 153, 0, 0.5);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: #020308; cursor: pointer; font-family: 'Inter', sans-serif;
-            animation: floating-bounce 2s infinite alternate;
-        }
-        .btn-floating-circle span { font-size: 9px; font-weight: 800; text-transform: uppercase; margin-top: -2px; }
-        .btn-floating-circle i { font-size: 16px; }
+        .vip-header { display: flex; align-items: center; gap: 10px; }
+        .vip-header i { font-size: 24px; color: #ff0055; text-shadow: 0 0 10px rgba(255,0,85,0.4); }
+        .vip-header h2 { margin: 0; font-size: 16px; font-weight: 800; color: #fff; }
 
-        @keyframes floating-bounce {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-10px); }
+        /* --- STICKY BANNER COLLÉE EN BAS --- */
+        .sticky-footer-ad {
+            position: absolute; bottom: 65px; left: 0; width: 100%; height: 55px; background: #000;
+            display: flex; justify-content: center; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); z-index: 15;
         }
 
-        /* --- MODAL DE PUBLICITE UNIVERSEL (CARRE ULTRA-STYLE) --- */
-        .ad-modal-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(2, 3, 8, 0.95); z-index: 200;
-            display: none; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;
-        }
-        .ad-modal-card {
-            width: 100%; max-width: 340px; background: #060713; border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px; padding: 20px; display: flex; flex-direction: column; gap: 15px; position: relative;
-        }
-        .btn-close-modal {
-            position: absolute; top: -15px; right: -15px; width: 36px; height: 36px; border-radius: 50%;
-            background: #ff4a4a; border: none; color: white; cursor: pointer; display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 4px 15px rgba(255,74,74,0.4); font-size: 16px; z-index: 210;
-        }
-        
-        /* Conteneur Carré Publicitaire Exclusif */
-        .square-ad-viewport {
-            width: 100%; aspect-ratio: 1 / 1; background: #000; border-radius: 16px;
-            overflow: hidden; display: flex; justify-content: center; align-items: center; position: relative;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .square-ad-viewport iframe, .square-ad-viewport div {
-            width: 100%; height: 100%; border: none;
-        }
-
-        .modal-btn-action {
-            width: 100%; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 13px; border: none; cursor: pointer;
-            display: flex; justify-content: center; align-items: center; gap: 8px; text-transform: uppercase;
-        }
-        .modal-btn-claim { background: #555; color: #aaa; cursor: not-allowed; }
-        .modal-btn-claim.ready { background: #00ffcc; color: #020308; cursor: pointer; }
-        .modal-btn-boost { background: #ffcc00; color: #020308; }
-
-        /* Information / Instruction de tâche */
-        .task-instruction {
-            font-size: 11px; color: #8a8d9f; text-align: center; line-height: 1.4; margin: 0;
-            background: rgba(255,255,255,0.02); padding: 8px; border-radius: 8px;
-        }
-
-        /* --- OVERLAY DE L'IFRAME RECOUVREMENT --- */
+        /* --- OVERLAYS GENERIQUE --- */
         .fullscreen-overlay {
             position: absolute; top: 67px; left: 0; width: 100%; bottom: 65px; background: #050508; z-index: 100;
             display: none; flex-direction: column;
         }
-        iframe.wall-frame { width: 100%; flex: 1; border: none; background: #050508; }
         .btn-close-wall {
             position: absolute; bottom: 20px; right: 20px; background: rgba(255, 74, 74, 0.95);
             color: white; border: none; padding: 12px 20px; border-radius: 30px; font-size: 13px; font-weight: 600;
-            cursor: pointer; box-shadow: 0 5px 15px rgba(255, 74, 74, 0.4); z-index: 101; display: flex; align-items: center; gap: 8px;
-        }
-
-        /* --- BOTTOM STICKY FOOTER --- */
-        .footer-sticky-ad {
-            width: 100%; height: 50px; background: #000; display: flex; justify-content: center; align-items: center; z-index: 10;
-            border-top: 1px solid rgba(255,255,255,0.05); overflow: hidden;
+            cursor: pointer; z-index: 101; display: flex; align-items: center; gap: 8px;
         }
 
         /* --- BOTTOM NAV --- */
@@ -241,6 +214,20 @@
 
     <div class="app-container">
 
+        <!-- BOUTONS DIRECT LINKS FLOTTANTS (ADVERTICA & ADSTERRA) -->
+        <div class="floating-bonus-container">
+            <!-- Advertica Direct Link -->
+            <a href="https://data527.click/8db930650dc1e3bc4df6/8bdc6ee564/?placementName=link" target="_blank" class="bonus-badge" onclick="ajouterPointsDirectLink(150)">
+                <i class="fa-solid fa-gift"></i>
+                <span>Bonus 1</span>
+            </a>
+            <!-- Adsterra Direct Link -->
+            <a href="https://www.effectivecpmnetwork.com/uc21ey6tf?key=2f113ae182b0d7d4aeeff282e07b95be" target="_blank" class="bonus-badge adsterra-link" onclick="ajouterPointsDirectLink(150)">
+                <i class="fa-solid fa-star"></i>
+                <span>Bonus 2</span>
+            </a>
+        </div>
+
         <header class="app-header">
             <div class="btn-back" id="header-back-btn" onclick="window.history.back()"><i class="fa-solid fa-chevron-left"></i></div>
             <h1 class="header-title" id="wall-title">Zone Récompenses</h1>
@@ -249,159 +236,171 @@
 
         <div class="content-scroll">
 
-            <div class="points-card-wrapper">
-                <div class="points-card">
-                    <div>
-                        <span style="font-size: 11px; color:#8a8d9f;">Mes Points</span>
-                        <div class="points-val" id="points-display">Chargement... <span>★</span></div>
-                    </div>
-                    <div style="font-size: 28px;">💎</div>
+            <!-- DASHBOARD DE POINTS -->
+            <div class="points-dashboard">
+                <div>
+                    <div style="font-size: 12px; color: #8a8d9f;">Solde accumulé aujourd'hui</div>
+                    <div class="points-val" id="user-points">0 Pts</div>
                 </div>
-                <div class="help-trigger" onclick="ouvrirFaq()">
-                    <i class="fa-solid fa-circle-question"></i> Comment ça marche ? (Risque de perte de points)
-                </div>
+                <!-- POINT D'INTERROGATION PULSANT -->
+                <div class="info-pulse-btn" onclick="ouvrirExplorateur()">?</div>
             </div>
             
-            <div class="section-title">🎬 Cinéma Récompense (Clickadilla)</div>
-            <div class="video-reward-card">
-                <div class="video-reward-info">
-                    <i class="fa-solid fa-circle-play"></i>
-                    <div class="video-reward-text">
-                        <h3>Mission Vidéo Flash</h3>
-                        <p>Sélectionnez un canal, regardez et gagnez +100 points</p>
-                    </div>
+            <!-- SECTION VIDÉOS RÉCOMPENSÉES (10 VIDÉOS CLICKADILLA) -->
+            <div class="section-title">🎬 Missions Vidéos Flash</div>
+            <div class="missions-grid">
+                <!-- Les boutons de vidéo 1 à 10 sont injectés dynamiquement ici -->
+                <script>
+                    const LISTE_VIDEOS = [
+                        { id: 1, admpid: "447672", pts: 100 },
+                        { id: 2, admpid: "447741", pts: 100 },
+                        { id: 3, admpid: "447743", pts: 100 },
+                        { id: 4, admpid: "447744", pts: 100 },
+                        { id: 5, admpid: "447745", pts: 100 },
+                        { id: 6, admpid: "447746", pts: 100 },
+                        { id: 7, admpid: "447748", pts: 100 },
+                        { id: 8, admpid: "447749", pts: 100 },
+                        { id: 9, admpid: "447750", pts: 100 },
+                        { id: 10, admpid: "447751", pts: 100 }
+                    ];
+
+                    LISTE_VIDEOS.forEach(v => {
+                        document.write(`
+                            <div class="btn-mission-video" onclick="ouvrirModalPub('clickadilla', '${v.admpid}', ${v.pts}, 'Vidéo Flash ${v.id}')">
+                                <i class="fa-solid fa-circle-play"></i>
+                                <span>Vidéo Flash ${v.id}</span>
+                                <div class="pts-badge">+${v.pts} Pts</div>
+                            </div>
+                        `);
+                    });
+                </script>
+            </div>
+
+            <!-- BOUTON POPUNDER CLICKADILLA DÉDIÉ -->
+            <div class="section-title">🚀 Popunder Secret</div>
+            <button class="wall-btn btn-mylead" onclick="lancerPopunderClickadilla()">
+                <i class="fa-solid fa-rocket"></i>
+                <div>
+                    <h2>Débloquer Bonus Popunder</h2>
+                    <p>Déclenche une offre partenaire en arrière-plan (+50 Pts)</p>
                 </div>
+            </button>
 
-                <select class="video-selector" id="video-id-chooser">
-                    <option value="447672">Vidéo Flash #1</option>
-                    <option value="447741">Vidéo Flash #2</option>
-                    <option value="447743">Vidéo Flash #3</option>
-                    <option value="447744">Vidéo Flash #4</option>
-                    <option value="447745">Vidéo Flash #5</option>
-                    <option value="447746">Vidéo Flash #6</option>
-                    <option value="447748">Vidéo Flash #7</option>
-                    <option value="447749">Vidéo Flash #8</option>
-                    <option value="447750">Vidéo Flash #9</option>
-                    <option value="447751">Vidéo Flash #10</option>
-                </select>
-                
-                <button class="btn-watch-video" onclick="initierPubVideo()">
-                    <i class="fa-solid fa-play"></i> Lancer la vidéo (+100 Pts)
-                </button>
-            </div>
-
-            <div class="section-title">⚡ Popunder & Autres Régies</div>
-            <div class="grid-buttons">
-                <button class="btn-action-small" onclick="lancerPopunderClickadilla()">
-                    <i class="fa-solid fa-up-right-from-square"></i>
-                    <span>Popunder Clickadilla<br><b>+50 Pts</b></span>
-                </button>
-                <button class="btn-action-small" onclick="lancerPopunderAdvertica()">
-                    <i class="fa-solid fa-window-restore"></i>
-                    <span>Popup Advertica<br><b>+60 Pts</b></span>
-                </button>
-                <button class="btn-action-small" onclick="lancerPopunderAdsterra()">
-                    <i class="fa-solid fa-burst"></i>
-                    <span>Popunder Adsterra<br><b>+70 Pts</b></span>
-                </button>
-                <button class="btn-action-small" onclick="lancerSocialBarAdsterra()">
-                    <i class="fa-solid fa-comments"></i>
-                    <span>Barre Sociale<br><b>+40 Pts</b></span>
-                </button>
-            </div>
-
-            <div class="section-title">🖼️ Bannières Clickadilla</div>
-            <div class="banner-container-box"><div data-banner-id="1496058"></div></div>
-            <div class="banner-container-box"><div data-banner-id="1496059"></div></div>
-            <div class="banner-container-box"><div data-banner-id="1496060"></div></div>
-            <div class="banner-container-box"><div data-banner-id="1496061"></div></div>
-
-            <div class="section-title">⭐ Bannières Adsterra & Advertica</div>
+            <!-- ZONE DES BANNIÈRES ADSTERRA & ADVERTICA SÉLECTIONNÉES -->
+            <div class="section-title">💎 Multiplicateurs & Bannières</div>
             
-            <div class="banner-container-box" style="min-height: 250px;">
-                <iframe src="about:blank" id="adsterra-frame-300" style="width:300px; height:250px; border:none; background:transparent;"></iframe>
+            <!-- Bannière Advertica 300x250 -->
+            <div style="display:flex; justify-content:center; margin: 10px 0;">
+                <ins style="width: 300px;height:250px" data-width="300" data-height="250" class="z44a27d7180" data-domain="//data527.click" data-affquery="/0f96f9f42a0c9fc3d824/44a27d7180/?placementName=baniere"><script src="//data527.click/js/responsive.js" async></script></ins>
             </div>
 
-            <div class="banner-container-box" style="min-height: 300px;">
-                <iframe src="about:blank" id="adsterra-frame-160-300" style="width:160px; height:300px; border:none; background:transparent;"></iframe>
+            <!-- Bannière Native Adsterra -->
+            <div style="margin: 10px 0;">
+                <script async="async" data-cfasync="false" src="https://pl29546534.effectivecpmnetwork.com/2488fee72aaf9bf875080b7e81f37d58/invoke.js"></script>
+                <div id="container-2488fee72aaf9bf875080b7e81f37d58"></div>
             </div>
 
-            <div class="banner-container-box" style="min-height: 50px;">
-                <iframe src="about:blank" id="adsterra-frame-320-50" style="width:320px; height:50px; border:none; background:transparent;"></iframe>
-            </div>
-
-            <div class="banner-container-box" style="min-height: 150px;">
-                <div id="container-2488fee72aaf9bf875080b7e81f37d58" style="width:100%;"></div>
-            </div>
-
-            <div class="banner-container-box" style="min-height: 250px;">
-                <ins style="width: 300px; height:250px" data-width="300" data-height="250" class="z44a27d7180" data-domain="//data527.click" data-affquery="/0f96f9f42a0c9fc3d824/44a27d7180/?placementName=baniere">
-                    <script src="//data527.click/js/responsive.js" async></script>
-                </ins>
-            </div>
-
-            <div class="section-title">💎 Espace Murs Offres VIP (+5000 Pts)</div>
-            <p style="font-size: 11px; color:#8a8d9f; margin: 0 0 10px 0; line-height: 1.4;">
-                Ici vous pouvez générer plus de 5000 points selon les offres du jour. Lisez impérativement et suivez bien les instructions de chaque offre avant de l'accomplir pour recevoir vos points.
-            </p>
-
-            <div class="wall-btn btn-mylead" onclick="openWall('mylead')">
-                <i class="fa-solid fa-wallet"></i>
-                <h2>Gagner avec MyLead</h2>
-                <p>Complétez des offres et sondages rapides</p>
-            </div>
-
-            <div class="wall-btn btn-ogads" onclick="openWall('ogads')">
-                <i class="fa-solid fa-bolt"></i>
-                <h2>Gagner avec OGAds</h2>
-                <p>Installez des applications et des jeux</p>
-            </div>
-
-            <div class="wall-btn btn-cpagrip" onclick="openWall('cpagrip')">
-                <i class="fa-solid fa-star"></i>
-                <h2>Gagner avec CPAGrip</h2>
-                <p>Vidéos, offres spéciales et tâches</p>
-            </div>
-
-        </div>
-
-        <div class="floating-direct-container">
-            <div class="btn-floating-circle" onclick="toggleDirectMenu()">
-                <i class="fa-solid fa-fire"></i>
-                <span>Bonus</span>
-            </div>
-        </div>
-
-        <div class="ad-modal-overlay" id="ad-universal-modal">
-            <div class="ad-modal-card">
-                <button class="btn-close-modal" onclick="fermerModal()"><i class="fa-solid fa-xmark"></i></button>
-                
-                <div class="square-ad-viewport" id="modal-ad-target">
-                    </div>
-
-                <p class="task-instruction">
-                    Restez sur cette page. Une fois le temps écoulé, validez le premier bouton. Vous pouvez doubler vos points en cliquant sur "Visite Boostée".
+            <!-- SECTION ESPACE VIP (MYLEAD, OGADS, CPAGRIP) -->
+            <div class="vip-section">
+                <div class="vip-header">
+                    <i class="fa-solid fa-crown"></i>
+                    <h2>Espace Ultra VIP (+5000 Points)</h2>
+                </div>
+                <p style="font-size: 12px; color: #b3b6cd; margin: 0 0 10px 0; line-height: 1.5;">
+                    Ici, vous pouvez générer plus de 5000 points selon les offres du jour. Suivez attentivement les instructions de chaque tâche pour valider vos points.
                 </p>
 
-                <button class="modal-btn-action modal-btn-claim" id="btn-modal-claim" onclick="reclamerPointsModal()">
-                    Analyse du flux (15s)
+                <div class="wall-btn btn-mylead" onclick="openWall('mylead')">
+                    <i class="fa-solid fa-wallet"></i>
+                    <div>
+                        <h2>Gagner avec MyLead</h2>
+                        <p>Complétez des offres et sondages rapides</p>
+                    </div>
+                </div>
+
+                <div class="wall-btn btn-ogads" onclick="openWall('ogads')">
+                    <i class="fa-solid fa-bolt"></i>
+                    <div>
+                        <h2>Gagner avec OGAds</h2>
+                        <p>Installez des applications et des jeux</p>
+                    </div>
+                </div>
+
+                <div class="wall-btn btn-cpagrip" onclick="openWall('cpagrip')">
+                    <i class="fa-solid fa-star"></i>
+                    <div>
+                        <h2>Gagner avec CPAGrip</h2>
+                        <p>Vidéos, offres spéciales et tâches</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTENEURS DE BANNIÈRES CENTRALISÉS CLICKADILLA (Bannières 1 à 4) -->
+            <div class="section-title">📊 Partenaires Sponsors</div>
+            <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447738"></script>
+            <div style="display:flex; flex-direction:column; gap:10px; align-items:center;">
+                <div data-banner-id="1496058"></div>
+                <div data-banner-id="1496059"></div>
+                <div data-banner-id="1496060"></div>
+                <div data-banner-id="1496061"></div>
+            </div>
+
+        </div>
+
+        <!-- MODAL DE PUBLICITÉ CARRE (SÉCURISÉ & ANTI-TRICHE) -->
+        <div class="modal-pub-overlay" id="pub-modal">
+            <button class="close-modal-btn" onclick="fermerModalPub()"><i class="fa-solid fa-xmark"></i></button>
+            
+            <h3 id="modal-pub-title" style="margin:0 0 15px 0; color:#00ffcc;">Mission Pub Carrée</h3>
+            
+            <div class="pub-square-box">
+                <!-- Injecteur de pub ou d'iframe selon la configuration -->
+                <div id="modal-pub-content" style="width:100%; height:100%;"></div>
+            </div>
+
+            <div class="modal-actions">
+                <!-- Bouton 1 : Compte à rebours de visionnage -->
+                <button class="btn-modal-action btn-claim" id="btn-claim-points" disabled>
+                    <i class="fa-solid fa-hourglass"></i> Visionnage en cours (15s)...
                 </button>
 
-                <button class="modal-btn-action modal-btn-boost" id="btn-modal-boost" onclick="lancerTacheBoostee()">
-                    <i class="fa-solid fa-rocket"></i> Visite Boostée (+100 Pts Extra)
+                <!-- Bouton 2 : Boost anti-triche 30 sec -->
+                <button class="btn-modal-action btn-boost" id="btn-boost-points" onclick="lancerBoostAntiTriche()">
+                    <i class="fa-solid fa-bolt"></i> Gagner + Double Points (+30s de présence)
                 </button>
+                <div class="boost-instructions">
+                    Cliquez sur l'affiche, restez 30 secondes complètes sur le site partenaire pour multiplier vos points. Nos robots détectent la triche.
+                </div>
             </div>
         </div>
 
+        <!-- MODAL "COMMENT ÇA MARCHE ?" -->
+        <div class="modal-pub-overlay" id="info-modal">
+            <button class="close-modal-btn" onclick="fermerExplorateur()"><i class="fa-solid fa-xmark"></i></button>
+            <div style="max-width:320px; text-align:center;">
+                <i class="fa-solid fa-circle-question" style="font-size: 48px; color: #ffcc00; margin-bottom: 15px;"></i>
+                <h3 style="margin:0 0 10px 0; color: #fff;">Comment accumuler vos gains ?</h3>
+                <p style="font-size: 13px; color: #8a8d9f; line-height: 1.6; text-align: left;">
+                    1. <b>Missions Flash :</b> Lancez une vidéo, attendez la fin du chrono et validez vos points.<br><br>
+                    2. <b>Bonus Double :</b> Cliquez sur l'affiche publicitaire pour doubler instantanément vos gains en restant 30s actives.<br><br>
+                    3. <b>⚠️ Avertissement Important :</b> Vos points cumulés aujourd'hui doivent être impérativement convertis avant minuit. Tout solde non réclamé expirera et disparaîtra !
+                </p>
+            </div>
+        </div>
+
+        <!-- OVERLAY DES MURS CPA VIP -->
         <div class="fullscreen-overlay" id="wall-overlay">
             <div id="iframe-area" style="width:100%; height:100%; display:flex; flex-direction:column;"></div>
             <button class="btn-close-wall" onclick="closeWall()"><i class="fa-solid fa-xmark"></i> Quitter le mur</button>
         </div>
 
-        <div class="footer-sticky-ad">
+        <!-- STICKY BANNER COLLÉE EN BAS -->
+        <div class="sticky-footer-ad">
+            <!-- ClickADilla Sticky footer script (447739) -->
             <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447739"></script>
         </div>
 
+        <!-- NAV BAR -->
         <nav class="nav-bar">
             <div class="nav-item" onclick="location.href='index.html'"><i class="fa-solid fa-house nav-icon"></i><span>Accueil</span></div>
             <div class="nav-item" onclick="location.href='messages.html'"><i class="fa-regular fa-comment-dots nav-icon"></i><span>Messages</span></div>
@@ -411,8 +410,8 @@
 
     </div>
 
+    <!-- SCRIPT FIREBASE & SYSTÈME DE JEU -->
     <script>
-        // --- CONFIGURATION FIREBASE PROPRE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
             authDomain: "publicite-6445c.firebaseapp.com",
@@ -426,14 +425,11 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         let currentUserUid = null;
+        let pointsActuels = 0;
 
-        // Variables pour gérer l'état publicitaire en cours
-        let adClaimTimeout = null;
-        let adClaimInterval = null;
-        let pointsAAttribuer = 0;
-        let pointsExtraAAttribuer = 0;
-        let boostUrlActuelle = "";
-        let boostTimerActive = false;
+        // Éléments du modal
+        let activeAdPoints = 0;
+        let isDoubleClaim = false;
 
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
@@ -441,258 +437,149 @@
                 ecouterPoints();
             } else {
                 currentUserUid = null;
-                document.getElementById('points-display').innerHTML = "0 <span>★</span>";
+                document.getElementById('user-points').innerText = "0 Pts";
             }
         });
 
+        // Lecture en temps réel des points utilisateur
         function ecouterPoints() {
             if (!currentUserUid) return;
             db.collection("users").doc(currentUserUid).onSnapshot((doc) => {
-                if (doc.exists && doc.data().points !== undefined) {
-                    document.getElementById('points-display').innerHTML = `${doc.data().points.toLocaleString()} <span>★</span>`;
+                if (doc.exists) {
+                    pointsActuels = doc.data().points || 0;
+                    document.getElementById('user-points').innerText = `${pointsActuels} Pts`;
                 }
             });
         }
 
-        // --- ENREGISTREMENT ET CREDIT DES POINTS ---
-        function crediterPoints(somme) {
-            if (!currentUserUid) return;
-            db.collection("users").doc(currentUserUid).update({
-                points: firebase.firestore.FieldValue.increment(somme)
-            }).catch(err => console.error("Erreur d'incrémentation: ", err));
-        }
-
-        // --- GESTION DE LA BOITE MODALE ET DES TEMPS DE VISIONNAGE ---
-        function ouvrirModalAvecIframe(adPid, pointsPrincipaux, pointsBoost, lienAnnonceur) {
-            const overlay = document.getElementById('ad-universal-modal');
-            const target = document.getElementById('modal-ad-target');
-            const btnClaim = document.getElementById('btn-modal-claim');
-            const btnBoost = document.getElementById('btn-modal-boost');
-
-            // 1. Nettoyage complet de la zone
-            target.innerHTML = "";
-
-            // 2. Création de l'Iframe isolée pour forcer Clickadilla à s'afficher
-            const iframe = document.createElement('iframe');
-            iframe.style.width = "100%";
-            iframe.style.height = "100%";
-            iframe.style.border = "none";
-            iframe.style.background = "#000";
-            target.appendChild(iframe);
-
-            // 3. Injection du script dans l'Iframe (simulation d'une page dédiée)
-            const doc = iframe.contentWindow.document;
-            const iframeContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="utf-8">
-                    <style>
-                        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-                    </style>
-                </head>
-                <body>
-                    <!-- Le script Clickadilla s'exécute de manière autonome ici -->
-                    <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="${adPid}"><\/script>
-                </body>
-                </html>
-            `;
-            doc.open();
-            doc.write(iframeContent);
-            doc.close();
-
-            // Config des points et du boost
-            pointsAAttribuer = pointsPrincipaux;
-            pointsExtraAAttribuer = pointsBoost;
-            boostUrlActuelle = lienAnnonceur;
-            boostTimerActive = false;
-
-            // Reset des boutons
-            btnClaim.className = "modal-btn-action modal-btn-claim";
-            btnClaim.disabled = true;
-            btnClaim.innerText = "Analyse du flux (15s)";
-
-            btnBoost.style.display = lienAnnonceur ? "flex" : "none";
-            btnBoost.innerText = "Visite Boostée (+100 Pts Extra)";
-            btnBoost.disabled = false;
-
-            overlay.style.display = "flex";
-
-            // Lancement du compte à rebours de 15s
-            let tempsRestant = 15;
-            clearInterval(adClaimInterval);
-            adClaimInterval = setInterval(() => {
-                tempsRestant--;
-                btnClaim.innerText = `Analyse du flux (${tempsRestant}s)`;
-                if (tempsRestant <= 0) {
-                    clearInterval(adClaimInterval);
-                    btnClaim.innerText = "RÉCUPÉRER MES POINTS ✔";
-                    btnClaim.className = "modal-btn-action modal-btn-claim ready";
-                    btnClaim.disabled = false;
-                }
-            }, 1000);
-        }
-
-        function fermerModal() {
-            document.getElementById('ad-universal-modal').style.display = "none";
-            document.getElementById('modal-ad-target').innerHTML = "";
-            clearInterval(adClaimInterval);
-        }
-
-        function reclamerPointsModal() {
-            if (pointsAAttribuer > 0) {
-                crediterPoints(pointsAAttribuer);
-                alert(`Succès ! +${pointsAAttribuer} points ajoutés à votre solde.`);
-                pointsAAttribuer = 0;
-                fermerModal();
+        // --- DOUBLE BOUTONS DE SÉCURITÉ DE LA ZONE DE GESTION DES MODALS ---
+        function ouvrirModalPub(regie, adId, points, titre) {
+            if (!currentUserUid) { 
+                return alert("Veuillez vous connecter pour accumuler vos points."); 
             }
-        }
 
-        function lancerTacheBoostee() {
-            if (!boostUrlActuelle) return;
-            window.open(boostUrlActuelle, '_blank');
-            
-            const btnBoost = document.getElementById('btn-modal-boost');
-            btnBoost.disabled = true;
-            boostTimerActive = true;
+            activeAdPoints = points;
+            isDoubleClaim = false;
 
-            let reboursBoost = 30;
-            btnBoost.innerText = `Robot d'analyse (${reboursBoost}s)...`;
+            const modal = document.getElementById('pub-modal');
+            const container = document.getElementById('modal-pub-content');
+            const titreEl = document.getElementById('modal-pub-title');
+            const btnClaim = document.getElementById('btn-claim-points');
 
-            const intervalBoost = setInterval(() => {
-                reboursBoost--;
-                btnBoost.innerText = `Robot d'analyse (${reboursBoost}s)...`;
-                if (reboursBoost <= 0) {
-                    clearInterval(intervalBoost);
-                    btnBoost.innerText = "Double Gain Validé ✔";
-                    crediterPoints(pointsExtraAAttribuer);
-                    alert(`Super ! Votre assiduité de 30 secondes a été récompensée de +${pointsExtraAAttribuer} points supplémentaires !`);
+            titreEl.innerText = titre;
+            container.innerHTML = "";
+            modal.style.display = 'flex';
+
+            btnClaim.disabled = true;
+            btnClaim.innerHTML = `<i class="fa-solid fa-hourglass"></i> Analyse du flux (15s)...`;
+
+            // Injection dans le modal carré
+            if (regie === 'clickadilla') {
+                const s = document.createElement('script');
+                s.async = true;
+                s.src = "https://js.wpadmngr.com/static/adManager.js";
+                s.setAttribute('data-admpid', adId);
+                container.appendChild(s);
+            }
+
+            // Compte à rebours réglementaire initial (15 secondes)
+            let timerLeft = 15;
+            const interval = setInterval(() => {
+                timerLeft--;
+                btnClaim.innerHTML = `<i class="fa-solid fa-hourglass"></i> Analyse du flux (${timerLeft}s)...`;
+
+                if (timerLeft <= 0) {
+                    clearInterval(interval);
+                    btnClaim.disabled = false;
+                    btnClaim.innerHTML = `<i class="fa-solid fa-check"></i> Réclamer +${activeAdPoints} Pts`;
+                    btnClaim.setAttribute('onclick', `validerPointsNormaux()`);
                 }
             }, 1000);
         }
 
-        // --- DÉCLENCHEMENT DES PUBS VIA L'IFRAME ISOLÉE ---
-
-        // 1. Clickadilla Vidéos Dynamiques (1 à 10)
-        function initierPubVideo() {
-            if (!currentUserUid) return alert("Veuillez vous connecter pour accumuler vos points.");
-            const selectVideo = document.getElementById('video-id-chooser');
-            const currentVideoId = selectVideo.value;
-
-            // On lance l'Iframe avec l'ID sélectionné
-            ouvrirModalAvecIframe(currentVideoId, 100, 100, "https://js.wpadmngr.com/static/adManager.js");
+        function fermerModalPub() {
+            document.getElementById('pub-modal').style.display = 'none';
+            document.getElementById('modal-pub-content').innerHTML = '';
         }
 
-        // 2. Popunder Clickadilla (447731)
+        // Validation standard après 15 secondes
+        function validerPointsNormaux() {
+            if (!currentUserUid) return;
+            
+            db.collection("users").doc(currentUserUid).update({
+                points: firebase.firestore.FieldValue.increment(activeAdPoints)
+            }).then(() => {
+                alert(`Succès ! +${activeAdPoints} points ajoutés.`);
+                fermerModalPub();
+            });
+        }
+
+        // Option Booster : Double les points avec 30 secondes de présence exigées
+        function lancerBoostAntiTriche() {
+            const btnBoost = document.getElementById('btn-boost-points');
+            btnBoost.disabled = true;
+            
+            let presenceTimer = 30;
+            alert("Redirection en cours. Veuillez ne pas quitter l'affiche publicitaire pendant les 30 secondes pour doubler votre gain !");
+            
+            // On simule l'ouverture de la pub
+            window.open('https://www.effectivecpmnetwork.com/uc21ey6tf?key=2f113ae182b0d7d4aeeff282e07b95be', '_blank');
+
+            const countdown = setInterval(() => {
+                presenceTimer--;
+                btnBoost.innerHTML = `<i class="fa-solid fa-robot"></i> Vérification robot (${presenceTimer}s)...`;
+
+                if (presenceTimer <= 0) {
+                    clearInterval(countdown);
+                    isDoubleClaim = true;
+                    
+                    // On double la récompense !
+                    const doubleGains = activeAdPoints * 2;
+                    db.collection("users").doc(currentUserUid).update({
+                        points: firebase.firestore.FieldValue.increment(doubleGains)
+                    }).then(() => {
+                        btnBoost.innerHTML = `<i class="fa-solid fa-circle-check"></i> Boost validé !`;
+                        alert(`Félicitations ! Les robots ont validé votre présence. Gain Doublé : +${doubleGains} points !`);
+                        fermerModalPub();
+                        btnBoost.disabled = false;
+                        btnBoost.innerHTML = `<i class="fa-solid fa-bolt"></i> Gagner + Double Points (+30s de présence)`;
+                    });
+                }
+            }, 1000);
+        }
+
+        // Déclencheur direct du popunder ClickADilla
         function lancerPopunderClickadilla() {
             if (!currentUserUid) return alert("Veuillez vous connecter.");
-            ouvrirModalAvecIframe('447731', 50, 50, "https://js.wpadmngr.com/static/adManager.js");
-        }
-
-        // 3. Popunder Advertica (Popup)
-        function lancerPopunderAdvertica() {
-            if (!currentUserUid) return alert("Veuillez vous connecter.");
-            // Version Iframe pour Advertica Popunder
-            const overlay = document.getElementById('ad-universal-modal');
-            const target = document.getElementById('modal-ad-target');
-            target.innerHTML = "";
-
-            const iframe = document.createElement('iframe');
-            iframe.style.width = "100%"; iframe.style.height = "100%"; iframe.style.border = "none";
-            target.appendChild(iframe);
-
-            const doc = iframe.contentWindow.document;
-            const content = `
-                <html>
-                <body>
-                    <script src="//data527.click/fe77c0017a3a26cb73ec/a36db4224e/?placementName=default"><\/script>
-                </body>
-                </html>
-            `;
-            doc.open(); doc.write(content); doc.close();
-
-            ouvrirModalAvecIframe('default_advertica_stub', 60, 60, "//data527.click/fe77c0017a3a26cb73ec/a36db4224e/?placementName=default");
-        }
-
-        // 4. Popunder Adsterra (script externe)
-        function lancerPopunderAdsterra() {
-            if (!currentUserUid) return alert("Veuillez vous connecter.");
-            ouvrirModalAvecIframe('deacefeb17116ee3bc546f4b5ba4c252', 70, 70, "https://pl30313217.effectivecpmnetwork.com/de/ac/ef/deacefeb17116ee3bc546f4b5ba4c252.js");
-        }
-
-        // 5. Barre Sociale Adsterra (script d'activation)
-        function lancerSocialBarAdsterra() {
-            if (!currentUserUid) return alert("Veuillez vous connecter.");
-            ouvrirModalAvecIframe('ac91ae3c0f08f8755cfdc77e415d3a07', 40, 40, "https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js");
-        }
-
-        // --- DOUBLE BOUTONS DIRECTS FLOTTANTS ---
-        function toggleDirectMenu() {
-            if (!currentUserUid) return alert("Veuillez vous connecter.");
-            const choix = confirm("Choisissez votre Bonus Direct Link :\n\n- Cliquer sur OK pour ouvrir Advertica (+80 Points)\n- Cliquer sur ANNULER pour ouvrir Adsterra (+100 Points)");
             
-            if (choix) {
-                window.open("https://data527.click/8db930650dc1e3bc4df6/8bdc6ee564/?placementName=link", "_blank");
-                crediterPoints(80);
-                alert("Redirection en cours. +80 Points d'activité ajoutés.");
-            } else {
-                window.open("https://www.effectivecpmnetwork.com/uc21ey6tf?key=2f113ae182b0d7d4aeeff282e07b95be", "_blank");
-                crediterPoints(100);
-                alert("Redirection en cours. +100 Points d'activité ajoutés.");
-            }
+            // Injection dynamique du script popunder
+            const popScript = document.createElement('script');
+            popScript.async = true;
+            popScript.src = "https://js.wpadmngr.com/static/adManager.js";
+            popScript.setAttribute('data-admpid', '447731');
+            document.body.appendChild(popScript);
+
+            // Attribution immédiate des points pour encourager l'engagement
+            db.collection("users").doc(currentUserUid).update({
+                points: firebase.firestore.FieldValue.increment(50)
+            }).then(() => {
+                alert("Bonus Popunder activé ! +50 Points ajoutés à votre compte.");
+            });
         }
 
-        // --- CHARGEMENT SECURISE DES IFRAMES BANNIERES (ONLOAD) ---
-        window.onload = function() {
-            chargerIframe('adsterra-frame-300', 'e86dd4055cd86d43aa42fbae392c77d2', 300, 250, "https://www.highperformanceformat.com/e86dd4055cd86d43aa42fbae392c77d2/invoke.js");
-            chargerIframe('adsterra-frame-160-300', 'f37eede0de06b709e6c6db90820d116e', 160, 300, "https://www.highperformanceformat.com/f37eede0de06b709e6c6db90820d116e/invoke.js");
-            chargerIframe('adsterra-frame-320-50', '7221685de42e37b3b02c60ff0bee506a', 320, 50, "https://www.highperformanceformat.com/7221685de42e37b3b02c60ff0bee506a/invoke.js");
-            chargerBanniereNative();
-        };
-
-        function chargerIframe(frameId, key, width, height, scriptSrc) {
-            const frame = document.getElementById(frameId);
-            if (frame) {
-                const doc = frame.contentWindow.document;
-                const content = `
-                    <html>
-                    <body style="margin:0; background:transparent; display:flex; justify-content:center; align-items:center;">
-                        <script>
-                            atOptions = {
-                                'key' : '${key}',
-                                'format' : 'iframe',
-                                'height' : ${height},
-                                'width' : ${width},
-                                'params' : {}
-                            };
-                        <\/script>
-                        <script src="${scriptSrc}"><\/script>
-                    </body>
-                    </html>
-                `;
-                doc.open();
-                doc.write(content);
-                doc.close();
-            }
+        // Attribution des points sur les liens directs (Bonus Flottants)
+        function ajouterPointsDirectLink(points) {
+            if (!currentUserUid) return;
+            db.collection("users").doc(currentUserUid).update({
+                points: firebase.firestore.FieldValue.increment(points)
+            });
         }
 
-        function chargerBanniereNative() {
-            const container = document.getElementById('container-2488fee72aaf9bf875080b7e81f37d58');
-            if (container) {
-                const script1 = document.createElement('script');
-                script1.async = true;
-                script1.setAttribute('data-cfasync', 'false');
-                script1.src = "https://pl29546534.effectivecpmnetwork.com/2488fee72aaf9bf875080b7e81f37d58/invoke.js";
-                container.appendChild(script1);
-            }
-        }
+        // Explorateur Info "?"
+        function ouvrirExplorateur() { document.getElementById('info-modal').style.display = 'flex'; }
+        function fermerExplorateur() { document.getElementById('info-modal').style.display = 'none'; }
 
-        // --- GESTION DU POINT D'INTERROGATION PULSANT (FAQ) ---
-        function ouvrirFaq() {
-            alert(`💡 COMMENT ÇA MARCHE ?\n\n1. Chaque bouton ou vidéo lance une publicité. Ne fermez pas la fenêtre avant la fin de l'analyse (15s) pour débloquer votre récompense.\n2. Option Boost : En cliquant sur "Visite Boostée", une nouvelle page s'ouvre. Restez-y au moins 30 secondes pour doubler instantanément vos gains !\n\n⚠️ REGLE ANTI-FAILLITE IMPORTANTE :\nVos gains quotidiens doivent obligatoirement être convertis ou récupérés avant minuit. Si vous ne réclamez pas votre somme accumulée chaque jour, celle-ci expirera automatiquement pour préserver l'intégrité de la plateforme.`);
-        }
-
-        // --- OFFRES CPA VIP ---
+        // Gestionnaire d'affichage des régies du mur VIP
         function openWall(type) {
             const overlay = document.getElementById('wall-overlay');
             const iframeArea = document.getElementById('iframe-area');
@@ -706,14 +593,14 @@
 
             if (type === 'mylead') {
                 mainTitle.innerText = "MyLead Pub";
-                iframeArea.innerHTML = `<iframe class="wall-frame" src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${currentUserUid}"></iframe>`;
+                iframeArea.innerHTML = `<iframe src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${currentUserUid}"></iframe>`;
             } else if (type === 'ogads') {
                 mainTitle.innerText = "OGAds Missions";
-                iframeArea.innerHTML = `<iframe class="wall-frame" src="https://appsave.online/cl/i/grjgep?aff_sub=${currentUserUid}"></iframe>`;
+                iframeArea.innerHTML = `<iframe src="https://appsave.online/cl/i/grjgep?aff_sub=${currentUserUid}"></iframe>`;
             } else if (type === 'cpagrip') {
                 mainTitle.innerText = "CPAGrip Offres";
                 const srcScript = `https://getafilenow.com/script_include.php?id=1904067&tracking_id=${currentUserUid}`;
-                iframeArea.innerHTML = `<iframe id="cpagrip-iframe" class="wall-frame"></iframe>`;
+                iframeArea.innerHTML = `<iframe id="cpagrip-iframe"></iframe>`;
                 const iframe = document.getElementById('cpagrip-iframe');
                 const iframeContent = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0; background:#050508;"><script src="${srcScript}"><\/script></body></html>`;
                 iframe.contentWindow.document.open();
