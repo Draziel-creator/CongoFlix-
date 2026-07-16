@@ -463,25 +463,51 @@
         }
 
         // --- GESTION DE LA BOITE MODALE ET DES TEMPS DE VISIONNAGE ---
-        function ouvrirModal(elementHTML, pointsPrincipaux, pointsBoost, lienAnnonceur) {
+        function ouvrirModalAvecIframe(adPid, pointsPrincipaux, pointsBoost, lienAnnonceur) {
             const overlay = document.getElementById('ad-universal-modal');
             const target = document.getElementById('modal-ad-target');
             const btnClaim = document.getElementById('btn-modal-claim');
             const btnBoost = document.getElementById('btn-modal-boost');
 
-            // Reset
+            // 1. Nettoyage complet de la zone
             target.innerHTML = "";
-            if (typeof elementHTML === "string") {
-                target.innerHTML = elementHTML;
-            } else {
-                target.appendChild(elementHTML);
-            }
 
+            // 2. Création de l'Iframe isolée pour forcer Clickadilla à s'afficher
+            const iframe = document.createElement('iframe');
+            iframe.style.width = "100%";
+            iframe.style.height = "100%";
+            iframe.style.border = "none";
+            iframe.style.background = "#000";
+            target.appendChild(iframe);
+
+            // 3. Injection du script dans l'Iframe (simulation d'une page dédiée)
+            const doc = iframe.contentWindow.document;
+            const iframeContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+                    </style>
+                </head>
+                <body>
+                    <!-- Le script Clickadilla s'exécute de manière autonome ici -->
+                    <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="${adPid}"><\/script>
+                </body>
+                </html>
+            `;
+            doc.open();
+            doc.write(iframeContent);
+            doc.close();
+
+            // Config des points et du boost
             pointsAAttribuer = pointsPrincipaux;
             pointsExtraAAttribuer = pointsBoost;
             boostUrlActuelle = lienAnnonceur;
             boostTimerActive = false;
 
+            // Reset des boutons
             btnClaim.className = "modal-btn-action modal-btn-claim";
             btnClaim.disabled = true;
             btnClaim.innerText = "Analyse du flux (15s)";
@@ -492,6 +518,7 @@
 
             overlay.style.display = "flex";
 
+            // Lancement du compte à rebours de 15s
             let tempsRestant = 15;
             clearInterval(adClaimInterval);
             adClaimInterval = setInterval(() => {
@@ -544,7 +571,7 @@
             }, 1000);
         }
 
-        // --- EXÉCUTION DES DIVERSES UNITÉS DE PUBS ---
+        // --- DÉCLENCHEMENT DES PUBS VIA L'IFRAME ISOLÉE ---
 
         // 1. Clickadilla Vidéos Dynamiques (1 à 10)
         function initierPubVideo() {
@@ -552,60 +579,51 @@
             const selectVideo = document.getElementById('video-id-chooser');
             const currentVideoId = selectVideo.value;
 
-            // Préparation de la pub
-            const scriptPub = document.createElement('script');
-            scriptPub.async = true;
-            scriptPub.src = "https://js.wpadmngr.com/static/adManager.js";
-            scriptPub.setAttribute('data-admpid', currentVideoId);
-
-            ouvrirModal(scriptPub, 100, 100, "https://js.wpadmngr.com/static/adManager.js");
+            // On lance l'Iframe avec l'ID sélectionné
+            ouvrirModalAvecIframe(currentVideoId, 100, 100, "https://js.wpadmngr.com/static/adManager.js");
         }
 
         // 2. Popunder Clickadilla (447731)
         function lancerPopunderClickadilla() {
             if (!currentUserUid) return alert("Veuillez vous connecter.");
-            const containerScript = document.createElement('div');
-            const script = document.createElement('script');
-            script.async = true;
-            script.src = "https://js.wpadmngr.com/static/adManager.js";
-            script.setAttribute('data-admpid', '447731');
-            containerScript.appendChild(script);
-
-            ouvrirModal(containerScript, 50, 50, "https://js.wpadmngr.com/static/adManager.js");
+            ouvrirModalAvecIframe('447731', 50, 50, "https://js.wpadmngr.com/static/adManager.js");
         }
 
         // 3. Popunder Advertica (Popup)
         function lancerPopunderAdvertica() {
             if (!currentUserUid) return alert("Veuillez vous connecter.");
-            const container = document.createElement('div');
-            const script = document.createElement('script');
-            script.type = "text/javascript";
-            script.src = "//data527.click/fe77c0017a3a26cb73ec/a36db4224e/?placementName=default";
-            container.appendChild(script);
+            // Version Iframe pour Advertica Popunder
+            const overlay = document.getElementById('ad-universal-modal');
+            const target = document.getElementById('modal-ad-target');
+            target.innerHTML = "";
 
-            ouvrirModal(container, 60, 60, "//data527.click/fe77c0017a3a26cb73ec/a36db4224e/?placementName=default");
+            const iframe = document.createElement('iframe');
+            iframe.style.width = "100%"; iframe.style.height = "100%"; iframe.style.border = "none";
+            target.appendChild(iframe);
+
+            const doc = iframe.contentWindow.document;
+            const content = `
+                <html>
+                <body>
+                    <script src="//data527.click/fe77c0017a3a26cb73ec/a36db4224e/?placementName=default"><\/script>
+                </body>
+                </html>
+            `;
+            doc.open(); doc.write(content); doc.close();
+
+            ouvrirModalAvecIframe('default_advertica_stub', 60, 60, "//data527.click/fe77c0017a3a26cb73ec/a36db4224e/?placementName=default");
         }
 
         // 4. Popunder Adsterra (script externe)
         function lancerPopunderAdsterra() {
             if (!currentUserUid) return alert("Veuillez vous connecter.");
-            const container = document.createElement('div');
-            const script = document.createElement('script');
-            script.src = "https://pl30313217.effectivecpmnetwork.com/de/ac/ef/deacefeb17116ee3bc546f4b5ba4c252.js";
-            container.appendChild(script);
-
-            ouvrirModal(container, 70, 70, "https://pl30313217.effectivecpmnetwork.com/de/ac/ef/deacefeb17116ee3bc546f4b5ba4c252.js");
+            ouvrirModalAvecIframe('deacefeb17116ee3bc546f4b5ba4c252', 70, 70, "https://pl30313217.effectivecpmnetwork.com/de/ac/ef/deacefeb17116ee3bc546f4b5ba4c252.js");
         }
 
         // 5. Barre Sociale Adsterra (script d'activation)
         function lancerSocialBarAdsterra() {
             if (!currentUserUid) return alert("Veuillez vous connecter.");
-            const container = document.createElement('div');
-            const script = document.createElement('script');
-            script.src = "https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js";
-            container.appendChild(script);
-
-            ouvrirModal(container, 40, 40, "https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js");
+            ouvrirModalAvecIframe('ac91ae3c0f08f8755cfdc77e415d3a07', 40, 40, "https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js");
         }
 
         // --- DOUBLE BOUTONS DIRECTS FLOTTANTS ---
@@ -614,19 +632,17 @@
             const choix = confirm("Choisissez votre Bonus Direct Link :\n\n- Cliquer sur OK pour ouvrir Advertica (+80 Points)\n- Cliquer sur ANNULER pour ouvrir Adsterra (+100 Points)");
             
             if (choix) {
-                // Choix OK = Advertica
                 window.open("https://data527.click/8db930650dc1e3bc4df6/8bdc6ee564/?placementName=link", "_blank");
                 crediterPoints(80);
                 alert("Redirection en cours. +80 Points d'activité ajoutés.");
             } else {
-                // Choix Annuler = Adsterra
                 window.open("https://www.effectivecpmnetwork.com/uc21ey6tf?key=2f113ae182b0d7d4aeeff282e07b95be", "_blank");
                 crediterPoints(100);
                 alert("Redirection en cours. +100 Points d'activité ajoutés.");
             }
         }
 
-        // --- CHARGEMENT SECURISE ET ISOLE DES IFRAMES BANNIERES (ADSTERRA) ---
+        // --- CHARGEMENT SECURISE DES IFRAMES BANNIERES (ONLOAD) ---
         window.onload = function() {
             chargerIframe('adsterra-frame-300', 'e86dd4055cd86d43aa42fbae392c77d2', 300, 250, "https://www.highperformanceformat.com/e86dd4055cd86d43aa42fbae392c77d2/invoke.js");
             chargerIframe('adsterra-frame-160-300', 'f37eede0de06b709e6c6db90820d116e', 160, 300, "https://www.highperformanceformat.com/f37eede0de06b709e6c6db90820d116e/invoke.js");
@@ -671,7 +687,7 @@
             }
         }
 
-        // --- GESTION DU POINT D'INTERROGATION PULSANT (FAQ / REGLES ANTI-FAILLITE) ---
+        // --- GESTION DU POINT D'INTERROGATION PULSANT (FAQ) ---
         function ouvrirFaq() {
             alert(`💡 COMMENT ÇA MARCHE ?\n\n1. Chaque bouton ou vidéo lance une publicité. Ne fermez pas la fenêtre avant la fin de l'analyse (15s) pour débloquer votre récompense.\n2. Option Boost : En cliquant sur "Visite Boostée", une nouvelle page s'ouvre. Restez-y au moins 30 secondes pour doubler instantanément vos gains !\n\n⚠️ REGLE ANTI-FAILLITE IMPORTANTE :\nVos gains quotidiens doivent obligatoirement être convertis ou récupérés avant minuit. Si vous ne réclamez pas votre somme accumulée chaque jour, celle-ci expirera automatiquement pour préserver l'intégrité de la plateforme.`);
         }
