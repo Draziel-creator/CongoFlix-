@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CongoFlix - Roue De Chance</title>
+    <title>Roue De Chance</title>
     <!-- Publicité Adsterra injectée d'office en tâche de fond pour maximiser les impressions -->
     <script src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
     
@@ -219,15 +219,16 @@
             </div>
         </div>
 
-        <button id="exitBtn" class="btn-exit" onclick="declencherPubEtQuitter(event)"></button>
+        <button id="exitBtn" class="btn-exit"></button>
     </div>
 
-    <!-- SDK Firebase Compat -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <!-- SDK Firebase Modules Modernes (v10.7.1) - Même structure que ton accueil -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    <script>
-        // --- 1. CONFIGURATION FIREBASE ---
+        // --- Configuration identique à ton accueil ---
         const firebaseConfig = {
             apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
             authDomain: "publicite-6445c.firebaseapp.com",
@@ -237,16 +238,11 @@
             appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
             measurementId: "G-T37TGB3SR0"
         };
-        
-        let db;
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-        } catch (e) {
-            console.error("Erreur Firebase : ", e);
-        }
 
-        const userId = localStorage.getItem("user_id_congoflix");
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
         const spinSound = new Audio('https://www.soundjay.com/misc/sounds/casino-roulette-1.mp3');
         spinSound.loop = true; 
 
@@ -302,32 +298,34 @@
             history.go(1);
         };
 
-        // --- 2. SÉCURITÉ DE CHARGEMENT ET VÉRIFICATION STRICTE ---
-        window.onload = function() {
+        // --- RECONNAISSANCE DE LA CONNEXION (Même logique que ton fichier d'accueil) ---
+        onAuthStateChanged(auth, async (user) => {
             const statusText = document.getElementById('status-text');
-            
-            if (!userId) { 
-                statusText.innerHTML = "Erreur : ID utilisateur non détecté dans le navigateur."; 
-                return; 
-            }
-
-            // CORRECTION ICI : "rewards_users" au lieu de "users"
-            db.collection("rewards_users").doc(userId).get().then((doc) => {
-                if (doc.exists) {
-                    dataUser = doc.data();
-                    indexPubActuel = dataUser.indexPublicite || 0;
-                    // On utilise une valeur par défaut car il n'y a pas de champ 'name' visible
-                    userName = dataUser.name || dataUser.username || "Utilisateur";
+            if (user) {
+                try {
+                    const userDocRef = doc(db, "rewards_users", user.uid);
+                    const snap = await getDoc(userDocRef);
                     
-                    verifierRestrictions();
-                } else {
-                    statusText.innerHTML = "Accès refusé : ID introuvable dans la collection 'rewards_users'.";
+                    if (snap.exists()) {
+                        dataUser = snap.data();
+                        indexPubActuel = dataUser.indexPublicite || 0;
+                        userName = dataUser.name || "Utilisateur";
+                        
+                        verifierRestrictions();
+                    } else {
+                        statusText.innerHTML = "Accès refusé : Profil introuvable dans rewards_users.";
+                    }
+                } catch (error) {
+                    console.error(error);
+                    statusText.innerHTML = "Erreur de chargement des données utilisateur.";
                 }
-            }).catch((error) => {
-                console.error(error);
-                statusText.innerHTML = "Échec de connexion à la base de données.";
-            });
-        };
+            } else {
+                statusText.innerHTML = "Vous devez être connecté ! Redirection...";
+                setTimeout(() => {
+                    window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
+                }, 2000);
+            }
+        });
 
         function verifierRestrictions() {
             const maintenant = new Date().getTime();
@@ -399,7 +397,7 @@
             }
         }
 
-        function activerPopunderSilencieux() {
+        window.activerPopunderSilencieux = function() {
             console.log("Interaction détectée.");
         }
 
@@ -418,7 +416,7 @@
             setTimeout(enregistrerGains, 15000);
         }
 
-        function enregistrerGains() {
+        async function enregistrerGains() {
             try { spinSound.pause(); spinSound.currentTime = 0; } catch(e){}
             
             const statusText = document.getElementById('status-text');
@@ -430,24 +428,25 @@
 
             statusText.innerHTML = "Sécurisation de vos coins en cours...";
 
+            const userDocRef = doc(db, "rewards_users", auth.currentUser.uid);
+
             let updates = {
                 dernierBonusTime: maintenant,
                 indexPublicite: prochainIndexPub,
                 toursFaits: nouveauTours
             };
 
-            // CORRECTION ICI : On met à jour le champ "coins" au lieu de "points"
+            // Utilisation sécurisée de increment() pour les coins si gagné
             if (tirage.points > 0) {
-                db.collection("rewards_users").doc(userId).update({
-                    coins: firebase.firestore.FieldValue.increment(tirage.points),
-                    ...updates
-                }).then(() => {
-                    afficherBoutonFinal(statusText, bouton);
-                }).catch(() => afficherBoutonFinal(statusText, bouton));
-            } else {
-                db.collection("rewards_users").doc(userId).update(updates).then(() => {
-                    afficherBoutonFinal(statusText, bouton);
-                }).catch(() => afficherBoutonFinal(statusText, bouton));
+                updates.coins = increment(tirage.points);
+            }
+
+            try {
+                await updateDoc(userDocRef, updates);
+                afficherBoutonFinal(statusText, bouton);
+            } catch (error) {
+                console.error("Erreur de sauvegarde :", error);
+                afficherBoutonFinal(statusText, bouton);
             }
         }
 
@@ -468,7 +467,8 @@
             bouton.style.display = "block";
         }
 
-        function declencherPubEtQuitter(event) {
+        // Gestion de l'action finale (Redirection & Pubs)
+        document.getElementById('exitBtn').addEventListener('click', (event) => {
             event.preventDefault();
             const pub = listePublicites[indexPubActuel];
 
@@ -491,7 +491,7 @@
             setTimeout(() => {
                 window.location.href = "activite.html";
             }, 1200);
-        }
+        });
     </script>
 </body>
 </html>
