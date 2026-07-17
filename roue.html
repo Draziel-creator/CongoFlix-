@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roue De Chance</title>
+    <title>CongoFlix - Roulette Deluxe</title>
     <!-- Publicité Adsterra injectée d'office en tâche de fond pour maximiser les impressions -->
     <script src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
     
@@ -248,31 +248,30 @@
 
         const userId = localStorage.getItem("user_id_congoflix");
         const spinSound = new Audio('https://www.soundjay.com/misc/sounds/casino-roulette-1.mp3');
-        spinSound.loop = true; // Permet de garder le son actif durant les 15s
+        spinSound.loop = true; 
 
         // Définition de la roue 18 sections
         const cases = [
-            { type: "gain", points: 10, angle: 350, texte: "🎉 Gagné ! +10 Points !" },
+            { type: "gain", points: 10, angle: 350, texte: "🎉 Gagné ! +10 Coins !" },
             { type: "perdu", points: 0, angle: 330, texte: "❌ Case Vide... Retente ta chance !" },
-            { type: "gain", points: 20, angle: 310, texte: "🎉 Gagné ! +20 Points !" },
+            { type: "gain", points: 20, angle: 310, texte: "🎉 Gagné ! +20 Coins !" },
             { type: "perdu", points: 0, angle: 290, texte: "❌ Case Vide... Retente ta chance !" },
-            { type: "gain", points: 30, angle: 270, texte: "🎉 Gagné ! +30 Points !" },
+            { type: "gain", points: 30, angle: 270, texte: "🎉 Gagné ! +30 Coins !" },
             { type: "perdu", points: 0, angle: 250, texte: "❌ Case Vide... Retente ta chance !" },
-            { type: "gain", points: 40, angle: 230, texte: "🎉 Gagné ! +40 Points !" },
+            { type: "gain", points: 40, angle: 230, texte: "🎉 Gagné ! +40 Coins !" },
             { type: "perdu", points: 0, angle: 210, texte: "❌ Case Vide... Retente ta chance !" },
-            { type: "gain", points: 50, angle: 190, texte: "🎉 Gagné ! +50 Points !" },
+            { type: "gain", points: 50, angle: 190, texte: "🎉 Gagné ! +50 Coins !" },
             { type: "perdu", points: 0, angle: 170, texte: "❌ Case Vide... Retente ta chance !" },
-            { type: "gain", points: 60, angle: 150, texte: "🎉 Gagné ! +60 Points !" },
+            { type: "gain", points: 60, angle: 150, texte: "🎉 Gagné ! +60 Coins !" },
             { type: "perdu", points: 0, angle: 130, texte: "❌ Case Vide... Retente ta chance !" },
-            { type: "gain", points: 70, angle: 110, texte: "🎉 Gagné ! +70 Points !" },
+            { type: "gain", points: 70, angle: 110, texte: "🎉 Gagné ! +70 Coins !" },
             { type: "perdu", points: 0, angle: 90, texte: "❌ Case Vide... Retente ta chance !" },
-            { type: "gain", points: 80, angle: 70, texte: "🎉 Gagné ! +80 Points !" },
+            { type: "gain", points: 80, angle: 70, texte: "🎉 Gagné ! +80 Coins !" },
             { type: "perdu", points: 0, angle: 50, texte: "❌ Case Vide... Retente ta chance !" },
-            { type: "gain", points: 90, angle: 30, texte: "🎉 Gagné ! +90 Points !" },
-            { type: "perdu", points: 0, angle: 10, texte: "🎰 LE JACKPOT ! +100 Points !" }
+            { type: "gain", points: 90, angle: 30, texte: "🎉 Gagné ! +90 Coins !" },
+            { type: "perdu", points: 0, angle: 10, texte: "🎰 LE JACKPOT ! +100 Coins !" }
         ];
 
-        // Création visuelle des textes sur la roue
         const wheelEl = document.getElementById('wheel');
         cases.forEach((item, index) => {
             const numDiv = document.createElement('div');
@@ -288,7 +287,7 @@
         let pubChargee = false;
         let dataUser = null;
         let rotationActuelle = 0;
-        let userName = "Joueur"; // Valeur de repli au cas où le champ n'existe pas
+        let userName = "Joueur"; 
 
         const listePublicites = [
             { type: "popunder", id: "clickadilla", scriptSrc: "https://js.wpadmngr.com/static/adManager.js", admpid: "447731" },
@@ -298,7 +297,6 @@
             { type: "directlink", id: "adsterra_link", url: "https://www.effectivecpmnetwork.com/uc21ey6tf?key=2f113ae182b0d7d4aeeff282e07b95be" }
         ];
 
-        // Bloquer le bouton physique retour d'Android
         history.pushState(null, null, location.href);
         window.onpopstate = function () {
             history.go(1);
@@ -309,24 +307,25 @@
             const statusText = document.getElementById('status-text');
             
             if (!userId) { 
-                statusText.innerHTML = "Erreur : Utilisateur non connecté au système."; 
+                statusText.innerHTML = "Erreur : ID utilisateur non détecté dans le navigateur."; 
                 return; 
             }
 
-            db.collection("users").doc(userId).get().then((doc) => {
+            // CORRECTION ICI : "rewards_users" au lieu de "users"
+            db.collection("rewards_users").doc(userId).get().then((doc) => {
                 if (doc.exists) {
                     dataUser = doc.data();
                     indexPubActuel = dataUser.indexPublicite || 0;
-                    // Récupération du nom dans le profil (gère 'name' ou 'username')
-                    userName = dataUser.name || dataUser.username || "Gédéon";
+                    // On utilise une valeur par défaut car il n'y a pas de champ 'name' visible
+                    userName = dataUser.name || dataUser.username || "Utilisateur";
                     
                     verifierRestrictions();
                 } else {
-                    statusText.innerHTML = "Accès refusé : Profil de table introuvable.";
+                    statusText.innerHTML = "Accès refusé : ID introuvable dans la collection 'rewards_users'.";
                 }
             }).catch((error) => {
                 console.error(error);
-                statusText.innerHTML = "Échec de connexion au serveur de jeu.";
+                statusText.innerHTML = "Échec de connexion à la base de données.";
             });
         };
 
@@ -335,24 +334,21 @@
             const tours = dataUser.toursFaits || 0;
             const dernierBonus = dataUser.dernierBonusTime || 0;
 
-            // Limite stricte de 5 tours par jour
             if (tours >= 5) {
-                document.getElementById('status-text').innerHTML = `Félicitations ${userName} ! Vos 5 tours du jour sont terminés. 🎉`;
+                document.getElementById('status-text').innerHTML = `Félicitations ! Vos 5 tours du jour sont terminés. 🎉`;
                 document.getElementById('timer').style.display = "none";
                 return;
             }
 
-            // Limite de 1 heure entre chaque tour
             if (maintenant - dernierBonus < 3600000) {
                 const tempsRestantMs = 3600000 - (maintenant - dernierBonus);
-                document.getElementById('status-text').innerHTML = `Désolé ${userName}, votre prochain tour sera disponible dans :`;
+                document.getElementById('status-text').innerHTML = `Désolé, votre prochain tour sera disponible dans :`;
                 lancerCompteARebours(tempsRestantMs);
             } else {
                 lancerSequenceCompteAReboursPreLancement();
             }
         }
 
-        // Chronomètre précis au format HH:MM:SS
         function lancerCompteARebours(ms) {
             let totalSeconds = Math.floor(ms / 1000);
             const timerEl = document.getElementById('timer');
@@ -373,14 +369,13 @@
             }, 1000);
         }
 
-        // Séquence d'attente requise : nom utilisateur + décompte 5,4,3,2,1
         function lancerSequenceCompteAReboursPreLancement() {
             chargerScriptPublicitaire(indexPubActuel);
             const statusText = document.getElementById('status-text');
             let secondesRestantes = 5;
 
             const decompteInterval = setInterval(() => {
-                statusText.innerHTML = `${userName}, le lancement automatique de votre roue se lance dans ${secondesRestantes}...`;
+                statusText.innerHTML = `${userName}, le lancement de votre roue commence dans ${secondesRestantes}...`;
                 secondesRestantes--;
 
                 if (secondesRestantes < 0) {
@@ -405,24 +400,21 @@
         }
 
         function activerPopunderSilencieux() {
-            console.log("Interaction utilisateur détectée.");
+            console.log("Interaction détectée.");
         }
 
-        // Roulette modifiée pour tourner durant exactement 15 secondes avec gestion audio
         function lancerRoulette() {
-            try { spinSound.play(); } catch(e){ console.log("Audio en attente d'interaction"); }
+            try { spinSound.play(); } catch(e){}
             
             const statusText = document.getElementById('status-text');
-            statusText.innerHTML = "La roue tourne à pleine vitesse... ⚡";
+            statusText.innerHTML = "La roue tourne... ⚡";
 
             const indexAleatoire = Math.floor(Math.random() * cases.length);
             tirage = cases[indexAleatoire];
 
-            // 15 tours complets + décalage propre à l'index ciblé
             rotationActuelle = (360 * 15) + tirage.angle;
             wheelEl.style.transform = `rotate(${rotationActuelle}deg)`;
 
-            // Attente de l'arrêt complet après 15 secondes d'animation
             setTimeout(enregistrerGains, 15000);
         }
 
@@ -436,7 +428,7 @@
             const nouveauTours = (dataUser.toursFaits || 0) + 1;
             const prochainIndexPub = (indexPubActuel + 1) % 5;
 
-            statusText.innerHTML = "Sécurisation de vos jetons en cours...";
+            statusText.innerHTML = "Sécurisation de vos coins en cours...";
 
             let updates = {
                 dernierBonusTime: maintenant,
@@ -444,15 +436,16 @@
                 toursFaits: nouveauTours
             };
 
+            // CORRECTION ICI : On met à jour le champ "coins" au lieu de "points"
             if (tirage.points > 0) {
-                db.collection("users").doc(userId).update({
-                    points: firebase.firestore.FieldValue.increment(tirage.points),
+                db.collection("rewards_users").doc(userId).update({
+                    coins: firebase.firestore.FieldValue.increment(tirage.points),
                     ...updates
                 }).then(() => {
                     afficherBoutonFinal(statusText, bouton);
                 }).catch(() => afficherBoutonFinal(statusText, bouton));
             } else {
-                db.collection("users").doc(userId).update(updates).then(() => {
+                db.collection("rewards_users").doc(userId).update(updates).then(() => {
                     afficherBoutonFinal(statusText, bouton);
                 }).catch(() => afficherBoutonFinal(statusText, bouton));
             }
@@ -477,7 +470,6 @@
 
         function declencherPubEtQuitter(event) {
             event.preventDefault();
-            
             const pub = listePublicites[indexPubActuel];
 
             if (pub) {
@@ -492,7 +484,7 @@
             }
 
             const bouton = document.getElementById('exitBtn');
-            bouton.innerHTML = "Connexion sécurisée... ⏳";
+            bouton.innerHTML = "Sauvegarde... ⏳";
             bouton.style.backgroundColor = "#555";
             bouton.disabled = true;
 
