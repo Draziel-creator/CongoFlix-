@@ -154,16 +154,17 @@
 
         /* Boîte à messages */
         .status {
-            font-size: 16px;
+            font-size: 15px;
             color: #e5c158;
             font-weight: bold;
             margin-top: 12px;
-            min-height: 48px;
+            min-height: 55px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0 15px;
+            padding: 0 10px;
             text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            line-height: 1.4;
         }
 
         /* Style spécifique pour le chronomètre */
@@ -205,7 +206,7 @@
     <div class="casino-container">
         <h3 style="margin: 0; color: #fff; letter-spacing: 2px; font-size: 19px; text-shadow: 0 2px 5px rgba(0,0,0,0.8);">ROULETTE DELUXE</h3>
         
-        <div id="status-text" class="status">Connexion à la table... 🎰</div>
+        <div id="status-text" class="status">Vérification de la session... 🖥️</div>
         <div id="timer">00:00:00</div>
 
         <div class="wheel-outer-ring">
@@ -247,6 +248,7 @@
 
         const userId = localStorage.getItem("user_id_congoflix");
         const spinSound = new Audio('https://www.soundjay.com/misc/sounds/casino-roulette-1.mp3');
+        spinSound.loop = true; // Permet de garder le son actif durant les 15s
 
         // Définition de la roue 18 sections
         const cases = [
@@ -286,8 +288,8 @@
         let pubChargee = false;
         let dataUser = null;
         let rotationActuelle = 0;
+        let userName = "Joueur"; // Valeur de repli au cas où le champ n'existe pas
 
-        // Liste ordonnée de tes 5 publicités
         const listePublicites = [
             { type: "popunder", id: "clickadilla", scriptSrc: "https://js.wpadmngr.com/static/adManager.js", admpid: "447731" },
             { type: "popunder", id: "click", scriptSrc: "//data527.click/fe77c0017a3a26cb73ec/a36db4224e/?placementName=default" },
@@ -304,8 +306,10 @@
 
         // --- 2. SÉCURITÉ DE CHARGEMENT ET VÉRIFICATION STRICTE ---
         window.onload = function() {
+            const statusText = document.getElementById('status-text');
+            
             if (!userId) { 
-                document.getElementById('status-text').innerHTML = "Erreur : Utilisateur non connecté."; 
+                statusText.innerHTML = "Erreur : Utilisateur non connecté au système."; 
                 return; 
             }
 
@@ -313,12 +317,16 @@
                 if (doc.exists) {
                     dataUser = doc.data();
                     indexPubActuel = dataUser.indexPublicite || 0;
+                    // Récupération du nom dans le profil (gère 'name' ou 'username')
+                    userName = dataUser.name || dataUser.username || "Gédéon";
+                    
                     verifierRestrictions();
                 } else {
-                    document.getElementById('status-text').innerHTML = "Profil introuvable.";
+                    statusText.innerHTML = "Accès refusé : Profil de table introuvable.";
                 }
-            }).catch(() => {
-                document.getElementById('status-text').innerHTML = "Erreur de synchronisation réseau.";
+            }).catch((error) => {
+                console.error(error);
+                statusText.innerHTML = "Échec de connexion au serveur de jeu.";
             });
         };
 
@@ -329,7 +337,7 @@
 
             // Limite stricte de 5 tours par jour
             if (tours >= 5) {
-                document.getElementById('status-text').innerHTML = "Félicitations ! Vos 5 tours du jour sont terminés. 🎉";
+                document.getElementById('status-text').innerHTML = `Félicitations ${userName} ! Vos 5 tours du jour sont terminés. 🎉`;
                 document.getElementById('timer').style.display = "none";
                 return;
             }
@@ -337,11 +345,10 @@
             // Limite de 1 heure entre chaque tour
             if (maintenant - dernierBonus < 3600000) {
                 const tempsRestantMs = 3600000 - (maintenant - dernierBonus);
-                document.getElementById('status-text').innerHTML = "Prochain tour disponible dans :";
-                document.getElementById('timer').style.style.display = "block";
+                document.getElementById('status-text').innerHTML = `Désolé ${userName}, votre prochain tour sera disponible dans :`;
                 lancerCompteARebours(tempsRestantMs);
             } else {
-                demarrerProcessus(indexPubActuel);
+                lancerSequenceCompteAReboursPreLancement();
             }
         }
 
@@ -353,27 +360,34 @@
 
             const interval = setInterval(() => {
                 totalSeconds--;
+                if (totalSeconds <= 0) { 
+                    clearInterval(interval); 
+                    location.reload(); 
+                    return;
+                }
                 const h = Math.floor(totalSeconds / 3600);
                 const m = Math.floor((totalSeconds % 3600) / 60);
                 const s = totalSeconds % 60;
                 
                 timerEl.innerHTML = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-                
-                if (totalSeconds <= 0) { 
-                    clearInterval(interval); 
-                    location.reload(); 
-                }
             }, 1000);
         }
 
-        function demarrerProcessus(indexPub) {
-            indexPubActuel = indexPub;
+        // Séquence d'attente requise : nom utilisateur + décompte 5,4,3,2,1
+        function lancerSequenceCompteAReboursPreLancement() {
             chargerScriptPublicitaire(indexPubActuel);
-            
             const statusText = document.getElementById('status-text');
-            statusText.innerHTML = "Prêt à lancer ! 💰";
-            
-            setTimeout(lancerRoulette, 1200);
+            let secondesRestantes = 5;
+
+            const decompteInterval = setInterval(() => {
+                statusText.innerHTML = `${userName}, le lancement automatique de votre roue se lance dans ${secondesRestantes}...`;
+                secondesRestantes--;
+
+                if (secondesRestantes < 0) {
+                    clearInterval(decompteInterval);
+                    lancerRoulette();
+                }
+            }, 1000);
         }
 
         function chargerScriptPublicitaire(index) {
@@ -394,11 +408,12 @@
             console.log("Interaction utilisateur détectée.");
         }
 
-        // Roulette modifiée pour tourner durant 15 secondes
+        // Roulette modifiée pour tourner durant exactement 15 secondes avec gestion audio
         function lancerRoulette() {
-            try { spinSound.play(); } catch(e){}
+            try { spinSound.play(); } catch(e){ console.log("Audio en attente d'interaction"); }
+            
             const statusText = document.getElementById('status-text');
-            statusText.innerHTML = "La roue tourne... ⚡";
+            statusText.innerHTML = "La roue tourne à pleine vitesse... ⚡";
 
             const indexAleatoire = Math.floor(Math.random() * cases.length);
             tirage = cases[indexAleatoire];
@@ -413,15 +428,15 @@
 
         function enregistrerGains() {
             try { spinSound.pause(); spinSound.currentTime = 0; } catch(e){}
+            
             const statusText = document.getElementById('status-text');
             const bouton = document.getElementById('exitBtn');
             const maintenant = new Date().getTime();
             
-            // Calcul des tours incrémentés et de la rotation de la pub
             const nouveauTours = (dataUser.toursFaits || 0) + 1;
             const prochainIndexPub = (indexPubActuel + 1) % 5;
 
-            statusText.innerHTML = "Enregistrement des jetons...";
+            statusText.innerHTML = "Sécurisation de vos jetons en cours...";
 
             let updates = {
                 dernierBonusTime: maintenant,
@@ -444,7 +459,7 @@
         }
 
         function afficherBoutonFinal(statusText, bouton) {
-            statusText.innerHTML = tirage.texte;
+            statusText.innerHTML = `${userName} : ${tirage.texte}`;
             
             if (tirage.points > 0) {
                 statusText.style.color = "#4cd964";
