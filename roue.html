@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CongoFlix - Roulette Deluxe</title>
+    <!-- Publicité Adsterra injectée d'office en tâche de fond pour maximiser les impressions -->
+    <script src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
+    
     <style>
         body {
             background-color: #050507;
@@ -62,7 +65,7 @@
             100% { opacity: 0.4; }
         }
 
-        /* La Roue de Casino en relief */
+        /* La Roue de Casino en relief - Modifiée à 15s */
         .wheel {
             width: 100%;
             height: 100%;
@@ -91,7 +94,7 @@
                 #8b0000 320.5deg 340deg, #e5c158 340deg 340.5deg,
                 #141414 340.5deg 360deg
             );
-            transition: transform 6s cubic-bezier(0.1, 0.8, 0.1, 1);
+            transition: transform 15s cubic-bezier(0.1, 0, 0, 1);
         }
 
         /* Textes des cases */
@@ -119,7 +122,7 @@
             height: 65px;
             background: radial-gradient(circle, #ffeaa7 0%, #e5c158 60%, #9e781e 100%);
             border-radius: 50%;
-            border: 3px solid #141414;
+            border: 2px solid #141414;
             box-shadow: 0 4px 12px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.7);
             z-index: 5;
             display: flex;
@@ -163,6 +166,15 @@
             text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
 
+        /* Style spécifique pour le chronomètre */
+        #timer {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffcc00;
+            margin-top: 5px;
+            display: none;
+        }
+
         /* Bouton de sortie ultra dynamique */
         .btn-exit {
             display: none;
@@ -194,6 +206,7 @@
         <h3 style="margin: 0; color: #fff; letter-spacing: 2px; font-size: 19px; text-shadow: 0 2px 5px rgba(0,0,0,0.8);">ROULETTE DELUXE</h3>
         
         <div id="status-text" class="status">Connexion à la table... 🎰</div>
+        <div id="timer">00:00:00</div>
 
         <div class="wheel-outer-ring">
             <div class="pointer"></div>
@@ -232,7 +245,8 @@
             console.error("Erreur Firebase : ", e);
         }
 
-        const userId = localStorage.getItem("user_id_congoflix") || "utilisateur_demo";
+        const userId = localStorage.getItem("user_id_congoflix");
+        const spinSound = new Audio('https://www.soundjay.com/misc/sounds/casino-roulette-1.mp3');
 
         // Définition de la roue 18 sections
         const cases = [
@@ -270,6 +284,8 @@
         let indexPubActuel = 0;
         let tirage = null;
         let pubChargee = false;
+        let dataUser = null;
+        let rotationActuelle = 0;
 
         // Liste ordonnée de tes 5 publicités
         const listePublicites = [
@@ -286,51 +302,69 @@
             history.go(1);
         };
 
-        // --- 2. SÉCURITÉ DE CHARGEMENT ---
+        // --- 2. SÉCURITÉ DE CHARGEMENT ET VÉRIFICATION STRICTE ---
         window.onload = function() {
-            const safetyTimeout = setTimeout(() => {
-                console.warn("Sécurité : Firebase trop lent, démarrage local");
-                demarrerProcessus(0);
-            }, 3000);
-
-            if (!db) {
-                clearTimeout(safetyTimeout);
-                demarrerProcessus(0);
-                return;
+            if (!userId) { 
+                document.getElementById('status-text').innerHTML = "Erreur : Utilisateur non connecté."; 
+                return; 
             }
 
             db.collection("users").doc(userId).get().then((doc) => {
-                clearTimeout(safetyTimeout);
-
                 if (doc.exists) {
-                    const data = doc.data();
-                    const dernierBonus = data.dernierBonusTime || 0;
-                    indexPubActuel = data.indexPublicite || 0;
-                    const maintenant = new Date().getTime();
-
-                    if (maintenant - dernierBonus < 3600000) {
-                        const tempsRestant = Math.ceil((3600000 - (maintenant - dernierBonus)) / 60000);
-                        document.getElementById('status-text').innerHTML = `Revenez dans ${tempsRestant} min ! ⏳`;
-                        setTimeout(() => {
-                            window.location.href = "activite.html";
-                        }, 2500);
-                    } else {
-                        demarrerProcessus(indexPubActuel);
-                    }
+                    dataUser = doc.data();
+                    indexPubActuel = dataUser.indexPublicite || 0;
+                    verifierRestrictions();
                 } else {
-                    db.collection("users").doc(userId).set({
-                        points: 0,
-                        dernierBonusTime: 0,
-                        indexPublicite: 0
-                    }).then(() => {
-                        demarrerProcessus(0);
-                    }).catch(() => demarrerProcessus(0));
+                    document.getElementById('status-text').innerHTML = "Profil introuvable.";
                 }
             }).catch(() => {
-                clearTimeout(safetyTimeout);
-                demarrerProcessus(0);
+                document.getElementById('status-text').innerHTML = "Erreur de synchronisation réseau.";
             });
         };
+
+        function verifierRestrictions() {
+            const maintenant = new Date().getTime();
+            const tours = dataUser.toursFaits || 0;
+            const dernierBonus = dataUser.dernierBonusTime || 0;
+
+            // Limite stricte de 5 tours par jour
+            if (tours >= 5) {
+                document.getElementById('status-text').innerHTML = "Félicitations ! Vos 5 tours du jour sont terminés. 🎉";
+                document.getElementById('timer').style.display = "none";
+                return;
+            }
+
+            // Limite de 1 heure entre chaque tour
+            if (maintenant - dernierBonus < 3600000) {
+                const tempsRestantMs = 3600000 - (maintenant - dernierBonus);
+                document.getElementById('status-text').innerHTML = "Prochain tour disponible dans :";
+                document.getElementById('timer').style.style.display = "block";
+                lancerCompteARebours(tempsRestantMs);
+            } else {
+                demarrerProcessus(indexPubActuel);
+            }
+        }
+
+        // Chronomètre précis au format HH:MM:SS
+        function lancerCompteARebours(ms) {
+            let totalSeconds = Math.floor(ms / 1000);
+            const timerEl = document.getElementById('timer');
+            timerEl.style.display = "block";
+
+            const interval = setInterval(() => {
+                totalSeconds--;
+                const h = Math.floor(totalSeconds / 3600);
+                const m = Math.floor((totalSeconds % 3600) / 60);
+                const s = totalSeconds % 60;
+                
+                timerEl.innerHTML = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                
+                if (totalSeconds <= 0) { 
+                    clearInterval(interval); 
+                    location.reload(); 
+                }
+            }, 1000);
+        }
 
         function demarrerProcessus(indexPub) {
             indexPubActuel = indexPub;
@@ -342,7 +376,6 @@
             setTimeout(lancerRoulette, 1200);
         }
 
-        // Injection propre et immédiate du code pub dans le DOM
         function chargerScriptPublicitaire(index) {
             const pub = listePublicites[index];
             if (pub && pub.type === "popunder" && !pubChargee) {
@@ -357,41 +390,43 @@
             }
         }
 
-        // Active silencieusement les régies popunder au premier clic utilisateur n'importe où
         function activerPopunderSilencieux() {
-            console.log("Interaction utilisateur détectée, popunder amorcé.");
+            console.log("Interaction utilisateur détectée.");
         }
 
+        // Roulette modifiée pour tourner durant 15 secondes
         function lancerRoulette() {
+            try { spinSound.play(); } catch(e){}
             const statusText = document.getElementById('status-text');
             statusText.innerHTML = "La roue tourne... ⚡";
 
             const indexAleatoire = Math.floor(Math.random() * cases.length);
             tirage = cases[indexAleatoire];
 
-            // 7 tours d'élan + décalage d'angle
-            const rotationTotale = (360 * 7) + tirage.angle;
-            wheelEl.style.transform = `rotate(${rotationTotale}deg)`;
+            // 15 tours complets + décalage propre à l'index ciblé
+            rotationActuelle = (360 * 15) + tirage.angle;
+            wheelEl.style.transform = `rotate(${rotationActuelle}deg)`;
 
-            setTimeout(enregistrerGains, 6100);
+            // Attente de l'arrêt complet après 15 secondes d'animation
+            setTimeout(enregistrerGains, 15000);
         }
 
         function enregistrerGains() {
+            try { spinSound.pause(); spinSound.currentTime = 0; } catch(e){}
             const statusText = document.getElementById('status-text');
             const bouton = document.getElementById('exitBtn');
             const maintenant = new Date().getTime();
+            
+            // Calcul des tours incrémentés et de la rotation de la pub
+            const nouveauTours = (dataUser.toursFaits || 0) + 1;
             const prochainIndexPub = (indexPubActuel + 1) % 5;
 
             statusText.innerHTML = "Enregistrement des jetons...";
 
-            if (!db) {
-                afficherBoutonFinal(statusText, bouton);
-                return;
-            }
-
             let updates = {
                 dernierBonusTime: maintenant,
-                indexPublicite: prochainIndexPub
+                indexPublicite: prochainIndexPub,
+                toursFaits: nouveauTours
             };
 
             if (tirage.points > 0) {
@@ -425,40 +460,30 @@
             bouton.style.display = "block";
         }
 
-        // --- 3. DÉCLENCHEMENT SÉCURISÉ DE LA PUBLICITÉ AU CLIC ---
         function declencherPubEtQuitter(event) {
-            // Empêche la fermeture immédiate de l'application
             event.preventDefault();
             
             const pub = listePublicites[indexPubActuel];
-            console.log("Tentative de lancement de la pub :", pub);
 
             if (pub) {
                 if (pub.type === "directlink") {
-                    // Ouverture forcée du lien publicitaire dans un nouvel onglet
                     window.open(pub.url, "_blank");
                 } else if (pub.type === "popunder") {
-                    // Pour les scripts popunder, on tente de simuler un clic invisible
-                    // pour forcer le déclencheur d'Adsterra ou Clickadilla
                     const simulateClick = new MouseEvent('click', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window
+                        bubbles: true, cancelable: true, view: window
                     });
                     document.body.dispatchEvent(simulateClick);
                 }
             }
 
-            // On affiche un message d'attente à l'utilisateur
             const bouton = document.getElementById('exitBtn');
             bouton.innerHTML = "Connexion sécurisée... ⏳";
             bouton.style.backgroundColor = "#555";
             bouton.disabled = true;
 
-            // PAUSE CRUCIALE de 1,5 seconde (1500ms) avant de retourner à l'activité
             setTimeout(() => {
                 window.location.href = "activite.html";
-            }, 1500);
+            }, 1200);
         }
     </script>
 </body>
