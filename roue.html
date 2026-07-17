@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CongoFlix - Casino</title>
+    <style>
+        body {
+            background-color: #0b0b0d;
+            color: #ffffff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .casino-box {
+            background: radial-gradient(circle, #1a1a24 0%, #0e0e13 100%);
+            padding: 25px;
+            border-radius: 20px;
+            border: 3px solid #ffcc00;
+            width: 310px;
+            box-shadow: 0 0 30px rgba(255, 204, 0, 0.2);
+            text-align: center;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 240px;
+            height: 240px;
+            margin: 20px auto;
+        }
+
+        /* La Roue de 18 sections (10 gains alternés avec 8 vides) */
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 6px solid #ffcc00;
+            /* Conic-gradient divisé en portions de 20 degrés (360/18 = 20) */
+            background: conic-gradient(
+                #ff3b30 0deg 20deg,     /* 1. Gain +10 */
+                #1c1c1e 20deg 40deg,    /* 2. VIDE */
+                #ff9500 40deg 60deg,    /* 3. Gain +20 */
+                #1c1c1e 60deg 80deg,    /* 4. VIDE */
+                #ffcc00 80deg 100deg,   /* 5. Gain +30 */
+                #1c1c1e 100deg 120deg,  /* 6. VIDE */
+                #4cd964 120deg 140deg,  /* 7. Gain +40 */
+                #1c1c1e 140deg 160deg,  /* 8. VIDE */
+                #5ac8fa 160deg 180deg,  /* 9. Gain +50 */
+                #1c1c1e 180deg 200deg,  /* 10. VIDE */
+                #007aff 200deg 220deg,  /* 11. Gain +60 */
+                #1c1c1e 220deg 240deg,  /* 12. VIDE */
+                #5856d6 240deg 260deg,  /* 13. Gain +70 */
+                #1c1c1e 260deg 280deg,  /* 14. VIDE */
+                #ff2d55 280deg 300deg,  /* 15. Gain +80 */
+                #1c1c1e 300deg 320deg,  /* 16. VIDE */
+                #af52de 320deg 340deg,  /* 17. Gain +90 */
+                #1c1c1e 340deg 360deg   /* 18. VIDE */
+            );
+            /* Transition fluide style casino */
+            transition: transform 6s cubic-bezier(0.15, 0.95, 0.3, 1);
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .pointer {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid #ffcc00;
+            z-index: 10;
+            filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.5));
+        }
+
+        .status {
+            font-size: 16px;
+            color: #ffcc00;
+            font-weight: bold;
+            margin-top: 15px;
+            min-height: 24px;
+        }
+
+        .btn-exit {
+            display: none;
+            background-color: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 15px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(255,204,0,0.4);
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="casino-box">
+        <h2 style="margin: 0; color: #fff; letter-spacing: 1px;">CONGOFLIX SPIN</h2>
+        <div id="status-text" class="status">Initialisation du profil... 🎰</div>
+
+        <div class="wheel-container">
+            <div class="pointer"></div>
+            <div id="wheel" class="wheel"></div>
+        </div>
+
+        <button id="exitBtn" class="btn-exit" onclick="declencherPubEtQuitter()"></button>
+    </div>
+
+    <!-- SDK Firebase Compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // --- 1. CONFIGURATION CONFIG FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+            authDomain: "publicite-6445c.firebaseapp.com",
+            projectId: "publicite-6445c",
+            storageBucket: "publicite-6445c.firebasestorage.app",
+            messagingSenderId: "663385244466",
+            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
+            measurementId: "G-T37TGB3SR0"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Identifiant de session local
+        const userId = localStorage.getItem("user_id_congoflix") || "utilisateur_demo";
+
+        // Définition exacte des 18 tranches de ta nouvelle roue
+        const cases = [
+            { type: "gain", points: 10, angle: 350, texte: "🎉 Gagné ! +10 Points !" },
+            { type: "perdu", points: 0, angle: 330, texte: "❌ Case Vide... Pas de chance !" },
+            { type: "gain", points: 20, angle: 310, texte: "🎉 Gagné ! +20 Points !" },
+            { type: "perdu", points: 0, angle: 290, texte: "❌ Case Vide... Pas de chance !" },
+            { type: "gain", points: 30, angle: 270, texte: "🎉 Gagné ! +30 Points !" },
+            { type: "perdu", points: 0, angle: 250, texte: "❌ Case Vide... Pas de chance !" },
+            { type: "gain", points: 40, angle: 230, texte: "🎉 Gagné ! +40 Points !" },
+            { type: "perdu", points: 0, angle: 210, texte: "❌ Case Vide... Pas de chance !" },
+            { type: "gain", points: 50, angle: 190, texte: "🎉 Gagné ! +50 Points !" },
+            { type: "perdu", points: 0, angle: 170, texte: "❌ Case Vide... Pas de chance !" },
+            { type: "gain", points: 60, angle: 150, texte: "🎉 Gagné ! +60 Points !" },
+            { type: "perdu", points: 0, angle: 130, texte: "❌ Case Vide... Pas de chance !" },
+            { type: "gain", points: 70, angle: 110, texte: "🎉 Gagné ! +70 Points !" },
+            { type: "perdu", points: 0, angle: 90, texte: "❌ Case Vide... Pas de chance !" },
+            { type: "gain", points: 80, angle: 70, texte: "🎉 Gagné ! +80 Points !" },
+            { type: "perdu", points: 0, angle: 50, texte: "❌ Case Vide... Pas de chance !" },
+            { type: "gain", points: 90, angle: 30, texte: "🎉 Gagné ! +90 Points !" },
+            { type: "perdu", points: 0, angle: 10, texte: "🎰 LE JACKPOT ! +100 Points !" } // Représente le 100 à la fin
+        ];
+
+        let indexPubActuel = 0;
+        let tirage = null;
+
+        // Liste ordonnée de tes codes publicitaires (injectés dynamiquement par JS)
+        const listePublicites = [
+            { type: "popunder", id: "clickadilla", scriptSrc: "https://js.wpadmngr.com/static/adManager.js", admpid: "447731" },
+            { type: "popunder", id: "click", scriptSrc: "//data527.click/fe77c0017a3a26cb73ec/a36db4224e/?placementName=default" },
+            { type: "popunder", id: "adsterra", scriptSrc: "https://pl30313217.effectivecpmnetwork.com/de/ac/ef/deacefeb17116ee3bc546f4b5ba4c252.js" },
+            { type: "directlink", id: "advertica", url: "https://data527.click/8db930650dc1e3bc4df6/8bdc6ee564/?placementName=link" },
+            { type: "directlink", id: "adsterra_link", url: "https://www.effectivecpmnetwork.com/uc21ey6tf?key=2f113ae182b0d7d4aeeff282e07b95be" }
+        ];
+
+        // --- 2. VERROUILLAGE RETOUR PHYSIQUE ANDROID ---
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+        };
+
+        // --- 3. SYNCHRONISATION INITIALE FIREBASE ---
+        window.onload = function() {
+            db.collection("users").doc(userId).get().then((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    const dernierBonus = data.dernierBonusTime || 0;
+                    indexPubActuel = data.indexPublicite || 0;
+                    const maintenant = new Date().getTime();
+
+                    // Vérification de la limite de 1 heure (3600000ms)
+                    if (maintenant - dernierBonus < 3600000) {
+                        const tempsRestant = Math.ceil((3600000 - (maintenant - dernierBonus)) / 60000);
+                        document.getElementById('status-text').innerHTML = `Revenez dans ${tempsRestant} min !`;
+                        setTimeout(() => {
+                            window.location.href = "activite.html";
+                        }, 2000);
+                    } else {
+                        // Injection invisible du script publicitaire
+                        preparerPublicite(indexPubActuel);
+                        setTimeout(lancerRoulette, 1000);
+                    }
+                } else {
+                    // Création de l'utilisateur s'il est tout nouveau
+                    db.collection("users").doc(userId).set({
+                        points: 0,
+                        dernierBonusTime: 0,
+                        indexPublicite: 0
+                    }).then(() => {
+                        preparerPublicite(0);
+                        setTimeout(lancerRoulette, 1000);
+                    });
+                }
+            });
+        };
+
+        function preparerPublicite(index) {
+            const pub = listePublicites[index];
+            if (pub.type === "popunder") {
+                const script = document.createElement("script");
+                script.async = true;
+                script.src = pub.scriptSrc;
+                if (pub.admpid) {
+                    script.setAttribute("data-admpid", pub.admpid);
+                }
+                document.head.appendChild(script);
+            }
+        }
+
+        function lancerRoulette() {
+            const roue = document.getElementById('wheel');
+            const statusText = document.getElementById('status-text');
+
+            statusText.innerHTML = "La roulette tourne... ⚡";
+
+            const indexAleatoire = Math.floor(Math.random() * cases.length);
+            tirage = cases[indexAleatoire];
+
+            // 8 tours complets (2880 deg) + angle de la tranche sélectionnée
+            const rotationTotale = 2880 + tirage.angle;
+            roue.style.transform = `rotate(${rotationTotale}deg)`;
+
+            setTimeout(enregistrerGainsFirebase, 6000);
+        }
+
+        function enregistrerGainsFirebase() {
+            const statusText = document.getElementById('status-text');
+            const bouton = document.getElementById('exitBtn');
+            const maintenant = new Date().getTime();
+
+            // Calcul du prochain index de publicité (boucle de 0 à 4)
+            const prochainIndexPub = (indexPubActuel + 1) % 5;
+
+            let updates = {
+                dernierBonusTime: maintenant,
+                indexPublicite: prochainIndexPub
+            };
+
+            if (tirage.points > 0) {
+                statusText.innerHTML = "Sauvegarde de vos points...";
+                
+                db.collection("users").doc(userId).update({
+                    points: firebase.firestore.FieldValue.increment(tirage.points),
+                    ...updates
+                }).then(() => {
+                    statusText.innerHTML = tirage.texte;
+                    statusText.style.color = "#00ff66";
+                    
+                    bouton.innerHTML = "RÉCUPÉRER ET SORTIR ➔";
+                    bouton.style.backgroundColor = "#00ff66";
+                    bouton.style.display = "block";
+                });
+            } else {
+                db.collection("users").doc(userId).update(updates).then(() => {
+                    statusText.innerHTML = tirage.texte;
+                    statusText.style.color = "#ff3333";
+                    
+                    bouton.innerHTML = "Retour aux Tâches ➔";
+                    bouton.style.backgroundColor = "#ff3333";
+                    bouton.style.color = "#fff";
+                    bouton.style.display = "block";
+                });
+            }
+        }
+
+        function declencherPubEtQuitter() {
+            const pub = listePublicites[indexPubActuel];
+            
+            // Si le tour actuel était un direct link, on redirige vers la pub
+            if (pub.type === "directlink") {
+                window.open(pub.url, "_blank");
+            }
+            
+            // Redirection de l'application CongoFlix vers la page d'activité
+            window.location.href = "activite.html";
+        }
+    </script>
+</body>
+</html>
