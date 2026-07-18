@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
+<!DOCTYPE html><html lang="fr"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>PUBLICITÉ - Activités & Boost</title>
@@ -12,10 +10,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-    <!-- Web Push Notification Clickadilla -->
+    <!-- Web Push Notification Clickadilla (Chargement asynchrone en arrière-plan) -->
     <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447732"></script>
     
-    <!-- Adsterra Social Bar (Toujours active en arrière-plan) -->
+    <!-- Adsterra Social Bar -->
     <script src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
 
     <style>
@@ -23,6 +21,7 @@
             --bg-primary: #090b18;
             --bg-secondary: #121526;
             --accent-color: #ff3366;
+            --accent-glow: rgba(255, 51, 102, 0.4);
             --text-main: #ffffff;
             --text-muted: #8a8d9f;
         }
@@ -40,7 +39,7 @@
         /* Bouton Bonus Flottant & Pulse */
         .bonus-float-bubble {
             position: fixed;
-            bottom: 110px;
+            bottom: 90px;
             right: 20px;
             background: linear-gradient(135deg, #ff9900, #ff3300);
             color: white;
@@ -66,7 +65,7 @@
             100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 153, 0, 0); }
         }
 
-        /* Structure Globale */
+        /* Structure Générale */
         .app-container {
             max-width: 500px;
             margin: 0 auto;
@@ -74,7 +73,7 @@
             display: flex;
             flex-direction: column;
             background-color: var(--bg-primary);
-            padding-bottom: 140px;
+            padding-bottom: 120px;
         }
 
         .app-header {
@@ -110,7 +109,7 @@
             width: 25px; height: 25px; border-radius: 50%; cursor: pointer;
         }
 
-        .section-title { font-size: 16px; font-weight: 600; margin: 25px 0 12px 0; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+        .section-title { font-size: 16px; font-weight: 600; margin: 20px 0 12px 0; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
 
         /* Grid Vidéos */
         .video-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -129,47 +128,20 @@
             padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;
         }
 
-        /* Cadres Pub Clickadilla */
-        .ad-grid-clickadilla { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
+        /* Cadres Pub Clickadilla Régulés */
+        .ad-grid-clickadilla { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 15px 0; }
         .cadre-pub-clickadilla {
             width: 100%; min-height: 140px; background-color: #05060b;
             border: 1px dashed #2a2f54; border-radius: 8px;
             display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
         .cadre-pub-large {
-            width: 100%; min-height: 250px; background-color: #05060b;
-            border: 2px dashed #2a2f54; border-radius: 12px;
-            display: flex; justify-content: center; align-items: center; overflow: hidden; margin-top: 10px;
+            width: 100%; min-height: 100px; background-color: #05060b;
+            border: 1px dashed #2a2f54; border-radius: 8px; margin: 15px 0;
+            display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
 
-        /* Mur d'offres VIP Section */
-        .vip-zone-card {
-            background: linear-gradient(135deg, #170d2b, #121526);
-            border-radius: 16px; padding: 20px; border: 1px solid #441f7a; margin-top: 25px;
-        }
-        .vip-header { display: flex; align-items: center; gap: 10px; color: #ffcc00; margin-bottom: 10px; }
-        .vip-header h3 { margin: 0; font-size: 16px; font-weight: 700; }
-        .vip-instructions { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px; }
-        .wall-btn {
-            display: flex; flex-direction: column; background: #1a1435; border: 1px solid #3a2a6b;
-            padding: 15px; border-radius: 12px; margin-bottom: 12px; cursor: pointer; transition: 0.3s;
-        }
-        .wall-btn:hover { background: #231b47; border-color: #553b9c; }
-        .wall-btn h2 { margin: 0; font-size: 14px; color: #ffffff; display: flex; align-items: center; gap: 8px; }
-        .wall-btn p { margin: 5px 0 0 0; font-size: 11px; color: var(--text-muted); }
-        .wall-btn i { color: #ffcc00; }
-
-        /* Conteneurs Plein Écran pour Iframes VIP */
-        .fullscreen-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #04050b; z-index: 3000; display: none; flex-direction: column;
-        }
-        .btn-close-wall {
-            background: #ff3366; color: white; border: none; padding: 15px;
-            font-weight: bold; cursor: pointer; text-align: center; font-size: 14px;
-        }
-
-        /* Modales Tâches */
+        /* Modales Complexes */
         .pub-modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(4, 5, 11, 0.95); z-index: 2000;
@@ -186,6 +158,7 @@
         }
         .ad-slot-square { width: 100%; display: none; justify-content: center; align-items: center; }
 
+        /* États des boutons de validation */
         .btn-modal-action {
             width: 100%; padding: 12px; border-radius: 10px; border: none;
             font-weight: 600; font-size: 14px; margin-bottom: 10px; cursor: not-allowed;
@@ -199,9 +172,11 @@
             position: absolute; top: -40px; right: 0; background: none; border: none;
             color: white; font-size: 24px; cursor: pointer;
         }
+
+        /* Message d'erreur de chargement */
         .ad-error-msg { color: #ff3366; font-size: 12px; padding: 15px; font-weight: 500; }
 
-        /* Sticky Fixed Bottom Ad */
+        /* Sticky Banner Adsterra Fond de page */
         .sticky-bottom-ad {
             position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
             width: 100%; max-width: 500px; height: 55px; background: #090b18;
@@ -209,11 +184,52 @@
             border-top: 1px solid #1f233d; overflow: hidden;
         }
 
+        /* Styles Modale Bonus */
         .bonus-modal-title { font-size: 20px; font-weight: 700; color: #ff9900; margin-bottom: 10px; }
         .bonus-modal-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px; }
         .btn-bonus-launch {
             background: linear-gradient(135deg, #ff9900, #ff3300); color: white;
             border: none; padding: 14px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer;
+        }
+
+        /* Sur-multiplication des conteneurs Adsterra pour remplir l'espace */
+        .adsterra-fill-box {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        /* Espace Premium VIP Styles */
+        .vip-zone-card {
+            background: linear-gradient(135deg, #1f1a3a, #0d0b18);
+            border: 2px solid #b57cff;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+        .vip-header { display: flex; align-items: center; gap: 10px; color: #b57cff; margin-bottom: 10px; }
+        .vip-header h3 { margin: 0; font-size: 18px; font-weight: 700; }
+        .vip-instructions { font-size: 12px; color: #b2b5d1; line-height: 1.5; margin-bottom: 15px; }
+        .wall-btn {
+            background: #191632; border: 1px solid #3d356b; border-radius: 10px;
+            padding: 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;
+        }
+        .wall-btn:hover { background: #231e47; border-color: #b57cff; }
+        .wall-btn h2 { margin: 0 0 5px 0; font-size: 15px; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+        .wall-btn p { margin: 0; font-size: 12px; color: var(--text-muted); }
+
+        /* Fullscreen Overlay pour Iframe VIP */
+        .fullscreen-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #04050b; z-index: 3000;
+            display: none; flex-direction: column;
+        }
+        .btn-close-wall {
+            height: 50px; background: #ff3366; color: white; border: none;
+            font-weight: bold; font-size: 14px; cursor: pointer; width: 100%;
         }
 
         /* Navigation Basse */
@@ -226,8 +242,7 @@
         .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 11px; cursor: pointer; }
         .nav-item.active { color: var(--accent-color); }
         .nav-icon { font-size: 20px; margin-bottom: 4px; }
-    </style>
-</head>
+    </style></head>
 <body>
 
     <!-- Bouton Flottant Bonus Chance -->
@@ -339,17 +354,34 @@
                 </ins>
             </div>
 
-            <!-- Bannières & Formats Adsterra Organisés -->
+            <!-- Bannières & Formats Adsterra Organisés et Dupliqués pour Remplir l'Espace -->
             <div class="section-title"><i class="fa-solid fa-layer-group"></i> Formats Multiples Adsterra</div>
             <div style="display: flex; flex-direction: column; gap: 15px; align-items: center; background:#121526; padding:15px; border-radius:12px;">
+                
                 <div id="container-2488fee72aaf9bf875080b7e81f37d58" style="width: 100%;"></div>
-                <div id="adsterra-320-50"></div>
-                <div id="adsterra-468-60"></div>
-                <div id="adsterra-300-250"></div>
-                <div style="display: flex; gap: 10px; justify-content: center; width: 100%;">
+                
+                <!-- Format 320x50 Dupliqué -->
+                <div class="adsterra-fill-box">
+                    <div id="adsterra-320-50"></div>
+                    <div id="adsterra-320-50-dup"></div>
+                </div>
+
+                <!-- Format 468x60 -->
+                <div id="adsterra-468-60" style="width: 100%; display: flex; justify-content: center;"></div>
+                
+                <!-- Format 300x250 Dupliqué en ligne -->
+                <div class="adsterra-fill-box">
+                    <div id="adsterra-300-250"></div>
+                    <div id="adsterra-300-250-dup"></div>
+                </div>
+
+                <!-- Formats Verticaux alignés -->
+                <div style="display: flex; gap: 10px; justify-content: center; width: 100%; flex-wrap: wrap;">
                     <div id="adsterra-160-300"></div>
                     <div id="adsterra-160-600"></div>
                 </div>
+
+                <!-- Format Large 728x90 -->
                 <div id="adsterra-728-90" style="overflow-x: auto; width:100%;"></div>
             </div>
 
@@ -456,10 +488,15 @@
             // Script lié au cadre collé au bas de l'écran (447739)
             injecterScriptCentralClickadilla("447739", document.getElementById('sticky-bottom-frame'));
 
-            // Initialisations IFRAMES Adsterra
+            // Initialisations IFRAMES Adsterra (Avec versions Dupliquées pour combler l'espace)
             chargerConfigurationsAdsterra("adsterra-320-50", "7221685de42e37b3b02c60ff0bee506a", 320, 50);
+            chargerConfigurationsAdsterra("adsterra-320-50-dup", "7221685de42e37b3b02c60ff0bee506a", 320, 50);
+            
             chargerConfigurationsAdsterra("adsterra-468-60", "f4457d9de2541809ff0cdd731f5f78e2", 468, 60);
+            
             chargerConfigurationsAdsterra("adsterra-300-250", "e86dd4055cd86d43aa42fbae392c77d2", 300, 250);
+            chargerConfigurationsAdsterra("adsterra-300-250-dup", "e86dd4055cd86d43aa42fbae392c77d2", 300, 250);
+            
             chargerConfigurationsAdsterra("adsterra-160-300", "f37eede0de06b709e6c6db90820d116e", 160, 300);
             chargerConfigurationsAdsterra("adsterra-160-600", "355c9d0ee6ac5ec71d84d7f879fdc153", 160, 600);
             chargerConfigurationsAdsterra("adsterra-728-90", "1facbab7132cdcadf3fe0ead26074277", 728, 90);
@@ -579,23 +616,29 @@
             const destination = directLinks[directLinkIndex];
             directLinkIndex = (directLinkIndex + 1) % directLinks.length;
             window.open(destination, '_blank');
-
-            db.collection("users").doc(uidCourant).update({
-                points: firebase.firestore.FieldValue.increment(200),
-                pointsDuJour: firebase.firestore.FieldValue.increment(200)
-            });
-            alert("🚀 Booster activé ! +200 Points crédités après vérification du robot.");
         }
 
         function fermerModaleActive() {
-            if (simpleInterval) clearInterval(simpleInterval);
             document.getElementById('global-pub-modal').style.display = 'none';
-            document.getElementById(missionActive.idZone).innerHTML = '';
+            if (simpleInterval) clearInterval(simpleInterval);
+        }
+
+        function ouvrirModaleBonus() {
+            document.getElementById('bonus-luck-modal').style.display = 'flex';
+            document.getElementById('bonus-explanation-text').innerText = "Cliquez ci-dessous pour lancer votre tirage journalier unique et tenter de gagner jusqu'à +500 points.";
+        }
+
+        function executerLancementChance() {
+            if (!uidCourant) return alert("Veuillez vous connecter.");
+            const gainsAleatoires = Math.floor(Math.random() * 400) + 100; // Donne entre 100 et 500 points
             
-            const btnClaim = document.getElementById('btn-claim-points');
-            btnClaim.className = "btn-modal-action";
-            btnClaim.disabled = true;
-            btnClaim.removeAttribute('onclick');
+            db.collection("users").doc(uidCourant).update({
+                points: firebase.firestore.FieldValue.increment(gainsAleatoires),
+                pointsDuJour: firebase.firestore.FieldValue.increment(gainsAleatoires)
+            }).then(() => {
+                alert(`🎁 Chance activée ! Vous remportez un bonus de +${gainsAleatoires} Points.`);
+                document.getElementById('bonus-luck-modal').style.display = 'none';
+            });
         }
 
         // --- GESTION DE LA BOITE DE DIALOGUE ET DU CODE DE SÉCURITÉ EN BAS ---
@@ -616,51 +659,15 @@
             if (mur === 'mur1') {
                 insert.innerHTML = `<iframe src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${uidCourant}" style="width:100%; height:100%; border:none;"></iframe>`;
             } else if (mur === 'mur2') {
-                insert.innerHTML = `<iframe src="https://appsave.online/cl/i/grjgep?aff_sub=${uidCourant}" style="width:100%; height:100%; border:none;"></iframe>`;
+                insert.innerHTML = `<iframe src="https://www.ogads.com/show_wall/example?uid=${uidCourant}" style="width:100%; height:100%; border:none;"></iframe>`;
             } else if (mur === 'mur3') {
-                insert.innerHTML = `<iframe src="https://getafilenow.com/script_include.php?id=1904067&tracking_id=${uidCourant}" style="width:100%; height:100%; border:none;"></iframe>`;
+                insert.innerHTML = `<iframe src="https://www.cpagrip.com/show_wall/example2?uid=${uidCourant}" style="width:100%; height:100%; border:none;"></iframe>`;
             }
         }
 
         function fermerIframeVIP() {
             document.getElementById('conteneur-iframe-vip').style.display = 'none';
             document.getElementById('insert-zone-iframe').innerHTML = '';
-        }
-
-        // --- GESTION DE LA MODALE ROUE DE CHANCE BONUS ---
-        function ouvrirModaleBonus() {
-            if (!userDataGlobal) return alert("Erreur d'authentification.");
-            
-            const toursFaits = userDataGlobal.toursFaits || 0;
-            const toursRestants = Math.max(0, 5 - toursFaits);
-
-            document.getElementById('bonus-explanation-text').innerHTML = `
-                Il vous reste que <strong>${toursRestants} tour(s) de chance</strong> aujourd'hui.<br><br>
-                En cliquant sur le bouton "Lancer ma chance du jour", vous allez lancer la roue de chance.
-            `;
-            document.getElementById('bonus-luck-modal').style.display = 'flex';
-        }
-
-        function executerLancementChance() {
-            if (!uidCourant || !userDataGlobal) return;
-
-            const toursFaitsActuels = userDataGlobal.toursFaits || 0;
-            if (toursFaitsActuels >= 5) {
-                alert("⛔ Limite quotidienne atteinte ! Vous avez déjà épuisé vos 5 tours de chance aujourd'hui.");
-                return;
-            }
-
-            const nouveauTimestamp = Date.now();
-
-            db.collection("users").doc(uidCourant).update({
-                toursFaits: firebase.firestore.FieldValue.increment(1),
-                dernierBonusTime: nouveauTimestamp
-            }).then(() => {
-                document.getElementById('bonus-luck-modal').style.display = 'none';
-                location.href = 'roue.html';
-            }).catch((err) => {
-                console.error("Erreur Synchro: ", err);
-            });
         }
     </script>
 </body>
