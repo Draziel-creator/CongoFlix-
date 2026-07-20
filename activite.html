@@ -185,9 +185,30 @@
             display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
 
-        .close-modal-x {
-            position: absolute; top: -45px; right: 10px; background: none; border: none;
-            color: #ffffff; font-size: 24px; cursor: pointer; z-index: 2100;
+        /* Style du bouton X unique en haut à gauche */
+        .btn-fermer-modal {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #8a8d9f;
+            font-size: 14px;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 9999;
+        }
+
+        .btn-fermer-modal:hover {
+            background: rgba(255, 74, 74, 0.2); /* Rouge semi-transparent */
+            color: var(--danger-red); /* Utilise ta variable rouge */
+            border-color: rgba(255, 74, 74, 0.4);
         }
 
         .blue-status-layer {
@@ -261,18 +282,24 @@
     </div>
 
     <!-- ZONE D'AFFICHAGE ET MODALE SOLIDIFIÉE UNIQUE -->
-    <div class="pub-modal-overlay" id="global-pub-modal">
-        <button class="close-modal-x" onclick="fermerModaleActive()"><i class="fa-solid fa-xmark"></i></button>
-        <div class="pub-modal-content">
+<div class="pub-modal-overlay" id="global-pub-modal">
+    <div class="pub-modal-content">
+        
+        <!-- Bouton Fermer (X) unique en haut à gauche -->
+        <button class="btn-fermer-modal" onclick="fermerModaleActive()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        
+        <div class="pub-square-container" id="square-container-area">
             
-            <div class="pub-square-container" id="square-container-area">
-                
-                <!-- Analyseur de flux publicitaire actif -->
-                <div class="blue-status-layer" id="ad-stream-loader">
-                    <div class="loader-spin-blue"></div>
-                    <p style="font-size: 13px; font-weight: 600; margin: 0;">Analyse et détection du flux publicitaire...</p>
-                    <p style="font-size: 11px; color: #8a8d9f; margin: 5px 0 0 0;">Vérification de la source en cours</p>
-                </div>
+            <!-- Analyseur de flux publicitaire actif -->
+            <div class="blue-status-layer" id="ad-stream-loader">
+                <div class="loader-spin-blue"></div>
+                <p style="font-size: 13px; font-weight: 600; margin: 0;">Analyse et détection du flux publicitaire...</p>
+                <p style="font-size: 11px; color: #8a8d9f; margin: 5px 0 0 0;">Vérification de la source en cours</p>
+            </div>
+
+            <!-- Ne touche pas à ce qui suit, tes zones de pubs vont s'ouvrir ici -->
 
                 <!-- Le doigt de guidage pulsant interactif (Uniquement visible pour les vidéos) -->
                 <div class="finger-pulse-indicator" id="finger-indicator" onclick="declencherPlayFlux()">
@@ -689,130 +716,151 @@ window.addEventListener("DOMContentLoaded", () => {
         // ÉTAPE 3 : INITIALISATION DES MISSIONS (VIDÉOS & BANNIÈRES MULTIPLES)
         // ==========================================
         function initierMissionVideo(index, zoneId, uniqueId, points) {
-            if (verifierSiTacheBloquee(uniqueId)) {
-                alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
-                return;
-            }
-            
-            missionActiveType = "video";
-            missionActiveId = uniqueId;
-            missionActivePoints = points;
-            
-            // Configuration de l'affichage de la modale
-            document.getElementById("ad-stream-loader").style.display = "flex";
-            document.getElementById("finger-indicator").style.display = "flex"; // Doigt actif au centre
-            document.getElementById("zone-pub-alternative").style.display = "none";
-            
-            // Masquer les autres conteneurs vidéo
-            for (let i = 1; i <= 10; i++) {
-                document.getElementById("zone-pub-video" + i).style.display = "none";
-            }
-            
-            const conteneurCible = document.getElementById("zone-pub-video" + index);
-            if (conteneurCible) {
-                conteneurCible.style.display = "block";
-                conteneurCible.innerHTML = ""; 
+    if (verifierSiTacheBloquee(uniqueId)) {
+        alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
+        return;
+    }
+    
+    missionActiveType = "video";
+    missionActiveId = uniqueId;
+    missionActivePoints = points;
+    
+    // Configuration de l'affichage de la modale
+    document.getElementById("ad-stream-loader").style.display = "flex";
+    document.getElementById("finger-indicator").style.display = "flex"; // Doigt actif au centre
+    document.getElementById("zone-pub-alternative").style.display = "none";
+    
+    // Masquer les autres conteneurs vidéo
+    for (let i = 1; i <= 10; i++) {
+        document.getElementById("zone-pub-video" + i).style.display = "none";
+    }
+    
+    const conteneurCible = document.getElementById("zone-pub-video" + index);
+    if (conteneurCible) {
+        conteneurCible.style.display = "block";
+        conteneurCible.innerHTML = ""; 
+        
+        // Injection du script vidéo Clickadilla
+        let scriptVideo = document.createElement("script");
+        scriptVideo.type = "text/javascript";
+        scriptVideo.src = `https://zone.clickadilla.com/tag.js?zone=${zoneId}`;
+        scriptVideo.async = true;
+        scriptVideo.onerror = () => declencherPanneAffichagePub();
+        conteneurCible.appendChild(scriptVideo);
+    }
+    
+    // 1. On ouvre la modale noire
+    ouvrirCadreModaleGlobal();
+    
+    // 2. VRAIE VÉRIFICATION ANTI-ADBLOCK (Remplace l'ancien setTimeout de triche)
+    const idZoneActuelle = "zone-pub-video" + index;
+    verifierAffichageReelPub(
+        idZoneActuelle,
+        function() {
+            // SI LA VIDÉO EST BIEN CHARGÉE :
+            document.getElementById("ad-stream-loader").style.display = "none";
+            verificationPubChargee = true;
+            // Note : Pas de chrono automatique ici, il attendra le clic sur le doigt au centre
+        },
+        function() {
+            // SI LA VIDÉO EST BLOQUÉE OU INVISIBLE :
+            declencherPanneAffichagePub();
+        }
+    );
+}
+
+function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
+    if (verifierSiTacheBloquee(uniqueId)) {
+        alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
+        return;
+    }
+    
+    missionActiveType = "banniere";
+    missionActiveId = uniqueId;
+    missionActivePoints = points;
+    
+    document.getElementById("ad-stream-loader").style.display = "flex";
+    document.getElementById("finger-indicator").style.display = "none"; // Le doigt disparaît du centre pour les bannières
+    
+    // Masquer les blocs vidéo
+    for (let i = 1; i <= 10; i++) {
+        document.getElementById("zone-pub-video" + i).style.display = "none";
+    }
+    
+    const blocAlternative = document.getElementById("zone-pub-alternative");
+    const conteneurInterne = document.getElementById("box-banner-inside-modal");
+    
+    blocAlternative.style.display = "block";
+    conteneurInterne.innerHTML = ""; 
+
+    try {
+        if (fournisseur.startsWith("adsterra") || fournisseur === "advertica") {
+            // Répétition de 3 blocs d'Iframe pour remplir l'espace vide
+            for (let step = 0; step < 3; step++) {
+                let divEnveloppe = document.createElement("div");
+                divEnveloppe.className = "ad-zone-160x600";
+                divEnveloppe.style.margin = "10px auto";
+                divEnveloppe.style.textAlign = "center";
+
+                let cadreIframe = document.createElement("iframe");
+                cadreIframe.style.width = "160px";
+                cadreIframe.style.height = "600px";
+                cadreIframe.style.border = "none";
+                cadreIframe.style.scrolling = "no";
                 
-                // Simulation d'injection de script vidéo
-                let scriptVideo = document.createElement("script");
-                scriptVideo.type = "text/javascript";
-                scriptVideo.src = `https://zone.clickadilla.com/tag.js?zone=${zoneId}`;
-                scriptVideo.async = true;
-                scriptVideo.onerror = () => declencherPanneAffichagePub();
-                conteneurCible.appendChild(scriptVideo);
+                // Injection du code source structuré iframe
+                let htmlContenu = `
+                    <html>
+                    <body style="margin:0; padding:0; display:flex; justify-content:center;">
+                        <script type="text/javascript">
+                            atOptions = {
+                                'key' : '${clePub}',
+                                'format' : 'iframe',
+                                'height' : 600,
+                                'width' : 160,
+                                'params' : {}
+                            };
+                        <\/script>
+                        <script type="text/javascript" src="https://www.highperformanceformat.com/${clePub}/invoke.js"><\/script>
+                    </body>
+                    </html>
+                `;
+                
+                divEnveloppe.appendChild(cadreIframe);
+                conteneurInterne.appendChild(divEnveloppe);
+                
+                cadreIframe.contentWindow.document.open();
+                cadreIframe.contentWindow.document.write(htmlContenu);
+                cadreIframe.contentWindow.document.close();
             }
-            
-            ouvrirCadreModaleGlobal();
-            
-            // Simulation de détection du chargement
-            setTimeout(() => {
-                document.getElementById("ad-stream-loader").style.display = "none";
-                verificationPubChargee = true;
-            }, 3000);
+        } else {
+            // Fallback Clickadilla Bannières standard
+            conteneurInterne.innerHTML = `<iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="300" height="250" style="border:none; overflow:hidden;"></iframe>`;
         }
 
-        function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
-            if (verifierSiTacheBloquee(uniqueId)) {
-                alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
-                return;
-            }
-            
-            missionActiveType = "banniere";
-            missionActiveId = uniqueId;
-            missionActivePoints = points;
-            
-            document.getElementById("ad-stream-loader").style.display = "flex";
-            document.getElementById("finger-indicator").style.display = "none"; // Le doigt disparaît du centre pour les bannières
-            
-            // Masquer les blocs vidéo
-            for (let i = 1; i <= 10; i++) {
-                document.getElementById("zone-pub-video" + i).style.display = "none";
-            }
-            
-            const blocAlternative = document.getElementById("zone-pub-alternative");
-            const conteneurInterne = document.getElementById("box-banner-inside-modal");
-            
-            blocAlternative.style.display = "block";
-            conteneurInterne.innerHTML = ""; 
+    } catch(e) {
+        declencherPanneAffichagePub();
+        return;
+    }
 
-            try {
-                if (fournisseur.startsWith("adsterra") || fournisseur === "advertica") {
-                    // Répétition de 3 blocs d'Iframe pour remplir l'espace vide
-                    for (let step = 0; step < 3; step++) {
-                        let divEnveloppe = document.createElement("div");
-                        divEnveloppe.className = "ad-zone-160x600";
-                        divEnveloppe.style.margin = "10px auto";
-                        divEnveloppe.style.textAlign = "center";
+    // 1. On ouvre la modale noire
+    ouvrirCadreModaleGlobal();
 
-                        let cadreIframe = document.createElement("iframe");
-                        cadreIframe.style.width = "160px";
-                        cadreIframe.style.height = "600px";
-                        cadreIframe.style.border = "none";
-                        cadreIframe.style.scrolling = "no";
-                        
-                        // Injection du code source structuré iframe
-                        let htmlContenu = `
-                            <html>
-                            <body style="margin:0; padding:0; display:flex; justify-content:center;">
-                                <script type="text/javascript">
-                                    atOptions = {
-                                        'key' : '${clePub}',
-                                        'format' : 'iframe',
-                                        'height' : 600,
-                                        'width' : 160,
-                                        'params' : {}
-                                    };
-                                <\/script>
-                                <script type="text/javascript" src="https://www.highperformanceformat.com/${clePub}/invoke.js"><\/script>
-                            </body>
-                            </html>
-                        `;
-                        
-                        divEnveloppe.appendChild(cadreIframe);
-                        conteneurInterne.appendChild(divEnveloppe);
-                        
-                        cadreIframe.contentWindow.document.open();
-                        cadreIframe.contentWindow.document.write(htmlContenu);
-                        cadreIframe.contentWindow.document.close();
-                    }
-                } else {
-                    // Fallback Clickadilla Bannières standard
-                    conteneurInterne.innerHTML = `<iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="300" height="250" style="border:none; overflow:hidden;"></iframe>`;
-                }
-                
-                // Lancement direct du chronomètre pour les bannières puisque le doigt central est désactivé
-                setTimeout(() => {
-                    document.getElementById("ad-stream-loader").style.display = "none";
-                    verificationPubChargee = true;
-                    engagerCompteReboursAutomatique();
-                }, 2500);
-
-            } catch(e) {
-                declencherPanneAffichagePub();
-            }
-
-            ouvrirCadreModaleGlobal();
+    // 2. VRAIE VÉRIFICATION ANTI-ADBLOCK (Remplace l'ancien setTimeout de triche)
+    verifierAffichageReelPub(
+        "box-banner-inside-modal",
+        function() {
+            // SI LA BANNIÈRE EST BIEN CHARGÉE :
+            document.getElementById("ad-stream-loader").style.display = "none";
+            verificationPubChargee = true;
+            engagerCompteReboursAutomatique(); // Lancement direct du chronomètre de 30s pour les bannières
+        },
+        function() {
+            // SI LA BANNIÈRE EST BLOQUÉE OU INTROUVABLE :
+            declencherPanneAffichagePub();
         }
+    );
+}
 
         function declencherPanneAffichagePub() {
             document.getElementById("ad-stream-loader").style.display = "none";
@@ -820,18 +868,48 @@ window.addEventListener("DOMContentLoaded", () => {
             fermerModaleActive();
         }
 
-        function ouvrirCadreModaleGlobal() {
-            document.getElementById("global-pub-modal").style.display = "flex";
-            document.getElementById("btn-claim-points").disabled = true;
-            document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente...`;
-            tempsRestantTache = 30;
-            verificationPubChargee = false;
+        function ouvrirCadreModaleGlobal(idConteneurPub) {
+    // 1. On affiche la modale noire
+    document.getElementById("global-pub-modal").style.display = "flex";
+    document.getElementById("btn-claim-points").disabled = true;
+    document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente...`;
+    
+    tempsRestantTache = 30;
+    verificationPubChargee = false;
+
+    // 2. On lance la VRAIE détection anti-AdBlock sur le conteneur actif
+    verifierAffichageReelPub(
+        idConteneurPub, 
+        
+        // SI LA PUB EST PRÉSENTE (Succès) :
+        function() {
+            verificationPubChargee = true;
+            document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-play"></i> Flux détecté`;
+            
+            // Si c'est une bannière, le chrono se lance tout seul
+            if (missionActiveType === "banniere") {
+                engagerCompteReboursAutomatique();
+            }
+        }, 
+        
+        // SI LA PUB EST BLOQUÉE OU VIDE (Échec) :
+        function() {
+            declencherPanneAffichagePub();
         }
+    );
+}
 
         function fermerModaleActive() {
-            clearInterval(compteReboursDeTrente);
-            document.getElementById("global-pub-modal").style.display = "none";
-        }
+    clearInterval(compteReboursDeTrente); // On arrête le chrono en cours
+    document.getElementById("global-pub-modal").style.display = "none"; // On cache la modale
+    
+    // Sécurité : On remet le bouton de gains à zéro pour la prochaine fois
+    const btnClaim = document.getElementById("btn-claim-points");
+    if (btnClaim) {
+        btnClaim.disabled = true;
+        btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente...`;
+    }
+}
 
         // ==========================================
         // ÉTAPE 4 : MOTEURS DE CHRONOMÉTRAGE ET VALIDATION
@@ -1117,6 +1195,32 @@ window.addEventListener("DOMContentLoaded", () => {
                 cadenasVip.style.display = "flex"; // On affiche le cadenas de blocage
             }
         }
+        function verifierAffichageReelPub(idConteneur, callbackSucces, callbackEchec) {
+    // On laisse 3 secondes maximum à la pub pour charger et s'afficher
+    setTimeout(() => {
+        const conteneur = document.getElementById(idConteneur);
+        
+        if (!conteneur) {
+            return callbackEchec();
+        }
+
+        // 1. Détection par la taille (Si AdBlock ou panne, la hauteur reste à 0)
+        const hauteurReelle = conteneur.offsetHeight;
+        const largeurReelle = conteneur.offsetWidth;
+
+        // 2. Détection par le contenu (Vérifie si la régie a injecté du HTML ou une iframe)
+        const contientDuContenu = conteneur.innerHTML.trim().length > 0;
+
+        // Si le conteneur est visible, a une taille et contient du code
+        if (hauteurReelle > 10 && largeurReelle > 10 && contientDuContenu) {
+            console.log(`✅ Pub validée sur #${idConteneur} (${hauteurReelle}px)`);
+            callbackSucces();
+        } else {
+            console.warn(`❌ Fraude ou Panne détectée sur #${idConteneur}. Taille: ${hauteurReelle}px`);
+            callbackEchec();
+        }
+    }, 3000); // 3000 ms = 3 secondes d'attente réseau
+}
     </script>
 </body>
 </html>
