@@ -715,7 +715,14 @@ window.addEventListener("DOMContentLoaded", () => {
         // ==========================================
         // ÉTAPE 3 : INITIALISATION DES MISSIONS (VIDÉOS & BANNIÈRES MULTIPLES)
         // ==========================================
-        function initierMissionVideo(index, zoneId, uniqueId, points) {
+       function initierMissionVideo(index, zoneId, uniqueId, points) {
+    // CORRECTION POPUNDER : On intercepte l'événement global pour détruire le vol de clic
+    const e = window.event;
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
     if (verifierSiTacheBloquee(uniqueId)) {
         alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
         return;
@@ -727,12 +734,13 @@ window.addEventListener("DOMContentLoaded", () => {
     
     // Configuration de l'affichage de la modale
     document.getElementById("ad-stream-loader").style.display = "flex";
-    document.getElementById("finger-indicator").style.display = "flex"; // Doigt actif au centre
+    document.getElementById("finger-indicator").style.display = "flex"; 
     document.getElementById("zone-pub-alternative").style.display = "none";
     
-    // Masquer les autres conteneurs vidéo
+    // Masquer les autres conteneurs vidéo de sécurité
     for (let i = 1; i <= 10; i++) {
-        document.getElementById("zone-pub-video" + i).style.display = "none";
+        const cibleTemporaire = document.getElementById("zone-pub-video" + i);
+        if (cibleTemporaire) cibleTemporaire.style.display = "none";
     }
     
     const conteneurCible = document.getElementById("zone-pub-video" + index);
@@ -752,24 +760,32 @@ window.addEventListener("DOMContentLoaded", () => {
     // 1. On ouvre la modale noire
     ouvrirCadreModaleGlobal();
     
-    // 2. VRAIE VÉRIFICATION ANTI-ADBLOCK (Remplace l'ancien setTimeout de triche)
+    // 2. DÉTECTION VIDÉO INTELLIGENTE (Après 4.5 secondes)
     const idZoneActuelle = "zone-pub-video" + index;
-    verifierAffichageReelPub(
-        idZoneActuelle,
-        function() {
-            // SI LA VIDÉO EST BIEN CHARGÉE :
+    setTimeout(() => {
+        const conteneur = document.getElementById(idZoneActuelle);
+        
+        // On vérifie si le script Clickadilla a réussi à injecter du contenu visible 
+        // (que ce soit une iframe, une balise video, ou des nouveaux éléments HTML)
+        if (conteneur && (conteneur.querySelector('iframe') || conteneur.querySelector('video') || conteneur.children.length > 1)) {
+            // SUCCÈS : La vidéo est là !
             document.getElementById("ad-stream-loader").style.display = "none";
             verificationPubChargee = true;
-            // Note : Pas de chrono automatique ici, il attendra le clic sur le doigt au centre
-        },
-        function() {
-            // SI LA VIDÉO EST BLOQUÉE OU INVISIBLE :
+        } else {
+            // ÉCHEC : Le conteneur est resté vide (AdBlocker détecté)
             declencherPanneAffichagePub();
         }
-    );
+    }, 4500); 
 }
 
 function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
+    // CORRECTION POPUNDER : On intercepte l'événement global pour détruire le vol de clic
+    const e = window.event;
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
     if (verifierSiTacheBloquee(uniqueId)) {
         alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
         return;
@@ -780,11 +796,12 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
     missionActivePoints = points;
     
     document.getElementById("ad-stream-loader").style.display = "flex";
-    document.getElementById("finger-indicator").style.display = "none"; // Le doigt disparaît du centre pour les bannières
+    document.getElementById("finger-indicator").style.display = "none"; 
     
     // Masquer les blocs vidéo
     for (let i = 1; i <= 10; i++) {
-        document.getElementById("zone-pub-video" + i).style.display = "none";
+        const cibleTemporaire = document.getElementById("zone-pub-video" + i);
+        if (cibleTemporaire) cibleTemporaire.style.display = "none";
     }
     
     const blocAlternative = document.getElementById("zone-pub-alternative");
@@ -795,7 +812,6 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
 
     try {
         if (fournisseur.startsWith("adsterra") || fournisseur === "advertica") {
-            // Répétition de 3 blocs d'Iframe pour remplir l'espace vide
             for (let step = 0; step < 3; step++) {
                 let divEnveloppe = document.createElement("div");
                 divEnveloppe.className = "ad-zone-160x600";
@@ -808,7 +824,9 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
                 cadreIframe.style.border = "none";
                 cadreIframe.style.scrolling = "no";
                 
-                // Injection du code source structuré iframe
+                // SÉCURITÉ MAXIMUM : Empêche cette pub de rediriger ou manipuler ton site principal
+                cadreIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups");
+                
                 let htmlContenu = `
                     <html>
                     <body style="margin:0; padding:0; display:flex; justify-content:center;">
@@ -838,7 +856,7 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
             conteneurInterne.innerHTML = `<iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="300" height="250" style="border:none; overflow:hidden;"></iframe>`;
         }
 
-    } catch(e) {
+    } catch(err) {
         declencherPanneAffichagePub();
         return;
     }
@@ -846,28 +864,28 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
     // 1. On ouvre la modale noire
     ouvrirCadreModaleGlobal();
 
-    // 2. VRAIE VÉRIFICATION ANTI-ADBLOCK (Remplace l'ancien setTimeout de triche)
-    verifierAffichageReelPub(
-        "box-banner-inside-modal",
-        function() {
-            // SI LA BANNIÈRE EST BIEN CHARGÉE :
+    // 2. DÉTECTION BANNIÈRE FIABLE (Après 4.5 secondes)
+    setTimeout(() => {
+        const conteneurBanniere = document.getElementById("box-banner-inside-modal");
+        
+        // On vérifie si l'iframe s'est bien générée et n'est pas bloquée
+        if (conteneurBanniere && (conteneurBanniere.querySelector('iframe') || conteneurBanniere.children.length > 0)) {
+            // SUCCÈS : La bannière est chargée
             document.getElementById("ad-stream-loader").style.display = "none";
             verificationPubChargee = true;
-            engagerCompteReboursAutomatique(); // Lancement direct du chronomètre de 30s pour les bannières
-        },
-        function() {
-            // SI LA BANNIÈRE EST BLOQUÉE OU INTROUVABLE :
+            engagerCompteReboursAutomatique(); 
+        } else {
+            // ÉCHEC : Rien n'est apparu (AdBlocker actif)
             declencherPanneAffichagePub();
         }
-    );
+    }, 4500);
 }
 
-        function declencherPanneAffichagePub() {
-            document.getElementById("ad-stream-loader").style.display = "none";
-            alert("Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.");
-            fermerModaleActive();
-        }
-
+function declencherPanneAffichagePub() {
+    document.getElementById("ad-stream-loader").style.display = "none";
+    alert("Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.");
+    fermerModaleActive();
+}
         function ouvrirCadreModaleGlobal(idConteneurPub) {
     // 1. On affiche la modale noire
     document.getElementById("global-pub-modal").style.display = "flex";
