@@ -244,6 +244,22 @@
 </head>
 <body>
 
+    <!-- BOUTON FLOTTANT CASINO BONUS (Masqué par défaut, s'affiche si Rank >= 1) -->
+    <div id="floating-bonus-casino" class="casino-pulse-btn" onclick="ouvrirModalBonus()" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 60px; height: 60px; background: linear-gradient(135deg, #ff9d00 0%, #ff5100 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 999; cursor: pointer; box-shadow: 0 4px 20px rgba(255, 81, 0, 0.4); border: 2px solid #fff;">
+        <i class="fa-solid fa-dice" style="color: white; font-size: 26px;"></i>
+    </div>
+
+    <!-- MODALE DU CASINO BONUS -->
+    <div class="pub-modal-overlay" id="modal-bonus-casino" style="display: none;">
+        <button class="close-modal-x" onclick="fermerModalBonus()"><i class="fa-solid fa-xmark"></i></button>
+        <div class="pub-modal-content" style="max-width: 340px; text-align: center; padding: 25px;">
+            <i class="fa-solid fa-clover" style="font-size: 50px; color: #ff9d00; margin-bottom: 15px;"></i>
+            <h3 style="color: #fff; margin: 0 0 10px 0;">Chance du Jour</h3>
+            <p id="txt-chances-restantes" style="color: #8a8d9f; font-size: 14px; margin-bottom: 20px;">Chargement de vos chances...</p>
+            <button class="btn-main-action-collect" id="btn-action-casino" onclick="tenterChanceCasino()" style="width: 100%; margin: 0;">Tenter ma chance du jour</button>
+        </div>
+    </div>
+
     <!-- ZONE D'AFFICHAGE ET MODALE SOLIDIFIÉE UNIQUE -->
     <div class="pub-modal-overlay" id="global-pub-modal">
         <button class="close-modal-x" onclick="fermerModaleActive()"><i class="fa-solid fa-xmark"></i></button>
@@ -258,13 +274,13 @@
                     <p style="font-size: 11px; color: #8a8d9f; margin: 5px 0 0 0;">Vérification de la source en cours</p>
                 </div>
 
-                <!-- Le doigt de guidage pulsant interactif (Player/Actionneur) -->
+                <!-- Le doigt de guidage pulsant interactif (Uniquement visible pour les vidéos) -->
                 <div class="finger-pulse-indicator" id="finger-indicator" onclick="declencherPlayFlux()">
                     <i class="fa-solid fa-hand-pointer"></i>
                     <span>CLIQUEZ POUR LANCER</span>
                 </div>
 
-                <!-- Emplacements Physiques Cibles pour les 10 Vidéos Clickadilla -->
+                <!-- Emplacements Physiques Cibles pour les Vidéos Clickadilla -->
                 <div id="zone-pub-video1" class="ad-slot-square"></div>
                 <div id="zone-pub-video2" class="ad-slot-square"></div>
                 <div id="zone-pub-video3" class="ad-slot-square"></div>
@@ -276,10 +292,10 @@
                 <div id="zone-pub-video9" class="ad-slot-square"></div>
                 <div id="zone-pub-video10" class="ad-slot-square"></div>
                 
-                <!-- Zone de chargement Universelle des Bannières (Multipliées pour combler le vide) -->
-                <div id="zone-pub-alternative" class="ad-slot-square">
+                <!-- Zone de chargement Universelle des Bannières (Multipliées dynamiquement en script) -->
+                <div id="zone-pub-alternative" class="ad-slot-square" style="overflow-y: auto;">
                     <div class="box-banner-filler-300-250" id="box-banner-inside-modal">
-                        <!-- Injecté dynamiquement par JavaScript -->
+                        <!-- Injecté par JavaScript en mode iframe multiple -->
                     </div>
                 </div>
             </div>
@@ -290,12 +306,17 @@
                     <i class="fa-solid fa-hourglass-start"></i> En attente de détection...
                 </button>
                 
-                <button class="btn-modal-action btn-modal-visit" id="btn-boost-visit" onclick="visiterLienSponsorise()">
-                    <i class="fa-solid fa-rocket"></i> Gagner plus sur cette affiche (+200 Pts)
-                </button>
+                <div style="width: 100%; text-align: center;">
+                    <button class="btn-modal-action btn-modal-visit" id="btn-boost-visit" onclick="actionnerBoostPublicitaire()">
+                        <i class="fa-solid fa-rocket"></i> Boostage de 10% du points du visionnage et +1 sur XP
+                    </button>
+                    <p style="font-size: 10px; color: #8a8d9f; margin: 5px 0 0 0; line-height: 1.3;">
+                        Vous devez terminer la tâche en entier pour booster la tâche avec 10% des points obtenus sur le visionnage de la tâche et votre progression en XP montera
+                    </p>
+                </div>
                 
                 <p class="modal-instructions" id="modal-desc-instructions" style="font-size: 11px; color: #686c87; text-align: center; margin: 0; line-height: 1.4;">
-                    Une fois le flux detected, utilisez l'indicateur pour démarrer le compteur de 30 secondes obligatoires.
+                    Une fois le flux détecté, utilisez l'indicateur pour démarrer le compteur de 30 secondes obligatoires.
                 </p>
             </div>
         </div>
@@ -304,7 +325,7 @@
     <!-- DOUBLE FENETRE FULLSCREEN MURS VIP -->
     <div class="container-iframe-wrapper" id="conteneur-iframe-vip">
         <div style="background:#070914; padding:15px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e2235;">
-            <span style="font-weight:800; color:var(--accent-gold); font-size:14px;"><i class="fa-solid fa-crown"></i> ESPACE VIP OFFRES</span>
+            <span style="font-weight:800; color:var(--accent-gold); font-size:14px;"><i class="fa-solid fa-crown"></i> ESPACE VIP OFFRES PRO</span>
             <button onclick="fermerIframeVIP()" style="background:var(--danger-red); border:none; color:#fff; padding:6px 14px; border-radius:8px; font-weight:700; cursor:pointer;">Fermer X</button>
         </div>
         <div id="insert-zone-iframe" style="flex:1; width:100%; height:100%;"></div>
@@ -335,177 +356,182 @@
                 </div>
             </div>
 
-            <button class="btn-main-action-collect" onclick="ouvrirBoiteDialogueAide()">Encaisser mes gains du jour</button>
+            <button class="btn-main-action-collect" id="btn-main-action-collect" onclick="encaisserGainsDuJour()">Encaisser mes gains du jour</button>
 
             <!-- ================= SECTION 1 : CLICKADILLA BANNIÈRES (5 MISSIONS) ================= -->
             <div class="section-title">⚡ Missions Clickadilla Bannières</div>
             <div class="video-grid">
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-clickadilla-1">
                     <i class="fa-solid fa-rectangle-ad"></i>
-                    <h4>Bannière Alpha (Id)</h4>
+                    <h4>Tâche Bannière 1</h4>
                     <p>Récompense: +120 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('clickadilla_central', '1496577')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('clickadilla_central', '1496577', 'clickadilla-1', 120)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-clickadilla-2">
                     <i class="fa-solid fa-rectangle-ad"></i>
-                    <h4>Bannière C1</h4>
+                    <h4>Tâche Bannière 2</h4>
                     <p>Récompense: +100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('clickadilla_b1', '1496058')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('clickadilla_b1', '1496058', 'clickadilla-2', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-clickadilla-3">
                     <i class="fa-solid fa-rectangle-ad"></i>
-                    <h4>Bannière C2</h4>
+                    <h4>Tâche Bannière 3</h4>
                     <p>Récompense: +100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('clickadilla_b2', '1496059')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('clickadilla_b2', '1496059', 'clickadilla-3', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-clickadilla-4">
                     <i class="fa-solid fa-rectangle-ad"></i>
-                    <h4>Bannière C3</h4>
+                    <h4>Tâche Bannière 4</h4>
                     <p>Récompense: +100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('clickadilla_b3', '1496060')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('clickadilla_b3', '1496060', 'clickadilla-4', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-clickadilla-5">
                     <i class="fa-solid fa-rectangle-ad"></i>
-                    <h4>Bannière C4</h4>
+                    <h4>Tâche Bannière 5</h4>
                     <p>Récompense: +100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('clickadilla_b4', '1496061')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('clickadilla_b4', '1496061', 'clickadilla-5', 100)">Lancer</button>
                 </div>
             </div>
 
             <!-- ================= SECTION 2 : ADVERTICA (1 MISSION) ================= -->
             <div class="section-title">💎 Mission Advertica Exclusive</div>
             <div class="video-grid" style="grid-template-columns: 1fr;">
-                <div class="video-card-small" style="background: linear-gradient(135deg, #091326 0%, #050a14 100%); border-color: rgba(0, 255, 204, 0.25);">
+                <div class="video-card-small" id="card-advertica-1" style="background: linear-gradient(135deg, #091326 0%, #050a14 100%); border-color: rgba(0, 255, 204, 0.25);">
                     <i class="fa-solid fa-layer-group" style="color: var(--accent-gold);"></i>
-                    <h4>Advertica 300x250 Responsive</h4>
+                    <h4>Tâche Advertica 6</h4>
                     <p>Récompense Premium: +150 Pts</p>
-                    <button class="btn-launch-grid" style="background:var(--accent-cyan); color:#000; font-weight:800;" onclick="initierMissionBanniere('advertica')">Accomplir la mission</button>
+                    <button class="btn-launch-grid" style="background:var(--accent-cyan); color:#000; font-weight:800;" onclick="initierMissionBanniere('advertica', 'advertica_key', 'advertica-1', 150)">Accomplir la mission</button>
                 </div>
             </div>
 
             <!-- ================= SECTION 3 : ADSTERRA NATIVES & IFRAMES (7 MISSIONS) ================= -->
             <div class="section-title">🔮 Missions Spéciales Adsterra</div>
             <div class="video-grid">
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-adsterra-1">
                     <i class="fa-solid fa-code"></i>
-                    <h4>Bannière Native</h4>
+                    <h4>Tâche Adsterra 7</h4>
                     <p>+90 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_native')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_native', '355c9d0ee6ac5ec71d84d7f879fdc153', 'adsterra-1', 90)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-adsterra-2">
                     <i class="fa-solid fa-arrows-left-right"></i>
-                    <h4>Format 160x300</h4>
+                    <h4>Tâche Adsterra 8</h4>
                     <p>+90 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_160_300')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_160_300', '355c9d0ee6ac5ec71d84d7f879fdc153', 'adsterra-2', 90)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-adsterra-3">
                     <i class="fa-solid fa-bolt-lightning"></i>
-                    <h4>Barre Sociale</h4>
+                    <h4>Tâche Adsterra 9</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_social')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_social', '355c9d0ee6ac5ec71d84d7f879fdc153', 'adsterra-3', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-adsterra-4">
                     <i class="fa-solid fa-window-minimize"></i>
-                    <h4>Format 320x50</h4>
+                    <h4>Tâche Adsterra 10</h4>
                     <p>+80 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_320_50')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_320_50', '355c9d0ee6ac5ec71d84d7f879fdc153', 'adsterra-4', 80)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-adsterra-5">
                     <i class="fa-solid fa-heading"></i>
-                    <h4>Format 728x90</h4>
+                    <h4>Tâche Adsterra 11</h4>
                     <p>+110 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_728_90')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_728_90', '355c9d0ee6ac5ec71d84d7f879fdc153', 'adsterra-5', 110)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-adsterra-6">
                     <i class="fa-solid fa-grip-lines"></i>
-                    <h4>Format 468x60</h4>
+                    <h4>Tâche Adsterra 12</h4>
                     <p>+80 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_468_60')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_468_60', '355c9d0ee6ac5ec71d84d7f879fdc153', 'adsterra-6', 80)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-adsterra-7">
                     <i class="fa-solid fa-square"></i>
-                    <h4>Format 300x250</h4>
+                    <h4>Tâche Adsterra 13</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_300_250')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_300_250', '355c9d0ee6ac5ec71d84d7f879fdc153', 'adsterra-7', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small" style="grid-column: span 2;">
+                <div class="video-card-small" id="card-adsterra-8" style="grid-column: span 2;">
                     <i class="fa-solid fa-arrows-up-down"></i>
-                    <h4>Format Vertical Grand (160x600)</h4>
+                    <h4>Tâche Adsterra 14 (160x600)</h4>
                     <p>+130 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_160_600')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_160_600', '355c9d0ee6ac5ec71d84d7f879fdc153', 'adsterra-8', 130)">Lancer</button>
                 </div>
             </div>
 
             <!-- ================= SECTION 4 : MISSIONS VIDÉOS FLASH ================= -->
             <div class="section-title">🎬 Missions Vidéos Flash</div>
             <div class="video-grid">
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-video-1">
                     <i class="fa-solid fa-play"></i>
-                    <h4>Tâche 1</h4>
+                    <h4>Tâche Vidéo 15</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionVideo(1, '447672')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionVideo(1, '447672', 'video-1', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-video-2">
                     <i class="fa-solid fa-play"></i>
-                    <h4>Tâche 2</h4>
+                    <h4>Tâche Vidéo 16</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionVideo(2, '447741')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionVideo(2, '447741', 'video-2', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-video-3">
                     <i class="fa-solid fa-play"></i>
-                    <h4>Tâche 3</h4>
+                    <h4>Tâche Vidéo 17</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionVideo(3, '447743')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionVideo(3, '447743', 'video-3', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-video-4">
                     <i class="fa-solid fa-play"></i>
-                    <h4>Tâche 4</h4>
+                    <h4>Tâche Vidéo 18</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionVideo(4, '447744')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionVideo(4, '447744', 'video-4', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-video-5">
                     <i class="fa-solid fa-play"></i>
-                    <h4>Tâche 5</h4>
+                    <h4>Tâche Vidéo 19</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionVideo(5, '447745')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionVideo(5, '447745', 'video-5', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-video-6">
                     <i class="fa-solid fa-play"></i>
-                    <h4>Tâche 6</h4>
+                    <h4>Tâche Vidéo 20</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionVideo(6, '447746')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionVideo(6, '447746', 'video-6', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-video-7">
                     <i class="fa-solid fa-play"></i>
-                    <h4>Tâche 7</h4>
+                    <h4>Tâche Vidéo 21</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionVideo(7, '447748')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionVideo(7, '447748', 'video-7', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-video-8">
                     <i class="fa-solid fa-play"></i>
-                    <h4>Tâche 8</h4>
+                    <h4>Tâche Vidéo 22</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionVideo(8, '447749')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionVideo(8, '447749', 'video-8', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-video-9">
                     <i class="fa-solid fa-play"></i>
-                    <h4>Tâche 9</h4>
+                    <h4>Tâche Vidéo 23</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionVideo(9, '447750')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionVideo(9, '447750', 'video-9', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small">
+                <div class="video-card-small" id="card-video-10">
                     <i class="fa-solid fa-play"></i>
-                    <h4>Tâche 10</h4>
+                    <h4>Tâche Vidéo 24</h4>
                     <p>+100 Pts</p>
-                    <button class="btn-launch-grid" onclick="initierMissionVideo(10, '447751')">Lancer</button>
+                    <button class="btn-launch-grid" onclick="initierMissionVideo(10, '447751', 'video-10', 100)">Lancer</button>
                 </div>
             </div>
 
-            <!-- ZONE ACCÈS DIRECT PAR COIN VIP -->
+            <!-- ZONE ACCÈS DIRECT PAR COIN VIP (Superposition Grise avec Cadenas par défaut) -->
             <div class="section-title">👑 Murs d'Offres VIP</div>
-            <div class="vip-zone-card">
-                <button style="width:100%;" class="btn-launch-grid" onclick="ouvrirIframeOffresVIP('mur1')">Accéder Offerwall RewardMe</button>
-                <button style="width:100%;" class="btn-launch-grid" onclick="ouvrirIframeOffresVIP('mur2')">Accéder Offerwall OGAds</button>
+            <div class="vip-zone-card" id="bloc-zone-vip" style="position: relative; background: #131722; padding: 15px; border-radius: 12px;">
+                <!-- Calque d'emprisonnement VIP -->
+                <div id="vip-lock-overlay" onclick="intercepterClicVip(event)" style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(7, 9, 20, 0.85); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; cursor:pointer;">
+                    <i class="fa-solid fa-lock" style="font-size: 32px; color: #ff3b30; margin-bottom: 8px;"></i>
+                    <span style="color: #fff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Bloqué - Rang 5 VIP Requis</span>
+                </div>
+                <button style="width:100%; margin-bottom: 8px;" class="btn-launch-grid" onclick="ouvrirIframeOffresVIP('mur1')">Accéder Offerwall RewardMe</button>
+                <button style="width:100%; margin-bottom: 8px;" class="btn-launch-grid" onclick="ouvrirIframeOffresVIP('mur2')">Accéder Offerwall OGAds</button>
                 <button style="width:100%;" class="btn-launch-grid" onclick="ouvrirIframeOffresVIP('mur3')">Accéder Offerwall CPAGrip</button>
             </div>
         </div>
@@ -517,320 +543,579 @@
         </nav>
     </div>
 
+    <!-- ========================================================================== -->
+    <!-- LOGIQUE LOGICIELLE COMPLETE SYNCHRONISÉE FIREBASE                          -->
+    <!-- ========================================================================== -->
     <script>
-        // --- CONFIGURATION ET COMPTAGE DE BASE ---
-        let pointsCagnotte = 0;
-        let tempsRestantMission = 30;
-        let chronoInterval = null;
-        let typeMissionActive = "";
-        let uidCourant = "USER_TEST_ID"; // Remplacé par Firebase Auth en production
+        // INITIALISATION DE LA CONNEXION (Une seule fois ici)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+            authDomain: "publicite-6445c.firebaseapp.com",
+            projectId: "publicite-6445c",
+            storageBucket: "publicite-6445c.firebasestorage.app",
+            messagingSenderId: "663385244466",
+            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b"
+        }; 
 
-        // --- CHRONOMÈTRE DE FIN DE JOURNÉE (MINUIT PILE) ---
-        function actualiserChronoJournalier() {
-            const maintenant = new Date();
-            const minuit = new Date();
-            minuit.setHours(24, 0, 0, 0);
-            const differenceMs = minuit - maintenant;
-            if (differenceMs <= 0) {
-                document.getElementById("daily-countdown-clock").innerText = "00:00:00";
-                pointsCagnotte = 0;
-                document.getElementById("cagnotte-valeur-txt").innerText = "0 Points";
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore(); // La variable 'db' est maintenant connectée grâce au head !
+        // ==========================================
+// ÉTAPE 1 : CONFIGURATION GLOBALE ET ÉTATS
+// ==========================================
+// 1. On commence avec un userId vide (null), Firebase va lui donner sa vraie valeur dans un instant
+let userId = null; 
+
+let localPointsDujour = 0;
+let localUserRank = 0;
+let localToursFaits = 0;
+
+let missionActiveType = ""; // "video" ou "banniere"
+let missionActiveId = "";   
+let missionActivePoints = 0;
+let redirectionUrlActive = "https://www.highperformanceformat.com/305c9d0ee6ac5ec71d84d7f879fdc153/invoke.js"; // URL Fallback cible
+
+let compteReboursDeTrente;
+let tempsRestantTache = 30;
+let verificationPubChargee = false;
+
+// ==========================================
+// SURVEILLANCE DE LA CONNEXION EN TEMPS RÉEL
+// ==========================================
+// Ce bloc écoute en permanence pour savoir quel utilisateur est sur publicité
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        // L'utilisateur est connecté ! On récupère son identifiant unique
+        userId = user.uid; 
+        console.log("Utilisateur Congoflix détecté :", userId);
+        
+        // C'est SEULEMENT maintenant qu'on a le vrai ID qu'on active l'écouteur de points
+        brancherEcouteurFirebase();
+    } else {
+        console.log("Aucun utilisateur connecté sur la page.");
+        userId = null;
+    }
+});
+
+// Écouteur en Temps Réel Firebase pour le document de l'utilisateur
+function brancherEcouteurFirebase() {
+    if(!userId) return; // Sécurité si jamais l'ID est manquant
+    
+    db.collection("users").doc(userId).onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            
+            // Synchronisation des points du jour
+            localPointsDujour = data.pointsDuJours || 0;
+            document.getElementById("cagnotte-valeur-txt").innerText = localPointsDujour + " Points";
+            
+            // Gestion du Rang VIP
+            localUserRank = data.rank || 0;
+            ajusterAffichageRangVip(localUserRank);
+            
+            // 🌟 AJOUT : Mise à jour visuelle instantanée du cadenas VIP
+            gererAffichageVisuelVIP();
+            
+            // Gestion du Casino Flottant
+            const boutonCasino = document.getElementById("floating-bonus-casino");
+            if (localUserRank >= 1) {
+                boutonCasino.style.display = "flex";
+            } else {
+                boutonCasino.style.display = "none";
+            }
+            
+            // Synchronisation des tours du Casino
+            localToursFaits = data.toursfaits || 0;
+            actualiserTexteModalCasino();
+        } else {
+            // Initialisation sécurisée du document s'il n'existe pas encore dans Firestore
+            db.collection("users").doc(userId).set({
+                pointsDuJours: 0,
+                coin: 0,
+                rank: 0,
+                toursfaits: 0,
+                XP: 0
+            }, { merge: true });
+        }
+    });
+}
+
+// Appel au chargement des éléments graphiques de la page
+window.addEventListener("DOMContentLoaded", () => {
+    // Note : On a enlevé brancherEcouteurFirebase() d'ici car c'est géré par le onAuthStateChanged plus haut !
+    initialiserChronometresGlobaux();
+    verifierBlocagesBoutonsJournaliers();
+});
+
+        // ==========================================
+        // ÉTAPE 2 : ACCESSEUR DE L'ESPACE VIP (RANG 5)
+        // ==========================================
+        function ajusterAffichageRangVip(rang) {
+            const calqueVerrou = document.getElementById("vip-lock-overlay");
+            if (rang >= 5) {
+                calqueVerrou.style.display = "none";
+                
+                // Alerte unique de félicitations
+                if (!localStorage.getItem("premium_unlocked_alert_seen")) {
+                    alert("Félicitation vous avez débloqué votre rang premium !");
+                    localStorage.setItem("premium_unlocked_alert_seen", "true");
+                }
+            } else {
+                calqueVerrou.style.display = "flex";
+            }
+        }
+
+        function intercepterClicVip(event) {
+            event.stopPropagation();
+            alert("Vous devez atteindre le rang 5 VIP pour accéder aux murs d'offre.\n\nÊtre au rang VIP (Premium) vous offre le privilège d'ouvrir les murs d'offres exclusifs contenant des missions qui vous rapporteront plus de 5000 points par jour selon les opportunités.");
+        }
+
+        function ouvrirIframeOffresVIP(identifiantMur) {
+            if (localUserRank < 5) return;
+            let urlCible = "";
+            if(identifiantMur === 'mur1') urlCible = "https://example-rewardme-wall.com/api?user=" + userId;
+            if(identifiantMur === 'mur2') urlCible = "https://example-ogads-wall.com/api?user=" + userId;
+            if(identifiantMur === 'mur3') urlCible = "https://example-cpagrip-wall.com/api?user=" + userId;
+            
+            document.getElementById("insert-zone-iframe").innerHTML = `<iframe src="${urlCible}" style="width:100%; height:100%; border:none;"></iframe>`;
+            document.getElementById("conteneur-iframe-vip").style.display = "flex";
+        }
+
+        function fermerIframeVIP() {
+            document.getElementById("conteneur-iframe-vip").style.display = "none";
+            document.getElementById("insert-zone-iframe").innerHTML = "";
+        }
+
+        // ==========================================
+        // ÉTAPE 3 : INITIALISATION DES MISSIONS (VIDÉOS & BANNIÈRES MULTIPLES)
+        // ==========================================
+        function initierMissionVideo(index, zoneId, uniqueId, points) {
+            if (verifierSiTacheBloquee(uniqueId)) {
+                alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
                 return;
             }
-            const heures = Math.floor((differenceMs / (1000 * 60 * 60)) % 24);
-            const minutes = Math.floor((differenceMs / (1000 * 60)) % 60);
-            const secondes = Math.floor((differenceMs / 1000) % 60);
-            document.getElementById("daily-countdown-clock").innerText = 
-                (heures < 10 ? "0" : "") + heures + ":" + 
-                (minutes < 10 ? "0" : "") + minutes + ":" + 
-                (secondes < 10 ? "0" : "") + secondes;
-        }
-        setInterval(actualiserChronoJournalier, 1000);
-        actualiserChronoJournalier();
-
-        // --- INITIALISATION DES MISSIONS VIDÉO ---
-        function initierMissionVideo(indexVideo, zoneIdClickadilla) {
-            typeMissionActive = "video";
-            ouvrirBaseModale();
-
-            // Masquage global préventif des slots vidéos
-            for (let i = 1; i <= 10; i++) {
-                const sv = document.getElementById("zone-pub-video" + i);
-                if(sv) sv.style.display = "none";
-            }
-            document.getElementById("zone-pub-alternative").style.display = "none";
-
-            // Activation du slot ciblé
-            const slotCible = document.getElementById("zone-pub-video" + indexVideo);
-            if(slotCible) {
-                slotCible.style.display = "flex";
-                slotCible.innerHTML = ""; // Clear précédent
-                
-                // Injection dynamique propre du script central vidéo Clickadilla
-                const scriptPub = document.createElement('script');
-                scriptPub.async = true;
-                scriptPub.src = "https://js.wpadmngr.com/static/adManager.js";
-                scriptPub.setAttribute('data-admpid', zoneIdClickadilla);
-                slotCible.appendChild(scriptPub);
-            }
-
-            simulerDetectionFluxPublicitaire("Vidéo Stream Detected");
-        }
-
-        // --- COPIE, MULTIPLICATION ET AFFICHAGE COMPLEXE DES BANNIÈRES REÇUES ---
-        function initierMissionBanniere(regieType, extraId = "") {
-            typeMissionActive = "banniere";
-            ouvrirBaseModale();
-
-            // Nettoyage et masquage des slots vidéos inutiles pendant la bannière
-            for (let i = 1; i <= 10; i++) {
-                const sv = document.getElementById("zone-pub-video" + i);
-                if(sv) sv.style.display = "none";
-            }
-
-            const slotAlternative = document.getElementById("zone-pub-alternative");
-            slotAlternative.style.display = "flex";
-
-            const boxRemplissage = document.getElementById("box-banner-inside-modal");
-            boxRemplissage.innerHTML = ""; // Clear précédent
-
-            // Remplissage ciblé et dupliqué pour ne laisser aucun vide (Remplissage Forcé)
-            if (regieType.startsWith('clickadilla')) {
-                let codeBanner = `<div data-banner-id="${extraId}"></div>`;
-                // Injection et duplication dynamique sécurisée du script Clickadilla
-                boxRemplissage.innerHTML = `
-                    <div class="fine-banner-row"><script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="${extraId}"><\/script></div>
-                `;
-            } 
-            else if (regieType === 'advertica') {
-                let codeAdvertica = `<ins style="width: 300px;height:250px" data-width="300" data-height="250" class="z44a27d7180" data-domain="//data527.click" data-affquery="/0f96f9f42a0c9fc3d824/44a27d7180/?placementName=baniere"><script src="//data527.click/js/responsive.js" async><\/script></ins>`;
-                boxRemplissage.innerHTML = `<div class="fine-banner-row">${codeAdvertica}</div>`;
-            } 
-            else if (regieType === 'adsterra_native') {
-                boxRemplissage.innerHTML = `
-                    <div id="container-2488fee72aaf9bf875080b7e81f37d58"></div>
-                    <div id="container-2488fee72aaf9bf875080b7e81f37d58-dup" style="width:300px; height:100px; background:#111; display:flex; align-items:center; justify-content:center; font-size:11px;">[Flux Natif Activé]</div>
-                `;
-            }
-            else if (regieType === 'adsterra_160_300') {
-                // Remplissage par duplication d'iframes asynchrones empilées proprement
-                let containerId = "as-frame-160-300";
-                boxRemplissage.innerHTML = `
-                    <div style="display:flex; gap:10px; justify-content:center; width:100%;">
-                        <iframe id="${containerId}-1" src="about:blank" style="width:140px; height:240px; border:none; overflow:hidden;"></iframe>
-                        <iframe id="${containerId}-2" src="about:blank" style="width:140px; height:240px; border:none; overflow:hidden;"></iframe>
-                    </div>
-                `;
-                setTimeout(() => {
-                    [1, 2].forEach(k => {
-                        const f = document.getElementById(`${containerId}-${k}`);
-                        if(f) {
-                            const fDoc = f.contentWindow.document;
-                            fDoc.open();
-                            fDoc.write(`<html><body style="margin:0;padding:0;text-align:center;"><script>atOptions={'key':'f37e5621609ff0cb917f6311de1ff1b5','format':'iframe','height':300,'width':160,'params':{}};\<\/script><script src="https://www.highperformanceformat.com/f37e5621609ff0cb917f6311de1ff1b5/invoke.js">\<\/script></body></html>`);
-                            fDoc.close();
-                        }
-                    });
-                }, 100);
-            }
-            else if (regieType === 'adsterra_social') {
-                boxRemplissage.innerHTML = `<div style="padding:20px; text-align:center; color:var(--accent-cyan)">[Barre Sociale Active ac91ae3c]</div>`;
-            }
-            else if (regieType === 'adsterra_320_50') {
-                // Multi-Fill cumulé de 4 bannières pour remplir l'espace carré
-                let containerId = "as-frame-320-50";
-                boxRemplissage.innerHTML = `<div style="display:flex; flex-direction:column; gap:5px;"></div>`;
-                const targetedDiv = boxRemplissage.querySelector('div');
-                for(let k=0; k<4; k++) {
-                    targetedDiv.innerHTML += `<iframe id="${containerId}-${k}" src="about:blank" style="width:300px; height:50px; border:none; overflow:hidden;"></iframe>`;
-                }
-                setTimeout(() => {
-                    for(let k=0; k<4; k++) {
-                        const f = document.getElementById(`${containerId}-${k}`);
-                        if(f) {
-                            const fDoc = f.contentWindow.document; fDoc.open();
-                            fDoc.write(`<html><body style="margin:0;padding:0;"><script>atOptions={'key':'7221685de42e37b3b02c60ff0bee506a','format':'iframe','height':50,'width':320,'params':{}};\<\/script><script src="https://www.highperformanceformat.com/7221685de42e37b3b02c60ff0bee506a/invoke.js">\<\/script></body></html>`);
-                            fDoc.close();
-                        }
-                    }
-                }, 100);
-            }
-            else if (regieType === 'adsterra_728_90') {
-                boxRemplissage.innerHTML = `<iframe src="about:blank" id="as-frame-728-90" style="width:300px; height:90px; border:none; overflow:hidden; scale:0.9;"></iframe>`;
-                setTimeout(() => {
-                    const f = document.getElementById('as-frame-728-90');
-                    if(f) {
-                        const fDoc = f.contentWindow.document; fDoc.open();
-                        fDoc.write(`<html><body style="margin:0;padding:0;"><script>atOptions={'key':'1facbab67b9de12f38e07b469d8ebbc5','format':'iframe','height':90,'width':728,'params':{}};\<\/script><script src="https://www.highperformanceformat.com/1facbab67b9de12f38e07b469d8ebbc5/invoke.js">\<\/script></body></html>`);
-                        fDoc.close();
-                    }
-                }, 100);
-            }
-            else if (regieType === 'adsterra_468_60') {
-                boxRemplissage.innerHTML = `
-                    <iframe id="as-frame-468-60-1" src="about:blank" style="width:300px; height:60px; border:none; overflow:hidden; margin-bottom:5px;"></iframe>
-                    <iframe id="as-frame-468-60-2" src="about:blank" style="width:300px; height:60px; border:none; overflow:hidden;"></iframe>
-                `;
-                setTimeout(() => {
-                    [1,2].forEach(k => {
-                        const f = document.getElementById(`as-frame-468-60-${k}`);
-                        if(f) {
-                            const fDoc = f.contentWindow.document; fDoc.open();
-                            fDoc.write(`<html><body style="margin:0;padding:0;"><script>atOptions={'key':'f4457eb23eb120306ee17ff506bfbe54','format':'iframe','height':60,'width':468,'params':{}};\<\/script><script src="https://www.highperformanceformat.com/f4457eb23eb120306ee17ff506bfbe54/invoke.js">\<\/script></body></html>`);
-                            fDoc.close();
-                        }
-                    });
-                }, 100);
-            }
-            else if (regieType === 'adsterra_300_250') {
-                boxRemplissage.innerHTML = `<iframe src="about:blank" id="as-frame-300-250" style="width:300px; height:250px; border:none; overflow:hidden;"></iframe>`;
-                setTimeout(() => {
-                    const f = document.getElementById('as-frame-300-250');
-                    if(f) {
-                        const fDoc = f.contentWindow.document; fDoc.open();
-                        fDoc.write(`<html><body style="margin:0;padding:0;"><script>atOptions={'key':'e86dd4052f782bbf6b4b32bde1a88c3a','format':'iframe','height':250,'width':300,'params':{}};\<\/script><script src="https://www.highperformanceformat.com/e86dd4052f782bbf6b4b32bde1a88c3a/invoke.js">\<\/script></body></html>`);
-                        fDoc.close();
-                    }
-                }, 100);
-            }
-            else if (regieType === 'adsterra_160_600') {
-                boxRemplissage.innerHTML = `<iframe src="about:blank" id="as-frame-160-600" style="width:160px; height:240px; border:none; overflow:hidden;"></iframe>`;
-                setTimeout(() => {
-                    const f = document.getElementById('as-frame-160-600');
-                    if(f) {
-                        const fDoc = f.contentWindow.document; fDoc.open();
-                        fDoc.write(`<html><body style="margin:0;padding:0;text-align:center;"><script>atOptions={'key':'355c9d0eb6492976b7e37ee21b335a4d','format':'iframe','height':600,'width':160,'params':{}};\<\/script><script src="https://www.highperformanceformat.com/355c9d0eb6492976b7e37ee21b335a4d/invoke.js">\<\/script></body></html>`);
-                        fDoc.close();
-                    }
-                }, 100);
-            }
-
-            simulerDetectionFluxPublicitaire("Banner Component Loaded");
-        }
-
-        // --- SOUS-SYSTEMES MODALE ET DETECTION DE FLUX CONTROLES ---
-        function ouvrirBaseModale() {
-            document.getElementById("global-pub-modal").style.display = "flex";
+            
+            missionActiveType = "video";
+            missionActiveId = uniqueId;
+            missionActivePoints = points;
+            
+            // Configuration de l'affichage de la modale
             document.getElementById("ad-stream-loader").style.display = "flex";
-            document.getElementById("finger-indicator").style.display = "none";
-            document.querySelectorAll('.ad-slot-square').forEach(el => el.style.display = 'none');
-
-            const btnClaim = document.getElementById("btn-claim-points");
-            btnClaim.disabled = true;
-            btnClaim.className = "btn-modal-action btn-modal-claim";
-            btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Analyse du flux en cours...`;
-        }
-
-        function simulerDetectionFluxPublicitaire(logInfo) {
+            document.getElementById("finger-indicator").style.display = "flex"; // Doigt actif au centre
+            document.getElementById("zone-pub-alternative").style.display = "none";
+            
+            // Masquer les autres conteneurs vidéo
+            for (let i = 1; i <= 10; i++) {
+                document.getElementById("zone-pub-video" + i).style.display = "none";
+            }
+            
+            const conteneurCible = document.getElementById("zone-pub-video" + index);
+            if (conteneurCible) {
+                conteneurCible.style.display = "block";
+                conteneurCible.innerHTML = ""; 
+                
+                // Simulation d'injection de script vidéo
+                let scriptVideo = document.createElement("script");
+                scriptVideo.type = "text/javascript";
+                scriptVideo.src = `https://zone.clickadilla.com/tag.js?zone=${zoneId}`;
+                scriptVideo.async = true;
+                scriptVideo.onerror = () => declencherPanneAffichagePub();
+                conteneurCible.appendChild(scriptVideo);
+            }
+            
+            ouvrirCadreModaleGlobal();
+            
+            // Simulation de détection du chargement
             setTimeout(() => {
                 document.getElementById("ad-stream-loader").style.display = "none";
-                document.getElementById("finger-indicator").style.display = "flex"; // Apparition immédiate du doigt indicateur
-                document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-hand-point-up"></i> En attente du clic lecteur`;
-            }, 2200);
+                verificationPubChargee = true;
+            }, 3000);
         }
 
-        // --- DECLENCHEMENT ET ACTIONNEMENT COMPTEUR UNIQUE A 30 SECONDES ---
-        function declencherPlayFlux() {
-            document.getElementById("finger-indicator").style.display = "none";
-            tempsRestantMission = 30; // Compteur forcé à 30 secondes pour toutes les missions
+        function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
+            if (verifierSiTacheBloquee(uniqueId)) {
+                alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
+                return;
+            }
+            
+            missionActiveType = "banniere";
+            missionActiveId = uniqueId;
+            missionActivePoints = points;
+            
+            document.getElementById("ad-stream-loader").style.display = "flex";
+            document.getElementById("finger-indicator").style.display = "none"; // Le doigt disparaît du centre pour les bannières
+            
+            // Masquer les blocs vidéo
+            for (let i = 1; i <= 10; i++) {
+                document.getElementById("zone-pub-video" + i).style.display = "none";
+            }
+            
+            const blocAlternative = document.getElementById("zone-pub-alternative");
+            const conteneurInterne = document.getElementById("box-banner-inside-modal");
+            
+            blocAlternative.style.display = "block";
+            conteneurInterne.innerHTML = ""; 
 
-            const btnClaim = document.getElementById("btn-claim-points");
-            btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> Analyse active (${tempsRestantMission}s)`;
+            try {
+                if (fournisseur.startsWith("adsterra") || fournisseur === "advertica") {
+                    // Répétition de 3 blocs d'Iframe pour remplir l'espace vide
+                    for (let step = 0; step < 3; step++) {
+                        let divEnveloppe = document.createElement("div");
+                        divEnveloppe.className = "ad-zone-160x600";
+                        divEnveloppe.style.margin = "10px auto";
+                        divEnveloppe.style.textAlign = "center";
 
-            clearInterval(chronoInterval);
-            chronoInterval = setInterval(() => {
-                tempsRestantMission--;
-                if (tempsRestantMission > 0) {
-                    btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> Analyse active (${tempsRestantMission}s)`;
+                        let cadreIframe = document.createElement("iframe");
+                        cadreIframe.style.width = "160px";
+                        cadreIframe.style.height = "600px";
+                        cadreIframe.style.border = "none";
+                        cadreIframe.style.scrolling = "no";
+                        
+                        // Injection du code source structuré iframe
+                        let htmlContenu = `
+                            <html>
+                            <body style="margin:0; padding:0; display:flex; justify-content:center;">
+                                <script type="text/javascript">
+                                    atOptions = {
+                                        'key' : '${clePub}',
+                                        'format' : 'iframe',
+                                        'height' : 600,
+                                        'width' : 160,
+                                        'params' : {}
+                                    };
+                                <\/script>
+                                <script type="text/javascript" src="https://www.highperformanceformat.com/${clePub}/invoke.js"><\/script>
+                            </body>
+                            </html>
+                        `;
+                        
+                        divEnveloppe.appendChild(cadreIframe);
+                        conteneurInterne.appendChild(divEnveloppe);
+                        
+                        cadreIframe.contentWindow.document.open();
+                        cadreIframe.contentWindow.document.write(htmlContenu);
+                        cadreIframe.contentWindow.document.close();
+                    }
                 } else {
-                    clearInterval(chronoInterval);
-                    btnClaim.disabled = false;
-                    btnClaim.className = "btn-modal-action btn-modal-claim ready";
-                    btnClaim.innerHTML = `<i class="fa-solid fa-circle-check"></i> Collecter mes Points`;
-                    btnClaim.onclick = validerEtAjouterPoints;
+                    // Fallback Clickadilla Bannières standard
+                    conteneurInterne.innerHTML = `<iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="300" height="250" style="border:none; overflow:hidden;"></iframe>`;
+                }
+                
+                // Lancement direct du chronomètre pour les bannières puisque le doigt central est désactivé
+                setTimeout(() => {
+                    document.getElementById("ad-stream-loader").style.display = "none";
+                    verificationPubChargee = true;
+                    engagerCompteReboursAutomatique();
+                }, 2500);
+
+            } catch(e) {
+                declencherPanneAffichagePub();
+            }
+
+            ouvrirCadreModaleGlobal();
+        }
+
+        function declencherPanneAffichagePub() {
+            document.getElementById("ad-stream-loader").style.display = "none";
+            alert("Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.");
+            fermerModaleActive();
+        }
+
+        function ouvrirCadreModaleGlobal() {
+            document.getElementById("global-pub-modal").style.display = "flex";
+            document.getElementById("btn-claim-points").disabled = true;
+            document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente...`;
+            tempsRestantTache = 30;
+            verificationPubChargee = false;
+        }
+
+        function fermerModaleActive() {
+            clearInterval(compteReboursDeTrente);
+            document.getElementById("global-pub-modal").style.display = "none";
+        }
+
+        // ==========================================
+        // ÉTAPE 4 : MOTEURS DE CHRONOMÉTRAGE ET VALIDATION
+        // ==========================================
+        function declencherPlayFlux() {
+            // Uniquement appelé par le doigt interactif sur les vidéos
+            if (!verificationPubChargee) return;
+            document.getElementById("finger-indicator").style.display = "none";
+            engagerCompteReboursAutomatique();
+        }
+
+        function engagerCompteReboursAutomatique() {
+            const boutonRecup = document.getElementById("btn-claim-points");
+            boutonRecup.disabled = true;
+            
+            compteReboursDeTrente = setInterval(() => {
+                tempsRestantTache--;
+                if (tempsRestantTache > 0) {
+                    boutonRecup.innerHTML = `<i class="fa-solid fa-clock"></i> Reste ${tempsRestantTache}s`;
+                } else {
+                    clearInterval(compteReboursDeTrente);
+                    boutonRecup.disabled = false;
+                    boutonRecup.className = "btn-modal-action btn-modal-claim active";
+                    boutonRecup.innerHTML = `<i class="fa-solid fa-check-circle"></i> Récupérer mes points (+${missionActivePoints})`;
+                    boutonRecup.onclick = executerCollectePointsTache;
                 }
             }, 1000);
         }
 
-        // --- CRÉDIT DES POINTS ET SYNC AVEC FIREBASE SÉCURISÉ ---
-        function validerEtAjouterPoints() {
-            const gain = (typeMissionActive === "video") ? 100 : 90;
-            pointsCagnotte += gain;
+        // Actionneur du premier bouton : Collecte standard
+        function executerCollectePointsTache() {
+            if(!userId) return;
             
-            const cagnotteTxt = document.getElementById("cagnotte-valeur-txt");
-            cagnotteTxt.innerText = pointsCagnotte + " Points";
-            cagnotteTxt.classList.add("pulse-gold-active");
-            
-            setTimeout(() => { cagnotteTxt.classList.remove("pulse-gold-active"); }, 600);
-
-            // Synchronisation Firebase en arrière-plan si disponible
-            if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && uidCourant !== "USER_TEST_ID") {
-                const db = firebase.firestore();
-                db.collection("users").doc(uidCourant).update({
-                    points: firebase.firestore.FieldValue.increment(gain),
-                    pointsDuJour: firebase.firestore.FieldValue.increment(gain)
-                }).catch(err => console.log("Firebase sync bypass: ", err));
-            }
-
-            alert(`Succès ! Votre mission est validée. +${gain} points ajoutés.`);
-            fermerModaleActive();
+            db.collection("users").doc(userId).update({
+                pointsDuJours: firebase.firestore.FieldValue.increment(missionActivePoints)
+            }).then(() => {
+                marquerTacheCommeBloquee(missionActiveId);
+                alert(`Succès ! +${missionActivePoints} points ajoutés à votre cagnotte journalière.`);
+                fermerModaleActive();
+            }).catch(err => {
+                console.error("Erreur Firebase:", err);
+            });
         }
 
-        function visiterLienSponsorise() {
-            window.open("https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js", "_blank");
-            pointsCagnotte += 200;
-            document.getElementById("cagnotte-valeur-txt").innerText = pointsCagnotte + " Points";
+        // Actionneur du deuxième bouton : Le Super Boost (10%, XP, et Redirection simulée)
+        function actionnerBoostPublicitaire() {
+            if(!userId || !verificationPubChargee) return;
             
-            if (typeof firebase !== 'undefined' && firebase.apps.length > 0 && uidCourant !== "USER_TEST_ID") {
-                const db = firebase.firestore();
-                db.collection("users").doc(uidCourant).update({
-                    points: firebase.firestore.FieldValue.increment(200),
-                    pointsDuJour: firebase.firestore.FieldValue.increment(200)
-                }).catch(err => console.log("Firebase sync bypass: ", err));
-            }
-            alert("Vérification robot en cours : Rester 30s sur le site tiers pour sécuriser les +200 Points.");
+            const bonusBoost = Math.round(missionActivePoints * 0.10);
+            
+            // Émission immédiate en millisecondes des signaux vers Firebase
+            db.collection("users").doc(userId).update({
+                pointsDuJours: firebase.firestore.FieldValue.increment(bonusBoost),
+                XP: firebase.firestore.FieldValue.increment(1)
+            }).then(() => {
+                marquerTacheCommeBloquee(missionActiveId);
+                
+                // Redirection instantanée vers le flux publicitaire
+                window.open(redirectionUrlActive, '_blank');
+                
+                alert(`Boost validé ! +${bonusBoost} Points (10%) transférés et +1 XP généré.`);
+                fermerModaleActive();
+            }).catch(err => {
+                // Si le champ XP n'existe pas, traitement de secours pour sa création initiale
+                db.collection("users").doc(userId).set({
+                    XP: 1,
+                    pointsDuJours: firebase.firestore.FieldValue.increment(bonusBoost)
+                }, { merge: true }).then(() => {
+                    marquerTacheCommeBloquee(missionActiveId);
+                    window.open(redirectionUrlActive, '_blank');
+                    fermerModaleActive();
+                });
+            });
         }
 
-        function fermerModaleActive() {
-            clearInterval(chronoInterval);
-            document.getElementById("global-pub-modal").style.display = "none";
-            document.getElementById("btn-claim-points").onclick = null;
+        // ==========================================
+        // ÉTAPE 5 : SYNC CHRONOMÈTRE MIDNIGHT & PERSISTANCE DE BLOCAGE
+        // ==========================================
+        function initialiserChronometresGlobaux() {
+            const horlogeTexte = document.getElementById("daily-countdown-clock");
             
-            // Nettoyage de sécurité des cadres d'injection
-            for (let i = 1; i <= 10; i++) {
-                const sv = document.getElementById("zone-pub-video" + i);
-                if(sv) sv.innerHTML = "";
-            }
-            document.getElementById("box-banner-inside-modal").innerHTML = "";
+            setInterval(() => {
+                const maintenant = new Date();
+                const minuit = new Date();
+                minuit.setHours(24, 0, 0, 0); // Décompte calé sur Minuit pile
+                
+                let differenceMs = minuit - maintenant;
+                
+                if (differenceMs <= 0) {
+                    executerReinitialisationMinuitAutomatique();
+                    return;
+                }
+                
+                let heures = Math.floor((differenceMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                let minutes = Math.floor((differenceMs % (1000 * 60 * 60)) / (1000 * 60));
+                let secondes = Math.floor((differenceMs % (1000 * 60)) / 1000);
+                
+                heures = heures < 10 ? "0" + heures : heures;
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                secondes = secondes < 10 ? "0" + secondes : secondes;
+                
+                horlogeTexte.innerText = `${heures}:${minutes}:${secondes}`;
+                
+                // Vérification spécifique pour le reset de 1h du matin du Casino
+                if (maintenant.getHours() === 1 && maintenant.getMinutes() === 0 && maintenant.getSeconds() === 0) {
+                    executerResetCasinoUneHeureDuMat();
+                }
+                
+            }, 1000);
         }
 
-        // --- GESTION DE LA BOITE DE DIALOGUE ET DU CODE DE SÉCURITÉ EN BAS ---
+        function executerReinitialisationMinuitAutomatique() {
+            if(!userId) return;
+            
+            // Reset impératif du champ pointsDuJours à 0 sur Firebase à minuit
+            db.collection("users").doc(userId).update({
+                pointsDuJours: 0
+            }).then(() => {
+                // Déblocage complet de toutes les tâches stockées localement
+                localStorage.removeItem("liste_taches_bloquees_du_jour");
+                verifierBlocagesBoutonsJournaliers();
+                console.log("Remise à zéro de minuit effectuée.");
+            });
+        }
+
+        function executerResetCasinoUneHeureDuMat() {
+            if(!userId) return;
+            db.collection("users").doc(userId).update({
+                toursfaits: 0
+            });
+        }
+
+        // Utilitaires de gestion des tâches complétées pour la journée
+        function marquerTacheCommeBloquee(idTache) {
+            let liste = JSON.parse(localStorage.getItem("liste_taches_bloquees_du_jour")) || [];
+            if (!liste.includes(idTache)) {
+                liste.push(idTache);
+            }
+            localStorage.setItem("liste_taches_bloquees_du_jour", JSON.stringify(liste));
+            verifierBlocagesBoutonsJournaliers();
+        }
+
+        function verifierSiTacheBloquee(idTache) {
+            let liste = JSON.parse(localStorage.getItem("liste_taches_bloquees_du_jour")) || [];
+            return liste.includes(idTache);
+        }
+
+        function verifierBlocagesBoutonsJournaliers() {
+            let liste = JSON.parse(localStorage.getItem("liste_taches_bloquees_du_jour")) || [];
+            
+            // Recherche de tous les boutons de lancement de la grille pour griser visuellement les tâches accomplies
+            const toutesLesCartes = document.querySelectorAll(".video-card-small");
+            toutesLesCartes.forEach(carte => {
+                const idCarte = carte.id.replace("card-", "");
+                const boutonAssocie = carte.querySelector(".btn-launch-grid");
+                
+                if (liste.includes(idCarte) && boutonAssocie) {
+                    boutonAssocie.disabled = true;
+                    boutonAssocie.style.background = "#2a2e43";
+                    boutonAssocie.style.color = "#686c87";
+                    boutonAssocie.innerText = "Validée ✓";
+                } else if (boutonAssocie && boutonAssocie.innerText === "Validée ✓") {
+                    // Rétablissement si débloqué par le reset
+                    boutonAssocie.disabled = false;
+                    boutonAssocie.style.background = "";
+                    boutonAssocie.style.color = "";
+                    boutonAssocie.innerText = "Lancer";
+                }
+            });
+        }
+
+        // Actionneur du bouton d'encaissement global
+        function encaisserGainsDuJour() {
+            if (!userId || localPointsDujour <= 0) {
+                alert("Votre cagnotte journalière est vide. Accomplissez des tâches pour accumuler des points.");
+                return;
+            }
+            
+            // Transfert de pointsDuJours vers le champ global 'coin' puis nettoyage
+            db.collection("users").doc(userId).update({
+                coin: firebase.firestore.FieldValue.increment(localPointsDujour),
+                pointsDuJours: 0
+            }).then(() => {
+                alert("Félicitations ! Vos gains du jour ont été sécurisés et ajoutés à votre solde global 'Coin'.");
+            }).catch(err => console.error(err));
+        }
+
         function ouvrirBoiteDialogueAide() {
-            alert("💡 EXPLICATION DES RÈGLES DE SÉCURITÉ :\n\n" +
-                  "1. Vous devez regarder l'affiche publicitaire pendant 15 secondes complètes pour pouvoir cliquer sur le bouton de récupération.\n" +
-                  "2. Le bouton 'Booster mes gains' requiert que vous restiez un minimum de 30 secondes complètes sur le site ouvert afin que le bonus massif de +200 points soit validé par le robot.\n\n" +
-                  "⚠️ RISQUE DE PERTE IMMINENT : Tous vos points doivent impérativement être envoyés vers le profil central en cliquant sur le bouton 'Encaisser mes gains du jour' avant minuit. Si vous oubliez, le compteur se réinitialisera à zéro à 00h00 pour la nouvelle journée et les points non réclamés seront définitivement perdus (Règle de Non-Faillite).");
+            alert("AIDE & FONCTIONNEMENT :\n\n- Chaque tâche accomplie ajoute des points à votre cagnotte du jour.\n- Vous devez impérativement cliquer sur 'Encaisser mes gains du jour' avant minuit, sinon les points non réclamés seront définitivement perdus lors de la réinitialisation automatique.");
         }
 
-        // --- MURS VIP EMBED IFRAME MANAGEMENT ---
+        // ==========================================
+        // ÉTAPE 6 : LOGIQUE DU CASINO BONUS FLOTTANT
+        // ==========================================
+        function ouvrirModalBonus() {
+            if (localUserRank < 1) return;
+            document.getElementById("modal-bonus-casino").style.display = "flex";
+            actualiserTexteModalCasino();
+        }
+
+        function fermerModalBonus() {
+            document.getElementById("modal-bonus-casino").style.display = "none";
+        }
+
+        function actualiserTexteModalCasino() {
+            const labelChances = document.getElementById("txt-chances-restantes");
+            const boutonCasino = document.getElementById("btn-action-casino");
+            let restants = 5 - localToursFaits;
+            
+            if (restants <= 0) {
+                labelChances.innerText = "Vous avez épuisé toutes vos chances de votre journée, revenez demain pour retenter.";
+                boutonCasino.disabled = true;
+                boutonCasino.style.background = "#2a2e43";
+                boutonCasino.innerText = "Épuisé pour aujourd'hui";
+            } else {
+                labelChances.innerText = `Il vous reste ${restants} chance(s) de votre journée.`;
+                boutonCasino.disabled = false;
+                boutonCasino.style.background = "";
+                boutonCasino.innerText = "Tenter ma chance du jour";
+            }
+        }
+
+        function tenterChanceCasino() {
+            if (localToursFaits >= 5 || !userId) return;
+            
+            db.collection("users").doc(userId).update({
+                toursfaits: firebase.firestore.FieldValue.increment(1)
+            }).then(() => {
+                // Redirection externe liée à la mécanique de jeu
+                window.location.href = "https://www.highperformanceformat.com/355c9d0ee6ac5ec71d84d7f879fdc153/invoke.js";
+            });
+        }
+        // ==========================================
+        // ÉTAPE 7 : MURS VIP EMBED IFRAME MANAGEMENT
+        // ==========================================
         function ouvrirIframeOffresVIP(mur) {
-            if (!uidCourant) return alert("Veuillez vous connecter pour accéder à l'espace VIP.");
+            if (!userId) {
+                return alert("Veuillez vous connecter pour accéder à l'espace VIP.");
+            }
+            if (localUserRank < 5) {
+                return alert("Accès restreint. Vous devez atteindre le Rang 5 pour débloquer cet espace VIP.");
+            }
+
             const conteneur = document.getElementById('conteneur-iframe-vip');
             const insert = document.getElementById('insert-zone-iframe');
-            conteneur.style.display = 'flex';
+            
+            if (conteneur && insert) {
+                conteneur.style.display = 'flex';
 
-            if (mur === 'mur1') {
-                insert.innerHTML = `<iframe src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${uidCourant}" style="width:100%; height:100%; border:none;"></iframe>`;
-            } else if (mur === 'mur2') {
-                insert.innerHTML = `<iframe src="https://appsave.online/cl/i/grjgep?aff_sub=${uidCourant}" style="width:100%; height:100%; border:none;"></iframe>`;
-            } else if (mur === 'mur3') {
-                insert.innerHTML = `<iframe src="https://getafilenow.com/script_include.php?id=1904067&tracking_id=${uidCourant}" style="width:100%; height:100%; border:none;"></iframe>`;
+                if (mur === 'mur1') {
+                    insert.innerHTML = `<iframe src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${userId}" style="width:100%; height:100%; border:none;"></iframe>`;
+                } else if (mur === 'mur2') {
+                    insert.innerHTML = `<iframe src="https://appsave.online/cl/i/grjgep?aff_sub=${userId}" style="width:100%; height:100%; border:none;"></iframe>`;
+                } else if (mur === 'mur3') {
+                    insert.innerHTML = `<iframe src="https://getafilenow.com/script_include.php?id=1904067&tracking_id=${userId}" style="width:100%; height:100%; border:none;"></iframe>`;
+                }
             }
         }
 
         function fermerIframeVIP() {
-            document.getElementById('conteneur-iframe-vip').style.display = 'none';
-            document.getElementById('insert-zone-iframe').innerHTML = '';
+            const conteneur = document.getElementById('conteneur-iframe-vip');
+            const insert = document.getElementById('insert-zone-iframe');
+            if (conteneur && insert) {
+                conteneur.style.display = 'none';
+                insert.innerHTML = ''; // Vide l'iframe pour stopper les scripts publicitaires en arrière-plan
+            }
+        }
+
+        function intercepterClicVip(event) {
+            // Empêche le clic de traverser le calque et de toucher les boutons en dessous
+            event.stopPropagation(); 
+            alert("🔒 Cet espace est réservé aux membres de Rang 5. Accomplissez des tâches pour augmenter votre rang !");
+        }
+
+        // Gestion automatique du cadenas en fonction du rang (appelée par l'étape 1)
+        function gererAffichageVisuelVIP() {
+            const cadenasVip = document.getElementById("vip-lock-overlay");
+            if (!cadenasVip) return; // Sécurité si l'élément n'existe pas encore dans le HTML
+
+            if (localUserRank >= 5) {
+                cadenasVip.style.display = "none"; // On masque le cadenas, accès libre !
+            } else {
+                cadenasVip.style.display = "flex"; // On affiche le cadenas de blocage
+            }
         }
     </script>
 </body>
