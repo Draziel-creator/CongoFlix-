@@ -734,14 +734,13 @@ function initierMissionVideo(fournisseur, zoneId, uniqueId, points) {
     missionActiveId = uniqueId;
     missionActivePoints = points;
 
+    // 1. Préparer l'interface
     document.getElementById("ad-stream-loader").style.display = "flex";
     document.getElementById("finger-indicator").style.display = "none";
 
-    // Masquer le bloc bannière alternatif
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    // Cibler le conteneur vidéo principal
     const conteneurVideo = document.getElementById("zone-pub-video1");
     if (!conteneurVideo) {
         declencherPanneAffichagePub();
@@ -751,37 +750,34 @@ function initierMissionVideo(fournisseur, zoneId, uniqueId, points) {
     conteneurVideo.style.display = "block";
     conteneurVideo.innerHTML = ""; // Vider les injections précédentes
 
-    try {
-        // 1. Création de la div réceptrice pour Clickadilla
-        let divCibleVideo = document.createElement("div");
-        divCibleVideo.id = zoneId;
-        conteneurVideo.appendChild(divCibleVideo);
-
-        // 2. Injection du script vidéo In-Stream
-        let scriptVideo = document.createElement("script");
-        scriptVideo.async = true;
-        scriptVideo.dataset.cfasync = "false";
-        scriptVideo.src = `https://zone.clickadilla.com/tag.js?zone=${zoneId}`;
-
-        // Sécurité : si le script est bloqué par le réseau/AdBlock (ERR_NAME_NOT_RESOLVED)
-        scriptVideo.onerror = () => {
-            declencherPanneAffichagePub();
-        };
-
-        conteneurVideo.appendChild(scriptVideo);
-
-    } catch(err) {
-        declencherPanneAffichagePub();
-        return;
-    }
-
-    // Ouvrir la modale en surveillant le conteneur vidéo
+    // 2. OUVRIR LA MODALE EN PREMIER pour garantir que les dimensions CSS sont actives (> 0px)
     ouvrirCadreModaleGlobal("zone-pub-video1");
+
+    // 3. Injecter le script avec un léger délai (100ms) pour laisser le temps au navigateur d'afficher la modale
+    setTimeout(() => {
+        try {
+            let divCibleVideo = document.createElement("div");
+            divCibleVideo.id = zoneId;
+            conteneurVideo.appendChild(divCibleVideo);
+
+            let scriptVideo = document.createElement("script");
+            scriptVideo.async = true;
+            scriptVideo.dataset.cfasync = "false";
+            scriptVideo.src = `https://zone.clickadilla.com/tag.js?zone=${zoneId}`;
+
+            scriptVideo.onerror = () => {
+                console.error("Échec de chargement réseau Clickadilla Video pour la zone:", zoneId);
+                declencherPanneAffichagePub();
+            };
+
+            conteneurVideo.appendChild(scriptVideo);
+        } catch(err) {
+            console.error("Erreur lors de l'injection vidéo:", err);
+            declencherPanneAffichagePub();
+        }
+    }, 100);
 }
-        // ======================================================
-// 3. SURVEILLANCE UNIVERSELLE (BANNIÈRES & VIDÉOS)
-// ======================================================
-function surveillerPresencePub(idConteneur, surSucces, surEchec) {
+        function surveillerPresencePub(idConteneur, surSucces, surEchec) {
     const conteneur = document.getElementById(idConteneur);
     if (!conteneur) {
         surEchec();
@@ -789,55 +785,59 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
     }
 
     let pubDetectee = false;
+    let observer = null;
 
-    // Fonction de validation finale de la présence de la pub
     function validerSucces() {
         if (!pubDetectee) {
             pubDetectee = true;
+            if (observer) observer.disconnect();
             surSucces();
         }
     }
 
-    // Vérifie si du contenu publicitaire (iframe, video, ou lecteur injecté) est présent
     function testerContenuInjecte() {
+        if (pubDetectee) return;
+
+        // Détection multi-critères : Iframe, vidéo ou présence d'éléments injectés
         const iframe = conteneur.querySelector('iframe');
         const video = conteneur.querySelector('video');
-        // Clickadilla vidéo injecte souvent une div ou une structure avec plusieurs enfants
-        const elementsInjectes = conteneur.children.length > 1;
+        
+        // Vérifie si Clickadilla a créé des balises à l'intérieur du conteneur cible
+        const zoneSpecifique = conteneur.firstElementChild;
+        const aDesEnfantsInjected = conteneur.childElementCount > 1 || 
+            (zoneSpecifique && zoneSpecifique.childElementCount > 0);
 
         if (iframe) {
-            // Si c'est une iframe, on attend son événement onload réel
-            iframe.onload = validerSucces;
-            try {
-                if (iframe.contentDocument && iframe.contentDocument.readyState === "complete") {
-                    setTimeout(validerSucces, 300);
-                }
-            } catch(e) {
-                // cross-origin
+            // Si l'iframe est déjà chargée
+            if (iframe.complete || iframe.readyState === "complete") {
+                validerSucces();
+            } else {
+                iframe.onload = validerSucces;
+                // Secours en cas de restriction Cross-Origin
+                setTimeout(validerSucces, 1000);
             }
-        } else if (video || elementsInjectes) {
-            // Si c'est une balise video ou du HTML dynamique injecté par Clickadilla vidéo
+        } else if (video) {
             validerSucces();
+        } else if (aDesEnfantsInjected) {
+            // Le script a injecté le lecteur HTML5 Clickadilla
+            setTimeout(validerSucces, 600);
         }
     }
 
     // 1. Test immédiat
     testerContenuInjecte();
 
-    // 2. Si rien n'est encore prêt, on surveille l'injection dans le DOM via MutationObserver
-    const observer = new MutationObserver((mutations, obs) => {
+    // 2. Surveillance dynamique avec MutationObserver
+    observer = new MutationObserver(() => {
         testerContenuInjecte();
-        if (pubDetectee) {
-            obs.disconnect();
-        }
     });
 
     observer.observe(conteneur, { childList: true, subtree: true });
 
-    // 3. Sécurité : Si au bout de 9 secondes rien n'est fonctionnel = Panne/No-Fill
+    // 3. Sécurité : Délai d'expiration de 9 secondes
     setTimeout(() => {
         if (!pubDetectee) {
-            observer.disconnect();
+            if (observer) observer.disconnect();
             surEchec();
         }
     }, 9000);
