@@ -718,7 +718,10 @@ window.addEventListener("DOMContentLoaded", () => {
       // ======================================================
 // 1. INITIATION DE LA MISSION VIDÉO (CORRIGÉE)
 // ======================================================
-function initierMissionVideo(fournisseur, zoneId, uniqueId, points) {
+// ======================================================
+// 1. INITIATION DYNAMIQUE DES VIDÉOS (ZONES 1 À 10)
+// ======================================================
+function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
     if (e) {
         e.preventDefault();
@@ -734,15 +737,25 @@ function initierMissionVideo(fournisseur, zoneId, uniqueId, points) {
     missionActiveId = uniqueId;
     missionActivePoints = points;
 
-    // 1. Préparer l'interface
+    // 1. Masquer le loader / ajuster l'interface
     document.getElementById("ad-stream-loader").style.display = "flex";
     document.getElementById("finger-indicator").style.display = "none";
 
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    const conteneurVideo = document.getElementById("zone-pub-video1");
+    // 2. Masquer TOUTES les zones vidéo (1 à 10) pour éviter les chevauchements
+    for (let i = 1; i <= 10; i++) {
+        const zoneTemp = document.getElementById("zone-pub-video" + i);
+        if (zoneTemp) zoneTemp.style.display = "none";
+    }
+
+    // 3. Cibler et afficher la zone spécifique (ex: "zone-pub-video1", "zone-pub-video2", etc.)
+    const idZoneCible = "zone-pub-video" + indexVideo;
+    const conteneurVideo = document.getElementById(idZoneCible);
+
     if (!conteneurVideo) {
+        console.error("Conteneur introuvable dans le DOM :", idZoneCible);
         declencherPanneAffichagePub();
         return;
     }
@@ -750,16 +763,12 @@ function initierMissionVideo(fournisseur, zoneId, uniqueId, points) {
     conteneurVideo.style.display = "block";
     conteneurVideo.innerHTML = ""; // Vider les injections précédentes
 
-    // 2. OUVRIR LA MODALE EN PREMIER pour garantir que les dimensions CSS sont actives (> 0px)
-    ouvrirCadreModaleGlobal("zone-pub-video1");
+    // 4. Ouvrir la modale en premier pour garantir des dimensions CSS actives
+    ouvrirCadreModaleGlobal(idZoneCible);
 
-    // 3. Injecter le script avec un léger délai (100ms) pour laisser le temps au navigateur d'afficher la modale
+    // 5. Injecter le script Clickadilla après l'ouverture de la modale
     setTimeout(() => {
         try {
-            let divCibleVideo = document.createElement("div");
-            divCibleVideo.id = zoneId;
-            conteneurVideo.appendChild(divCibleVideo);
-
             let scriptVideo = document.createElement("script");
             scriptVideo.async = true;
             scriptVideo.dataset.cfasync = "false";
@@ -777,7 +786,12 @@ function initierMissionVideo(fournisseur, zoneId, uniqueId, points) {
         }
     }, 100);
 }
-        function surveillerPresencePub(idConteneur, surSucces, surEchec) {
+
+
+// ======================================================
+// 2. SURVEILLANCE UNIVERSELLE (SANS FAUX POSITIFS)
+// ======================================================
+function surveillerPresencePub(idConteneur, surSucces, surEchec) {
     const conteneur = document.getElementById(idConteneur);
     if (!conteneur) {
         surEchec();
@@ -786,11 +800,13 @@ function initierMissionVideo(fournisseur, zoneId, uniqueId, points) {
 
     let pubDetectee = false;
     let observer = null;
+    let timerPanne = null;
 
     function validerSucces() {
         if (!pubDetectee) {
             pubDetectee = true;
             if (observer) observer.disconnect();
+            if (timerPanne) clearTimeout(timerPanne); // Stoppe net l'alerte de 9 secondes
             surSucces();
         }
     }
@@ -798,28 +814,25 @@ function initierMissionVideo(fournisseur, zoneId, uniqueId, points) {
     function testerContenuInjecte() {
         if (pubDetectee) return;
 
-        // Détection multi-critères : Iframe, vidéo ou présence d'éléments injectés
         const iframe = conteneur.querySelector('iframe');
         const video = conteneur.querySelector('video');
-        
-        // Vérifie si Clickadilla a créé des balises à l'intérieur du conteneur cible
-        const zoneSpecifique = conteneur.firstElementChild;
-        const aDesEnfantsInjected = conteneur.childElementCount > 1 || 
-            (zoneSpecifique && zoneSpecifique.childElementCount > 0);
+
+        // Récupère uniquement les éléments HTML injectés en ignorant la balise <script>
+        const elementsVisuels = Array.from(conteneur.querySelectorAll('*')).filter(
+            el => el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE'
+        );
 
         if (iframe) {
-            // Si l'iframe est déjà chargée
             if (iframe.complete || iframe.readyState === "complete") {
                 validerSucces();
             } else {
                 iframe.onload = validerSucces;
-                // Secours en cas de restriction Cross-Origin
                 setTimeout(validerSucces, 1000);
             }
         } else if (video) {
             validerSucces();
-        } else if (aDesEnfantsInjected) {
-            // Le script a injecté le lecteur HTML5 Clickadilla
+        } else if (elementsVisuels.length > 0) {
+            // Un vrai lecteur ou conteneur publicitaire Clickadilla a été créé
             setTimeout(validerSucces, 600);
         }
     }
@@ -827,15 +840,15 @@ function initierMissionVideo(fournisseur, zoneId, uniqueId, points) {
     // 1. Test immédiat
     testerContenuInjecte();
 
-    // 2. Surveillance dynamique avec MutationObserver
+    // 2. Surveillance dynamique du DOM avec MutationObserver
     observer = new MutationObserver(() => {
         testerContenuInjecte();
     });
 
     observer.observe(conteneur, { childList: true, subtree: true });
 
-    // 3. Sécurité : Délai d'expiration de 9 secondes
-    setTimeout(() => {
+    // 3. Sécurité : Délai d'expiration de 9 secondes max
+    timerPanne = setTimeout(() => {
         if (!pubDetectee) {
             if (observer) observer.disconnect();
             surEchec();
@@ -1032,6 +1045,11 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
 // ======================================================
 // 4. GESTION DE LA PANNE / FERMETURE
 // ======================================================
+        function declencherPanneAffichagePub() {
+    document.getElementById("ad-stream-loader").style.display = "none";
+    alert("Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.");
+    fermerModaleActive();
+}
 
         function fermerModaleActive() {
     clearInterval(compteReboursDeTrente); // On arrête le chrono en cours
