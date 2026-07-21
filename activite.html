@@ -715,8 +715,10 @@ window.addEventListener("DOMContentLoaded", () => {
         // ==========================================
         // ÉTAPE 3 : INITIALISATION DES MISSIONS (VIDÉOS & BANNIÈRES MULTIPLES)
         // ==========================================
-       function initierMissionVideo(index, zoneId, uniqueId, points) {
-    // CORRECTION POPUNDER : On intercepte l'événement global pour détruire le vol de clic
+      // ======================================================
+// 1. INITIATION DE LA MISSION VIDÉO (CORRIGÉE)
+// ======================================================
+function initierMissionVideo(index, zoneId, uniqueId, points) {
     const e = window.event;
     if (e) {
         e.preventDefault();
@@ -737,13 +739,15 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("finger-indicator").style.display = "flex"; 
     document.getElementById("zone-pub-alternative").style.display = "none";
     
-    // Masquer les autres conteneurs vidéo de sécurité
+    // Masquer les autres conteneurs vidéo
     for (let i = 1; i <= 10; i++) {
         const cibleTemporaire = document.getElementById("zone-pub-video" + i);
         if (cibleTemporaire) cibleTemporaire.style.display = "none";
     }
     
-    const conteneurCible = document.getElementById("zone-pub-video" + index);
+    const idZoneActuelle = "zone-pub-video" + index;
+    const conteneurCible = document.getElementById(idZoneActuelle);
+    
     if (conteneurCible) {
         conteneurCible.style.display = "block";
         conteneurCible.innerHTML = ""; 
@@ -757,25 +761,72 @@ window.addEventListener("DOMContentLoaded", () => {
         conteneurCible.appendChild(scriptVideo);
     }
     
-    // 1. On ouvre la modale noire
-    ouvrirCadreModaleGlobal();
-    
-    // 2. DÉTECTION VIDÉO INTELLIGENTE (Après 4.5 secondes)
-    const idZoneActuelle = "zone-pub-video" + index;
-    setTimeout(() => {
-        const conteneur = document.getElementById(idZoneActuelle);
-        
-        // On vérifie si le script Clickadilla a réussi à injecter du contenu visible 
-        // (que ce soit une iframe, une balise video, ou des nouveaux éléments HTML)
-        if (conteneur && (conteneur.querySelector('iframe') || conteneur.querySelector('video') || conteneur.children.length > 1)) {
-            // SUCCÈS : La vidéo est là !
-            document.getElementById("ad-stream-loader").style.display = "none";
-            verificationPubChargee = true;
-        } else {
-            // ÉCHEC : Le conteneur est resté vide (AdBlocker détecté)
-            declencherPanneAffichagePub();
+    // ON OUVRE LA MODALE EN LUI PASSANT L'ID DU CONTENEUR VIDÉO !
+    ouvrirCadreModaleGlobal(idZoneActuelle);
+}
+        // ======================================================
+// 3. SURVEILLANCE UNIVERSELLE (BANNIÈRES & VIDÉOS)
+// ======================================================
+function surveillerPresencePub(idConteneur, surSucces, surEchec) {
+    const conteneur = document.getElementById(idConteneur);
+    if (!conteneur) {
+        surEchec();
+        return;
+    }
+
+    let pubDetectee = false;
+
+    // Fonction de validation finale de la présence de la pub
+    function validerSucces() {
+        if (!pubDetectee) {
+            pubDetectee = true;
+            surSucces();
         }
-    }, 4500); 
+    }
+
+    // Vérifie si du contenu publicitaire (iframe, video, ou lecteur injecté) est présent
+    function testerContenuInjecte() {
+        const iframe = conteneur.querySelector('iframe');
+        const video = conteneur.querySelector('video');
+        // Clickadilla vidéo injecte souvent une div ou une structure avec plusieurs enfants
+        const elementsInjectes = conteneur.children.length > 1;
+
+        if (iframe) {
+            // Si c'est une iframe, on attend son événement onload réel
+            iframe.onload = validerSucces;
+            try {
+                if (iframe.contentDocument && iframe.contentDocument.readyState === "complete") {
+                    setTimeout(validerSucces, 300);
+                }
+            } catch(e) {
+                // cross-origin
+            }
+        } else if (video || elementsInjectes) {
+            // Si c'est une balise video ou du HTML dynamique injecté par Clickadilla vidéo
+            validerSucces();
+        }
+    }
+
+    // 1. Test immédiat
+    testerContenuInjecte();
+
+    // 2. Si rien n'est encore prêt, on surveille l'injection dans le DOM via MutationObserver
+    const observer = new MutationObserver((mutations, obs) => {
+        testerContenuInjecte();
+        if (pubDetectee) {
+            obs.disconnect();
+        }
+    });
+
+    observer.observe(conteneur, { childList: true, subtree: true });
+
+    // 3. Sécurité : Si au bout de 9 secondes rien n'est fonctionnel = Panne/No-Fill
+    setTimeout(() => {
+        if (!pubDetectee) {
+            observer.disconnect();
+            surEchec();
+        }
+    }, 9000);
 }
 
 // ======================================================
