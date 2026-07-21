@@ -979,7 +979,7 @@ function ouvrirCadreModaleGlobal(idConteneurPub) {
 
 
 // ======================================================
-// 3. SURVEILLANCE DU CHARGEMENT RÉEL (ONLOAD)
+// 3. SURVEILLANCE DU CHARGEMENT (COMPATIBLE BANNIÈRE & VIDÉO)
 // ======================================================
 function surveillerPresencePub(idConteneur, surSucces, surEchec) {
     const conteneur = document.getElementById(idConteneur);
@@ -989,51 +989,53 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
     }
 
     let pubDetectee = false;
+    let observer = null;
 
-    // Attache l'événement ONLOAD à l'iframe pour savoir quand le visuel est là
-    function ecouterChargementIframe(iframeElement) {
-        // Dès que l'iframe a fini de télécharger son contenu
-        iframeElement.onload = function() {
-            if (!pubDetectee) {
-                pubDetectee = true;
-                surSucces(); // LANCE LE CHRONO ICI
-            }
-        };
-
-        // Sécurité si l'iframe s'est chargée ultra-rapidement
-        try {
-            if (iframeElement.contentDocument && iframeElement.contentDocument.readyState === "complete") {
-                setTimeout(() => {
-                    if (!pubDetectee) {
-                        pubDetectee = true;
-                        surSucces();
-                    }
-                }, 500);
-            }
-        } catch(e) {
-            // Iframe externe (Clickadilla) : l'événement onload prend le relais automatiquement
+    function validerSucces() {
+        if (!pubDetectee) {
+            pubDetectee = true;
+            if (observer) observer.disconnect();
+            surSucces();
         }
     }
 
-    // 1. Si l'iframe existe déjà dans le conteneur
-    const iframeExistante = conteneur.querySelector('iframe');
-    if (iframeExistante) {
-        ecouterChargementIframe(iframeExistante);
-    } else {
-        // 2. Sinon on observe le DOM jusqu'à son apparition puis on écoute son onload
-        const observer = new MutationObserver((mutations, obs) => {
-            const nouvelleIframe = conteneur.querySelector('iframe');
-            if (nouvelleIframe) {
-                obs.disconnect(); // On arrête d'observer le DOM
-                ecouterChargementIframe(nouvelleIframe); // On passe à l'écoute de l'onload
+    function testerPresencePublicite() {
+        if (pubDetectee) return;
+
+        const iframe = conteneur.querySelector('iframe');
+        const video = conteneur.querySelector('video');
+        
+        // Vérifie si le script Clickadilla a créé des éléments enfants dans la zone
+        const conteneurEnfant = conteneur.firstElementChild;
+        const aInjecteDesElements = conteneur.children.length > 1 || 
+            (conteneurEnfant && conteneurEnfant.children.length > 0);
+
+        if (iframe) {
+            iframe.onload = validerSucces;
+            // Valide si l'iframe est déjà chargée
+            if (iframe.complete || iframe.readyState === "complete") {
+                validerSucces();
             }
-        });
-        observer.observe(conteneur, { childList: true, subtree: true });
+        } else if (video || aInjecteDesElements) {
+            // Un lecteur vidéo JS ou du contenu HTML5 a été injecté
+            setTimeout(validerSucces, 500);
+        }
     }
 
-    // Sécurité : Si au bout de 9 secondes rien n'est chargé = Panne/No-Fill
+    // 1. Test immédiat au cas où la pub est ultra rapide
+    testerPresencePublicite();
+
+    // 2. Écoute dynamique de l'injection d'éléments dans le DOM
+    observer = new MutationObserver(() => {
+        testerPresencePublicite();
+    });
+
+    observer.observe(conteneur, { childList: true, subtree: true });
+
+    // 3. Sécurité : Si après 9 secondes rien n'est apparu (No-Fill / Blocked)
     setTimeout(() => {
         if (!pubDetectee) {
+            if (observer) observer.disconnect();
             surEchec();
         }
     }, 9000);
