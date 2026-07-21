@@ -844,7 +844,7 @@ function initierMissionVideo(fournisseur, zoneId, uniqueId, points) {
 }
 
 // ======================================================
-// 1. INITIATION DE LA MISSION BANNIÈRE
+// 1. INITIATION DES BANNIÈRES (CORRIGÉE)
 // ======================================================
 function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
     const e = window.event;
@@ -857,29 +857,29 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
         alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
         return;
     }
-
+    
     missionActiveType = "banniere";
     missionActiveId = uniqueId;
     missionActivePoints = points;
-
+    
     document.getElementById("ad-stream-loader").style.display = "flex";
-    document.getElementById("finger-indicator").style.display = "none";
-
-    // Masquer les blocs vidéo s'ils étaient affichés
+    document.getElementById("finger-indicator").style.display = "none"; 
+    
+    // Masquer les blocs vidéo
     for (let i = 1; i <= 10; i++) {
         const cibleTemporaire = document.getElementById("zone-pub-video" + i);
         if (cibleTemporaire) cibleTemporaire.style.display = "none";
     }
-
+    
     const blocAlternative = document.getElementById("zone-pub-alternative");
     const conteneurInterne = document.getElementById("box-banner-inside-modal");
-
+    
     blocAlternative.style.display = "block";
     conteneurInterne.innerHTML = ""; // Vider le conteneur
 
     try {
         if (fournisseur.startsWith("adsterra") || fournisseur === "advertica") {
-            // Adsterra / Advertica via Iframe
+            // Création de l'iframe sécurisée pour Adsterra / Advertica
             let divEnveloppe = document.createElement("div");
             divEnveloppe.className = "ad-zone-160x600";
             divEnveloppe.style.margin = "10px auto";
@@ -891,7 +891,7 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
             cadreIframe.style.border = "none";
             cadreIframe.style.scrolling = "no";
             cadreIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups");
-
+            
             let htmlContenu = `
                 <html>
                 <body style="margin:0; padding:0; display:flex; justify-content:center;">
@@ -908,28 +908,21 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
                 </body>
                 </html>
             `;
-
+            
             divEnveloppe.appendChild(cadreIframe);
             conteneurInterne.appendChild(divEnveloppe);
-
+            
             cadreIframe.contentWindow.document.open();
             cadreIframe.contentWindow.document.write(htmlContenu);
             cadreIframe.contentWindow.document.close();
 
         } else {
-            // Clickadilla via Script JS dynamique
-            // 1. On crée la div cible réclamée par Clickadilla (ex: <div id="1496058"></div>)
-            let divCible = document.createElement("div");
-            divCible.id = clePub;
-            conteneurInterne.appendChild(divCible);
-
-            // 2. On injecte le script publicitaire Clickadilla
-            let scriptBanniere = document.createElement("script");
-            scriptBanniere.async = true;
-            scriptBanniere.dataset.cfasync = "false";
-            scriptBanniere.src = `https://zone.clickadilla.com/banner.js?zone=${clePub}`;
-
-            conteneurInterne.appendChild(scriptBanniere);
+            // Bannière Clickadilla : On ajoute l'élément cible avec l'ID requis (clePub) 
+            // pour éliminer l'erreur "No banner mount target id found"
+            conteneurInterne.innerHTML = `
+                <div id="${clePub}"></div>
+                <iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="300" height="250" style="border:none; overflow:hidden;"></iframe>
+            `;
         }
 
     } catch(err) {
@@ -937,7 +930,7 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
         return;
     }
 
-    // Ouverture de la modale en surveillant le conteneur
+    // Ouverture de la modale avec l'ID du conteneur
     ouvrirCadreModaleGlobal("box-banner-inside-modal");
 }
 
@@ -946,7 +939,6 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
 // 2. OUVERTURE DE LA MODALE & DÉTECTION
 // ======================================================
 function ouvrirCadreModaleGlobal(idConteneurPub) {
-    // 1. Affichage de la modale noire
     document.getElementById("global-pub-modal").style.display = "flex";
     document.getElementById("btn-claim-points").disabled = true;
     document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente de la pub...`;
@@ -954,23 +946,21 @@ function ouvrirCadreModaleGlobal(idConteneurPub) {
     tempsRestantTache = 30;
     verificationPubChargee = false;
 
-    // 2. Détection du chargement RÉEL de la pub (onload)
     surveillerPresencePub(
         idConteneurPub, 
         
-        // SI LA PUB EST RÉELLEMENT CHARGÉE (Succès) :
+        // SUCCÈS :
         function() {
             verificationPubChargee = true;
             document.getElementById("ad-stream-loader").style.display = "none";
             document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-play"></i> Flux détecté`;
             
-            // Si c'est une bannière, le compte à rebours démarre maintenant !
             if (missionActiveType === "banniere") {
                 engagerCompteReboursAutomatique();
             }
         }, 
         
-        // SI LA PUB NE CHARGE PAS AU BOUT DE 9 SECONDES (Échec / No-Fill) :
+        // ÉCHEC (9s sans contenu) :
         function() {
             declencherPanneAffichagePub();
         }
@@ -979,7 +969,7 @@ function ouvrirCadreModaleGlobal(idConteneurPub) {
 
 
 // ======================================================
-// 3. SURVEILLANCE DU CHARGEMENT (COMPATIBLE BANNIÈRE & VIDÉO)
+// 3. SURVEILLANCE UNIVERSELLE (BANNIÈRES & VIDÉOS)
 // ======================================================
 function surveillerPresencePub(idConteneur, surSucces, surEchec) {
     const conteneur = document.getElementById(idConteneur);
@@ -989,53 +979,50 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
     }
 
     let pubDetectee = false;
-    let observer = null;
 
     function validerSucces() {
         if (!pubDetectee) {
             pubDetectee = true;
-            if (observer) observer.disconnect();
             surSucces();
         }
     }
 
-    function testerPresencePublicite() {
-        if (pubDetectee) return;
-
+    function testerContenuInjecte() {
         const iframe = conteneur.querySelector('iframe');
         const video = conteneur.querySelector('video');
-        
-        // Vérifie si le script Clickadilla a créé des éléments enfants dans la zone
-        const conteneurEnfant = conteneur.firstElementChild;
-        const aInjecteDesElements = conteneur.children.length > 1 || 
-            (conteneurEnfant && conteneurEnfant.children.length > 0);
+        const elementsInjectes = conteneur.children.length > 1;
 
         if (iframe) {
             iframe.onload = validerSucces;
-            // Valide si l'iframe est déjà chargée
-            if (iframe.complete || iframe.readyState === "complete") {
-                validerSucces();
+            try {
+                if (iframe.contentDocument && iframe.contentDocument.readyState === "complete") {
+                    setTimeout(validerSucces, 300);
+                }
+            } catch(e) {
+                // Cross-origin
             }
-        } else if (video || aInjecteDesElements) {
-            // Un lecteur vidéo JS ou du contenu HTML5 a été injecté
-            setTimeout(validerSucces, 500);
+        } else if (video || elementsInjectes) {
+            validerSucces();
         }
     }
 
-    // 1. Test immédiat au cas où la pub est ultra rapide
-    testerPresencePublicite();
+    // 1. Test immédiat
+    testerContenuInjecte();
 
-    // 2. Écoute dynamique de l'injection d'éléments dans le DOM
-    observer = new MutationObserver(() => {
-        testerPresencePublicite();
+    // 2. Surveillance du DOM (MutationObserver)
+    const observer = new MutationObserver((mutations, obs) => {
+        testerContenuInjecte();
+        if (pubDetectee) {
+            obs.disconnect();
+        }
     });
 
     observer.observe(conteneur, { childList: true, subtree: true });
 
-    // 3. Sécurité : Si après 9 secondes rien n'est apparu (No-Fill / Blocked)
+    // 3. Compte à rebours de sécurité (9 secondes max)
     setTimeout(() => {
         if (!pubDetectee) {
-            if (observer) observer.disconnect();
+            observer.disconnect();
             surEchec();
         }
     }, 9000);
