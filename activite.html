@@ -718,7 +718,7 @@ window.addEventListener("DOMContentLoaded", () => {
       // ======================================================
 // 1. INITIATION DE LA MISSION VIDÉO (CORRIGÉE)
 // ======================================================
-function initierMissionVideo(index, zoneId, uniqueId, points) {
+function initierMissionVideo(fournisseur, zoneId, uniqueId, points) {
     const e = window.event;
     if (e) {
         e.preventDefault();
@@ -729,40 +729,54 @@ function initierMissionVideo(index, zoneId, uniqueId, points) {
         alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
         return;
     }
-    
+
     missionActiveType = "video";
     missionActiveId = uniqueId;
     missionActivePoints = points;
-    
-    // Configuration de l'affichage de la modale
+
     document.getElementById("ad-stream-loader").style.display = "flex";
-    document.getElementById("finger-indicator").style.display = "flex"; 
-    document.getElementById("zone-pub-alternative").style.display = "none";
-    
-    // Masquer les autres conteneurs vidéo
-    for (let i = 1; i <= 10; i++) {
-        const cibleTemporaire = document.getElementById("zone-pub-video" + i);
-        if (cibleTemporaire) cibleTemporaire.style.display = "none";
+    document.getElementById("finger-indicator").style.display = "none";
+
+    // Masquer le bloc bannière alternatif
+    const blocAlternative = document.getElementById("zone-pub-alternative");
+    if (blocAlternative) blocAlternative.style.display = "none";
+
+    // Cibler le conteneur vidéo principal
+    const conteneurVideo = document.getElementById("zone-pub-video1");
+    if (!conteneurVideo) {
+        declencherPanneAffichagePub();
+        return;
     }
-    
-    const idZoneActuelle = "zone-pub-video" + index;
-    const conteneurCible = document.getElementById(idZoneActuelle);
-    
-    if (conteneurCible) {
-        conteneurCible.style.display = "block";
-        conteneurCible.innerHTML = ""; 
-        
-        // Injection du script vidéo Clickadilla
+
+    conteneurVideo.style.display = "block";
+    conteneurVideo.innerHTML = ""; // Vider les injections précédentes
+
+    try {
+        // 1. Création de la div réceptrice pour Clickadilla
+        let divCibleVideo = document.createElement("div");
+        divCibleVideo.id = zoneId;
+        conteneurVideo.appendChild(divCibleVideo);
+
+        // 2. Injection du script vidéo In-Stream
         let scriptVideo = document.createElement("script");
-        scriptVideo.type = "text/javascript";
-        scriptVideo.src = `https://zone.clickadilla.com/tag.js?zone=${zoneId}`;
         scriptVideo.async = true;
-        scriptVideo.onerror = () => declencherPanneAffichagePub();
-        conteneurCible.appendChild(scriptVideo);
+        scriptVideo.dataset.cfasync = "false";
+        scriptVideo.src = `https://zone.clickadilla.com/tag.js?zone=${zoneId}`;
+
+        // Sécurité : si le script est bloqué par le réseau/AdBlock (ERR_NAME_NOT_RESOLVED)
+        scriptVideo.onerror = () => {
+            declencherPanneAffichagePub();
+        };
+
+        conteneurVideo.appendChild(scriptVideo);
+
+    } catch(err) {
+        declencherPanneAffichagePub();
+        return;
     }
-    
-    // ON OUVRE LA MODALE EN LUI PASSANT L'ID DU CONTENEUR VIDÉO !
-    ouvrirCadreModaleGlobal(idZoneActuelle);
+
+    // Ouvrir la modale en surveillant le conteneur vidéo
+    ouvrirCadreModaleGlobal("zone-pub-video1");
 }
         // ======================================================
 // 3. SURVEILLANCE UNIVERSELLE (BANNIÈRES & VIDÉOS)
@@ -833,7 +847,6 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
 // 1. INITIATION DE LA MISSION BANNIÈRE
 // ======================================================
 function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
-    // Interception de l'événement global
     const e = window.event;
     if (e) {
         e.preventDefault();
@@ -844,29 +857,29 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
         alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
         return;
     }
-    
+
     missionActiveType = "banniere";
     missionActiveId = uniqueId;
     missionActivePoints = points;
-    
+
     document.getElementById("ad-stream-loader").style.display = "flex";
-    document.getElementById("finger-indicator").style.display = "none"; 
-    
-    // Masquer les blocs vidéo
+    document.getElementById("finger-indicator").style.display = "none";
+
+    // Masquer les blocs vidéo s'ils étaient affichés
     for (let i = 1; i <= 10; i++) {
         const cibleTemporaire = document.getElementById("zone-pub-video" + i);
         if (cibleTemporaire) cibleTemporaire.style.display = "none";
     }
-    
+
     const blocAlternative = document.getElementById("zone-pub-alternative");
     const conteneurInterne = document.getElementById("box-banner-inside-modal");
-    
+
     blocAlternative.style.display = "block";
     conteneurInterne.innerHTML = ""; // Vider le conteneur
 
     try {
         if (fournisseur.startsWith("adsterra") || fournisseur === "advertica") {
-            // Création de l'iframe sécurisée avec Adsterra
+            // Adsterra / Advertica via Iframe
             let divEnveloppe = document.createElement("div");
             divEnveloppe.className = "ad-zone-160x600";
             divEnveloppe.style.margin = "10px auto";
@@ -877,10 +890,8 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
             cadreIframe.style.height = "600px";
             cadreIframe.style.border = "none";
             cadreIframe.style.scrolling = "no";
-            
-            // Protection sandbox
             cadreIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups");
-            
+
             let htmlContenu = `
                 <html>
                 <body style="margin:0; padding:0; display:flex; justify-content:center;">
@@ -897,17 +908,28 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
                 </body>
                 </html>
             `;
-            
+
             divEnveloppe.appendChild(cadreIframe);
             conteneurInterne.appendChild(divEnveloppe);
-            
+
             cadreIframe.contentWindow.document.open();
             cadreIframe.contentWindow.document.write(htmlContenu);
             cadreIframe.contentWindow.document.close();
 
         } else {
-            // Bannière standard Clickadilla
-            conteneurInterne.innerHTML = `<iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="300" height="250" style="border:none; overflow:hidden;"></iframe>`;
+            // Clickadilla via Script JS dynamique
+            // 1. On crée la div cible réclamée par Clickadilla (ex: <div id="1496058"></div>)
+            let divCible = document.createElement("div");
+            divCible.id = clePub;
+            conteneurInterne.appendChild(divCible);
+
+            // 2. On injecte le script publicitaire Clickadilla
+            let scriptBanniere = document.createElement("script");
+            scriptBanniere.async = true;
+            scriptBanniere.dataset.cfasync = "false";
+            scriptBanniere.src = `https://zone.clickadilla.com/banner.js?zone=${clePub}`;
+
+            conteneurInterne.appendChild(scriptBanniere);
         }
 
     } catch(err) {
@@ -915,7 +937,7 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
         return;
     }
 
-    // On ouvre la modale EN LUI PASSANT L'ID DU CONTENEUR
+    // Ouverture de la modale en surveillant le conteneur
     ouvrirCadreModaleGlobal("box-banner-inside-modal");
 }
 
