@@ -778,8 +778,11 @@ window.addEventListener("DOMContentLoaded", () => {
     }, 4500); 
 }
 
+// ======================================================
+// 1. INITIATION DE LA MISSION BANNIÈRE
+// ======================================================
 function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
-    // CORRECTION POPUNDER : On intercepte l'événement global pour détruire le vol de clic
+    // Interception de l'événement global
     const e = window.event;
     if (e) {
         e.preventDefault();
@@ -808,51 +811,51 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
     const conteneurInterne = document.getElementById("box-banner-inside-modal");
     
     blocAlternative.style.display = "block";
-    conteneurInterne.innerHTML = ""; 
+    conteneurInterne.innerHTML = ""; // Vider le conteneur
 
     try {
         if (fournisseur.startsWith("adsterra") || fournisseur === "advertica") {
-            for (let step = 0; step < 3; step++) {
-                let divEnveloppe = document.createElement("div");
-                divEnveloppe.className = "ad-zone-160x600";
-                divEnveloppe.style.margin = "10px auto";
-                divEnveloppe.style.textAlign = "center";
+            // Création de l'iframe sécurisée avec Adsterra
+            let divEnveloppe = document.createElement("div");
+            divEnveloppe.className = "ad-zone-160x600";
+            divEnveloppe.style.margin = "10px auto";
+            divEnveloppe.style.textAlign = "center";
 
-                let cadreIframe = document.createElement("iframe");
-                cadreIframe.style.width = "160px";
-                cadreIframe.style.height = "600px";
-                cadreIframe.style.border = "none";
-                cadreIframe.style.scrolling = "no";
-                
-                // SÉCURITÉ MAXIMUM : Empêche cette pub de rediriger ou manipuler ton site principal
-                cadreIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups");
-                
-                let htmlContenu = `
-                    <html>
-                    <body style="margin:0; padding:0; display:flex; justify-content:center;">
-                        <script type="text/javascript">
-                            atOptions = {
-                                'key' : '${clePub}',
-                                'format' : 'iframe',
-                                'height' : 600,
-                                'width' : 160,
-                                'params' : {}
-                            };
-                        <\/script>
-                        <script type="text/javascript" src="https://www.highperformanceformat.com/${clePub}/invoke.js"><\/script>
-                    </body>
-                    </html>
-                `;
-                
-                divEnveloppe.appendChild(cadreIframe);
-                conteneurInterne.appendChild(divEnveloppe);
-                
-                cadreIframe.contentWindow.document.open();
-                cadreIframe.contentWindow.document.write(htmlContenu);
-                cadreIframe.contentWindow.document.close();
-            }
+            let cadreIframe = document.createElement("iframe");
+            cadreIframe.style.width = "160px";
+            cadreIframe.style.height = "600px";
+            cadreIframe.style.border = "none";
+            cadreIframe.style.scrolling = "no";
+            
+            // Protection sandbox
+            cadreIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups");
+            
+            let htmlContenu = `
+                <html>
+                <body style="margin:0; padding:0; display:flex; justify-content:center;">
+                    <script type="text/javascript">
+                        atOptions = {
+                            'key' : '${clePub}',
+                            'format' : 'iframe',
+                            'height' : 600,
+                            'width' : 160,
+                            'params' : {}
+                        };
+                    <\/script>
+                    <script type="text/javascript" src="https://www.highperformanceformat.com/${clePub}/invoke.js"><\/script>
+                </body>
+                </html>
+            `;
+            
+            divEnveloppe.appendChild(cadreIframe);
+            conteneurInterne.appendChild(divEnveloppe);
+            
+            cadreIframe.contentWindow.document.open();
+            cadreIframe.contentWindow.document.write(htmlContenu);
+            cadreIframe.contentWindow.document.close();
+
         } else {
-            // Fallback Clickadilla Bannières standard
+            // Bannière standard Clickadilla
             conteneurInterne.innerHTML = `<iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="300" height="250" style="border:none; overflow:hidden;"></iframe>`;
         }
 
@@ -861,62 +864,117 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
         return;
     }
 
-    // 1. On ouvre la modale noire
-    ouvrirCadreModaleGlobal();
-
-    // 2. DÉTECTION BANNIÈRE FIABLE (Après 4.5 secondes)
-    setTimeout(() => {
-        const conteneurBanniere = document.getElementById("box-banner-inside-modal");
-        
-        // On vérifie si l'iframe s'est bien générée et n'est pas bloquée
-        if (conteneurBanniere && (conteneurBanniere.querySelector('iframe') || conteneurBanniere.children.length > 0)) {
-            // SUCCÈS : La bannière est chargée
-            document.getElementById("ad-stream-loader").style.display = "none";
-            verificationPubChargee = true;
-            engagerCompteReboursAutomatique(); 
-        } else {
-            // ÉCHEC : Rien n'est apparu (AdBlocker actif)
-            declencherPanneAffichagePub();
-        }
-    }, 4500);
+    // On ouvre la modale EN LUI PASSANT L'ID DU CONTENEUR
+    ouvrirCadreModaleGlobal("box-banner-inside-modal");
 }
 
-function declencherPanneAffichagePub() {
-    document.getElementById("ad-stream-loader").style.display = "none";
-    alert("Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.");
-    fermerModaleActive();
-}
-        function ouvrirCadreModaleGlobal(idConteneurPub) {
-    // 1. On affiche la modale noire
+
+// ======================================================
+// 2. OUVERTURE DE LA MODALE & DÉTECTION
+// ======================================================
+function ouvrirCadreModaleGlobal(idConteneurPub) {
+    // 1. Affichage de la modale noire
     document.getElementById("global-pub-modal").style.display = "flex";
     document.getElementById("btn-claim-points").disabled = true;
-    document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente...`;
+    document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente de la pub...`;
     
     tempsRestantTache = 30;
     verificationPubChargee = false;
 
-    // 2. On lance la VRAIE détection anti-AdBlock sur le conteneur actif
-    verifierAffichageReelPub(
+    // 2. Détection du chargement RÉEL de la pub (onload)
+    surveillerPresencePub(
         idConteneurPub, 
         
-        // SI LA PUB EST PRÉSENTE (Succès) :
+        // SI LA PUB EST RÉELLEMENT CHARGÉE (Succès) :
         function() {
             verificationPubChargee = true;
+            document.getElementById("ad-stream-loader").style.display = "none";
             document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-play"></i> Flux détecté`;
             
-            // Si c'est une bannière, le chrono se lance tout seul
+            // Si c'est une bannière, le compte à rebours démarre maintenant !
             if (missionActiveType === "banniere") {
                 engagerCompteReboursAutomatique();
             }
         }, 
         
-        // SI LA PUB EST BLOQUÉE OU VIDE (Échec) :
+        // SI LA PUB NE CHARGE PAS AU BOUT DE 9 SECONDES (Échec / No-Fill) :
         function() {
             declencherPanneAffichagePub();
         }
     );
 }
 
+
+// ======================================================
+// 3. SURVEILLANCE DU CHARGEMENT RÉEL (ONLOAD)
+// ======================================================
+function surveillerPresencePub(idConteneur, surSucces, surEchec) {
+    const conteneur = document.getElementById(idConteneur);
+    if (!conteneur) {
+        surEchec();
+        return;
+    }
+
+    let pubDetectee = false;
+
+    // Attache l'événement ONLOAD à l'iframe pour savoir quand le visuel est là
+    function ecouterChargementIframe(iframeElement) {
+        // Dès que l'iframe a fini de télécharger son contenu
+        iframeElement.onload = function() {
+            if (!pubDetectee) {
+                pubDetectee = true;
+                surSucces(); // LANCE LE CHRONO ICI
+            }
+        };
+
+        // Sécurité si l'iframe s'est chargée ultra-rapidement
+        try {
+            if (iframeElement.contentDocument && iframeElement.contentDocument.readyState === "complete") {
+                setTimeout(() => {
+                    if (!pubDetectee) {
+                        pubDetectee = true;
+                        surSucces();
+                    }
+                }, 500);
+            }
+        } catch(e) {
+            // Iframe externe (Clickadilla) : l'événement onload prend le relais automatiquement
+        }
+    }
+
+    // 1. Si l'iframe existe déjà dans le conteneur
+    const iframeExistante = conteneur.querySelector('iframe');
+    if (iframeExistante) {
+        ecouterChargementIframe(iframeExistante);
+    } else {
+        // 2. Sinon on observe le DOM jusqu'à son apparition puis on écoute son onload
+        const observer = new MutationObserver((mutations, obs) => {
+            const nouvelleIframe = conteneur.querySelector('iframe');
+            if (nouvelleIframe) {
+                obs.disconnect(); // On arrête d'observer le DOM
+                ecouterChargementIframe(nouvelleIframe); // On passe à l'écoute de l'onload
+            }
+        });
+        observer.observe(conteneur, { childList: true, subtree: true });
+    }
+
+    // Sécurité : Si au bout de 9 secondes rien n'est chargé = Panne/No-Fill
+    setTimeout(() => {
+        if (!pubDetectee) {
+            surEchec();
+        }
+    }, 9000);
+}
+
+
+// ======================================================
+// 4. GESTION DE LA PANNE / FERMETURE
+// ======================================================
+function declencherPanneAffichagePub() {
+    document.getElementById("ad-stream-loader").style.display = "none";
+    alert("Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.");
+    fermerModaleActive();
+}
         function fermerModaleActive() {
     clearInterval(compteReboursDeTrente); // On arrête le chrono en cours
     document.getElementById("global-pub-modal").style.display = "none"; // On cache la modale
@@ -1213,32 +1271,6 @@ function declencherPanneAffichagePub() {
                 cadenasVip.style.display = "flex"; // On affiche le cadenas de blocage
             }
         }
-        function verifierAffichageReelPub(idConteneur, callbackSucces, callbackEchec) {
-    // On laisse 3 secondes maximum à la pub pour charger et s'afficher
-    setTimeout(() => {
-        const conteneur = document.getElementById(idConteneur);
-        
-        if (!conteneur) {
-            return callbackEchec();
-        }
-
-        // 1. Détection par la taille (Si AdBlock ou panne, la hauteur reste à 0)
-        const hauteurReelle = conteneur.offsetHeight;
-        const largeurReelle = conteneur.offsetWidth;
-
-        // 2. Détection par le contenu (Vérifie si la régie a injecté du HTML ou une iframe)
-        const contientDuContenu = conteneur.innerHTML.trim().length > 0;
-
-        // Si le conteneur est visible, a une taille et contient du code
-        if (hauteurReelle > 10 && largeurReelle > 10 && contientDuContenu) {
-            console.log(`✅ Pub validée sur #${idConteneur} (${hauteurReelle}px)`);
-            callbackSucces();
-        } else {
-            console.warn(`❌ Fraude ou Panne détectée sur #${idConteneur}. Taille: ${hauteurReelle}px`);
-            callbackEchec();
-        }
-    }, 3000); // 3000 ms = 3 secondes d'attente réseau
-}
     </script>
 </body>
 </html>
