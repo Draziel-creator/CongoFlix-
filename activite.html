@@ -970,7 +970,7 @@ window.addEventListener("DOMContentLoaded", () => {
 let timerDecompteInterval = null;
 
 // ======================================================
-// 1. INITIALISATION DE LA MISSION VIDÉO
+// 1. INITIALISATION DE LA MISSION VIDÉO (CORRIGÉE)
 // ======================================================
 function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1066,7 +1066,15 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
                     if (finger) finger.style.display = "flex";
 
                     if (btnClaim) {
-                        btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo pour lancer';
+                        // DEBLOQUER LE BOUTON ET ATTACHER L'ÉVÉNEMENT DE CLIC
+                        btnClaim.disabled = false;
+                        btnClaim.classList.add("ready");
+                        btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez ici pour lancer le chrono (30s)';
+                        
+                        // Si l'utilisateur clique sur le bouton, cela lance le décompte !
+                        btnClaim.onclick = function(event) {
+                            declencherPlayFlux(event, uniqueId);
+                        };
                     }
                 },
                 () => {
