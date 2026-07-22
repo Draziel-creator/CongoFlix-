@@ -185,6 +185,115 @@
             border: 1px dashed rgba(255, 255, 255, 0.1); position: relative;
             display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
+        .btn-modal-claim.pret-a-reclamer {
+    background-color: #28a745 !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+    animation: pulseGreenBtn 1.5s infinite;
+}
+
+@keyframes pulseGreenBtn {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+        /* OVERLAY MODALE ALERTE */
+.custom-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10, 14, 29, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 999999; /* Toujours au-dessus de tout */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* BOÎTE D'ALERTE */
+.custom-alert-box {
+    background: #181d36;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    animation: popInAlert 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popInAlert {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* ICÔNE D'AVERTISSEMENT ANIMÉE */
+.custom-alert-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px auto;
+    background: rgba(255, 179, 0, 0.15);
+    border: 2px solid #ffb300;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-alert-icon i {
+    font-size: 30px;
+    color: #ffb300;
+}
+
+/* TITRE ET TEXTE */
+.custom-alert-box h3 {
+    margin: 0 0 10px 0;
+    color: #ffffff;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.custom-alert-box p {
+    margin: 0 0 22px 0;
+    color: #a0a5c0;
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
+/* BOUTON D'ACTION */
+.btn-custom-alert-ok {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0052d4, #4364f7);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 8px 20px rgba(67, 100, 247, 0.4);
+}
+
+.btn-custom-alert-ok:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(67, 100, 247, 0.6);
+}
+
+.btn-custom-alert-ok:active {
+    transform: translateY(0);
+}
 
         /* Style du bouton X unique en haut à gauche */
         .btn-fermer-modal {
@@ -220,6 +329,36 @@
             width: 28px; height: 28px; border: 3px solid rgba(0,255,204,0.1);
             border-top: 3px solid var(--accent-cyan); border-radius: 50%; animation: spin 0.8s linear infinite;
         }
+        .finger-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 15px 25px;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.finger-overlay i {
+    font-size: 32px;
+    color: #ffcc00;
+    margin-bottom: 8px;
+    animation: pulseFinger 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseFinger {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
 
         .finger-pulse-indicator {
             position: absolute; width:100%; height:100%; background: rgba(3,4,8,0.7);
@@ -713,10 +852,14 @@ window.addEventListener("DOMContentLoaded", () => {
             document.getElementById("insert-zone-iframe").innerHTML = "";
         }
 
-// ==========================================
-// ÉTAPE 3 : INITIALISATION DES MISSIONS VIDÉO (CORRIGÉE)
-// ==========================================
+// ======================================================
+// VARIABLES GLOBALES
+// ======================================================
+let timerDecompteInterval = null;
 
+// ======================================================
+// 1. INITIALISATION DE LA MISSION VIDÉO
+// ======================================================
 function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
     if (e) {
@@ -725,39 +868,56 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     }
 
     if (typeof verifierSiTacheBloquee === "function" && verifierSiTacheBloquee(uniqueId)) {
-        alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Cette tâche a déjà été complétée. Revenez demain pour la débloquer !", "Tâche déjà validée");
+        } else {
+            alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
+        }
         return;
     }
+
+    // Réinitialiser tout chrono en cours
+    if (timerDecompteInterval) clearInterval(timerDecompteInterval);
 
     missionActiveType = "video";
     missionActiveId = uniqueId;
     missionActivePoints = points;
 
-    // 1. Masquer le loader / ajuster l'interface
+    // A. Masquer/Afficher les bons éléments visuels
     const loader = document.getElementById("ad-stream-loader");
     if (loader) loader.style.display = "flex";
 
     const finger = document.getElementById("finger-indicator");
     if (finger) finger.style.display = "none";
 
+    const btnClaim = document.getElementById("btn-claim-points");
+    if (btnClaim) {
+        btnClaim.disabled = true;
+        btnClaim.style.backgroundColor = "";
+        btnClaim.style.color = "";
+        btnClaim.classList.remove("pret-a-reclamer");
+        btnClaim.innerHTML = '<i class="fa-solid fa-hourglass-start"></i> En attente de détection...';
+        btnClaim.onclick = null;
+    }
+
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    // 2. Masquer TOUTES les zones vidéo (1 à 10) et effacer leur contenu
+    // B. Réinitialiser les 10 emplacements vidéos
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
             zoneTemp.style.display = "none";
-            zoneTemp.innerHTML = ""; // Vider impérativement pour éviter les conflits
+            zoneTemp.innerHTML = "";
         }
     }
 
-    // 3. Cibler et préparer la zone spécifique
+    // C. Cibler l'emplacement actif
     const idZoneCible = "zone-pub-video" + indexVideo;
     const conteneurVideo = document.getElementById(idZoneCible);
 
     if (!conteneurVideo) {
-        console.error("Conteneur introuvable dans le DOM :", idZoneCible);
+        console.error("Conteneur introuvable :", idZoneCible);
         if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
         return;
     }
@@ -765,12 +925,12 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     conteneurVideo.style.display = "flex";
     conteneurVideo.innerHTML = "";
 
-    // 4. Ouvrir la modale en premier pour activer les dimensions CSS
+    // D. Ouvrir la modale
     if (typeof ouvrirCadreModaleGlobal === "function") {
         ouvrirCadreModaleGlobal(idZoneCible);
     }
 
-    // 5. Injecter le script officiel Clickadilla (wpadmngr + data-admpid)
+    // E. Injecter le script Clickadilla
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -779,28 +939,33 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
             scriptVideo.setAttribute("data-admpid", zoneId);
 
             scriptVideo.onerror = () => {
-                console.error("Échec de chargement réseau Clickadilla pour la zone:", zoneId);
+                console.error("Échec de chargement réseau Clickadilla :", zoneId);
                 if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
             };
 
             conteneurVideo.appendChild(scriptVideo);
 
-            // 6. Lancer la surveillance réseau de la publicité
+            // F. Lancer la surveillance du flux (Max 10 secondes)
             surveillerPresencePub(
                 idZoneCible,
                 () => {
-                    // Succès : La vidéo est injectée et visible
+                    // SUCCÈS : Flux vidéo présent !
                     if (loader) loader.style.display = "none";
+                    if (finger) finger.style.display = "flex";
+
+                    if (btnClaim) {
+                        btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo pour lancer';
+                    }
                 },
                 () => {
-                    // Échec : Aucun lecteur n'a été créé après le délai
-                    console.warn("Aucune publicité vidéo chargée dans la zone:", idZoneCible);
+                    // ÉCHEC : Aucune vidéo détectée après 10 secondes
+                    console.warn("Délai expiré : Aucun flux vidéo dans", idZoneCible);
                     if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
                 }
             );
 
         } catch(err) {
-            console.error("Erreur lors de l'injection vidéo:", err);
+            console.error("Erreur lors de l'injection :", err);
             if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
         }
     }, 100);
@@ -808,7 +973,7 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
 
 // ======================================================
-// 2. SURVEILLANCE UNIVERSELLE DE PRÉSENCE PUB
+// 2. SURVEILLANCE DU FLUX (AVEC TIMEOUT DE 10 SECONDES)
 // ======================================================
 function surveillerPresencePub(idConteneur, surSucces, surEchec) {
     const conteneur = document.getElementById(idConteneur);
@@ -836,7 +1001,6 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
         const iframe = conteneur.querySelector('iframe');
         const video = conteneur.querySelector('video');
 
-        // Éléments HTML injectés hors balises d'en-tête/scripts
         const elementsVisuels = Array.from(conteneur.querySelectorAll('*')).filter(
             el => el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE'
         );
@@ -848,23 +1012,92 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
         }
     }
 
-    // 1. Test immédiat
+    // Test immédiat
     testerContenuInjecte();
 
-    // 2. Surveillance dynamique du DOM
+    // Surveillance dynamique du DOM
     observer = new MutationObserver(() => {
         testerContenuInjecte();
     });
 
     observer.observe(conteneur, { childList: true, subtree: true });
 
-    // 3. Délai de sécurité avant de déclarer une panne (10 secondes)
+    // DÉLAI D'ATTENTE MAXIMAL : 10000ms = 10 secondes
     timerPanne = setTimeout(() => {
         if (!pubDetectee) {
             if (observer) observer.disconnect();
             surEchec();
         }
-    }, 10000);
+    }, 10000); 
+}
+
+
+// ======================================================
+// 3. CLIC SUR LE DOIGT (Appelé par onclick="declencherPlayFlux()")
+// ======================================================
+function declencherPlayFlux() {
+    const finger = document.getElementById("finger-indicator");
+    if (finger) finger.style.display = "none";
+
+    // Démarrer le chrono de 30s
+    lancerChronoMission(30);
+}
+
+
+// ======================================================
+// 4. DÉCOMPTE DES 30 SECONDES
+// ======================================================
+function lancerChronoMission(secondes) {
+    if (timerDecompteInterval) clearInterval(timerDecompteInterval);
+
+    const btnClaim = document.getElementById("btn-claim-points");
+    if (!btnClaim) return;
+
+    let tempsRestant = secondes;
+    btnClaim.disabled = true;
+    btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez (${tempsRestant}s)...`;
+
+    timerDecompteInterval = setInterval(() => {
+        tempsRestant--;
+        if (tempsRestant > 0) {
+            btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez (${tempsRestant}s)...`;
+        } else {
+            clearInterval(timerDecompteInterval);
+            activerBoutonRecuperation();
+        }
+    }, 1000);
+}
+
+
+// ======================================================
+// 5. RÉCUPÉRATION DES POINTS (BOUTON VERT)
+// ======================================================
+function activerBoutonRecuperation() {
+    const btnClaim = document.getElementById("btn-claim-points");
+    if (!btnClaim) return;
+
+    btnClaim.disabled = false;
+    btnClaim.style.backgroundColor = "#28a745";
+    btnClaim.style.color = "#ffffff";
+    btnClaim.classList.add("pret-a-reclamer");
+
+    const pts = (typeof missionActivePoints !== "undefined" && missionActivePoints) ? missionActivePoints : 100;
+    btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Récupérer mes ${pts} Points`;
+
+    btnClaim.onclick = function() {
+        if (typeof recolterPointsMission === "function") {
+            recolterPointsMission();
+        } else if (typeof validerTacheEtAjouterPoints === "function") {
+            validerTacheEtAjouterPoints();
+        } else {
+            if (typeof afficherAlertePersonnalisee === "function") {
+                afficherAlertePersonnalisee(`Félicitations ! Vous avez gagné ${pts} points !`, "Victoire !");
+            } else {
+                alert(`Félicitations ! Vous avez gagné ${pts} points !`);
+            }
+            if (typeof fermerModaleActive === "function") fermerModaleActive();
+        }
+    };
 }
 
 // ======================================================
@@ -1359,5 +1592,18 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
             }
         }
     </script>
+    <!-- MODALE D'ALERTE PERSONNALISÉE MAGNIFIQUE -->
+<div class="custom-alert-overlay" id="custom-alert-modal" style="display: none;">
+    <div class="custom-alert-box">
+        <div class="custom-alert-icon">
+            <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <h3 id="custom-alert-title">Tâche indisponible</h3>
+        <p id="custom-alert-message">Cette tâche est déjà validée et bloquée pour aujourd'hui.</p>
+        <button class="btn-custom-alert-ok" onclick="fermerAlertePersonnalisee()">
+            <i class="fa-solid fa-check"></i> J'ai compris
+        </button>
+    </div>
+</div>
 </body>
 </html>
