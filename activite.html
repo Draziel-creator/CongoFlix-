@@ -530,7 +530,7 @@
         </div>
     </div>
 
-    <!-- ZONE D'AFFICHAGE ET MODALE SOLIDIFIÉE UNIQUE -->
+   <!-- ZONE D'AFFICHAGE ET MODALE SOLIDIFIÉE UNIQUE -->
 <div class="pub-modal-overlay" id="global-pub-modal">
     <div class="pub-modal-content">
         
@@ -539,6 +539,7 @@
             <i class="fa-solid fa-xmark"></i>
         </button>
         
+        <!-- 1. CADRE VIDÉO ET PUBLICITÉ (Uniquement le contenu média + le doigt) -->
         <div class="pub-square-container" id="square-container-area">
             
             <!-- Analyseur de flux publicitaire actif -->
@@ -548,59 +549,57 @@
                 <p style="font-size: 11px; color: #8a8d9f; margin: 5px 0 0 0;">Vérification de la source en cours</p>
             </div>
 
-            <!-- Ne touche pas à ce qui suit, tes zones de pubs vont s'ouvrir ici -->
+            <!-- HTML du Doigt (Superposé uniquement sur la zone vidéo) -->
+            <div class="finger-pulse-indicator" id="finger-indicator" onclick="declencherPlayFlux(event)">
+                <i class="fa-solid fa-hand-pointer"></i>
+                <span>CLIQUEZ POUR LANCER</span>
+            </div>
 
-            <!-- HTML du Doigt -->
-<div class="finger-pulse-indicator" id="finger-indicator" onclick="declencherPlayFlux(event)">
-    <i class="fa-solid fa-hand-pointer"></i>
-    <span>CLIQUEZ POUR LANCER</span>
-</div>
-
-<!-- HTML du Bouton 1 -->
-<button id="btn-claim-points" class="btn-reward" onclick="reclamerPointsBouton1()" disabled>
-    <i class="fa-solid fa-lock"></i> Cliquez sur le doigt pour lancer le chrono
-</button>
-                <!-- Emplacements Physiques Cibles pour les Vidéos Clickadilla -->
-                <div id="zone-pub-video1" class="ad-slot-square"></div>
-                <div id="zone-pub-video2" class="ad-slot-square"></div>
-                <div id="zone-pub-video3" class="ad-slot-square"></div>
-                <div id="zone-pub-video4" class="ad-slot-square"></div>
-                <div id="zone-pub-video5" class="ad-slot-square"></div>
-                <div id="zone-pub-video6" class="ad-slot-square"></div>
-                <div id="zone-pub-video7" class="ad-slot-square"></div>
-                <div id="zone-pub-video8" class="ad-slot-square"></div>
-                <div id="zone-pub-video9" class="ad-slot-square"></div>
-                <div id="zone-pub-video10" class="ad-slot-square"></div>
-                
-                <!-- Zone de chargement Universelle des Bannières (Multipliées dynamiquement en script) -->
-                <div id="zone-pub-alternative" class="ad-slot-square" style="overflow-y: auto;">
-                    <div class="box-banner-filler-300-250" id="box-banner-inside-modal">
-                        <!-- Injecté par JavaScript en mode iframe multiple -->
-                    </div>
+            <!-- Emplacements Physiques Cibles pour les Vidéos Clickadilla -->
+            <div id="zone-pub-video1" class="ad-slot-square"></div>
+            <div id="zone-pub-video2" class="ad-slot-square"></div>
+            <div id="zone-pub-video3" class="ad-slot-square"></div>
+            <div id="zone-pub-video4" class="ad-slot-square"></div>
+            <div id="zone-pub-video5" class="ad-slot-square"></div>
+            <div id="zone-pub-video6" class="ad-slot-square"></div>
+            <div id="zone-pub-video7" class="ad-slot-square"></div>
+            <div id="zone-pub-video8" class="ad-slot-square"></div>
+            <div id="zone-pub-video9" class="ad-slot-square"></div>
+            <div id="zone-pub-video10" class="ad-slot-square"></div>
+            
+            <!-- Zone de chargement Universelle des Bannières -->
+            <div id="zone-pub-alternative" class="ad-slot-square" style="overflow-y: auto;">
+                <div class="box-banner-filler-300-250" id="box-banner-inside-modal">
+                    <!-- Injecté par JavaScript en mode iframe multiple -->
                 </div>
             </div>
 
-            <!-- Commandes et décompte de 30 secondes -->
-            <div class="pub-modal-actions">
-                <button class="btn-modal-action btn-modal-claim" id="btn-claim-points" disabled>
-                    <i class="fa-solid fa-hourglass-start"></i> En attente de détection...
+        </div> <!-- Fin de pub-square-container -->
+
+        <!-- 2. COMMANDES ET DÉCOMPTE (Strictement sous le cadre vidéo) -->
+        <div class="pub-modal-actions">
+            
+            <!-- LE BOUTON 1 UNIQUE ICI -->
+            <button class="btn-modal-action btn-modal-claim" id="btn-claim-points" disabled>
+                <i class="fa-solid fa-lock"></i> Cliquez sur le doigt pour lancer le chrono
+            </button>
+            
+            <div style="width: 100%; text-align: center;">
+                <button class="btn-modal-action btn-modal-visit" id="btn-boost-visit" onclick="actionnerBoostPublicitaire()">
+                    <i class="fa-solid fa-rocket"></i> Boostage de 10% du points du visionnage et +1 sur XP
                 </button>
-                
-                <div style="width: 100%; text-align: center;">
-                    <button class="btn-modal-action btn-modal-visit" id="btn-boost-visit" onclick="actionnerBoostPublicitaire()">
-                        <i class="fa-solid fa-rocket"></i> Boostage de 10% du points du visionnage et +1 sur XP
-                    </button>
-                    <p style="font-size: 10px; color: #8a8d9f; margin: 5px 0 0 0; line-height: 1.3;">
-                        Vous devez terminer la tâche en entier pour booster la tâche avec 10% des points obtenus sur le visionnage de la tâche et votre progression en XP montera
-                    </p>
-                </div>
-                
-                <p class="modal-instructions" id="modal-desc-instructions" style="font-size: 11px; color: #686c87; text-align: center; margin: 0; line-height: 1.4;">
-                    Une fois le flux détecté, utilisez l'indicateur pour démarrer le compteur de 30 secondes obligatoires.
+                <p style="font-size: 10px; color: #8a8d9f; margin: 5px 0 0 0; line-height: 1.3;">
+                    Vous devez terminer la tâche en entier pour booster la tâche avec 10% des points obtenus sur le visionnage de la tâche et votre progression en XP montera
                 </p>
             </div>
+            
+            <p class="modal-instructions" id="modal-desc-instructions" style="font-size: 11px; color: #686c87; text-align: center; margin: 0; line-height: 1.4;">
+                Une fois le flux détecté, utilisez l'indicateur pour démarrer le compteur de 30 secondes obligatoires.
+            </p>
         </div>
+
     </div>
+</div>
 
     <!-- DOUBLE FENETRE FULLSCREEN MURS VIP -->
     <div class="container-iframe-wrapper" id="conteneur-iframe-vip">
