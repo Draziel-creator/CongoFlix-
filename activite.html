@@ -823,27 +823,77 @@
     </div>
 
     <!-- ========================================================================== -->
-    <!-- LOGIQUE LOGICIELLE COMPLETE SYNCHRONISÉE FIREBASE                          -->
-    <!-- ========================================================================== -->
-    <script>
-        // INITIALISATION DE LA CONNEXION (Une seule fois ici)
-        const firebaseConfig = {
-            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
-            authDomain: "publicite-6445c.firebaseapp.com",
-            projectId: "publicite-6445c",
-            storageBucket: "publicite-6445c.firebasestorage.app",
-            messagingSenderId: "663385244466",
-            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b"
-        }; 
+<!-- MODALE D'ALERTE PERSONNALISÉE MAGNIFIQUE                                    -->
+<!-- ========================================================================== -->
+<div class="custom-alert-overlay" id="custom-alert-modal" style="display: none;">
+    <div class="custom-alert-box">
+        <div class="custom-alert-icon">
+            <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <h3 id="custom-alert-title">Tâche indisponible</h3>
+        <p id="custom-alert-message">Cette tâche est déjà validée et bloquée pour aujourd'hui.</p>
+        <button class="btn-custom-alert-ok" onclick="fermerAlertePersonnalisee()">
+            <i class="fa-solid fa-check"></i> J'ai compris
+        </button>
+    </div>
+</div>
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(); // La variable 'db' est maintenant connectée grâce au head !
-        // ==========================================
-// ÉTAPE 1 : CONFIGURATION GLOBALE ET ÉTATS
+<!-- ========================================================================== -->
+<!-- LOGIQUE LOGICIELLE COMPLETE SYNCHRONISÉE FIREBASE                          -->
+<!-- ========================================================================== -->
+<script>
 // ==========================================
-// 1. On commence avec un userId vide (null), Firebase va lui donner sa vraie valeur dans un instant
-let userId = null; 
+// FONCTIONS DE LA MODALE D'ALERTE PERSONNALISÉE
+// ==========================================
+function afficherAlertePersonnalisee(message, titre = "Information") {
+    const modal = document.getElementById("custom-alert-modal");
+    const txtTitle = document.getElementById("custom-alert-title");
+    const txtMsg = document.getElementById("custom-alert-message");
+    
+    if (txtTitle) txtTitle.innerText = titre;
+    if (txtMsg) txtMsg.innerText = message;
+    if (modal) modal.style.display = "flex";
+}
 
+function fermerAlertePersonnalisee() {
+    const modal = document.getElementById("custom-alert-modal");
+    if (modal) modal.style.display = "none";
+}
+
+// ==========================================
+// GESTION DU BLOCAGE INDIVIDUEL PAR TÂCHE
+// ==========================================
+function verifierSiTacheBloquee(taskId) {
+    if (!taskId || !userId) return false;
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+    const key = "task_blocked_" + userId + "_" + taskId;
+    return localStorage.getItem(key) === dateAujourdhui;
+}
+
+function marquerTacheCommeBloquee(taskId) {
+    if (!taskId || !userId) return;
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+    const key = "task_blocked_" + userId + "_" + taskId;
+    localStorage.setItem(key, dateAujourdhui);
+}
+
+// ==========================================
+// INITIALISATION FIREBASE
+// ==========================================
+const firebaseConfig = {
+    apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+    authDomain: "publicite-6445c.firebaseapp.com",
+    projectId: "publicite-6445c",
+    storageBucket: "publicite-6445c.firebasestorage.app",
+    messagingSenderId: "663385244466",
+    appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b"
+}; 
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ÉTAPE 1 : CONFIGURATION GLOBALE ET ÉTATS
+let userId = null; 
 let localPointsDujour = 0;
 let localUserRank = 0;
 let localToursFaits = 0;
@@ -851,23 +901,16 @@ let localToursFaits = 0;
 let missionActiveType = ""; // "video" ou "banniere"
 let missionActiveId = "";   
 let missionActivePoints = 0;
-let redirectionUrlActive = "https://www.highperformanceformat.com/305c9d0ee6ac5ec71d84d7f879fdc153/invoke.js"; // URL Fallback cible
+let redirectionUrlActive = "https://www.highperformanceformat.com/305c9d0ee6ac5ec71d84d7f879fdc153/invoke.js";
 
-let compteReboursDeTrente;
-let tempsRestantTache = 30;
+let chronoInterval = null;
 let verificationPubChargee = false;
 
-// ==========================================
-// SURVEILLANCE DE LA CONNEXION EN TEMPS RÉEL
-// ==========================================
-// Ce bloc écoute en permanence pour savoir quel utilisateur est sur publicité
+// SURVEILLANCE DE LA CONNEXION FIREBASE
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
-        // L'utilisateur est connecté ! On récupère son identifiant unique
         userId = user.uid; 
         console.log("Utilisateur Congoflix détecté :", userId);
-        
-        // C'est SEULEMENT maintenant qu'on a le vrai ID qu'on active l'écouteur de points
         brancherEcouteurFirebase();
     } else {
         console.log("Aucun utilisateur connecté sur la page.");
@@ -875,38 +918,34 @@ firebase.auth().onAuthStateChanged((user) => {
     }
 });
 
-// Écouteur en Temps Réel Firebase pour le document de l'utilisateur
 function brancherEcouteurFirebase() {
-    if(!userId) return; // Sécurité si jamais l'ID est manquant
+    if(!userId) return;
     
     db.collection("users").doc(userId).onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
             
-            // Synchronisation des points du jour
             localPointsDujour = data.pointsDuJours || 0;
-            document.getElementById("cagnotte-valeur-txt").innerText = localPointsDujour + " Points";
+            const elCagnotte = document.getElementById("cagnotte-valeur-txt");
+            if (elCagnotte) elCagnotte.innerText = localPointsDujour + " Points";
             
-            // Gestion du Rang VIP
             localUserRank = data.rank || 0;
             ajusterAffichageRangVip(localUserRank);
             
-            // 🌟 AJOUT : Mise à jour visuelle instantanée du cadenas VIP
-            gererAffichageVisuelVIP();
-            
-            // Gestion du Casino Flottant
-            const boutonCasino = document.getElementById("floating-bonus-casino");
-            if (localUserRank >= 1) {
-                boutonCasino.style.display = "flex";
-            } else {
-                boutonCasino.style.display = "none";
+            if (typeof gererAffichageVisuelVIP === "function") {
+                gererAffichageVisuelVIP();
             }
             
-            // Synchronisation des tours du Casino
+            const boutonCasino = document.getElementById("floating-bonus-casino");
+            if (boutonCasino) {
+                boutonCasino.style.display = (localUserRank >= 1) ? "flex" : "none";
+            }
+            
             localToursFaits = data.toursfaits || 0;
-            actualiserTexteModalCasino();
+            if (typeof actualiserTexteModalCasino === "function") {
+                actualiserTexteModalCasino();
+            }
         } else {
-            // Initialisation sécurisée du document s'il n'existe pas encore dans Firestore
             db.collection("users").doc(userId).set({
                 pointsDuJours: 0,
                 coin: 0,
@@ -918,59 +957,56 @@ function brancherEcouteurFirebase() {
     });
 }
 
-// Appel au chargement des éléments graphiques de la page
 window.addEventListener("DOMContentLoaded", () => {
-    // Note : On a enlevé brancherEcouteurFirebase() d'ici car c'est géré par le onAuthStateChanged plus haut !
-    initialiserChronometresGlobaux();
-    verifierBlocagesBoutonsJournaliers();
+    if (typeof initialiserChronometresGlobaux === "function") initialiserChronometresGlobaux();
+    if (typeof verifierBlocagesBoutonsJournaliers === "function") verifierBlocagesBoutonsJournaliers();
 });
 
-        // ==========================================
-        // ÉTAPE 2 : ACCESSEUR DE L'ESPACE VIP (RANG 5)
-        // ==========================================
-        function ajusterAffichageRangVip(rang) {
-            const calqueVerrou = document.getElementById("vip-lock-overlay");
-            if (rang >= 5) {
-                calqueVerrou.style.display = "none";
-                
-                // Alerte unique de félicitations
-                if (!localStorage.getItem("premium_unlocked_alert_seen")) {
-                    alert("Félicitation vous avez débloqué votre rang premium !");
-                    localStorage.setItem("premium_unlocked_alert_seen", "true");
-                }
-            } else {
-                calqueVerrou.style.display = "flex";
-            }
-        }
+// ==========================================
+// ÉTAPE 2 : ACCESSEUR DE L'ESPACE VIP (RANG 5)
+// ==========================================
+function ajusterAffichageRangVip(rang) {
+    const calqueVerrou = document.getElementById("vip-lock-overlay");
+    if (!calqueVerrou) return;
 
-        function intercepterClicVip(event) {
-            event.stopPropagation();
-            alert("Vous devez atteindre le rang 5 VIP pour accéder aux murs d'offre.\n\nÊtre au rang VIP (Premium) vous offre le privilège d'ouvrir les murs d'offres exclusifs contenant des missions qui vous rapporteront plus de 5000 points par jour selon les opportunités.");
+    if (rang >= 5) {
+        calqueVerrou.style.display = "none";
+        
+        if (!localStorage.getItem("premium_unlocked_alert_seen")) {
+            afficherAlertePersonnalisee("Félicitations, vous avez débloqué votre rang premium !", "Rang Premium Débloqué");
+            localStorage.setItem("premium_unlocked_alert_seen", "true");
         }
+    } else {
+        calqueVerrou.style.display = "flex";
+    }
+}
 
-        function ouvrirIframeOffresVIP(identifiantMur) {
-            if (localUserRank < 5) return;
-            let urlCible = "";
-            if(identifiantMur === 'mur1') urlCible = "https://example-rewardme-wall.com/api?user=" + userId;
-            if(identifiantMur === 'mur2') urlCible = "https://example-ogads-wall.com/api?user=" + userId;
-            if(identifiantMur === 'mur3') urlCible = "https://example-cpagrip-wall.com/api?user=" + userId;
-            
-            document.getElementById("insert-zone-iframe").innerHTML = `<iframe src="${urlCible}" style="width:100%; height:100%; border:none;"></iframe>`;
-            document.getElementById("conteneur-iframe-vip").style.display = "flex";
-        }
+function intercepterClicVip(event) {
+    if (event) event.stopPropagation();
+    afficherAlertePersonnalisee(
+        "Vous devez atteindre le rang 5 VIP pour accéder aux murs d'offres.\n\nÊtre au rang VIP (Premium) vous offre le privilège d'ouvrir les murs d'offres exclusifs contenant des missions qui vous rapporteront plus de 5000 points par jour selon les opportunités.",
+        "Accès VIP Réservé"
+    );
+}
 
-        function fermerIframeVIP() {
-            document.getElementById("conteneur-iframe-vip").style.display = "none";
-            document.getElementById("insert-zone-iframe").innerHTML = "";
-        }
+function ouvrirIframeOffresVIP(identifiantMur) {
+    if (localUserRank < 5) return;
+    let urlCible = "";
+    if(identifiantMur === 'mur1') urlCible = "https://example-rewardme-wall.com/api?user=" + userId;
+    if(identifiantMur === 'mur2') urlCible = "https://example-ogads-wall.com/api?user=" + userId;
+    if(identifiantMur === 'mur3') urlCible = "https://example-cpagrip-wall.com/api?user=" + userId;
+    
+    document.getElementById("insert-zone-iframe").innerHTML = `<iframe src="${urlCible}" style="width:100%; height:100%; border:none;"></iframe>`;
+    document.getElementById("conteneur-iframe-vip").style.display = "flex";
+}
+
+function fermerIframeVIP() {
+    document.getElementById("conteneur-iframe-vip").style.display = "none";
+    document.getElementById("insert-zone-iframe").innerHTML = "";
+}
 
 // ======================================================
-// VARIABLES GLOBALES
-// ======================================================
-let timerDecompteInterval = null;
-
-// ======================================================
-// 1. INITIALISATION DE LA MISSION VIDÉO (CORRIGÉE)
+// LOGIQUE SPÉCIFIQUE VOLET VIDÉO
 // ======================================================
 function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -979,23 +1015,18 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
-    if (typeof verifierSiTacheBloquee === "function" && verifierSiTacheBloquee(uniqueId)) {
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Cette tâche a déjà été complétée. Revenez demain pour la débloquer !", "Tâche déjà validée");
-        } else {
-            alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
-        }
+    // Vérification individuelle du blocage
+    if (verifierSiTacheBloquee(uniqueId)) {
+        afficherAlertePersonnalisee("Cette tâche a déjà été complétée. Revenez demain pour la débloquer !", "Tâche déjà validée");
         return;
     }
 
-    // Réinitialiser tout chrono en cours
-    if (timerDecompteInterval) clearInterval(timerDecompteInterval);
+    if (chronoInterval) clearInterval(chronoInterval);
 
     missionActiveType = "video";
     missionActiveId = uniqueId;
     missionActivePoints = points;
 
-    // A. Masquer/Afficher les bons éléments visuels
     const loader = document.getElementById("ad-stream-loader");
     if (loader) loader.style.display = "flex";
 
@@ -1007,42 +1038,48 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         btnClaim.disabled = true;
         btnClaim.style.backgroundColor = "";
         btnClaim.style.color = "";
-        btnClaim.classList.remove("pret-a-reclamer");
-        btnClaim.innerHTML = '<i class="fa-solid fa-hourglass-start"></i> En attente de détection...';
+        btnClaim.classList.remove("pret-a-reclamer", "ready");
+        btnClaim.innerHTML = '<i class="fa-solid fa-hourglass-start"></i> En attente de détection du flux...';
         btnClaim.onclick = null;
     }
 
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    // B. Réinitialiser les 10 emplacements vidéos
+    // Reinitialiser les zones vidéos
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
             zoneTemp.style.display = "none";
             zoneTemp.innerHTML = "";
+            zoneTemp.onclick = null;
         }
     }
 
-    // C. Cibler l'emplacement actif
     const idZoneCible = "zone-pub-video" + indexVideo;
     const conteneurVideo = document.getElementById(idZoneCible);
 
     if (!conteneurVideo) {
         console.error("Conteneur introuvable :", idZoneCible);
-        if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+        declencherPanneAffichagePub();
         return;
     }
 
     conteneurVideo.style.display = "flex";
     conteneurVideo.innerHTML = "";
 
-    // D. Ouvrir la modale
+    // Clic sur le centre de la vidéo déclenche uniquement le lancement
+    conteneurVideo.onclick = function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        declencherPlayFlux(event, uniqueId);
+    };
+
     if (typeof ouvrirCadreModaleGlobal === "function") {
         ouvrirCadreModaleGlobal(idZoneCible);
     }
 
-    // E. Injecter le script Clickadilla
+    // Injection script Clickadilla
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1052,144 +1089,87 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
             scriptVideo.onerror = () => {
                 console.error("Échec de chargement réseau Clickadilla :", zoneId);
-                if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+                declencherPanneAffichagePub();
             };
 
             conteneurVideo.appendChild(scriptVideo);
 
-            // F. Lancer la surveillance du flux (Max 10 secondes)
+            // Surveillance du flux vidéo
             surveillerPresencePub(
                 idZoneCible,
                 () => {
-                    // SUCCÈS : Flux vidéo présent !
-                    if (loader) loader.style.display = "none";
-                    if (finger) finger.style.display = "flex";
-
+                    // SUCCÈS : Flux vidéo détecté !
                     if (btnClaim) {
-                        // DEBLOQUER LE BOUTON ET ATTACHER L'ÉVÉNEMENT DE CLIC
-                        btnClaim.disabled = false;
-                        btnClaim.classList.add("ready");
-                        btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez ici pour lancer le chrono (30s)';
-                        
-                        // Si l'utilisateur clique sur le bouton, cela lance le décompte !
-                        btnClaim.onclick = function(event) {
-                            declencherPlayFlux(event, uniqueId);
-                        };
+                        btnClaim.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> Flux détecté ! Patientez 5 sec...';
                     }
+
+                    // Attente de 5 secondes après détection avant d'afficher le doigt
+                    setTimeout(() => {
+                        if (loader) loader.style.display = "none";
+                        if (finger) {
+                            finger.style.display = "flex";
+                            // Clic sur le doigt déclenche le décompte sans ouvrir de lien
+                            finger.onclick = function(event) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                declencherPlayFlux(event, uniqueId);
+                            };
+                        }
+
+                        if (btnClaim) {
+                            btnClaim.disabled = false;
+                            btnClaim.classList.add("ready");
+                            btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur le centre pour lancer (30s)';
+                            
+                            btnClaim.onclick = function(event) {
+                                declencherPlayFlux(event, uniqueId);
+                            };
+                        }
+                    }, 5000);
                 },
                 () => {
                     // ÉCHEC : Aucune vidéo détectée après 10 secondes
                     console.warn("Délai expiré : Aucun flux vidéo dans", idZoneCible);
-                    if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+                    declencherPanneAffichagePub();
                 }
             );
 
         } catch(err) {
             console.error("Erreur lors de l'injection :", err);
-            if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+            declencherPanneAffichagePub();
         }
     }, 100);
 }
 
-
 // ======================================================
-// 2. SURVEILLANCE DU FLUX (AVEC TIMEOUT DE 10 SECONDES)
+// DÉCLENCHEMENT DU FLUX ET CHRONO DE 30 SECONDES
 // ======================================================
-function surveillerPresencePub(idConteneur, surSucces, surEchec) {
-    const conteneur = document.getElementById(idConteneur);
-    if (!conteneur) {
-        surEchec();
-        return;
-    }
-
-    let pubDetectee = false;
-    let observer = null;
-    let timerPanne = null;
-
-    function validerSucces() {
-        if (!pubDetectee) {
-            pubDetectee = true;
-            if (observer) observer.disconnect();
-            if (timerPanne) clearTimeout(timerPanne);
-            surSucces();
-        }
-    }
-
-    function testerContenuInjecte() {
-        if (pubDetectee) return;
-
-        const iframe = conteneur.querySelector('iframe');
-        const video = conteneur.querySelector('video');
-
-        const elementsVisuels = Array.from(conteneur.querySelectorAll('*')).filter(
-            el => el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE'
-        );
-
-        if (iframe || video) {
-            validerSucces();
-        } else if (elementsVisuels.length > 0) {
-            setTimeout(validerSucces, 500);
-        }
-    }
-
-    // Test immédiat
-    testerContenuInjecte();
-
-    // Surveillance dynamique du DOM
-    observer = new MutationObserver(() => {
-        testerContenuInjecte();
-    });
-
-    observer.observe(conteneur, { childList: true, subtree: true });
-
-    // DÉLAI D'ATTENTE MAXIMAL : 10000ms = 10 secondes
-    timerPanne = setTimeout(() => {
-        if (!pubDetectee) {
-            if (observer) observer.disconnect();
-            surEchec();
-        }
-    }, 10000); 
-}
-
-
-// ======================================================
-// GESTION DU FLUX, DU CHRONO ET DU BOUTON 1 (FIREBASE V8)
-// ======================================================
-
-let chronoInterval = null;
-let videoEnCoursId = null;
-
-// 1. DÉCLENCHEMENT VIA LE DOIGT DE GUIDAGE
-function declencherPlayFlux(event, videoId) {
+function declencherPlayFlux(event, taskId) {
     if (event) {
         event.preventDefault();
         event.stopPropagation();
     }
 
-    if (videoId) {
-        videoEnCoursId = videoId;
+    if (taskId) {
+        missionActiveId = taskId;
     }
 
-    // Masquer le doigt et le loader
     const doigt = document.getElementById("finger-indicator");
     const loader = document.getElementById("ad-stream-loader");
     if (doigt) doigt.style.display = "none";
     if (loader) loader.style.display = "none";
 
-    // Lancer directement le décompte de 30 secondes
-    demarrerDecompte(30);
+    demarrerDecompte30Sec();
 }
 
-// 2. CHRONOMÈTRE DE 30 SECONDES
-function demarrerDecompte(secondes) {
-    let tempsRestant = secondes;
+function demarrerDecompte30Sec() {
+    let tempsRestant = 30;
     const btnClaim = document.getElementById("btn-claim-points");
 
     if (!btnClaim) return;
 
     if (chronoInterval) clearInterval(chronoInterval);
 
-    // Bloquer le bouton pendant le décompte
     btnClaim.disabled = true;
     btnClaim.classList.remove("ready", "pret-a-reclamer");
     btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez... ${tempsRestant}s`;
@@ -1201,38 +1181,16 @@ function demarrerDecompte(secondes) {
             btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez... ${tempsRestant}s`;
         } else {
             clearInterval(chronoInterval);
-            // À la fin du décompte : vérification du blocage journalier
-            verifierEtatBoutonJournalier();
+            activerBoutonRecuperation();
         }
     }, 1000);
 }
 
-// 3. VÉRIFICATION DU BLOCAGE JOURNALIER
-function verifierEtatBoutonJournalier() {
-    const btnClaim = document.getElementById("btn-claim-points");
-    if (!btnClaim) return;
-
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
-    const derniereDate = localStorage.getItem("dateReclamationBouton1_" + userId);
-
-    if (derniereDate === dateAujourdhui) {
-        // Déjà réclamé aujourd'hui
-        btnClaim.disabled = true;
-        btnClaim.classList.remove("ready", "pret-a-reclamer");
-        btnClaim.style.backgroundColor = "#6c757d";
-        btnClaim.innerHTML = `<i class="fa-solid fa-ban"></i> Déjà réclamé aujourd'hui`;
-    } else {
-        // Prêt pour la réclamation
-        activerBoutonRecuperation();
-    }
-}
-
-// 4. ACTIVATION DU BOUTON VERT ET ATTACHEMENT DU CLIC
 function activerBoutonRecuperation() {
     const btnClaim = document.getElementById("btn-claim-points");
     if (!btnClaim) return;
 
-    const pts = (typeof missionActivePoints !== "undefined" && missionActivePoints) ? missionActivePoints : 100;
+    const pts = missionActivePoints || 100;
 
     btnClaim.disabled = false;
     btnClaim.style.backgroundColor = "#28a745";
@@ -1240,57 +1198,48 @@ function activerBoutonRecuperation() {
     btnClaim.classList.add("ready", "pret-a-reclamer");
     btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Récupérer mes ${pts} Points`;
 
-    // Attachement direct de la fonction de sauvegarde Firebase
     btnClaim.onclick = function() {
         reclamerPointsBouton1(pts);
     };
 }
 
-// 5. ENREGISTREMENT DES POINTS SUR FIREBASE (SYNTAXE V8)
 function reclamerPointsBouton1(pts) {
     if (!userId) {
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Attention");
-        } else {
-            alert("Connexion en cours... Veuillez patienter.");
-        }
+        afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
         return;
     }
 
     const btnClaim = document.getElementById("btn-claim-points");
-    btnClaim.disabled = true;
-    btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
+    if (btnClaim) {
+        btnClaim.disabled = true;
+        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
+    }
 
     const pointsAAjouter = pts || 100;
 
-    // Mise à jour atomique dans Firebase Firestore (SDK v8 Global)
     db.collection("users").doc(userId).update({
         pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter)
     }).then(() => {
-        // Bloquer pour le reste de la journée
-        const dateAujourdhui = new Date().toISOString().split('T')[0];
-        localStorage.setItem("dateReclamationBouton1_" + userId, dateAujourdhui);
+        marquerTacheCommeBloquee(missionActiveId);
 
-        btnClaim.style.backgroundColor = "#6c757d";
-        btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> +${pointsAAjouter} Points Crédités !`;
-
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(`Félicitations ! Vous avez gagné ${pointsAAjouter} points !`, "Victoire !");
-        } else {
-            alert(`Félicitations ! Vous avez gagné ${pointsAAjouter} points !`);
+        if (btnClaim) {
+            btnClaim.style.backgroundColor = "#6c757d";
+            btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> +${pointsAAjouter} Points Crédités !`;
         }
 
-        if (typeof fermerModaleActive === "function") {
-            fermerModaleActive();
-        }
+        afficherAlertePersonnalisee(`Félicitations ! Vous avez gagné ${pointsAAjouter} points !`, "Victoire !");
+        fermerModaleActive();
     }).catch((error) => {
         console.error("Erreur Firebase :", error);
-        btnClaim.disabled = false;
-        btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
+        if (btnClaim) {
+            btnClaim.disabled = false;
+            btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
+        }
     });
 }
+
 // ======================================================
-// 1. INITIATION DES BANNIÈRES (CORRIGÉE)
+// LOGIQUE SPÉCIFIQUE BANNIÈRES (INTACTE)
 // ======================================================
 function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
     const e = window.event;
@@ -1300,7 +1249,7 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
     }
 
     if (verifierSiTacheBloquee(uniqueId)) {
-        alert("Cette tâche est déjà validée et bloquée pour aujourd'hui.");
+        afficherAlertePersonnalisee("Cette tâche est déjà validée et bloquée pour aujourd'hui.", "Tâche déjà complétée");
         return;
     }
     
@@ -1311,7 +1260,6 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
     document.getElementById("ad-stream-loader").style.display = "flex";
     document.getElementById("finger-indicator").style.display = "none"; 
     
-    // Masquer les blocs vidéo
     for (let i = 1; i <= 10; i++) {
         const cibleTemporaire = document.getElementById("zone-pub-video" + i);
         if (cibleTemporaire) cibleTemporaire.style.display = "none";
@@ -1321,11 +1269,10 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
     const conteneurInterne = document.getElementById("box-banner-inside-modal");
     
     blocAlternative.style.display = "block";
-    conteneurInterne.innerHTML = ""; // Vider le conteneur
+    conteneurInterne.innerHTML = "";
 
     try {
         if (fournisseur.startsWith("adsterra") || fournisseur === "advertica") {
-            // Création de l'iframe sécurisée pour Adsterra / Advertica
             let divEnveloppe = document.createElement("div");
             divEnveloppe.className = "ad-zone-160x600";
             divEnveloppe.style.margin = "10px auto";
@@ -1363,8 +1310,6 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
             cadreIframe.contentWindow.document.close();
 
         } else {
-            // Bannière Clickadilla : On ajoute l'élément cible avec l'ID requis (clePub) 
-            // pour éliminer l'erreur "No banner mount target id found"
             conteneurInterne.innerHTML = `
                 <div id="${clePub}"></div>
                 <iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="300" height="250" style="border:none; overflow:hidden;"></iframe>
@@ -1376,47 +1321,42 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
         return;
     }
 
-    // Ouverture de la modale avec l'ID du conteneur
-    ouvrirCadreModaleGlobal("box-banner-inside-modal");
+    if (typeof ouvrirCadreModaleGlobal === "function") {
+        ouvrirCadreModaleGlobal("box-banner-inside-modal");
+    }
 }
 
-
 // ======================================================
-// 2. OUVERTURE DE LA MODALE & DÉTECTION
+// SURVEILLANCE GENERALE DES PUBS & PANNES
 // ======================================================
 function ouvrirCadreModaleGlobal(idConteneurPub) {
-    document.getElementById("global-pub-modal").style.display = "flex";
-    document.getElementById("btn-claim-points").disabled = true;
-    document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente de la pub...`;
+    const modal = document.getElementById("global-pub-modal");
+    if (modal) modal.style.display = "flex";
     
-    tempsRestantTache = 30;
+    const btnClaim = document.getElementById("btn-claim-points");
+    if (btnClaim) {
+        btnClaim.disabled = true;
+        btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente de la pub...`;
+    }
+    
     verificationPubChargee = false;
 
     surveillerPresencePub(
         idConteneurPub, 
-        
-        // SUCCÈS :
         function() {
             verificationPubChargee = true;
-            document.getElementById("ad-stream-loader").style.display = "none";
-            document.getElementById("btn-claim-points").innerHTML = `<i class="fa-solid fa-play"></i> Flux détecté`;
-            
             if (missionActiveType === "banniere") {
-                engagerCompteReboursAutomatique();
+                const loader = document.getElementById("ad-stream-loader");
+                if (loader) loader.style.display = "none";
+                demarrerDecompte30Sec();
             }
         }, 
-        
-        // ÉCHEC (9s sans contenu) :
         function() {
             declencherPanneAffichagePub();
         }
     );
 }
 
-
-// ======================================================
-// 3. SURVEILLANCE UNIVERSELLE (BANNIÈRES & VIDÉOS)
-// ======================================================
 function surveillerPresencePub(idConteneur, surSucces, surEchec) {
     const conteneur = document.getElementById(idConteneur);
     if (!conteneur) {
@@ -1425,70 +1365,64 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
     }
 
     let pubDetectee = false;
+    let observer = null;
+    let timerPanne = null;
 
     function validerSucces() {
         if (!pubDetectee) {
             pubDetectee = true;
+            if (observer) observer.disconnect();
+            if (timerPanne) clearTimeout(timerPanne);
             surSucces();
         }
     }
 
     function testerContenuInjecte() {
+        if (pubDetectee) return;
+
         const iframe = conteneur.querySelector('iframe');
         const video = conteneur.querySelector('video');
-        const elementsInjectes = conteneur.children.length > 1;
+        const elementsVisuels = Array.from(conteneur.querySelectorAll('*')).filter(
+            el => el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE'
+        );
 
-        if (iframe) {
-            iframe.onload = validerSucces;
-            try {
-                if (iframe.contentDocument && iframe.contentDocument.readyState === "complete") {
-                    setTimeout(validerSucces, 300);
-                }
-            } catch(e) {
-                // Cross-origin
-            }
-        } else if (video || elementsInjectes) {
+        if (iframe || video) {
             validerSucces();
+        } else if (elementsVisuels.length > 0) {
+            setTimeout(validerSucces, 500);
         }
     }
 
-    // 1. Test immédiat
     testerContenuInjecte();
 
-    // 2. Surveillance du DOM (MutationObserver)
-    const observer = new MutationObserver((mutations, obs) => {
+    observer = new MutationObserver(() => {
         testerContenuInjecte();
-        if (pubDetectee) {
-            obs.disconnect();
-        }
     });
 
     observer.observe(conteneur, { childList: true, subtree: true });
 
-    // 3. Compte à rebours de sécurité (9 secondes max)
-    setTimeout(() => {
+    // Délai maximal de détection : 10 secondes
+    timerPanne = setTimeout(() => {
         if (!pubDetectee) {
-            observer.disconnect();
+            if (observer) observer.disconnect();
             surEchec();
         }
-    }, 9000);
+    }, 10000); 
 }
 
-
-// ======================================================
-// 4. GESTION DE LA PANNE / FERMETURE
-// ======================================================
-        function declencherPanneAffichagePub() {
-    document.getElementById("ad-stream-loader").style.display = "none";
-    alert("Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.");
+function declencherPanneAffichagePub() {
+    const loader = document.getElementById("ad-stream-loader");
+    if (loader) loader.style.display = "none";
+    afficherAlertePersonnalisee("Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.", "Pub Indisponible");
     fermerModaleActive();
 }
+
+function fermerModaleActive() {
+    if (chronoInterval) clearInterval(chronoInterval);
     
-        function fermerModaleActive() {
-    clearInterval(compteReboursDeTrente); // On arrête le chrono en cours
-    document.getElementById("global-pub-modal").style.display = "none"; // On cache la modale
+    const modal = document.getElementById("global-pub-modal");
+    if (modal) modal.style.display = "none";
     
-    // Sécurité : On remet le bouton de gains à zéro pour la prochaine fois
     const btnClaim = document.getElementById("btn-claim-points");
     if (btnClaim) {
         btnClaim.disabled = true;
@@ -1496,105 +1430,31 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
     }
 }
 
-        // ==========================================
-        // ÉTAPE 4 : MOTEURS DE CHRONOMÉTRAGE ET VALIDATION
-        // ==========================================
-        function declencherPlayFlux(e) {
-    // 1. BLOQUER la propagation du clic vers la régie pub / iframe en dessous
-    if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    // 2. Masquer le doigt de guidage immédiatement
-    const doigt = document.getElementById("finger-indicator");
-    if (doigt) {
-        doigt.style.display = "none";
-    }
-
-    // 3. Masquer le calque d'analyse/loader bleu
-    const loader = document.getElementById("ad-stream-loader");
-    if (loader) {
-        loader.style.display = "none";
-    }
-
-    // 4. Lancer EXCLUSIVEMENT le décompte de 30 secondes (Fonction interne)
-    demarrerDecompte30Sec();
-}
-
-// Exemple de fonction de décompte interne
-function demarrerDecompte30Sec() {
-    tempsRestantMission = 30;
-    const btnClaim = document.getElementById("btn-claim-points");
+// Actionneur de collecte alternative / Boost
+function actionnerBoostPublicitaire() {
+    if(!userId || !verificationPubChargee) return;
     
-    if (btnClaim) {
-        btnClaim.disabled = true;
-        btnClaim.classList.remove("ready");
-    }
-
-    if (chronoInterval) clearInterval(chronoInterval);
-
-    chronoInterval = setInterval(() => {
-        tempsRestantMission--;
-        if (btnClaim) {
-            btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez... ${tempsRestantMission}s`;
-        }
-
-        if (tempsRestantMission <= 0) {
-            clearInterval(chronoInterval);
-            if (btnClaim) {
-                btnClaim.disabled = false;
-                btnClaim.classList.add("ready");
-                btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamer mes points`;
-            }
-        }
-    }, 1000);
+    const bonusBoost = Math.round(missionActivePoints * 0.10);
+    
+    db.collection("users").doc(userId).update({
+        pointsDuJours: firebase.firestore.FieldValue.increment(bonusBoost),
+        XP: firebase.firestore.FieldValue.increment(1)
+    }).then(() => {
+        marquerTacheCommeBloquee(missionActiveId);
+        window.open(redirectionUrlActive, '_blank');
+        afficherAlertePersonnalisee(`Boost validé ! +${bonusBoost} Points (10%) transférés et +1 XP généré.`, "Boost Activé");
+        fermerModaleActive();
+    }).catch(err => {
+        db.collection("users").doc(userId).set({
+            XP: 1,
+            pointsDuJours: firebase.firestore.FieldValue.increment(bonusBoost)
+        }, { merge: true }).then(() => {
+            marquerTacheCommeBloquee(missionActiveId);
+            window.open(redirectionUrlActive, '_blank');
+            fermerModaleActive();
+        });
+    });
 }
-        // Actionneur du premier bouton : Collecte standard
-        function executerCollectePointsTache() {
-            if(!userId) return;
-            
-            db.collection("users").doc(userId).update({
-                pointsDuJours: firebase.firestore.FieldValue.increment(missionActivePoints)
-            }).then(() => {
-                marquerTacheCommeBloquee(missionActiveId);
-                alert(`Succès ! +${missionActivePoints} points ajoutés à votre cagnotte journalière.`);
-                fermerModaleActive();
-            }).catch(err => {
-                console.error("Erreur Firebase:", err);
-            });
-        }
-
-        // Actionneur du deuxième bouton : Le Super Boost (10%, XP, et Redirection simulée)
-        function actionnerBoostPublicitaire() {
-            if(!userId || !verificationPubChargee) return;
-            
-            const bonusBoost = Math.round(missionActivePoints * 0.10);
-            
-            // Émission immédiate en millisecondes des signaux vers Firebase
-            db.collection("users").doc(userId).update({
-                pointsDuJours: firebase.firestore.FieldValue.increment(bonusBoost),
-                XP: firebase.firestore.FieldValue.increment(1)
-            }).then(() => {
-                marquerTacheCommeBloquee(missionActiveId);
-                
-                // Redirection instantanée vers le flux publicitaire
-                window.open(redirectionUrlActive, '_blank');
-                
-                alert(`Boost validé ! +${bonusBoost} Points (10%) transférés et +1 XP généré.`);
-                fermerModaleActive();
-            }).catch(err => {
-                // Si le champ XP n'existe pas, traitement de secours pour sa création initiale
-                db.collection("users").doc(userId).set({
-                    XP: 1,
-                    pointsDuJours: firebase.firestore.FieldValue.increment(bonusBoost)
-                }, { merge: true }).then(() => {
-                    marquerTacheCommeBloquee(missionActiveId);
-                    window.open(redirectionUrlActive, '_blank');
-                    fermerModaleActive();
-                });
-            });
-        }
 
         // ==========================================
         // ÉTAPE 5 : SYNC CHRONOMÈTRE MIDNIGHT & PERSISTANCE DE BLOCAGE
@@ -1807,18 +1667,5 @@ function demarrerDecompte30Sec() {
             }
         }
     </script>
-    <!-- MODALE D'ALERTE PERSONNALISÉE MAGNIFIQUE -->
-<div class="custom-alert-overlay" id="custom-alert-modal" style="display: none;">
-    <div class="custom-alert-box">
-        <div class="custom-alert-icon">
-            <i class="fa-solid fa-circle-exclamation"></i>
-        </div>
-        <h3 id="custom-alert-title">Tâche indisponible</h3>
-        <p id="custom-alert-message">Cette tâche est déjà validée et bloquée pour aujourd'hui.</p>
-        <button class="btn-custom-alert-ok" onclick="fermerAlertePersonnalisee()">
-            <i class="fa-solid fa-check"></i> J'ai compris
-        </button>
-    </div>
-</div>
 </body>
 </html>
