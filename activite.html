@@ -1144,45 +1144,56 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
 // ======================================================
 // 3. CLIC SUR LE DOIGT (Empêche l'ouverture de la pub)
 // ======================================================
-function declencherPlayFlux(e) {
-    // Bloquer la propagation du clic vers la pub Clickadilla
-    if (e) {
-        e.preventDefault();
-        e.stopPropagation();
+let chronoInterval = null;
+let videoEnCoursId = null;
+let pointsGagnesVideo = 100; // Exemple : nombre de points attribués par cette vidéo
+
+function declencherPlayFlux(event, videoId) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
     }
 
-    // Masquer le doigt animé
-    const finger = document.getElementById("finger-indicator");
-    if (finger) finger.style.display = "none";
+    // Sauvegarde du code de la vidéo en cours
+    videoEnCoursId = videoId;
 
-    // Démarrer le chrono de 30 secondes
-    lancerChronoMission(30);
+    // 1. Masquer le doigt et le loader
+    const doigt = document.getElementById("finger-indicator");
+    const loader = document.getElementById("ad-stream-loader");
+    if (doigt) doigt.style.display = "none";
+    if (loader) loader.style.display = "none";
+
+    // 2. Lancer le chronomètre de 30 secondes
+    demarrerDecompte(30);
 }
 
-// ======================================================
-// 4. DÉCOMPTE DES 30 SECONDES
-// ======================================================
-function lancerChronoMission(secondes) {
-    if (timerDecompteInterval) clearInterval(timerDecompteInterval);
-
+function demarrerDecompte(secondes) {
+    let tempsRestant = secondes;
     const btnClaim = document.getElementById("btn-claim-points");
+
     if (!btnClaim) return;
 
-    let tempsRestant = secondes;
+    // Bloquer le bouton pendant le décompte
     btnClaim.disabled = true;
-    btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez (${tempsRestant}s)...`;
+    btnClaim.classList.remove("ready");
+    btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez... ${tempsRestant}s`;
 
-    timerDecompteInterval = setInterval(() => {
+    if (chronoInterval) clearInterval(chronoInterval);
+
+    chronoInterval = setInterval(() => {
         tempsRestant--;
-        if (tempsRestant > 0) {
-            btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez (${tempsRestant}s)...`;
-        } else {
-            clearInterval(timerDecompteInterval);
-            activerBoutonRecuperation();
+        btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez... ${tempsRestant}s`;
+
+        if (tempsRestant <= 0) {
+            clearInterval(chronoInterval);
+            
+            // Une fois fini : activer le bouton
+            btnClaim.disabled = false;
+            btnClaim.classList.add("ready");
+            btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer mes points (+${pointsGagnesVideo})`;
         }
     }, 1000);
 }
-
 
 // ======================================================
 // 5. RÉCUPÉRATION DES POINTS (BOUTON VERT)
