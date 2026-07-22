@@ -1008,6 +1008,9 @@ function fermerIframeVIP() {
 // ======================================================
 // 1. INITIALISATION DE LA MISSION VIDÉO (FONCTIONNELLE)
 // ======================================================
+// ======================================================
+// 1. INITIALISATION DE LA MISSION VIDÉO (AVEC TEMPO)
+// ======================================================
 function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
     if (e) {
@@ -1036,7 +1039,7 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
     const btnClaim = document.getElementById("btn-claim-points");
     if (btnClaim) {
-        btnClaim.disabled = true;
+        btnClaim.disabled = true; // Bloqué par défaut
         btnClaim.style.backgroundColor = "";
         btnClaim.style.color = "";
         btnClaim.classList.remove("pret-a-reclamer", "ready");
@@ -1089,33 +1092,39 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
             conteneurVideo.appendChild(scriptVideo);
 
-            // Lancer la surveillance du flux (Max 10 secondes)
+            // Surveillance du flux vidéo (Max 10s)
             surveillerPresencePub(
                 idZoneCible,
                 () => {
-                    // SUCCÈS : Flux vidéo présent !
-                    if (loader) loader.style.display = "none";
-                    if (finger) {
-                        finger.style.display = "flex";
-                        finger.onclick = function(event) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            declencherPlayFlux(event, uniqueId);
-                        };
+                    // SUCCÈS : Flux vidéo détecté !
+                    
+                    // 1. Mettre à jour le texte pendant le chargement visuel
+                    if (btnClaim) {
+                        btnClaim.disabled = true;
+                        btnClaim.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Préparation du lecteur vidéo...';
                     }
 
-                    if (btnClaim) {
-                        btnClaim.disabled = false;
-                        btnClaim.classList.add("ready");
-                        btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez ici pour lancer le chrono (30s)';
-                        
-                        btnClaim.onclick = function(event) {
-                            declencherPlayFlux(event, uniqueId);
-                        };
-                    }
+                    // 2. Pause de 2.5 secondes pour laisser la vidéo se placer proprement dans le cadre
+                    setTimeout(() => {
+                        // Masquer le loader de chargement
+                        if (loader) loader.style.display = "none";
+
+                        // Afficher le doigt indicateur au centre
+                        if (finger) {
+                            finger.style.display = "flex";
+                            finger.onclick = function(event) {
+                                declencherPlayFlux(event, uniqueId);
+                            };
+                        }
+
+                        // Donner l'instruction d'action sur le bouton
+                        if (btnClaim) {
+                            btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo au centre pour démarrer';
+                        }
+                    }, 2500); // Temporisation de 2500 millisecondes (2.5s)
                 },
                 () => {
-                    // ÉCHEC : Aucune vidéo détectée après 10 secondes
+                    // ÉCHEC : Aucune vidéo détectée
                     console.warn("Délai expiré : Aucun flux vidéo dans", idZoneCible);
                     declencherPanneAffichagePub();
                 }
@@ -1127,7 +1136,6 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         }
     }, 100);
 }
-
 // ======================================================
 // DÉCLENCHEMENT DU FLUX ET CHRONO DE 30 SECONDES
 // ======================================================
@@ -1141,14 +1149,15 @@ function declencherPlayFlux(event, taskId) {
         missionActiveId = taskId;
     }
 
+    // Masquer le doigt indicateur et le loader
     const doigt = document.getElementById("finger-indicator");
     const loader = document.getElementById("ad-stream-loader");
     if (doigt) doigt.style.display = "none";
     if (loader) loader.style.display = "none";
 
+    // Démarrer le chrono de 30 secondes
     demarrerDecompte30Sec();
 }
-
 function demarrerDecompte30Sec() {
     let tempsRestant = 30;
     const btnClaim = document.getElementById("btn-claim-points");
