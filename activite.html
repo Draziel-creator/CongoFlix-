@@ -1141,6 +1141,21 @@ function declencherPlayFlux(event) {
 // ======================================================
 // 3. CHRONOMÈTRE DE 30 SECONDES SUR LE BOUTON
 // ======================================================
+// 1. DÉTECTEUR DE CLIC SUR LA VIDÉO (BLUR)
+window.addEventListener("blur", function() {
+    const modal = document.getElementById("global-pub-modal");
+    const doigt = document.getElementById("finger-indicator");
+
+    if (modal && modal.style.display !== "none" && doigt && doigt.style.display !== "none") {
+        // Cacher le doigt
+        doigt.style.display = "none";
+        
+        // Lancer le chrono sur le bouton
+        demarrerDecompte30Sec();
+    }
+});
+
+// 2. CHRONOMÈTRE DE 30 SECONDES SUR LE BOUTON
 function demarrerDecompte30Sec() {
     let secondesRestantes = 30;
     const btnClaim = document.getElementById("btn-claim-points");
@@ -1149,6 +1164,9 @@ function demarrerDecompte30Sec() {
 
     if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) {
         clearInterval(timerDecompteInterval);
+    }
+    if (window.timerDecompteInterval) {
+        clearInterval(window.timerDecompteInterval);
     }
 
     btnClaim.disabled = true;
@@ -1160,11 +1178,7 @@ function demarrerDecompte30Sec() {
         if (secondesRestantes > 0) {
             btnClaim.innerHTML = `<i class="fa-solid fa-clock fa-spin"></i> Patientez... ${secondesRestantes}s`;
         } else {
-            if (typeof timerDecompteInterval !== "undefined") {
-                clearInterval(timerDecompteInterval);
-            } else if (window.timerDecompteInterval) {
-                clearInterval(window.timerDecompteInterval);
-            }
+            clearInterval(window.timerDecompteInterval);
 
             btnClaim.disabled = false;
             btnClaim.classList.add("pret-a-reclamer", "ready");
@@ -1428,14 +1442,21 @@ function declencherPanneAffichagePub() {
 }
 
 function fermerModaleActive() {
-    if (chronoInterval) clearInterval(chronoInterval);
-    
+    // 1. Arrete TOUS les chronos possibles si la modale est fermee prématurément
+    if (typeof chronoInterval !== "undefined" && chronoInterval) clearInterval(chronoInterval);
+    if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) clearInterval(timerDecompteInterval);
+    if (window.timerDecompteInterval) clearInterval(window.timerDecompteInterval);
+
+    // 2. Masquer la modale
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "none";
-    
+
+    // 3. Réinitialiser le bouton et son style
     const btnClaim = document.getElementById("btn-claim-points");
     if (btnClaim) {
         btnClaim.disabled = true;
+        btnClaim.style.backgroundColor = ""; // Retire le vert si le bouton était prêt
+        btnClaim.style.color = "";
         btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente...`;
     }
 }
