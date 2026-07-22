@@ -550,7 +550,7 @@
 
             <!-- Ne touche pas à ce qui suit, tes zones de pubs vont s'ouvrir ici -->
 
-                <!-- Le doigt de guidage pulsant interactif (Uniquement visible pour les vidéos) -->
+                <!-- Le doigt de guidage pulsant interactif -->
 <div class="finger-pulse-indicator" id="finger-indicator" onclick="declencherPlayFlux(event)">
     <i class="fa-solid fa-hand-pointer"></i>
     <span>CLIQUEZ POUR LANCER</span>
@@ -1425,31 +1425,57 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
         // ==========================================
         // ÉTAPE 4 : MOTEURS DE CHRONOMÉTRAGE ET VALIDATION
         // ==========================================
-        function declencherPlayFlux() {
-            // Uniquement appelé par le doigt interactif sur les vidéos
-            if (!verificationPubChargee) return;
-            document.getElementById("finger-indicator").style.display = "none";
-            engagerCompteReboursAutomatique();
+        function declencherPlayFlux(e) {
+    // 1. BLOQUER la propagation du clic vers la régie pub / iframe en dessous
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    // 2. Masquer le doigt de guidage immédiatement
+    const doigt = document.getElementById("finger-indicator");
+    if (doigt) {
+        doigt.style.display = "none";
+    }
+
+    // 3. Masquer le calque d'analyse/loader bleu
+    const loader = document.getElementById("ad-stream-loader");
+    if (loader) {
+        loader.style.display = "none";
+    }
+
+    // 4. Lancer EXCLUSIVEMENT le décompte de 30 secondes (Fonction interne)
+    demarrerDecompte30Sec();
+}
+
+// Exemple de fonction de décompte interne
+function demarrerDecompte30Sec() {
+    tempsRestantMission = 30;
+    const btnClaim = document.getElementById("btn-claim-points");
+    
+    if (btnClaim) {
+        btnClaim.disabled = true;
+        btnClaim.classList.remove("ready");
+    }
+
+    if (chronoInterval) clearInterval(chronoInterval);
+
+    chronoInterval = setInterval(() => {
+        tempsRestantMission--;
+        if (btnClaim) {
+            btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez... ${tempsRestantMission}s`;
         }
 
-        function engagerCompteReboursAutomatique() {
-            const boutonRecup = document.getElementById("btn-claim-points");
-            boutonRecup.disabled = true;
-            
-            compteReboursDeTrente = setInterval(() => {
-                tempsRestantTache--;
-                if (tempsRestantTache > 0) {
-                    boutonRecup.innerHTML = `<i class="fa-solid fa-clock"></i> Reste ${tempsRestantTache}s`;
-                } else {
-                    clearInterval(compteReboursDeTrente);
-                    boutonRecup.disabled = false;
-                    boutonRecup.className = "btn-modal-action btn-modal-claim active";
-                    boutonRecup.innerHTML = `<i class="fa-solid fa-check-circle"></i> Récupérer mes points (+${missionActivePoints})`;
-                    boutonRecup.onclick = executerCollectePointsTache;
-                }
-            }, 1000);
+        if (tempsRestantMission <= 0) {
+            clearInterval(chronoInterval);
+            if (btnClaim) {
+                btnClaim.disabled = false;
+                btnClaim.classList.add("ready");
+                btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamer mes points`;
+            }
         }
-
+    }, 1000);
+}
         // Actionneur du premier bouton : Collecte standard
         function executerCollectePointsTache() {
             if(!userId) return;
