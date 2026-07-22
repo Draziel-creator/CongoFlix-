@@ -185,7 +185,10 @@
             border: 1px dashed rgba(255, 255, 255, 0.1); position: relative;
             display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
-        .btn-modal-claim.pret-a-reclamer {
+        /* ======================================================
+   1. BOUTON VERT DE RÉCLAMATION (ANIMÉ)
+   ====================================================== */
+.btn-modal-claim.pret-a-reclamer {
     background-color: #28a745 !important;
     color: #ffffff !important;
     cursor: pointer !important;
@@ -197,6 +200,112 @@
     0% { transform: scale(1); }
     50% { transform: scale(1.02); }
     100% { transform: scale(1); }
+}
+
+
+/* ======================================================
+   2. DOIGT ANIMÉ (SUPERPOSITION AU-DESSUS DE LA VIDÉO)
+   ====================================================== */
+#finger-indicator {
+    position: absolute;
+    z-index: 99; /* S'assure de capturer le clic avant le lecteur vidéo */
+    cursor: pointer;
+}
+
+
+/* ======================================================
+   3. MODALE D'ALERTE PERSONNALISÉE (ÉLÉGANTE)
+   ====================================================== */
+.custom-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10, 14, 29, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 999999; /* Toujours au-dessus de tout */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.custom-alert-box {
+    background: #181d36;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    animation: popInAlert 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popInAlert {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.custom-alert-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px auto;
+    background: rgba(255, 179, 0, 0.15);
+    border: 2px solid #ffb300;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-alert-icon i {
+    font-size: 30px;
+    color: #ffb300;
+}
+
+.custom-alert-box h3 {
+    margin: 0 0 10px 0;
+    color: #ffffff;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.custom-alert-box p {
+    margin: 0 0 22px 0;
+    color: #a0a5c0;
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
+.btn-custom-alert-ok {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0052d4, #4364f7);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 8px 20px rgba(67, 100, 247, 0.4);
+}
+
+.btn-custom-alert-ok:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(67, 100, 247, 0.6);
+}
+
+.btn-custom-alert-ok:active {
+    transform: translateY(0);
 }
         /* OVERLAY MODALE ALERTE */
 .custom-alert-overlay {
@@ -442,10 +551,10 @@
             <!-- Ne touche pas à ce qui suit, tes zones de pubs vont s'ouvrir ici -->
 
                 <!-- Le doigt de guidage pulsant interactif (Uniquement visible pour les vidéos) -->
-                <div class="finger-pulse-indicator" id="finger-indicator" onclick="declencherPlayFlux()">
-                    <i class="fa-solid fa-hand-pointer"></i>
-                    <span>CLIQUEZ POUR LANCER</span>
-                </div>
+<div class="finger-pulse-indicator" id="finger-indicator" onclick="declencherPlayFlux(event)">
+    <i class="fa-solid fa-hand-pointer"></i>
+    <span>CLIQUEZ POUR LANCER</span>
+</div>
 
                 <!-- Emplacements Physiques Cibles pour les Vidéos Clickadilla -->
                 <div id="zone-pub-video1" class="ad-slot-square"></div>
@@ -1033,16 +1142,22 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
 
 
 // ======================================================
-// 3. CLIC SUR LE DOIGT (Appelé par onclick="declencherPlayFlux()")
+// 3. CLIC SUR LE DOIGT (Empêche l'ouverture de la pub)
 // ======================================================
-function declencherPlayFlux() {
+function declencherPlayFlux(e) {
+    // Bloquer la propagation du clic vers la pub Clickadilla
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    // Masquer le doigt animé
     const finger = document.getElementById("finger-indicator");
     if (finger) finger.style.display = "none";
 
-    // Démarrer le chrono de 30s
+    // Démarrer le chrono de 30 secondes
     lancerChronoMission(30);
 }
-
 
 // ======================================================
 // 4. DÉCOMPTE DES 30 SECONDES
