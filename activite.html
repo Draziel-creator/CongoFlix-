@@ -1011,17 +1011,7 @@ if (typeof timerDecompteInterval === "undefined") {
 }
 
 // ======================================================
-// 1. INITIALISATION DE LA MISSION VIDÉO (SANS CONFLIT)
-// ======================================================
-// ======================================================
-// VARIABLES GLOBALES DE SESSION
-// ======================================================
-var timerDecompteInterval = null;
-var missionActivePoints = 0;
-var missionActiveId = "";
-
-// ======================================================
-// 1. INITIALISATION DE LA MISSION VIDÉO
+// 1. INITIALISATION DE LA MISSION VIDÉO (SÉCURISÉE)
 // ======================================================
 function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1037,20 +1027,21 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         return;
     }
 
-    // Réinitialiser tout chrono en cours
-    if (timerDecompteInterval) clearInterval(timerDecompteInterval);
+    // Arrêt sécurisé du chrono s'il existe déjà
+    if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) {
+        clearInterval(timerDecompteInterval);
+    }
 
-    // Enregistrer les infos en global
-    missionActiveType = "video";
-    missionActiveId = uniqueId;
-    missionActivePoints = points;
+    // Affectation aux variables globales sans redéclaration violente
+    window.missionActiveType = "video";
+    window.missionActiveId = uniqueId;
+    window.missionActivePoints = points;
 
-    // Récupérer les éléments du DOM
+    // Récupération des éléments HTML
     const loader = document.getElementById("ad-stream-loader");
     const finger = document.getElementById("finger-indicator");
     const btnClaim = document.getElementById("btn-claim-points");
 
-    // État visuel initial
     if (loader) loader.style.display = "flex";
     if (finger) finger.style.display = "none";
 
@@ -1064,7 +1055,7 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    // Vider et masquer les 10 emplacements vidéos
+    // Réinitialisation des 10 emplacements vidéos
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
@@ -1073,7 +1064,6 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         }
     }
 
-    // Cibler l'emplacement actif
     const idZoneCible = "zone-pub-video" + indexVideo;
     const conteneurVideo = document.getElementById(idZoneCible);
 
@@ -1084,11 +1074,11 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
     conteneurVideo.style.display = "block";
 
-    // Ouvrir la modale
+    // Afficher la modale
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
-    // Injecter Clickadilla
+    // Injection Clickadilla
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1102,26 +1092,18 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
             conteneurVideo.appendChild(scriptVideo);
 
-            // Surveillance du flux vidéo
             if (typeof surveillerPresencePub === "function") {
                 surveillerPresencePub(
                     idZoneCible,
                     () => {
-                        // SUCCÈS : Vidéo détectée !
                         if (btnClaim) {
                             btnClaim.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Préparation du lecteur...';
                         }
 
-                        // Temporisation de 2.5s pour l'affichage de la vidéo
                         setTimeout(() => {
                             if (loader) loader.style.display = "none";
+                            if (finger) finger.style.display = "flex";
 
-                            // Rendre le doigt visible
-                            if (finger) {
-                                finger.style.display = "flex";
-                            }
-
-                            // Mettre à jour le message d'instruction sur le bouton
                             if (btnClaim) {
                                 btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur le doigt pour lancer le chrono';
                             }
@@ -1148,13 +1130,11 @@ function declencherPlayFlux(event) {
         event.stopPropagation();
     }
 
-    // Masquer le doigt et le loader
     const doigt = document.getElementById("finger-indicator");
     const loader = document.getElementById("ad-stream-loader");
     if (doigt) doigt.style.display = "none";
     if (loader) loader.style.display = "none";
 
-    // Lancer le chrono sur le bouton
     demarrerDecompte30Sec();
 }
 
@@ -1167,36 +1147,41 @@ function demarrerDecompte30Sec() {
 
     if (!btnClaim) return;
 
-    if (timerDecompteInterval) clearInterval(timerDecompteInterval);
+    if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) {
+        clearInterval(timerDecompteInterval);
+    }
 
     btnClaim.disabled = true;
     btnClaim.innerHTML = `<i class="fa-solid fa-clock fa-spin"></i> Patientez... ${secondesRestantes}s`;
 
-    timerDecompteInterval = setInterval(() => {
+    window.timerDecompteInterval = setInterval(() => {
         secondesRestantes--;
 
         if (secondesRestantes > 0) {
             btnClaim.innerHTML = `<i class="fa-solid fa-clock fa-spin"></i> Patientez... ${secondesRestantes}s`;
         } else {
-            clearInterval(timerDecompteInterval);
+            if (typeof timerDecompteInterval !== "undefined") {
+                clearInterval(timerDecompteInterval);
+            } else if (window.timerDecompteInterval) {
+                clearInterval(window.timerDecompteInterval);
+            }
 
-            // Fin des 30 secondes : Déblocage du bouton de récompense
             btnClaim.disabled = false;
             btnClaim.classList.add("pret-a-reclamer", "ready");
             btnClaim.style.backgroundColor = "#28a745";
             btnClaim.style.color = "#ffffff";
-            btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${missionActivePoints} Points`;
+            
+            const pointsAAttribuer = window.missionActivePoints || 0;
+            btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${pointsAAttribuer} Points`;
 
-            // Action lors du clic final de réclamation
             btnClaim.onclick = function() {
                 if (typeof reclamerPointsBouton1 === "function") {
-                    reclamerPointsBouton1(missionActivePoints);
+                    reclamerPointsBouton1(window.missionActivePoints);
                 }
             };
         }
     }, 1000);
 }
-
 // ======================================================
 // 4. OUVERTURE MODALE SIMPLIFIÉE (SANS DOUBLE SURVEILLANCE)
 // ======================================================
