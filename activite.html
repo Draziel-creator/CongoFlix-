@@ -550,12 +550,16 @@
 
             <!-- Ne touche pas à ce qui suit, tes zones de pubs vont s'ouvrir ici -->
 
-                <!-- Le doigt de guidage pulsant interactif -->
+            <!-- HTML du Doigt -->
 <div class="finger-pulse-indicator" id="finger-indicator" onclick="declencherPlayFlux(event)">
     <i class="fa-solid fa-hand-pointer"></i>
     <span>CLIQUEZ POUR LANCER</span>
 </div>
 
+<!-- HTML du Bouton 1 -->
+<button id="btn-claim-points" class="btn-reward" onclick="reclamerPointsBouton1()" disabled>
+    <i class="fa-solid fa-lock"></i> Cliquez sur le doigt pour lancer le chrono
+</button>
                 <!-- Emplacements Physiques Cibles pour les Vidéos Clickadilla -->
                 <div id="zone-pub-video1" class="ad-slot-square"></div>
                 <div id="zone-pub-video2" class="ad-slot-square"></div>
@@ -1142,90 +1146,142 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
 
 
 // ======================================================
-// 3. CLIC SUR LE DOIGT (Empêche l'ouverture de la pub)
+// GESTION DU FLUX, DU CHRONO ET DU BOUTON 1 (FIREBASE V8)
 // ======================================================
+
 let chronoInterval = null;
 let videoEnCoursId = null;
-let pointsGagnesVideo = 100; // Exemple : nombre de points attribués par cette vidéo
 
+// 1. DÉCLENCHEMENT VIA LE DOIGT DE GUIDAGE
 function declencherPlayFlux(event, videoId) {
     if (event) {
         event.preventDefault();
         event.stopPropagation();
     }
 
-    // Sauvegarde du code de la vidéo en cours
-    videoEnCoursId = videoId;
+    if (videoId) {
+        videoEnCoursId = videoId;
+    }
 
-    // 1. Masquer le doigt et le loader
+    // Masquer le doigt et le loader
     const doigt = document.getElementById("finger-indicator");
     const loader = document.getElementById("ad-stream-loader");
     if (doigt) doigt.style.display = "none";
     if (loader) loader.style.display = "none";
 
-    // 2. Lancer le chronomètre de 30 secondes
+    // Lancer directement le décompte de 30 secondes
     demarrerDecompte(30);
 }
 
+// 2. CHRONOMÈTRE DE 30 SECONDES
 function demarrerDecompte(secondes) {
     let tempsRestant = secondes;
     const btnClaim = document.getElementById("btn-claim-points");
 
     if (!btnClaim) return;
 
+    if (chronoInterval) clearInterval(chronoInterval);
+
     // Bloquer le bouton pendant le décompte
     btnClaim.disabled = true;
-    btnClaim.classList.remove("ready");
+    btnClaim.classList.remove("ready", "pret-a-reclamer");
     btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez... ${tempsRestant}s`;
-
-    if (chronoInterval) clearInterval(chronoInterval);
 
     chronoInterval = setInterval(() => {
         tempsRestant--;
-        btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez... ${tempsRestant}s`;
 
-        if (tempsRestant <= 0) {
+        if (tempsRestant > 0) {
+            btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez... ${tempsRestant}s`;
+        } else {
             clearInterval(chronoInterval);
-            
-            // Une fois fini : activer le bouton
-            btnClaim.disabled = false;
-            btnClaim.classList.add("ready");
-            btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer mes points (+${pointsGagnesVideo})`;
+            // À la fin du décompte : vérification du blocage journalier
+            verifierEtatBoutonJournalier();
         }
     }, 1000);
 }
 
-// ======================================================
-// 5. RÉCUPÉRATION DES POINTS (BOUTON VERT)
-// ======================================================
+// 3. VÉRIFICATION DU BLOCAGE JOURNALIER
+function verifierEtatBoutonJournalier() {
+    const btnClaim = document.getElementById("btn-claim-points");
+    if (!btnClaim) return;
+
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+    const derniereDate = localStorage.getItem("dateReclamationBouton1_" + userId);
+
+    if (derniereDate === dateAujourdhui) {
+        // Déjà réclamé aujourd'hui
+        btnClaim.disabled = true;
+        btnClaim.classList.remove("ready", "pret-a-reclamer");
+        btnClaim.style.backgroundColor = "#6c757d";
+        btnClaim.innerHTML = `<i class="fa-solid fa-ban"></i> Déjà réclamé aujourd'hui`;
+    } else {
+        // Prêt pour la réclamation
+        activerBoutonRecuperation();
+    }
+}
+
+// 4. ACTIVATION DU BOUTON VERT ET ATTACHEMENT DU CLIC
 function activerBoutonRecuperation() {
     const btnClaim = document.getElementById("btn-claim-points");
     if (!btnClaim) return;
 
+    const pts = (typeof missionActivePoints !== "undefined" && missionActivePoints) ? missionActivePoints : 100;
+
     btnClaim.disabled = false;
     btnClaim.style.backgroundColor = "#28a745";
     btnClaim.style.color = "#ffffff";
-    btnClaim.classList.add("pret-a-reclamer");
-
-    const pts = (typeof missionActivePoints !== "undefined" && missionActivePoints) ? missionActivePoints : 100;
+    btnClaim.classList.add("ready", "pret-a-reclamer");
     btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Récupérer mes ${pts} Points`;
 
+    // Attachement direct de la fonction de sauvegarde Firebase
     btnClaim.onclick = function() {
-        if (typeof recolterPointsMission === "function") {
-            recolterPointsMission();
-        } else if (typeof validerTacheEtAjouterPoints === "function") {
-            validerTacheEtAjouterPoints();
-        } else {
-            if (typeof afficherAlertePersonnalisee === "function") {
-                afficherAlertePersonnalisee(`Félicitations ! Vous avez gagné ${pts} points !`, "Victoire !");
-            } else {
-                alert(`Félicitations ! Vous avez gagné ${pts} points !`);
-            }
-            if (typeof fermerModaleActive === "function") fermerModaleActive();
-        }
+        reclamerPointsBouton1(pts);
     };
 }
 
+// 5. ENREGISTREMENT DES POINTS SUR FIREBASE (SYNTAXE V8)
+function reclamerPointsBouton1(pts) {
+    if (!userId) {
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Attention");
+        } else {
+            alert("Connexion en cours... Veuillez patienter.");
+        }
+        return;
+    }
+
+    const btnClaim = document.getElementById("btn-claim-points");
+    btnClaim.disabled = true;
+    btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
+
+    const pointsAAjouter = pts || 100;
+
+    // Mise à jour atomique dans Firebase Firestore (SDK v8 Global)
+    db.collection("users").doc(userId).update({
+        pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter)
+    }).then(() => {
+        // Bloquer pour le reste de la journée
+        const dateAujourdhui = new Date().toISOString().split('T')[0];
+        localStorage.setItem("dateReclamationBouton1_" + userId, dateAujourdhui);
+
+        btnClaim.style.backgroundColor = "#6c757d";
+        btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> +${pointsAAjouter} Points Crédités !`;
+
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee(`Félicitations ! Vous avez gagné ${pointsAAjouter} points !`, "Victoire !");
+        } else {
+            alert(`Félicitations ! Vous avez gagné ${pointsAAjouter} points !`);
+        }
+
+        if (typeof fermerModaleActive === "function") {
+            fermerModaleActive();
+        }
+    }).catch((error) => {
+        console.error("Erreur Firebase :", error);
+        btnClaim.disabled = false;
+        btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
+    });
+}
 // ======================================================
 // 1. INITIATION DES BANNIÈRES (CORRIGÉE)
 // ======================================================
