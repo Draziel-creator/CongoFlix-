@@ -822,8 +822,8 @@
         </nav>
     </div>
 
-    <!-- ========================================================================== -->
-<!-- MODALE D'ALERTE PERSONNALISÉE MAGNIFIQUE                                    -->
+   <!-- ========================================================================== -->
+<!-- MODALE D'ALERTE PERSONNALISÉE                                              -->
 <!-- ========================================================================== -->
 <div class="custom-alert-overlay" id="custom-alert-modal" style="display: none;">
     <div class="custom-alert-box">
@@ -839,7 +839,7 @@
 </div>
 
 <!-- ========================================================================== -->
-<!-- LOGIQUE LOGICIELLE COMPLETE SYNCHRONISÉE FIREBASE                          -->
+<!-- LOGIQUE LOGICIELLE COMPLÈTE SYNCHRONISÉE FIREBASE                          -->
 <!-- ========================================================================== -->
 <script>
 // ==========================================
@@ -1006,7 +1006,7 @@ function fermerIframeVIP() {
 }
 
 // ======================================================
-// LOGIQUE SPÉCIFIQUE VOLET VIDÉO
+// 1. INITIALISATION DE LA MISSION VIDÉO (FONCTIONNELLE)
 // ======================================================
 function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1015,18 +1015,19 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
-    // Vérification individuelle du blocage
     if (verifierSiTacheBloquee(uniqueId)) {
         afficherAlertePersonnalisee("Cette tâche a déjà été complétée. Revenez demain pour la débloquer !", "Tâche déjà validée");
         return;
     }
 
+    // Réinitialiser tout chrono en cours
     if (chronoInterval) clearInterval(chronoInterval);
 
     missionActiveType = "video";
     missionActiveId = uniqueId;
     missionActivePoints = points;
 
+    // Masquer/Afficher les bons éléments visuels
     const loader = document.getElementById("ad-stream-loader");
     if (loader) loader.style.display = "flex";
 
@@ -1039,23 +1040,23 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         btnClaim.style.backgroundColor = "";
         btnClaim.style.color = "";
         btnClaim.classList.remove("pret-a-reclamer", "ready");
-        btnClaim.innerHTML = '<i class="fa-solid fa-hourglass-start"></i> En attente de détection du flux...';
+        btnClaim.innerHTML = '<i class="fa-solid fa-hourglass-start"></i> En attente de détection...';
         btnClaim.onclick = null;
     }
 
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    // Reinitialiser les zones vidéos
+    // Réinitialiser les 10 emplacements vidéos
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
             zoneTemp.style.display = "none";
             zoneTemp.innerHTML = "";
-            zoneTemp.onclick = null;
         }
     }
 
+    // Cibler l'emplacement actif
     const idZoneCible = "zone-pub-video" + indexVideo;
     const conteneurVideo = document.getElementById(idZoneCible);
 
@@ -1068,18 +1069,12 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     conteneurVideo.style.display = "flex";
     conteneurVideo.innerHTML = "";
 
-    // Clic sur le centre de la vidéo déclenche uniquement le lancement
-    conteneurVideo.onclick = function(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        declencherPlayFlux(event, uniqueId);
-    };
-
+    // Ouvrir la modale
     if (typeof ouvrirCadreModaleGlobal === "function") {
         ouvrirCadreModaleGlobal(idZoneCible);
     }
 
-    // Injection script Clickadilla
+    // Injecter le script Clickadilla
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1094,38 +1089,30 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
             conteneurVideo.appendChild(scriptVideo);
 
-            // Surveillance du flux vidéo
+            // Lancer la surveillance du flux (Max 10 secondes)
             surveillerPresencePub(
                 idZoneCible,
                 () => {
-                    // SUCCÈS : Flux vidéo détecté !
-                    if (btnClaim) {
-                        btnClaim.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> Flux détecté ! Patientez 5 sec...';
+                    // SUCCÈS : Flux vidéo présent !
+                    if (loader) loader.style.display = "none";
+                    if (finger) {
+                        finger.style.display = "flex";
+                        finger.onclick = function(event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            declencherPlayFlux(event, uniqueId);
+                        };
                     }
 
-                    // Attente de 5 secondes après détection avant d'afficher le doigt
-                    setTimeout(() => {
-                        if (loader) loader.style.display = "none";
-                        if (finger) {
-                            finger.style.display = "flex";
-                            // Clic sur le doigt déclenche le décompte sans ouvrir de lien
-                            finger.onclick = function(event) {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                declencherPlayFlux(event, uniqueId);
-                            };
-                        }
-
-                        if (btnClaim) {
-                            btnClaim.disabled = false;
-                            btnClaim.classList.add("ready");
-                            btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur le centre pour lancer (30s)';
-                            
-                            btnClaim.onclick = function(event) {
-                                declencherPlayFlux(event, uniqueId);
-                            };
-                        }
-                    }, 5000);
+                    if (btnClaim) {
+                        btnClaim.disabled = false;
+                        btnClaim.classList.add("ready");
+                        btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez ici pour lancer le chrono (30s)';
+                        
+                        btnClaim.onclick = function(event) {
+                            declencherPlayFlux(event, uniqueId);
+                        };
+                    }
                 },
                 () => {
                     // ÉCHEC : Aucune vidéo détectée après 10 secondes
@@ -1239,7 +1226,7 @@ function reclamerPointsBouton1(pts) {
 }
 
 // ======================================================
-// LOGIQUE SPÉCIFIQUE BANNIÈRES (INTACTE)
+// LOGIQUE SPÉCIFIQUE BANNIÈRES
 // ======================================================
 function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
     const e = window.event;
@@ -1327,7 +1314,7 @@ function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
 }
 
 // ======================================================
-// SURVEILLANCE GENERALE DES PUBS & PANNES
+// SURVEILLANCE GÉNÉRALE DES PUBS & PANNES
 // ======================================================
 function ouvrirCadreModaleGlobal(idConteneurPub) {
     const modal = document.getElementById("global-pub-modal");
