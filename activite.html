@@ -1005,11 +1005,13 @@ function fermerIframeVIP() {
     document.getElementById("insert-zone-iframe").innerHTML = "";
 }
 
+// Variable globale unifiée pour le chronomètre
+if (typeof timerDecompteInterval === "undefined") {
+    var timerDecompteInterval = null;
+}
+
 // ======================================================
-// 1. INITIALISATION DE LA MISSION VIDÉO (FONCTIONNELLE)
-// ======================================================
-// ======================================================
-// 1. INITIALISATION DE LA MISSION VIDÉO (AVEC TEMPO)
+// 1. INITIALISATION DE LA MISSION VIDÉO (SANS CONFLIT)
 // ======================================================
 function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1023,23 +1025,26 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         return;
     }
 
-    // Réinitialiser tout chrono en cours
-    if (chronoInterval) clearInterval(chronoInterval);
+    // Réinitialisation stricte du chrono
+    if (timerDecompteInterval) clearInterval(timerDecompteInterval);
 
     missionActiveType = "video";
     missionActiveId = uniqueId;
     missionActivePoints = points;
 
-    // Masquer/Afficher les bons éléments visuels
+    // Réinitialisation visuelle
     const loader = document.getElementById("ad-stream-loader");
     if (loader) loader.style.display = "flex";
 
     const finger = document.getElementById("finger-indicator");
-    if (finger) finger.style.display = "none";
+    if (finger) {
+        finger.style.display = "none";
+        finger.onclick = null; // Nettoyage de l'ancien clic
+    }
 
     const btnClaim = document.getElementById("btn-claim-points");
     if (btnClaim) {
-        btnClaim.disabled = true; // Bloqué par défaut
+        btnClaim.disabled = true;
         btnClaim.style.backgroundColor = "";
         btnClaim.style.color = "";
         btnClaim.classList.remove("pret-a-reclamer", "ready");
@@ -1050,7 +1055,7 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    // Réinitialiser les 10 emplacements vidéos
+    // Réinitialiser les emplacements vidéos
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
@@ -1072,10 +1077,9 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     conteneurVideo.style.display = "flex";
     conteneurVideo.innerHTML = "";
 
-    // Ouvrir la modale
-    if (typeof ouvrirCadreModaleGlobal === "function") {
-        ouvrirCadreModaleGlobal(idZoneCible);
-    }
+    // Ouvrir la modale (Simple ouverture sans double surveillance)
+    const modal = document.getElementById("global-pub-modal");
+    if (modal) modal.style.display = "flex";
 
     // Injecter le script Clickadilla
     setTimeout(() => {
@@ -1092,52 +1096,52 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
             conteneurVideo.appendChild(scriptVideo);
 
-            // Surveillance du flux vidéo (Max 10s)
+            // Surveillance unique du flux vidéo
             surveillerPresencePub(
                 idZoneCible,
                 () => {
                     // SUCCÈS : Flux vidéo détecté !
-                    
-                    // 1. Mettre à jour le texte pendant le chargement visuel
                     if (btnClaim) {
                         btnClaim.disabled = true;
-                        btnClaim.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Préparation du lecteur vidéo...';
+                        btnClaim.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Chargement du lecteur...';
                     }
 
-                    // 2. Pause de 2.5 secondes pour laisser la vidéo se placer proprement dans le cadre
+                    // Temporisation de 2.5s pour laisser la vidéo s'installer
                     setTimeout(() => {
-                        // Masquer le loader de chargement
                         if (loader) loader.style.display = "none";
 
-                        // Afficher le doigt indicateur au centre
+                        // Activation prioritaire du clic sur le Doigt
                         if (finger) {
                             finger.style.display = "flex";
-                            finger.onclick = function(event) {
-                                declencherPlayFlux(event, uniqueId);
+                            finger.style.pointerEvents = "auto";
+                            finger.style.cursor = "pointer";
+
+                            finger.onclick = function(evt) {
+                                console.log("--> Clic sur le doigt intercepté !");
+                                declencherPlayFlux(evt, uniqueId);
                             };
                         }
 
-                        // Donner l'instruction d'action sur le bouton
                         if (btnClaim) {
                             btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo au centre pour démarrer';
                         }
-                    }, 2500); // Temporisation de 2500 millisecondes (2.5s)
+                    }, 2500);
                 },
                 () => {
-                    // ÉCHEC : Aucune vidéo détectée
                     console.warn("Délai expiré : Aucun flux vidéo dans", idZoneCible);
                     declencherPanneAffichagePub();
                 }
             );
 
         } catch(err) {
-            console.error("Erreur lors de l'injection :", err);
+            console.error("Erreur d'injection :", err);
             declencherPanneAffichagePub();
         }
     }, 100);
 }
+
 // ======================================================
-// DÉCLENCHEMENT DU FLUX ET CHRONO DE 30 SECONDES
+// 2. DÉCLENCHEMENT DU DÉCOMPTE (LIAISON DOIGT -> BOUTON)
 // ======================================================
 function declencherPlayFlux(event, taskId) {
     if (event) {
@@ -1145,41 +1149,64 @@ function declencherPlayFlux(event, taskId) {
         event.stopPropagation();
     }
 
+    console.log("--> Lancement de declencherPlayFlux pour la tâche :", taskId);
+
     if (taskId) {
         missionActiveId = taskId;
     }
 
-    // Masquer le doigt indicateur et le loader
+    // Masquer le doigt et le loader
     const doigt = document.getElementById("finger-indicator");
     const loader = document.getElementById("ad-stream-loader");
     if (doigt) doigt.style.display = "none";
     if (loader) loader.style.display = "none";
 
-    // Démarrer le chrono de 30 secondes
+    // Démarrage immédiat du chrono
     demarrerDecompte30Sec();
 }
+
+// ======================================================
+// 3. CHRONOMÈTRE DE 30 SECONDES SUR LE BOUTON
+// ======================================================
 function demarrerDecompte30Sec() {
     let tempsRestant = 30;
     const btnClaim = document.getElementById("btn-claim-points");
 
-    if (!btnClaim) return;
+    if (!btnClaim) {
+        console.error("Bouton #btn-claim-points introuvable dans le DOM !");
+        return;
+    }
 
-    if (chronoInterval) clearInterval(chronoInterval);
+    if (timerDecompteInterval) clearInterval(timerDecompteInterval);
 
     btnClaim.disabled = true;
     btnClaim.classList.remove("ready", "pret-a-reclamer");
     btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez... ${tempsRestant}s`;
 
-    chronoInterval = setInterval(() => {
+    timerDecompteInterval = setInterval(() => {
         tempsRestant--;
 
         if (tempsRestant > 0) {
             btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Patientez... ${tempsRestant}s`;
         } else {
-            clearInterval(chronoInterval);
+            clearInterval(timerDecompteInterval);
             activerBoutonRecuperation();
         }
     }, 1000);
+}
+
+// ======================================================
+// 4. OUVERTURE MODALE SIMPLIFIÉE (SANS DOUBLE SURVEILLANCE)
+// ======================================================
+function ouvrirCadreModaleGlobal(idConteneurPub) {
+    const modal = document.getElementById("global-pub-modal");
+    if (modal) modal.style.display = "flex";
+    
+    const btnClaim = document.getElementById("btn-claim-points");
+    if (btnClaim) {
+        btnClaim.disabled = true;
+        btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente de la pub...`;
+    }
 }
 
 function activerBoutonRecuperation() {
