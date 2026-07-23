@@ -1061,11 +1061,12 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         clearInterval(timerDecompteInterval);
     }
 
-    // Enregistrement des variables de mission globale
+    // Enregistrement des variables de mission globale (y compris le zoneId)
     window.missionActiveType = "video";
     window.missionActiveId = uniqueId;
     window.missionActivePoints = points;
     window.missionActiveIndex = indexVideo;
+    window.missionActiveZoneId = zoneId;
 
     const loader = document.getElementById("ad-stream-loader");
     const finger = document.getElementById("finger-indicator");
@@ -1135,7 +1136,7 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
-    // Injection Clickadilla
+    // Injection Clickadilla pour le CADRE CENTRAL
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1354,6 +1355,28 @@ function actionnerBoostPublicitaire() {
     };
 }
 
+// Fonction auxiliaire : Appel publicitaire propre et indépendant pour le Bouton 2
+function declencherPubIndependanteBouton(zoneId) {
+    if (!zoneId) return;
+    try {
+        let scriptBoost = document.createElement("script");
+        scriptBoost.async = true;
+        scriptBoost.src = "https://js.wpadmngr.com/static/adManager.js";
+        scriptBoost.setAttribute("data-admpid", zoneId);
+
+        document.body.appendChild(scriptBoost);
+
+        // Nettoyage automatique du script injecté après 3 secondes
+        setTimeout(() => {
+            if (scriptBoost && scriptBoost.parentNode) {
+                scriptBoost.parentNode.removeChild(scriptBoost);
+            }
+        }, 3000);
+    } catch (e) {
+        console.error("Erreur lors de l'appel publicitaire du Bouton 2 :", e);
+    }
+}
+
 // Étape B : Traitement effectif des actions du Bouton 2
 async function executerBoostPublicitaire() {
     const btnBoost = document.getElementById("btn-boost-visit");
@@ -1396,54 +1419,12 @@ async function executerBoostPublicitaire() {
     }
 
     // ----------------------------------------------------
-    // ACTION 2 : CAPTURE SPÉCIFIQUE DE LA PUB DANS LE CADRAN
+    // ACTION 2 : APPEL PUBLICITAIRE INDÉPENDANT DU BOUTON 2
     // ----------------------------------------------------
-    const idZoneCible = "zone-pub-video" + window.missionActiveIndex;
-    const conteneurVideo = document.getElementById(idZoneCible);
-    let lienPubExterne = null;
-
-    if (conteneurVideo) {
-        // Recherche de tous les liens A et IFRAME injectés par Clickadilla dans la zone vidéo
-        const liens = conteneurVideo.querySelectorAll("a[href]");
-        const iframes = conteneurVideo.querySelectorAll("iframe");
-
-        // 1. Recherche d'une URL externe valide (qui n'est pas votre domaine PWA)
-        for (let a of liens) {
-            const href = a.getAttribute("href");
-            if (href && href.startsWith("http") && !href.includes(window.location.hostname)) {
-                lienPubExterne = href;
-                break;
-            }
-        }
-
-        // 2. Sinon recherche dans l'iframe
-        if (!lienPubExterne) {
-            for (let iframe of iframes) {
-                const src = iframe.getAttribute("src");
-                if (src && src.startsWith("http") && !src.includes(window.location.hostname)) {
-                    lienPubExterne = src;
-                    break;
-                }
-            }
-        }
-    }
+    declencherPubIndependanteBouton(window.missionActiveZoneId);
 
     // ----------------------------------------------------
-    // ACTION 3 : OUVERTURE SÉCURISÉE DE LA PUB
-    // ----------------------------------------------------
-    if (lienPubExterne) {
-        // Ouvre uniquement la vraie URL sponsorisée de la pub
-        window.open(lienPubExterne, "_blank");
-    } else if (conteneurVideo) {
-        // Clic ciblé uniquement sur la pub interne (ex: l'iframe ou l'élément actif)
-        const elPub = conteneurVideo.querySelector("iframe, a, img");
-        if (elPub && typeof elPub.click === "function") {
-            elPub.click();
-        }
-    }
-
-    // ----------------------------------------------------
-    // ACTION 4 : BLOQUER LE BOUTON ET FERMER LA MODALE
+    // ACTION 3 : BLOQUER LE BOUTON ET FERMER LA MODALE
     // ----------------------------------------------------
     if (btnBoost) {
         btnBoost.style.backgroundColor = "#6c757d";
