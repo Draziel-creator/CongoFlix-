@@ -1011,20 +1011,42 @@ if (typeof timerDecompteInterval === "undefined") {
 }
 
 // ======================================================
-// 1. INITIALISATION DE LA MISSION VIDÉO (SÉCURISÉE)
+// 1. VÉRIFICATION DU BLOCAGE DANS FIREBASE
 // ======================================================
-function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
+async function verifierSiTacheBloquee(taskId) {
+    if (!userId || !taskId) return false;
+
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+
+    try {
+        const doc = await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).get();
+        if (doc.exists && doc.data().dateExecution === dateAujourdhui) {
+            return true; // Déjà faite aujourd'hui !
+        }
+    } catch (error) {
+        console.error("Erreur de vérification Firebase :", error);
+    }
+
+    return false; // Disponible
+}
+
+// ======================================================
+// 2. INITIALISATION DE LA MISSION VIDÉO (COMPLÈTE & SÉCURISÉE)
+// ======================================================
+async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
     if (e) {
         e.preventDefault();
         e.stopPropagation();
     }
 
-    if (typeof verifierSiTacheBloquee === "function" && verifierSiTacheBloquee(uniqueId)) {
+    // --- VÉRIFICATION FIREBASE ANTI-TRICHE ---
+    const estBloquee = await verifierSiTacheBloquee(uniqueId);
+    if (estBloquee) {
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Cette tâche est déjà validée pour aujourd'hui.", "Tâche déjà faite");
+            afficherAlertePersonnalisee("Vous avez déjà accompli cette mission aujourd'hui. Revenez demain !", "Tâche Bloquée");
         }
-        return;
+        return; // On arrête tout ici !
     }
 
     // Arrêt sécurisé du chrono s'il existe déjà
@@ -1032,7 +1054,7 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         clearInterval(timerDecompteInterval);
     }
 
-    // Affectation aux variables globales sans redéclaration violente
+    // Affectation aux variables globales
     window.missionActiveType = "video";
     window.missionActiveId = uniqueId;
     window.missionActivePoints = points;
@@ -1074,11 +1096,11 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
     conteneurVideo.style.display = "block";
 
-    // Afficher la modale
+    // AFFICHAGE MODALE EN FLEX (Rétablit le centrage parfait au milieu de l'écran)
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
-    // Injection Clickadilla
+    // Injection du script Clickadilla
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1122,7 +1144,7 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 }
 
 // ======================================================
-// 2. FONCTION APPELÉE PAR LE ONCLICK DU DOIGT
+// 3. FONCTION APPELÉE PAR LE ONCLICK DU DOIGT
 // ======================================================
 function declencherPlayFlux(event) {
     if (event) {
@@ -1139,23 +1161,18 @@ function declencherPlayFlux(event) {
 }
 
 // ======================================================
-// 3. CHRONOMÈTRE DE 30 SECONDES SUR LE BOUTON
+// 4. DÉTECTEUR BLUR + CHRONOMÈTRE 30S
 // ======================================================
-// 1. DÉTECTEUR DE CLIC SUR LA VIDÉO (BLUR)
 window.addEventListener("blur", function() {
     const modal = document.getElementById("global-pub-modal");
     const doigt = document.getElementById("finger-indicator");
 
     if (modal && modal.style.display !== "none" && doigt && doigt.style.display !== "none") {
-        // Cacher le doigt
         doigt.style.display = "none";
-        
-        // Lancer le chrono sur le bouton
         demarrerDecompte30Sec();
     }
 });
 
-// 2. CHRONOMÈTRE DE 30 SECONDES SUR LE BOUTON
 function demarrerDecompte30Sec() {
     let secondesRestantes = 30;
     const btnClaim = document.getElementById("btn-claim-points");
@@ -1196,84 +1213,9 @@ function demarrerDecompte30Sec() {
         }
     }, 1000);
 }
-// ======================================================
-// 4. OUVERTURE MODALE SIMPLIFIÉE (SANS DOUBLE SURVEILLANCE)
-// ======================================================
-function ouvrirCadreModaleGlobal(idConteneurPub) {
-    const modal = document.getElementById("global-pub-modal");
-    if (modal) modal.style.display = "flex";
-    
-    const btnClaim = document.getElementById("btn-claim-points");
-    if (btnClaim) {
-        btnClaim.disabled = true;
-        btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente de la pub...`;
-    }
-}
-
-function activerBoutonRecuperation() {
-    const btnClaim = document.getElementById("btn-claim-points");
-    if (!btnClaim) return;
-
-    const pts = missionActivePoints || 100;
-
-    btnClaim.disabled = false;
-    btnClaim.style.backgroundColor = "#28a745";
-    btnClaim.style.color = "#ffffff";
-    btnClaim.classList.add("ready", "pret-a-reclamer");
-    btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Récupérer mes ${pts} Points`;
-
-    btnClaim.onclick = function() {
-        reclamerPointsBouton1(pts);
-    };
-}
 
 // ======================================================
-// 1. VÉRIFICATION DU BLOCAGE (Interroge Firebase)
-// ======================================================
-async function verifierSiTacheBloquee(taskId) {
-    if (!userId || !taskId) return false;
-
-    // Date du jour selon l'appareil (format: AAAA-MM-JJ)
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
-
-    try {
-        // Va lire dans users / USER_ID / taches_faites / TACHE_ID
-        const doc = await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).get();
-        
-        if (doc.exists && doc.data().dateExecution === dateAujourdhui) {
-            return true; // Déjà faite aujourd'hui !
-        }
-    } catch (error) {
-        console.error("Erreur de vérification Firebase :", error);
-    }
-
-    return false; // Mission autorisée
-}
-
-// ======================================================
-// 2. INITIALISATION DE LA MISSION (Vérifie avant d'ouvrir)
-// ======================================================
-async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
-    window.missionActiveId = uniqueId;
-    window.missionActivePoints = points;
-
-    // On attend la réponse de Firebase
-    const estBloquee = await verifierSiTacheBloquee(uniqueId);
-
-    if (estBloquee) {
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Vous avez déjà accompli cette mission aujourd'hui. Revenez demain !", "Tâche Bloquée");
-        }
-        return; // Stop : la modale ne s'ouvre pas
-    }
-
-    // Si pas bloquée, on ouvre la modale
-    const modal = document.getElementById("global-pub-modal");
-    if (modal) modal.style.display = "block";
-}
-
-// ======================================================
-// 3. RÉCLAMATION DES POINTS (Met à jour pointsDuJours)
+// 5. RÉCLAMATION ET ENREGISTREMENT DANS FIREBASE
 // ======================================================
 function reclamerPointsBouton1(pts) {
     if (!userId) {
@@ -1289,12 +1231,10 @@ function reclamerPointsBouton1(pts) {
 
     const pointsAAjouter = pts || 100;
 
-    // Mise à jour exacte sur ton champ "pointsDuJours"
     db.collection("users").doc(userId).update({
         pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter)
     }).then(() => {
         
-        // Verrouille la tâche dans Firebase pour aujourd'hui
         marquerTacheCommeBloquee(window.missionActiveId);
 
         if (btnClaim) {
@@ -1317,15 +1257,11 @@ function reclamerPointsBouton1(pts) {
     });
 }
 
-// ======================================================
-// 4. ENREGISTREMENT DU BLOCAGE PAR DATE DANS FIREBASE
-// ======================================================
 function marquerTacheCommeBloquee(taskId) {
     if (!userId || !taskId) return;
 
     const dateAujourdhui = new Date().toISOString().split('T')[0];
 
-    // Crée le document dans la sous-collection taches_faites
     db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
         dateExecution: dateAujourdhui,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
