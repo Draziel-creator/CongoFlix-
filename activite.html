@@ -1051,6 +1051,8 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     if (etat.b2Fait) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Vous avez déjà entièrement accompli et boosté cette tâche aujourd'hui. Revenez demain !", "Tâche Bloquée");
+        } else {
+            alert("Vous avez déjà entièrement accompli cette tâche aujourd'hui.");
         }
         return;
     }
@@ -1059,7 +1061,7 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         clearInterval(timerDecompteInterval);
     }
 
-    // Enregistrement de l'index de la vidéo active pour le Bouton 2
+    // Enregistrement des variables de mission globale
     window.missionActiveType = "video";
     window.missionActiveId = uniqueId;
     window.missionActivePoints = points;
@@ -1068,11 +1070,12 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const loader = document.getElementById("ad-stream-loader");
     const finger = document.getElementById("finger-indicator");
     const btnClaim = document.getElementById("btn-claim-points");
+    const btnBoost = document.getElementById("btn-boost-visit");
 
     if (loader) loader.style.display = "flex";
     if (finger) finger.style.display = "none";
 
-    // État du Bouton 1 selon Firebase
+    // --- INITIALISATION DU BOUTON 1 ---
     if (etat.b1Fait) {
         if (btnClaim) {
             btnClaim.disabled = true;
@@ -1088,6 +1091,21 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
             btnClaim.style.backgroundColor = "";
             btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Détection de la vidéo...';
             btnClaim.onclick = null;
+        }
+    }
+
+    // --- INITIALISATION DU BOUTON 2 ---
+    if (btnBoost) {
+        if (etat.b2Fait) {
+            btnBoost.disabled = true;
+            btnBoost.style.backgroundColor = "#6c757d";
+            btnBoost.innerHTML = '<i class="fa-solid fa-check-circle"></i> Boost déjà appliqué';
+            btnBoost.onclick = null;
+        } else {
+            btnBoost.disabled = false;
+            btnBoost.style.backgroundColor = "";
+            btnBoost.innerHTML = '<i class="fa-solid fa-rocket"></i> Booster (+10% & +1 XP)';
+            btnBoost.onclick = actionnerBoostPublicitaire;
         }
     }
 
@@ -1235,7 +1253,11 @@ function demarrerDecompte30Sec() {
 // ======================================================
 function reclamerPointsBouton1(pts) {
     if (!userId) {
-        afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
+        } else {
+            alert("Connexion requise.");
+        }
         return;
     }
 
@@ -1274,23 +1296,23 @@ function reclamerPointsBouton1(pts) {
 }
 
 // ======================================================
-// 5. BOUTON 2 : CONFIRMATION PUIS DÉCLENCHEMENT DES ACTIONS
+// 5. BOUTON 2 : CONFIRMATION ET EXÉCUTION
 // ======================================================
 
-// Étape A : Fonction appelée au clic du Bouton 2 -> Affiche l'alerte
+// Étape A : Affichage de la modale de confirmation
 function actionnerBoostPublicitaire() {
     if (!userId) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
+        } else {
+            alert("Connexion en cours... Veuillez patienter.");
         }
         return;
     }
 
-    // Suppression d'une modale de confirmation préexistante si présente
     const ancienneModale = document.getElementById("modal-confirmation-b2");
     if (ancienneModale) ancienneModale.remove();
 
-    // Création dynamique de l'overlay de confirmation
     const overlay = document.createElement("div");
     overlay.id = "modal-confirmation-b2";
     overlay.style.cssText = `
@@ -1307,13 +1329,13 @@ function actionnerBoostPublicitaire() {
                 <i class="fa-solid fa-triangle-exclamation"></i> Attention !
             </h3>
             <p style="font-size: 14px; line-height: 1.5; color: #444; margin: 15px 0 25px 0;">
-                Après validation de cette action, la tâche sera bloquée pour aujourd'hui. Si vous n'avez pas encore récupéré vos points de visionnage sur la tâche, veuillez vérifier si c'est le cas car il n'y aura pas de retour en arrière : la tâche sera bloquée et les points de visionnage d'aujourd'hui seront perdus.
+                Après validation de cette action, la tâche sera bloquée pour aujourd'hui. Si vous n'avez pas encore récupéré vos points de visionnage sur la tâche, veuillez vérifier car la tâche sera bloquée.
             </p>
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="btn-confirma-annuler" style="flex: 1; padding: 12px; border: none; background: #6c757d; color: #ffffff; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s;">
+                <button id="btn-confirma-annuler" style="flex: 1; padding: 12px; border: none; background: #6c757d; color: #ffffff; border-radius: 8px; font-weight: bold; cursor: pointer;">
                     Vérifier
                 </button>
-                <button id="btn-confirma-valider" style="flex: 1; padding: 12px; border: none; background: #e63946; color: #ffffff; border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s;">
+                <button id="btn-confirma-valider" style="flex: 1; padding: 12px; border: none; background: #e63946; color: #ffffff; border-radius: 8px; font-weight: bold; cursor: pointer;">
                     J'en suis sûr
                 </button>
             </div>
@@ -1322,19 +1344,17 @@ function actionnerBoostPublicitaire() {
 
     document.body.appendChild(overlay);
 
-    // BOUTON "VÉRIFIER" : Ferme la fenêtre d'avertissement et ne fait rien
     document.getElementById("btn-confirma-annuler").onclick = function() {
         overlay.remove();
     };
 
-    // BOUTON "J'EN SUIS SÛR" : Exécute Firebase + Ouverture Pub + Verrouillage Tâche
     document.getElementById("btn-confirma-valider").onclick = function() {
         overlay.remove();
         executerBoostPublicitaire();
     };
 }
 
-// Étape B : Traitement effectif des données Firebase et de la publicité
+// Étape B : Traitement effectif des actions du Bouton 2
 async function executerBoostPublicitaire() {
     const btnBoost = document.getElementById("btn-boost-visit");
     if (btnBoost) {
@@ -1343,13 +1363,34 @@ async function executerBoostPublicitaire() {
     }
 
     const ptsBase = window.missionActivePoints || 100;
-    const bonusPoints = Math.round(ptsBase * 0.10); // 10% des points
+    const bonusPoints = Math.round(ptsBase * 0.10); // +10% des points
     const bonusXP = 1; // +1 XP
     const dateAujourdhui = new Date().toISOString().split('T')[0];
 
-    // ----------------------------------------------------
-    // ACTION 1 : ENVOI EN MILISECONDES À FIREBASE
-    // ----------------------------------------------------
+    // 1. RECHERCHE DU LIEN PUB ET OUVERTURE IMMÉDIATE (Évite le blocage des popups)
+    const idZoneCible = "zone-pub-video" + window.missionActiveIndex;
+    const conteneurVideo = document.getElementById(idZoneCible);
+    let lienPubTrouve = null;
+
+    if (conteneurVideo) {
+        const lienA = conteneurVideo.querySelector("a[href]");
+        const iframeAd = conteneurVideo.querySelector("iframe");
+
+        if (lienA && lienA.href) {
+            lienPubTrouve = lienA.href;
+        } else if (iframeAd && iframeAd.src) {
+            lienPubTrouve = iframeAd.src;
+        }
+    }
+
+    // Déclenchement SYNCHRONE du clic/ouverture avant l'opération asynchrone Firebase
+    if (lienPubTrouve) {
+        window.open(lienPubTrouve, "_blank");
+    } else if (conteneurVideo) {
+        conteneurVideo.click();
+    }
+
+    // 2. ENVOI DES DONNÉES À FIREBASE
     try {
         const userRef = db.collection("users").doc(userId);
         const taskRef = userRef.collection("taches_faites").doc(window.missionActiveId);
@@ -1366,43 +1407,25 @@ async function executerBoostPublicitaire() {
             }, { merge: true })
         ]);
     } catch (err) {
-        console.error("Erreur lors de l'envoi rapide Firebase :", err);
-    }
-
-    // ----------------------------------------------------
-    // ACTION 2 : RÉCUPÉRATION ET OUVERTURE DE LA PUB
-    // ----------------------------------------------------
-    const idZoneCible = "zone-pub-video" + window.missionActiveIndex;
-    const conteneurVideo = document.getElementById(idZoneCible);
-    let lienPubTrouve = null;
-
-    if (conteneurVideo) {
-        const lienA = conteneurVideo.querySelector("a[href]");
-        const iframeAd = conteneurVideo.querySelector("iframe");
-
-        if (lienA && lienA.href) {
-            lienPubTrouve = lienA.href;
-        } else if (iframeAd && iframeAd.src) {
-            lienPubTrouve = iframeAd.src;
+        console.error("Erreur lors de l'envoi Firebase :", err);
+        if (btnBoost) {
+            btnBoost.disabled = false;
+            btnBoost.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer le boost`;
         }
+        return;
     }
 
-    if (lienPubTrouve) {
-        window.open(lienPubTrouve, "_blank");
-    } else if (conteneurVideo) {
-        conteneurVideo.click();
-    }
-
-    // ----------------------------------------------------
-    // ACTION 3 : NOTIFICATION ET FERMETURE DE LA MODALE
-    // ----------------------------------------------------
+    // 3. NOTIFICATION & FERMETURE
     if (btnBoost) {
         btnBoost.style.backgroundColor = "#6c757d";
         btnBoost.innerHTML = `<i class="fa-solid fa-check-circle"></i> Boost +${bonusPoints} Pts & +1 XP Validé !`;
     }
 
+    const messageSucces = `Boost activé ! +${bonusPoints} points et +1 XP ajoutés. Tâche entièrement terminée !`;
     if (typeof afficherAlertePersonnalisee === "function") {
-        afficherAlertePersonnalisee(`Boost activé ! +${bonusPoints} points et +1 XP ajoutés. Tâche entièrement terminée !`, "Victoire !");
+        afficherAlertePersonnalisee(messageSucces, "Victoire !");
+    } else {
+        alert(messageSucces);
     }
 
     setTimeout(() => {
