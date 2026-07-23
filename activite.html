@@ -1035,7 +1035,7 @@ async function verifierEtatTacheFirebase(taskId) {
 }
 
 // ======================================================
-// 2. INITIALISATION DE LA MISSION VIDÉO
+// 2. INITIALISATION DE LA MISSION VIDÉO (CADRE CENTRAL)
 // ======================================================
 async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1061,7 +1061,7 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         clearInterval(timerDecompteInterval);
     }
 
-    // Enregistrement des variables de mission globale (y compris le zoneId)
+    // Enregistrement des variables de mission globale
     window.missionActiveType = "video";
     window.missionActiveId = uniqueId;
     window.missionActivePoints = points;
@@ -1136,7 +1136,7 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
-    // Injection Clickadilla pour le CADRE CENTRAL
+    // Injection Clickadilla pour le CADRE CENTRAL (Méthode de référence)
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1250,7 +1250,7 @@ function demarrerDecompte30Sec() {
 }
 
 // ======================================================
-// 4. BOUTON 1 : CRÉDIT DES POINTS DE VISIONNAGE
+// 4. BOUTON 1 : CRÉDIT DES POINTS
 // ======================================================
 function reclamerPointsBouton1(pts) {
     if (!userId) {
@@ -1297,10 +1297,10 @@ function reclamerPointsBouton1(pts) {
 }
 
 // ======================================================
-// 5. BOUTON 2 : CONFIRMATION ET EXÉCUTION
+// 5. BOUTON 2 : MODALE & EXÉCUTION D'APPEL IDENTIQUE AU CADRE
 // ======================================================
 
-// Étape A : Affichage de la modale de confirmation
+// Étape A : Confirmation
 function actionnerBoostPublicitaire() {
     if (!userId) {
         if (typeof afficherAlertePersonnalisee === "function") {
@@ -1355,29 +1355,7 @@ function actionnerBoostPublicitaire() {
     };
 }
 
-// Fonction auxiliaire : Appel publicitaire propre et indépendant pour le Bouton 2
-function declencherPubIndependanteBouton(zoneId) {
-    if (!zoneId) return;
-    try {
-        let scriptBoost = document.createElement("script");
-        scriptBoost.async = true;
-        scriptBoost.src = "https://js.wpadmngr.com/static/adManager.js";
-        scriptBoost.setAttribute("data-admpid", zoneId);
-
-        document.body.appendChild(scriptBoost);
-
-        // Nettoyage automatique du script injecté après 3 secondes
-        setTimeout(() => {
-            if (scriptBoost && scriptBoost.parentNode) {
-                scriptBoost.parentNode.removeChild(scriptBoost);
-            }
-        }, 3000);
-    } catch (e) {
-        console.error("Erreur lors de l'appel publicitaire du Bouton 2 :", e);
-    }
-}
-
-// Étape B : Traitement effectif des actions du Bouton 2
+// Étape B : Traitement et appel publicitaire IDENTIQUE au cadre central
 async function executerBoostPublicitaire() {
     const btnBoost = document.getElementById("btn-boost-visit");
     if (btnBoost) {
@@ -1391,7 +1369,27 @@ async function executerBoostPublicitaire() {
     const dateAujourdhui = new Date().toISOString().split('T')[0];
 
     // ----------------------------------------------------
-    // ACTION 1 : ENREGISTREMENT SYNC/ASYNC FIREBASE D'ABORD
+    // 1. APPEL PUBLICITAIRE STRICTEMENT IDENTIQUE AU CADRE CENTRAL
+    // ----------------------------------------------------
+    const idZoneCible = "zone-pub-video" + window.missionActiveIndex;
+    const conteneurVideo = document.getElementById(idZoneCible);
+
+    if (conteneurVideo && window.missionActiveZoneId) {
+        try {
+            let scriptBoost = document.createElement("script");
+            scriptBoost.async = true;
+            scriptBoost.src = "https://js.wpadmngr.com/static/adManager.js";
+            scriptBoost.setAttribute("data-admpid", window.missionActiveZoneId);
+
+            // Attachement exact au conteneur cible comme dans initierMissionVideo
+            conteneurVideo.appendChild(scriptBoost);
+        } catch (e) {
+            console.error("Erreur lors de l'injection du script pour le Bouton 2 :", e);
+        }
+    }
+
+    // ----------------------------------------------------
+    // 2. SAUVEGARDE DANS FIREBASE
     // ----------------------------------------------------
     try {
         const userRef = db.collection("users").doc(userId);
@@ -1408,7 +1406,6 @@ async function executerBoostPublicitaire() {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true })
         ]);
-        console.log("Firebase : +10% points, +1 XP et verrouillage de la date enregistrés.");
     } catch (err) {
         console.error("Erreur Firebase lors du Boost :", err);
         if (btnBoost) {
@@ -1419,12 +1416,7 @@ async function executerBoostPublicitaire() {
     }
 
     // ----------------------------------------------------
-    // ACTION 2 : APPEL PUBLICITAIRE INDÉPENDANT DU BOUTON 2
-    // ----------------------------------------------------
-    declencherPubIndependanteBouton(window.missionActiveZoneId);
-
-    // ----------------------------------------------------
-    // ACTION 3 : BLOQUER LE BOUTON ET FERMER LA MODALE
+    // 3. MISE À JOUR DE L'IHM ET FERMETURE
     // ----------------------------------------------------
     if (btnBoost) {
         btnBoost.style.backgroundColor = "#6c757d";
