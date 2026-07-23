@@ -535,12 +535,12 @@
     <div class="pub-modal-content">
         
         <!-- Bouton Fermer (X) unique en haut à gauche -->
-        <button class="btn-fermer-modal" onclick="fermerModaleActive()">
+        <button class="btn-fermer-modal" onclick="fermerModaleActive()" style="position: relative; z-index: 10000;">
             <i class="fa-solid fa-xmark"></i>
         </button>
         
-        <!-- 1. CADRE VIDÉO ET PUBLICITÉ (Uniquement le contenu média + le doigt) -->
-        <div class="pub-square-container" id="square-container-area">
+        <!-- 1. CADRE VIDÉO ET PUBLICITÉ -->
+        <div class="pub-square-container" id="square-container-area" style="position: relative; overflow: hidden;">
             
             <!-- Analyseur de flux publicitaire actif -->
             <div class="blue-status-layer" id="ad-stream-loader">
@@ -549,7 +549,7 @@
                 <p style="font-size: 11px; color: #8a8d9f; margin: 5px 0 0 0;">Vérification de la source en cours</p>
             </div>
 
-            <!-- HTML du Doigt (Superposé uniquement sur la zone vidéo) -->
+            <!-- HTML du Doigt -->
             <div class="finger-pulse-indicator" id="finger-indicator" onclick="declencherPlayFlux(event)">
                 <i class="fa-solid fa-hand-pointer"></i>
                 <span>CLIQUEZ POUR LANCER</span>
@@ -567,25 +567,24 @@
             <div id="zone-pub-video9" class="ad-slot-square"></div>
             <div id="zone-pub-video10" class="ad-slot-square"></div>
             
-            <!-- Zone de chargement Universelle des Bannières -->
+            <!-- Zone alternative -->
             <div id="zone-pub-alternative" class="ad-slot-square" style="overflow-y: auto;">
-                <div class="box-banner-filler-300-250" id="box-banner-inside-modal">
-                    <!-- Injecté par JavaScript en mode iframe multiple -->
-                </div>
+                <div class="box-banner-filler-300-250" id="box-banner-inside-modal"></div>
             </div>
 
         </div> <!-- Fin de pub-square-container -->
 
-        <!-- 2. COMMANDES ET DÉCOMPTE (Strictement sous le cadre vidéo) -->
-        <div class="pub-modal-actions">
+        <!-- 2. COMMANDES ET DÉCOMPTE (Priorité Z-Index élevée pour réagir aux clics) -->
+        <div class="pub-modal-actions" style="position: relative; z-index: 9999; pointer-events: auto;">
             
-            <!-- LE BOUTON 1 UNIQUE ICI -->
-            <button class="btn-modal-action btn-modal-claim" id="btn-claim-points" disabled>
+            <!-- LE BOUTON 1 -->
+            <button class="btn-modal-action btn-modal-claim" id="btn-claim-points" disabled style="position: relative; z-index: 10000;">
                 <i class="fa-solid fa-lock"></i> Cliquez sur le doigt pour lancer le chrono
             </button>
             
-            <div style="width: 100%; text-align: center;">
-                <button class="btn-modal-action btn-modal-visit" id="btn-boost-visit" onclick="actionnerBoostPublicitaire()">
+            <!-- LE BOUTON 2 -->
+            <div style="width: 100%; text-align: center; position: relative; z-index: 10000;">
+                <button class="btn-modal-action btn-modal-visit" id="btn-boost-visit" onclick="actionnerBoostPublicitaire(event)" style="position: relative; z-index: 10000; cursor: pointer;">
                     <i class="fa-solid fa-rocket"></i> Boostage de 10% du points du visionnage et +1 sur XP
                 </button>
                 <p style="font-size: 10px; color: #8a8d9f; margin: 5px 0 0 0; line-height: 1.3;">
@@ -1299,10 +1298,17 @@ function reclamerPointsBouton1(pts) {
 // ======================================================
 // 5. BOUTON 2 : MODALE & EXÉCUTION D'APPEL IDENTIQUE AU CADRE
 // ======================================================
+// Étape A : Confirmation et déclenchement
+function actionnerBoostPublicitaire(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
 
-// Étape A : Confirmation
-function actionnerBoostPublicitaire() {
-    if (!userId) {
+    console.log("--> LE BOUTON 2 A BIEN ÉTÉ CLIQUÉ !");
+
+    if (typeof userId === "undefined" || !userId) {
+        console.warn("Utilisateur non connecté ou userId introuvable.");
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
         } else {
@@ -1319,13 +1325,13 @@ function actionnerBoostPublicitaire() {
     overlay.style.cssText = `
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0, 0, 0, 0.75);
+        background-color: rgba(0, 0, 0, 0.85);
         display: flex; align-items: center; justify-content: center;
-        z-index: 99999; padding: 20px; box-sizing: border-box;
+        z-index: 999999; padding: 20px; box-sizing: border-box;
     `;
 
     overlay.innerHTML = `
-        <div style="background: #ffffff; color: #222; max-width: 440px; width: 100%; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-family: sans-serif;">
+        <div style="background: #ffffff; color: #222; max-width: 440px; width: 100%; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: sans-serif; position: relative; z-index: 1000000;">
             <h3 style="margin-top: 0; color: #e63946; font-size: 20px; font-weight: bold;">
                 <i class="fa-solid fa-triangle-exclamation"></i> Attention !
             </h3>
