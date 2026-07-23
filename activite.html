@@ -1227,6 +1227,54 @@ function activerBoutonRecuperation() {
     };
 }
 
+// ======================================================
+// 1. VÉRIFICATION DU BLOCAGE (Interroge Firebase)
+// ======================================================
+async function verifierSiTacheBloquee(taskId) {
+    if (!userId || !taskId) return false;
+
+    // Date du jour selon l'appareil (format: AAAA-MM-JJ)
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+
+    try {
+        // Va lire dans users / USER_ID / taches_faites / TACHE_ID
+        const doc = await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).get();
+        
+        if (doc.exists && doc.data().dateExecution === dateAujourdhui) {
+            return true; // Déjà faite aujourd'hui !
+        }
+    } catch (error) {
+        console.error("Erreur de vérification Firebase :", error);
+    }
+
+    return false; // Mission autorisée
+}
+
+// ======================================================
+// 2. INITIALISATION DE LA MISSION (Vérifie avant d'ouvrir)
+// ======================================================
+async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
+    window.missionActiveId = uniqueId;
+    window.missionActivePoints = points;
+
+    // On attend la réponse de Firebase
+    const estBloquee = await verifierSiTacheBloquee(uniqueId);
+
+    if (estBloquee) {
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Vous avez déjà accompli cette mission aujourd'hui. Revenez demain !", "Tâche Bloquée");
+        }
+        return; // Stop : la modale ne s'ouvre pas
+    }
+
+    // Si pas bloquée, on ouvre la modale
+    const modal = document.getElementById("global-pub-modal");
+    if (modal) modal.style.display = "block";
+}
+
+// ======================================================
+// 3. RÉCLAMATION DES POINTS (Met à jour pointsDuJours)
+// ======================================================
 function reclamerPointsBouton1(pts) {
     if (!userId) {
         afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
@@ -1241,10 +1289,13 @@ function reclamerPointsBouton1(pts) {
 
     const pointsAAjouter = pts || 100;
 
+    // Mise à jour exacte sur ton champ "pointsDuJours"
     db.collection("users").doc(userId).update({
         pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter)
     }).then(() => {
-        marquerTacheCommeBloquee(missionActiveId);
+        
+        // Verrouille la tâche dans Firebase pour aujourd'hui
+        marquerTacheCommeBloquee(window.missionActiveId);
 
         if (btnClaim) {
             btnClaim.style.backgroundColor = "#6c757d";
@@ -1252,13 +1303,34 @@ function reclamerPointsBouton1(pts) {
         }
 
         afficherAlertePersonnalisee(`Félicitations ! Vous avez gagné ${pointsAAjouter} points !`, "Victoire !");
-        fermerModaleActive();
+        
+        setTimeout(() => {
+            if (typeof fermerModaleActive === "function") fermerModaleActive();
+        }, 1500);
+
     }).catch((error) => {
         console.error("Erreur Firebase :", error);
         if (btnClaim) {
             btnClaim.disabled = false;
             btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
         }
+    });
+}
+
+// ======================================================
+// 4. ENREGISTREMENT DU BLOCAGE PAR DATE DANS FIREBASE
+// ======================================================
+function marquerTacheCommeBloquee(taskId) {
+    if (!userId || !taskId) return;
+
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+
+    // Crée le document dans la sous-collection taches_faites
+    db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
+        dateExecution: dateAujourdhui,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch((err) => {
+        console.error("Erreur lors de l'enregistrement de la date :", err);
     });
 }
 
