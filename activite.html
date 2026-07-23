@@ -1156,35 +1156,15 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 }
 
 // ======================================================
-// 3. ÉCOUTEUR INTELLIGENT DE LA PUB (ENREGISTREMENT FIREBASE DU CLIC)
+// 3. ÉCOUTEUR D'INTERACTION PUBLICITAIRE (BLUR)
 // ======================================================
-window.addEventListener("blur", async function() {
+window.addEventListener("blur", function() {
     const modal = document.getElementById("global-pub-modal");
 
-    // Si la modale est active et que la fenêtre perd le focus (clic sur la pub dans l'iframe)
-    if (modal && modal.style.display !== "none" && !window.pubCliquee) {
+    // Si la modale est active et que la fenêtre perd le focus, l'utilisateur a cliqué dans le cadre
+    if (modal && modal.style.display !== "none") {
         window.pubCliquee = true;
-        console.log("--> Clic sur la publicité détecté ! Enregistrement intelligent du bonus...");
-
-        // Enregistrement immédiat dans Firebase du bonus et verrouillage
-        if (userId && window.missionActiveId) {
-            const dateAujourdhui = new Date().toISOString().split('T')[0];
-            const ptsBase = window.missionActivePoints || 100;
-            const bonusPoints = Math.round(ptsBase * 0.10);
-            const bonusXP = 1;
-
-            try {
-                await db.collection("users").doc(userId).collection("taches_faites").doc(window.missionActiveId).set({
-                    pubCliqueeDate: dateAujourdhui,
-                    boostApplique: true,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-                
-                console.log("Bonus de pub enregistré avec succès en arrière-plan.");
-            } catch (err) {
-                console.error("Erreur enregistrement clic pub Firebase :", err);
-            }
-        }
+        console.log("--> INTERACTION PUBLICITAIRE DÉTECTÉE ! Bonus +10% et +1 XP activés.");
 
         const finger = document.getElementById("finger-indicator");
         if (finger && finger.style.display !== "none") {
@@ -1211,8 +1191,8 @@ function declencherPlayFlux(event) {
     demarrerDecompte30Sec();
 }
 
-function demarrerDecompte5Sec() {
-    let secondesRestantes = 5;
+function demarrerDecompte30Sec() {
+    let secondesRestantes = 30;
     const btnClaim = document.getElementById("btn-claim-points");
 
     if (!btnClaim) return;
@@ -1238,86 +1218,19 @@ function demarrerDecompte5Sec() {
             btnClaim.style.color = "#ffffff";
             
             const pointsBase = window.missionActivePoints || 100;
-            
-            // Affichage dynamique sur le bouton selon si la pub a été cliquée ou non
-            if (window.pubCliquee) {
-                const bonusPts = Math.round(pointsBase * 0.10);
-                btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${pointsBase + bonusPts} Pts (+10% & +1 XP)`;
-            } else {
-                btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${pointsBase} Pts`;
-            }
+            btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer vos gains`;
 
             btnClaim.onclick = function() {
-                verifierEtRecupererPoints(pointsBase);
+                reclamerPointsUnifie(pointsBase);
             };
         }
     }, 1000);
 }
 
 // ======================================================
-// 5. GESTION DE LA RÉCLAMATION AVEC MODALE SI LA PUB N'A PAS ÉTÉ CLIQUÉE
+// 5. BOUTON UNIQUE : CRÉDIT DES POINTS (BASE + BONUS OPTIONNEL)
 // ======================================================
-function verifierEtRecupererPoints(ptsBase) {
-    // Si la pub a déjà été cliquée, on encaisse directement les gains complets
-    if (window.pubCliquee) {
-        executerEncaissement(ptsBase, true);
-    } else {
-        // Sinon, on affiche la modale d'alerte avec les deux choix
-        afficherModaleAlertePubManquante(ptsBase);
-    }
-}
-
-function afficherModaleAlertePubManquante(ptsBase) {
-    const ancienneModale = document.getElementById("modal-alerte-pub");
-    if (ancienneModale) ancienneModale.remove();
-
-    const overlay = document.createElement("div");
-    overlay.id = "modal-alerte-pub";
-    overlay.style.cssText = `
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0, 0, 0, 0.85);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 999999; padding: 20px; box-sizing: border-box;
-    `;
-
-    overlay.innerHTML = `
-        <div style="background: #ffffff; color: #222; max-width: 440px; width: 100%; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: sans-serif; position: relative; z-index: 1000000;">
-            <h3 style="margin-top: 0; color: #e63946; font-size: 20px; font-weight: bold;">
-                <i class="fa-solid fa-triangle-exclamation"></i> Attendez !
-            </h3>
-            <p style="font-size: 14px; line-height: 1.5; color: #444; margin: 15px 0 25px 0;">
-                Vous n'avez pas encore cliqué sur la publicité pour récupérer vos points de bonus (+10% et +1 XP). Si vous continuez, vous ne toucherez que vos points de base et la tâche sera bloquée pour aujourd'hui.
-            </p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="btn-alerte-annuler" style="flex: 1; padding: 12px; border: none; background: #6c757d; color: #ffffff; border-radius: 8px; font-weight: bold; cursor: pointer;">
-                    Aller cliquer sur la pub
-                </button>
-                <button id="btn-alerte-ok" style="flex: 1; padding: 12px; border: none; background: #28a745; color: #ffffff; border-radius: 8px; font-weight: bold; cursor: pointer;">
-                    Je suis satisfait (OK)
-                </button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    // Bouton 1 : Annule la réclamation pour laisser l'utilisateur aller cliquer sur la pub
-    document.getElementById("btn-alerte-annuler").onclick = function() {
-        overlay.remove();
-    };
-
-    // Bouton 2 : L'utilisateur est satisfait de ses points de base, on encaisse et on bloque la tâche
-    document.getElementById("btn-alerte-ok").onclick = function() {
-        overlay.remove();
-        executerEncaissement(ptsBase, false);
-    };
-}
-
-// ======================================================
-// 6. ENCAISSEMENT FINAL DANS FIREBASE
-// ======================================================
-async function executerEncaissement(ptsBase, avecBonus) {
+async function reclamerPointsUnifie(ptsBase) {
     if (!userId) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
@@ -1330,55 +1243,63 @@ async function executerEncaissement(ptsBase, avecBonus) {
     const btnClaim = document.getElementById("btn-claim-points");
     if (btnClaim) {
         btnClaim.disabled = true;
-        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
+        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement des gains...`;
     }
 
+    const pointsDuVisionnage = ptsBase || window.missionActivePoints || 100;
     const dateAujourdhui = new Date().toISOString().split('T')[0];
-    let pointsFinals = ptsBase;
-    let xpFinal = 0;
 
-    if (avecBonus) {
-        pointsFinals += Math.round(ptsBase * 0.10); // +10%
-        xpFinal = 1; // +1 XP
+    // Calcul du bonus si l'interaction pub a été détectée
+    let bonusPoints = 0;
+    let bonusXP = 0;
+
+    if (window.pubCliquee) {
+        bonusPoints = Math.round(pointsDuVisionnage * 0.10); // +10%
+        bonusXP = 1; // +1 XP
     }
+
+    const totalPointsAAttribuer = pointsDuVisionnage + bonusPoints;
 
     try {
         const userRef = db.collection("users").doc(userId);
         const taskRef = userRef.collection("taches_faites").doc(window.missionActiveId);
 
+        // Mise à jour de l'utilisateur dans Firebase
         const majUser = {
-            pointsDuJours: firebase.firestore.FieldValue.increment(pointsFinals)
+            pointsDuJours: firebase.firestore.FieldValue.increment(totalPointsAAttribuer)
         };
-        if (xpFinal > 0) {
-            majUser.XP = firebase.firestore.FieldValue.increment(xpFinal);
+        if (bonusXP > 0) {
+            majUser.XP = firebase.firestore.FieldValue.increment(bonusXP);
         }
 
         await Promise.all([
             userRef.update(majUser),
             taskRef.set({
                 bouton1Date: dateAujourdhui,
+                bouton2Date: dateAujourdhui,
                 dateExecution: dateAujourdhui,
-                boostApplique: avecBonus,
+                boostApplique: window.pubCliquee,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true })
         ]);
 
         if (btnClaim) {
             btnClaim.style.backgroundColor = "#6c757d";
-            btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${pointsFinals} Pts encaissés !`;
+            btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Gains de ${totalPointsAAttribuer} Pts crédités !`;
         }
 
-        let messageFinal = "";
-        if (avecBonus) {
-            messageFinal = `Félicitations ! ${pointsFinals} points et +1 XP enregistrés avec succès. La tâche est maintenant verrouillée jusqu'demain.`;
+        // Message explicatif selon si la pub a été cliquée ou non
+        let messageModal = "";
+        if (window.pubCliquee) {
+            messageModal = `Félicitations ! Vous avez obtenu ${pointsDuVisionnage} pts de visionnage + ${bonusPoints} pts de bonus (+10%) et +1 XP pour avoir interagi avec la publicité. La tâche sera réinitialisée demain.`;
         } else {
-            messageFinal = `Vos ${pointsFinals} points de base ont été encaissés. La tâche est maintenant verrouillée jusqu'demain.`;
+            messageModal = `Vous avez récupéré vos ${pointsDuVisionnage} points de visionnage. (Si vous n'avez pas cliqué sur la publicité, le bonus de +10% et +1 XP n'a pas pu être appliqué). La tâche sera réinitialisée demain.`;
         }
 
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(messageFinal, "Tâche Terminée");
+            afficherAlertePersonnalisee(messageModal, "Tâche Validée");
         } else {
-            alert(messageFinal);
+            alert(messageModal);
         }
 
         setTimeout(() => {
@@ -1388,10 +1309,10 @@ async function executerEncaissement(ptsBase, avecBonus) {
         }, 1500);
 
     } catch (error) {
-        console.error("Erreur Firebase lors de l'encaissement :", error);
+        console.error("Erreur Firebase :", error);
         if (btnClaim) {
             btnClaim.disabled = false;
-            btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer`;
+            btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
         }
     }
 }
