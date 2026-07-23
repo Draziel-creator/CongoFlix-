@@ -1359,38 +1359,17 @@ async function executerBoostPublicitaire() {
     const btnBoost = document.getElementById("btn-boost-visit");
     if (btnBoost) {
         btnBoost.disabled = true;
-        btnBoost.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Traitement rapide...`;
+        btnBoost.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Traitement du boost...`;
     }
 
     const ptsBase = window.missionActivePoints || 100;
-    const bonusPoints = Math.round(ptsBase * 0.10); // +10% des points
+    const bonusPoints = Math.round(ptsBase * 0.10); // +10%
     const bonusXP = 1; // +1 XP
     const dateAujourdhui = new Date().toISOString().split('T')[0];
 
-    // 1. RECHERCHE DU LIEN PUB ET OUVERTURE IMMÉDIATE (Évite le blocage des popups)
-    const idZoneCible = "zone-pub-video" + window.missionActiveIndex;
-    const conteneurVideo = document.getElementById(idZoneCible);
-    let lienPubTrouve = null;
-
-    if (conteneurVideo) {
-        const lienA = conteneurVideo.querySelector("a[href]");
-        const iframeAd = conteneurVideo.querySelector("iframe");
-
-        if (lienA && lienA.href) {
-            lienPubTrouve = lienA.href;
-        } else if (iframeAd && iframeAd.src) {
-            lienPubTrouve = iframeAd.src;
-        }
-    }
-
-    // Déclenchement SYNCHRONE du clic/ouverture avant l'opération asynchrone Firebase
-    if (lienPubTrouve) {
-        window.open(lienPubTrouve, "_blank");
-    } else if (conteneurVideo) {
-        conteneurVideo.click();
-    }
-
-    // 2. ENVOI DES DONNÉES À FIREBASE
+    // ----------------------------------------------------
+    // ACTION 1 : ENREGISTREMENT SYNC/ASYNC FIREBASE D'ABORD
+    // ----------------------------------------------------
     try {
         const userRef = db.collection("users").doc(userId);
         const taskRef = userRef.collection("taches_faites").doc(window.missionActiveId);
@@ -1406,8 +1385,9 @@ async function executerBoostPublicitaire() {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true })
         ]);
+        console.log("Firebase : +10% points, +1 XP et verrouillage de la date enregistrés.");
     } catch (err) {
-        console.error("Erreur lors de l'envoi Firebase :", err);
+        console.error("Erreur Firebase lors du Boost :", err);
         if (btnBoost) {
             btnBoost.disabled = false;
             btnBoost.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer le boost`;
@@ -1415,17 +1395,66 @@ async function executerBoostPublicitaire() {
         return;
     }
 
-    // 3. NOTIFICATION & FERMETURE
+    // ----------------------------------------------------
+    // ACTION 2 : CAPTURE SPÉCIFIQUE DE LA PUB DANS LE CADRAN
+    // ----------------------------------------------------
+    const idZoneCible = "zone-pub-video" + window.missionActiveIndex;
+    const conteneurVideo = document.getElementById(idZoneCible);
+    let lienPubExterne = null;
+
+    if (conteneurVideo) {
+        // Recherche de tous les liens A et IFRAME injectés par Clickadilla dans la zone vidéo
+        const liens = conteneurVideo.querySelectorAll("a[href]");
+        const iframes = conteneurVideo.querySelectorAll("iframe");
+
+        // 1. Recherche d'une URL externe valide (qui n'est pas votre domaine PWA)
+        for (let a of liens) {
+            const href = a.getAttribute("href");
+            if (href && href.startsWith("http") && !href.includes(window.location.hostname)) {
+                lienPubExterne = href;
+                break;
+            }
+        }
+
+        // 2. Sinon recherche dans l'iframe
+        if (!lienPubExterne) {
+            for (let iframe of iframes) {
+                const src = iframe.getAttribute("src");
+                if (src && src.startsWith("http") && !src.includes(window.location.hostname)) {
+                    lienPubExterne = src;
+                    break;
+                }
+            }
+        }
+    }
+
+    // ----------------------------------------------------
+    // ACTION 3 : OUVERTURE SÉCURISÉE DE LA PUB
+    // ----------------------------------------------------
+    if (lienPubExterne) {
+        // Ouvre uniquement la vraie URL sponsorisée de la pub
+        window.open(lienPubExterne, "_blank");
+    } else if (conteneurVideo) {
+        // Clic ciblé uniquement sur la pub interne (ex: l'iframe ou l'élément actif)
+        const elPub = conteneurVideo.querySelector("iframe, a, img");
+        if (elPub && typeof elPub.click === "function") {
+            elPub.click();
+        }
+    }
+
+    // ----------------------------------------------------
+    // ACTION 4 : BLOQUER LE BOUTON ET FERMER LA MODALE
+    // ----------------------------------------------------
     if (btnBoost) {
         btnBoost.style.backgroundColor = "#6c757d";
         btnBoost.innerHTML = `<i class="fa-solid fa-check-circle"></i> Boost +${bonusPoints} Pts & +1 XP Validé !`;
     }
 
-    const messageSucces = `Boost activé ! +${bonusPoints} points et +1 XP ajoutés. Tâche entièrement terminée !`;
+    const msgSucces = `Boost activé ! +${bonusPoints} points et +1 XP ajoutés. Tâche bloquée pour aujourd'hui !`;
     if (typeof afficherAlertePersonnalisee === "function") {
-        afficherAlertePersonnalisee(messageSucces, "Victoire !");
+        afficherAlertePersonnalisee(msgSucces, "Victoire !");
     } else {
-        alert(messageSucces);
+        alert(msgSucces);
     }
 
     setTimeout(() => {
