@@ -1008,120 +1008,34 @@ function fermerIframeVIP() {
 if (typeof timerDecompteInterval === "undefined") {
     var timerDecompteInterval = null;
 }
-window.pubCliquee = false;
-window.surveillantIframeActif = false;
+window.pubCliquee = false; // Flag pour enregistrer si l'utilisateur a cliqué sur la pub
 
 // ======================================================
-// 1. GESTION DE LA PERSISTANCE LOCALE (MÊME SI L'APPLI FERME)
-// ======================================================
-function obtenirCleStockage(taskId) {
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
-    return `pub_cliquee_${taskId}_${dateAujourdhui}`;
-}
-
-// Vérifie si le clic a été enregistré dans le téléphone/navigateur aujourd'hui
-function verifierClicPubLocal(taskId) {
-    const cle = obtenirCleStockage(taskId);
-    return localStorage.getItem(cle) === "true";
-}
-
-// Enregistre le clic localement et dans Firebase immédiatement
-async function marquerPubCliqueeImmediat(taskId) {
-    window.pubCliquee = true;
-    const cle = obtenirCleStockage(taskId);
-    localStorage.setItem(cle, "true");
-    
-    console.log("--> Clic Pub validé et sauvegardé localement !");
-
-    // Mise à jour visuelle immédiate du bouton s'il est affiché
-    actualiserAffichageBouton();
-
-    // Sauvegarde immédiate en arrière-plan dans Firebase
-    if (userId && taskId) {
-        const dateAujourdhui = new Date().toISOString().split('T')[0];
-        try {
-            await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
-                pubCliqueeDate: dateAujourdhui,
-                boostApplique: true,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-            console.log("--> Clic Pub synchronisé avec Firebase !");
-        } catch (err) {
-            console.error("Erreur sync Firebase clic pub :", err);
-        }
-    }
-}
-
-// ======================================================
-// 2. DÉTECTION INTELLIGENTE DU CLIC SUR L'IFRAME PUB
-// ======================================================
-function activerSurveillanceIframe(zoneContainerId, taskId) {
-    const container = document.getElementById(zoneContainerId);
-    if (!container) return;
-
-    let survolZonePub = false;
-
-    // Détection du survol/toucher de la zone de publicité
-    container.addEventListener("mouseenter", () => { survolZonePub = true; });
-    container.addEventListener("mouseleave", () => { survolZonePub = false; });
-    container.addEventListener("touchstart", () => { survolZonePub = true; }, { passive: true });
-
-    // Écouteur perte de focus (Blur)
-    const gererPerteFocus = () => {
-        const elemActif = document.activeElement;
-        const estIframe = elemActif && elemActif.tagName === "IFRAME";
-
-        if ((survolZonePub || estIframe) && !window.pubCliquee) {
-            marquerPubCliqueeImmediat(taskId);
-        }
-    };
-
-    // Écouteur changement de visibilité (sortie d'application)
-    const gererVisibilite = () => {
-        if (document.hidden && survolZonePub && !window.pubCliquee) {
-            marquerPubCliqueeImmediat(taskId);
-        }
-    };
-
-    window.removeEventListener("blur", gererPerteFocus);
-    document.removeEventListener("visibilitychange", gererVisibilite);
-
-    window.addEventListener("blur", gererPerteFocus);
-    document.addEventListener("visibilitychange", gererVisibilite);
-}
-
-// ======================================================
-// 3. VÉRIFICATION DE L'ÉTAT DANS FIREBASE ET LOCALSTORAGE
+// 1. VÉRIFICATION DE L'ÉTAT DE LA TÂCHE DANS FIREBASE
 // ======================================================
 async function verifierEtatTacheFirebase(taskId) {
-    if (!userId || !taskId) return { b1Fait: false, pubCliquee: false };
+    if (!userId || !taskId) return { b1Fait: false, b2Fait: false };
 
     const dateAujourdhui = new Date().toISOString().split('T')[0];
-    let pubEstCliquee = verifierClicPubLocal(taskId);
 
     try {
         const doc = await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).get();
         if (doc.exists) {
             const data = doc.data();
-            const b1Fait = data.bouton1Date === dateAujourdhui || data.dateExecution === dateAujourdhui;
-            
-            if (data.pubCliqueeDate === dateAujourdhui || data.boostApplique === true) {
-                pubEstCliquee = true;
-                // Met à jour la mémoire locale pour cohérence
-                localStorage.setItem(obtenirCleStockage(taskId), "true");
-            }
-
-            return { b1Fait, pubCliquee: pubEstCliquee };
+            return {
+                b1Fait: data.bouton1Date === dateAujourdhui,
+                b2Fait: data.bouton2Date === dateAujourdhui || data.dateExecution === dateAujourdhui
+            };
         }
     } catch (error) {
         console.error("Erreur de vérification Firebase :", error);
     }
 
-    return { b1Fait: false, pubCliquee: pubEstCliquee };
+    return { b1Fait: false, b2Fait: false };
 }
 
 // ======================================================
-// 4. INITIALISATION DE LA MISSION VIDÉO
+// 2. INITIALISATION DE LA MISSION VIDÉO (CADRE CENTRAL)
 // ======================================================
 async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1130,12 +1044,14 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
-    // Récupération de l'état (local + Firebase)
-    const etat = await verifierEtatTacheFirebase(uniqueId);
-    window.pubCliquee = etat.pubCliquee;
+    // Réinitialisation de la détection de clic pub pour cette session
+    window.pubCliquee = false;
 
-    // Si la tâche globale a déjà été validée aujourd'hui
-    if (etat.b1Fait) {
+    // Vérification Firebase
+    const etat = await verifierEtatTacheFirebase(uniqueId);
+
+    // Si la tâche a déjà été faite aujourd'hui
+    if (etat.b1Fait || etat.b2Fait) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Vous avez déjà accompli cette tâche aujourd'hui. Revenez demain !", "Tâche Bloquée");
         } else {
@@ -1144,11 +1060,11 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         return;
     }
 
-    if (window.timerDecompteInterval) {
-        clearInterval(window.timerDecompteInterval);
+    if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) {
+        clearInterval(timerDecompteInterval);
     }
 
-    // Variables globales
+    // Enregistrement des variables de mission globale
     window.missionActiveType = "video";
     window.missionActiveId = uniqueId;
     window.missionActivePoints = points;
@@ -1162,18 +1078,19 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     if (loader) loader.style.display = "flex";
     if (finger) finger.style.display = "none";
 
+    // Initialisation du bouton unique de réclamation
     if (btnClaim) {
         btnClaim.disabled = true;
         btnClaim.className = "btn-modal-action btn-modal-claim";
         btnClaim.style.backgroundColor = "";
-        btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Chargement de la vidéo...';
+        btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Détection de la vidéo...';
         btnClaim.onclick = null;
     }
 
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    // Réinitialisation des conteneurs vidéo
+    // Réinitialisation des zones vidéos
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
@@ -1192,10 +1109,11 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
     conteneurVideo.style.display = "block";
 
+    // Affichage modale
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
-    // Injection du script de publicité
+    // Injection du script publicitaire
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1209,24 +1127,21 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
             conteneurVideo.appendChild(scriptVideo);
 
-            // Activer la surveillance intelligente sur cette zone de publicité
-            activerSurveillanceIframe(idZoneCible, uniqueId);
-
             if (typeof surveillerPresencePub === "function") {
                 surveillerPresencePub(
                     idZoneCible,
                     () => {
                         if (btnClaim) {
-                            btnClaim.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Préparation...';
+                            btnClaim.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Préparation du lecteur...';
                         }
 
                         setTimeout(() => {
                             if (loader) loader.style.display = "none";
                             if (finger) finger.style.display = "flex";
                             if (btnClaim) {
-                                btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur le doigt au centre';
+                                btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur le doigt pour lancer le chrono';
                             }
-                        }, 2000);
+                        }, 2500);
                     },
                     () => {
                         if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
@@ -1241,7 +1156,46 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 }
 
 // ======================================================
-// 5. CHRONOMÈTRE DE 30 SECONDES
+// 3. ÉCOUTEUR INTELLIGENT DE LA PUB (ENREGISTREMENT FIREBASE DU CLIC)
+// ======================================================
+window.addEventListener("blur", async function() {
+    const modal = document.getElementById("global-pub-modal");
+
+    // Si la modale est active et que la fenêtre perd le focus (clic sur la pub dans l'iframe)
+    if (modal && modal.style.display !== "none" && !window.pubCliquee) {
+        window.pubCliquee = true;
+        console.log("--> Clic sur la publicité détecté ! Enregistrement intelligent du bonus...");
+
+        // Enregistrement immédiat dans Firebase du bonus et verrouillage
+        if (userId && window.missionActiveId) {
+            const dateAujourdhui = new Date().toISOString().split('T')[0];
+            const ptsBase = window.missionActivePoints || 100;
+            const bonusPoints = Math.round(ptsBase * 0.10);
+            const bonusXP = 1;
+
+            try {
+                await db.collection("users").doc(userId).collection("taches_faites").doc(window.missionActiveId).set({
+                    pubCliqueeDate: dateAujourdhui,
+                    boostApplique: true,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                console.log("Bonus de pub enregistré avec succès en arrière-plan.");
+            } catch (err) {
+                console.error("Erreur enregistrement clic pub Firebase :", err);
+            }
+        }
+
+        const finger = document.getElementById("finger-indicator");
+        if (finger && finger.style.display !== "none") {
+            finger.style.display = "none";
+            demarrerDecompte30Sec();
+        }
+    }
+});
+
+// ======================================================
+// 4. CHRONOMÈTRE DE 30 SECONDES
 // ======================================================
 function declencherPlayFlux(event) {
     if (event) {
@@ -1257,8 +1211,8 @@ function declencherPlayFlux(event) {
     demarrerDecompte30Sec();
 }
 
-function demarrerDecompte5Sec() {
-    let secondesRestantes = 5;
+function demarrerDecompte30Sec() {
+    let secondesRestantes = 30;
     const btnClaim = document.getElementById("btn-claim-points");
 
     if (!btnClaim) return;
@@ -1283,43 +1237,32 @@ function demarrerDecompte5Sec() {
             btnClaim.style.backgroundColor = "#28a745";
             btnClaim.style.color = "#ffffff";
             
-            actualiserAffichageBouton();
+            const pointsBase = window.missionActivePoints || 100;
+            
+            // Affichage dynamique sur le bouton selon si la pub a été cliquée ou non
+            if (window.pubCliquee) {
+                const bonusPts = Math.round(pointsBase * 0.10);
+                btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${pointsBase + bonusPts} Pts (+10% & +1 XP)`;
+            } else {
+                btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${pointsBase} Pts`;
+            }
 
             btnClaim.onclick = function() {
-                const pointsBase = window.missionActivePoints || 100;
                 verifierEtRecupererPoints(pointsBase);
             };
         }
     }, 1000);
 }
 
-// Met à jour l'intitulé du bouton selon si le clic pub a été détecté
-function actualiserAffichageBouton() {
-    const btnClaim = document.getElementById("btn-claim-points");
-    if (!btnClaim || btnClaim.disabled) return;
-
-    const pointsBase = window.missionActivePoints || 100;
-
-    if (window.pubCliquee) {
-        const bonusPts = Math.round(pointsBase * 0.10);
-        btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${pointsBase + bonusPts} Pts (+10% & +1 XP)`;
-        btnClaim.style.backgroundColor = "#28a745";
-    } else {
-        btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${pointsBase} Pts`;
-        btnClaim.style.backgroundColor = "#ffc107";
-        btnClaim.style.color = "#000000";
-    }
-}
-
 // ======================================================
-// 6. GESTION DE LA RÉCLAMATION & MODALE DE CONFIRMATION
+// 5. GESTION DE LA RÉCLAMATION AVEC MODALE SI LA PUB N'A PAS ÉTÉ CLIQUÉE
 // ======================================================
 function verifierEtRecupererPoints(ptsBase) {
+    // Si la pub a déjà été cliquée, on encaisse directement les gains complets
     if (window.pubCliquee) {
-        // Pub cliquée : attribution directe du total (100 + 10% + 1XP)
         executerEncaissement(ptsBase, true);
     } else {
-        // Pub non cliquée : modale de choix
+        // Sinon, on affiche la modale d'alerte avec les deux choix
         afficherModaleAlertePubManquante(ptsBase);
     }
 }
@@ -1339,19 +1282,19 @@ function afficherModaleAlertePubManquante(ptsBase) {
     `;
 
     overlay.innerHTML = `
-        <div style="background: #ffffff; color: #222; max-width: 420px; width: 100%; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: sans-serif;">
+        <div style="background: #ffffff; color: #222; max-width: 440px; width: 100%; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-family: sans-serif; position: relative; z-index: 1000000;">
             <h3 style="margin-top: 0; color: #e63946; font-size: 20px; font-weight: bold;">
-                <i class="fa-solid fa-triangle-exclamation"></i> Attention !
+                <i class="fa-solid fa-triangle-exclamation"></i> Attendez !
             </h3>
             <p style="font-size: 14px; line-height: 1.5; color: #444; margin: 15px 0 25px 0;">
-                Vous n'avez pas encore cliqué sur la publicité pour obtenir vos <strong>+10% de bonus</strong> et votre <strong>+1 XP</strong>.
+                Vous n'avez pas encore cliqué sur la publicité pour récupérer vos points de bonus (+10% et +1 XP). Si vous continuez, vous ne toucherez que vos points de base et la tâche sera bloquée pour aujourd'hui.
             </p>
             <div style="display: flex; gap: 10px; justify-content: center;">
                 <button id="btn-alerte-annuler" style="flex: 1; padding: 12px; border: none; background: #6c757d; color: #ffffff; border-radius: 8px; font-weight: bold; cursor: pointer;">
-                    Cliquer sur la pub
+                    Aller cliquer sur la pub
                 </button>
                 <button id="btn-alerte-ok" style="flex: 1; padding: 12px; border: none; background: #28a745; color: #ffffff; border-radius: 8px; font-weight: bold; cursor: pointer;">
-                    Encaisser ${ptsBase} Pts (OK)
+                    Je suis satisfait (OK)
                 </button>
             </div>
         </div>
@@ -1359,12 +1302,12 @@ function afficherModaleAlertePubManquante(ptsBase) {
 
     document.body.appendChild(overlay);
 
-    // Annuler : Ferme la modale d'alerte pour laisser l'utilisateur cliquer sur la pub
+    // Bouton 1 : Annule la réclamation pour laisser l'utilisateur aller cliquer sur la pub
     document.getElementById("btn-alerte-annuler").onclick = function() {
         overlay.remove();
     };
 
-    // OK : L'utilisateur accepte uniquement les points de base
+    // Bouton 2 : L'utilisateur est satisfait de ses points de base, on encaisse et on bloque la tâche
     document.getElementById("btn-alerte-ok").onclick = function() {
         overlay.remove();
         executerEncaissement(ptsBase, false);
@@ -1372,7 +1315,7 @@ function afficherModaleAlertePubManquante(ptsBase) {
 }
 
 // ======================================================
-// 7. ENCAISSEMENT FINAL DANS FIREBASE
+// 6. ENCAISSEMENT FINAL DANS FIREBASE
 // ======================================================
 async function executerEncaissement(ptsBase, avecBonus) {
     if (!userId) {
@@ -1387,7 +1330,7 @@ async function executerEncaissement(ptsBase, avecBonus) {
     const btnClaim = document.getElementById("btn-claim-points");
     if (btnClaim) {
         btnClaim.disabled = true;
-        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement en cours...`;
+        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
     }
 
     const dateAujourdhui = new Date().toISOString().split('T')[0];
@@ -1422,16 +1365,18 @@ async function executerEncaissement(ptsBase, avecBonus) {
 
         if (btnClaim) {
             btnClaim.style.backgroundColor = "#6c757d";
-            btnClaim.style.color = "#ffffff";
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> ${pointsFinals} Pts encaissés !`;
         }
 
-        let messageFinal = avecBonus
-            ? `Félicitations ! Vous avez gagné ${pointsFinals} points (+10% bonus) et +1 XP. Revenez demain !`
-            : `Vos ${pointsFinals} points de base ont été crédités. Revenez demain !`;
+        let messageFinal = "";
+        if (avecBonus) {
+            messageFinal = `Félicitations ! ${pointsFinals} points et +1 XP enregistrés avec succès. La tâche est maintenant verrouillée jusqu'demain.`;
+        } else {
+            messageFinal = `Vos ${pointsFinals} points de base ont été encaissés. La tâche est maintenant verrouillée jusqu'demain.`;
+        }
 
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(messageFinal, "Tâche Réussie");
+            afficherAlertePersonnalisee(messageFinal, "Tâche Terminée");
         } else {
             alert(messageFinal);
         }
@@ -1443,7 +1388,7 @@ async function executerEncaissement(ptsBase, avecBonus) {
         }, 1500);
 
     } catch (error) {
-        console.error("Erreur d'encaissement Firebase :", error);
+        console.error("Erreur Firebase lors de l'encaissement :", error);
         if (btnClaim) {
             btnClaim.disabled = false;
             btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer`;
