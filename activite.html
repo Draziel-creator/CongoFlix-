@@ -1011,7 +1011,8 @@ if (typeof timerDecompteInterval === "undefined") {
     var timerDecompteInterval = null;
 }
 
-window.chronoDemarre = false; // Empêche les déclenchements multiples
+window.chronoDemarre = false;
+window.ecouteurBlurActif = null;
 
 // ======================================================
 // 1. VÉRIFICATION DE L'ÉTAT DANS FIREBASE
@@ -1045,8 +1046,14 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
-    // Réinitialisation de l'état du chrono
+    // Réinitialisation des verrous
     window.chronoDemarre = false;
+    
+    // Nettoyer un ancien écouteur de clic s'il existe
+    if (window.ecouteurBlurActif) {
+        window.removeEventListener('blur', window.ecouteurBlurActif);
+        window.ecouteurBlurActif = null;
+    }
 
     const etat = await verifierEtatTacheFirebase(uniqueId);
 
@@ -1079,7 +1086,9 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         finger.style.display = "none";
         finger.style.opacity = "1";
         finger.style.backdropFilter = "none";
-        finger.innerHTML = `<i class="fa-solid fa-play"></i> Lecture en cours...`;
+        // On laisse le clic traverser le doigt pour qu'il touche directement la vidéo
+        finger.style.pointerEvents = "none"; 
+        finger.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo pour démarrer`;
     }
 
     if (btnClaim) {
@@ -1114,6 +1123,9 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
+    // Donner le focus à la fenêtre principale pour pouvoir détecter le prochain clic
+    window.focus();
+
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1136,13 +1148,16 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
                             
                             if (finger) {
                                 finger.style.display = "flex";
-                                finger.onclick = LancerChronoDirectement;
+                            }
+                            
+                            if (btnClaim) {
+                                btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo pour lancer le chrono';
                             }
 
-                            // DÉCLENCHEMENT AUTOMATIQUE DU CHRONO DÈS L'AFFICHAGE DE LA VIDÉO
-                            LancerChronoDirectement();
+                            // ACTIVER LA DÉTECTION DU CLIC DANS LA VIDÉO
+                            activerEcouteurClicIframe();
 
-                        }, 1000);
+                        }, 1500);
                     },
                     () => {
                         if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
@@ -1156,29 +1171,30 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 }
 
 // ======================================================
-// 3. DÉCLENCHEMENT FIABLE DU CHRONO (SANS DOUBLE CLIC)
+// 3. DÉTECTION DU CLIC DANS L'IFRAME VIDÉO
 // ======================================================
-function LancerChronoDirectement(event) {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
+function activerEcouteurClicIframe() {
+    window.ecouteurBlurActif = function() {
+        // Dès que l'utilisateur clique sur la vidéo, la fenêtre perd le focus (blur)
+        if (!window.chronoDemarre) {
+            window.chronoDemarre = true;
 
-    // Évite de lancer le chrono plusieurs fois
-    if (window.chronoDemarre) return;
-    window.chronoDemarre = true;
+            // Retirer l'écouteur pour ne pas le déclencher deux fois
+            window.removeEventListener('blur', window.ecouteurBlurActif);
+            window.ecouteurBlurActif = null;
 
-    const doigt = document.getElementById("finger-indicator");
+            // Masquer le doigt indicateur
+            const doigt = document.getElementById("finger-indicator");
+            if (doigt) {
+                doigt.style.display = "none";
+            }
 
-    // Masque le doigt au bout de 2 secondes
-    if (doigt) {
-        setTimeout(() => {
-            doigt.style.display = "none";
-        }, 2000);
-    }
+            // Démarrer immédiatement le chrono de 30s
+            demarrerDecompte30Sec();
+        }
+    };
 
-    // Démarre directement le compte à rebours de 30 secondes
-    demarrerDecompte30Sec();
+    window.addEventListener('blur', window.ecouteurBlurActif);
 }
 
 // ======================================================
