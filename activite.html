@@ -1011,6 +1011,8 @@ if (typeof timerDecompteInterval === "undefined") {
     var timerDecompteInterval = null;
 }
 
+window.chronoDemarre = false; // Empêche les déclenchements multiples
+
 // ======================================================
 // 1. VÉRIFICATION DE L'ÉTAT DANS FIREBASE
 // ======================================================
@@ -1043,6 +1045,9 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
+    // Réinitialisation de l'état du chrono
+    window.chronoDemarre = false;
+
     const etat = await verifierEtatTacheFirebase(uniqueId);
 
     if (etat.b1Fait) {
@@ -1070,12 +1075,11 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
     if (loader) loader.style.display = "flex";
     
-    // Réinitialisation du doigt au centre
     if (finger) {
         finger.style.display = "none";
         finger.style.opacity = "1";
         finger.style.backdropFilter = "none";
-        finger.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Cliquez pour démarrer la vidéo`;
+        finger.innerHTML = `<i class="fa-solid fa-play"></i> Lecture en cours...`;
     }
 
     if (btnClaim) {
@@ -1129,15 +1133,16 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
                     () => {
                         setTimeout(() => {
                             if (loader) loader.style.display = "none";
+                            
                             if (finger) {
                                 finger.style.display = "flex";
-                                // Le PREMIER CLIC lance directement le chrono
-                                finger.onclick = gererClicSurDoigt;
+                                finger.onclick = LancerChronoDirectement;
                             }
-                            if (btnClaim) {
-                                btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez au centre pour lancer le chrono';
-                            }
-                        }, 1500);
+
+                            // DÉCLENCHEMENT AUTOMATIQUE DU CHRONO DÈS L'AFFICHAGE DE LA VIDÉO
+                            LancerChronoDirectement();
+
+                        }, 1000);
                     },
                     () => {
                         if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
@@ -1151,22 +1156,28 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 }
 
 // ======================================================
-// 3. GESTION DU CLIC UNIQUE SUR LE DOIGT
+// 3. DÉCLENCHEMENT FIABLE DU CHRONO (SANS DOUBLE CLIC)
 // ======================================================
-function gererClicSurDoigt(event) {
+function LancerChronoDirectement(event) {
     if (event) {
         event.preventDefault();
         event.stopPropagation();
     }
 
+    // Évite de lancer le chrono plusieurs fois
+    if (window.chronoDemarre) return;
+    window.chronoDemarre = true;
+
     const doigt = document.getElementById("finger-indicator");
 
-    // Masque le doigt au centre dès qu'on clique
+    // Masque le doigt au bout de 2 secondes
     if (doigt) {
-        doigt.style.display = "none";
+        setTimeout(() => {
+            doigt.style.display = "none";
+        }, 2000);
     }
 
-    // Déclenche directement le compte à rebours de 30 secondes
+    // Démarre directement le compte à rebours de 30 secondes
     demarrerDecompte30Sec();
 }
 
