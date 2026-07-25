@@ -1005,6 +1005,16 @@ function fermerIframeVIP() {
 }
 
 // ======================================================
+// VARIABLES GLOBALES & ÉTAT
+// ======================================================
+if (typeof timerDecompteInterval === "undefined") {
+    var timerDecompteInterval = null;
+}
+
+window.chronoDemarre = false;
+window.ecouteurBlurActif = null;
+
+// ======================================================
 // 1. VÉRIFICATION DE L'ÉTAT DANS FIREBASE (0% LOCALSTORAGE)
 // ======================================================
 async function verifierEtatTacheFirebase(taskId) {
@@ -1037,6 +1047,15 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
+    // Réinitialisation des verrous
+    window.chronoDemarre = false;
+
+    // Nettoyer un ancien écouteur de clic s'il existe
+    if (window.ecouteurBlurActif) {
+        window.removeEventListener('blur', window.ecouteurBlurActif);
+        window.ecouteurBlurActif = null;
+    }
+
     // 1. Vérification Firebase pure (Bloqué si déjà fait aujourd'hui)
     const etat = await verifierEtatTacheFirebase(uniqueId);
     if (etat.b1Fait) {
@@ -1059,12 +1078,12 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
     if (loader) loader.style.display = "flex";
 
-    // Vider et masquer proprement tous les slots de pub précédents (Élimine toute image résiduelle)
+    // Vider et masquer tous les slots de pub précédents
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
             zoneTemp.style.display = "none";
-            zoneTemp.innerHTML = ""; // FORCE LE VIDAGE DE L'IFRAME
+            zoneTemp.innerHTML = "";
         }
     }
 
@@ -1073,13 +1092,35 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
     const idZoneCible = "zone-pub-video" + indexVideo;
     const conteneurVideo = document.getElementById(idZoneCible);
-    if (!conteneurVideo) return;
+    if (!conteneurVideo) {
+        if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+        return;
+    }
 
-    conteneurVideo.style.display = "flex";
+    // CORRECTION : display: block pour éviter le problème de hauteur dans un flexbox
+    conteneurVideo.style.display = "block";
     conteneurVideo.innerHTML = "";
+
+    // CORRECTION : Le doigt laisse passer le clic (pointer-events: none)
+    if (finger) {
+        finger.style.display = "none";
+        finger.style.opacity = "1";
+        finger.style.pointerEvents = "none";
+        finger.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo pour démarrer`;
+    }
+
+    if (btnClaim) {
+        btnClaim.disabled = true;
+        btnClaim.className = "btn-modal-action btn-modal-claim";
+        btnClaim.style.backgroundColor = "";
+        btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Chargement de la vidéo...';
+        btnClaim.onclick = null;
+    }
 
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
+
+    window.focus();
 
     // Injection dynamique du script publicitaire
     setTimeout(() => {
@@ -1088,6 +1129,11 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
             scriptVideo.async = true;
             scriptVideo.src = "https://js.wpadmngr.com/static/adManager.js";
             scriptVideo.setAttribute("data-admpid", zoneId);
+
+            scriptVideo.onerror = () => {
+                if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+            };
+
             conteneurVideo.appendChild(scriptVideo);
 
             if (typeof surveillerPresencePub === "function") {
@@ -1095,35 +1141,17 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
                     setTimeout(() => {
                         if (loader) loader.style.display = "none";
 
-                        // ETAPE A : Le doigt indique "Cliquer pour lancer la pub"
                         if (finger) {
                             finger.style.display = "flex";
-                            finger.style.pointerEvents = "auto";
-                            finger.style.zIndex = "999";
-                            finger.innerHTML = `<i class="fa-solid fa-play"></i> Cliquez pour lancer la pub`;
-
-                            // Action Clic 1 sur le doigt : Masque le doigt pour laisser la vidéo tourner
-                            finger.onclick = function() {
-                                finger.style.display = "none"; // Le masque s'efface
-
-                                // ETAPE B : Met à jour le bouton pour proposer le lancement du chrono
-                                if (btnClaim) {
-                                    btnClaim.disabled = false;
-                                    btnClaim.style.backgroundColor = "#ffc107";
-                                    btnClaim.style.color = "#000000";
-                                    btnClaim.innerHTML = `<i class="fa-solid fa-stopwatch"></i> Lancer le chrono de récupération de vos gains`;
-                                    
-                                    btnClaim.onclick = function() {
-                                        demarrerDecompte5Sec();
-                                    };
-                                }
-                            };
                         }
 
                         if (btnClaim) {
-                            btnClaim.disabled = true;
-                            btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo ci-dessus';
+                            btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo pour lancer le chrono';
                         }
+
+                        // ACTIVER LA DÉTECTION DE CLIC DANS L'IFRAME VIDÉO
+                        activerEcouteurClicIframe();
+
                     }, 1200);
                 }, () => {
                     if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
@@ -1136,10 +1164,35 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 }
 
 // ======================================================
-// 3. CHRONOMÈTRE DE 5 SECONDES
+// 3. DÉTECTION DU CLIC DANS L'IFRAME VIDÉO
+// ======================================================
+function activerEcouteurClicIframe() {
+    window.ecouteurBlurActif = function() {
+        // Dès que l'utilisateur clique sur la vidéo, la fenêtre perd le focus (blur)
+        if (!window.chronoDemarre) {
+            window.chronoDemarre = true;
+
+            // Retirer l'écouteur pour ne pas le déclencher deux fois
+            window.removeEventListener('blur', window.ecouteurBlurActif);
+            window.ecouteurBlurActif = null;
+
+            // Masquer l'indicateur
+            const finger = document.getElementById("finger-indicator");
+            if (finger) finger.style.display = "none";
+
+            // Démarrer immédiatement le chrono de 5s
+            demarrerDecompte5Sec();
+        }
+    };
+
+    window.addEventListener('blur', window.ecouteurBlurActif);
+}
+
+// ======================================================
+// 4. CHRONOMÈTRE DE 5 SECONDES
 // ======================================================
 function demarrerDecompte5Sec() {
-    let secondesRestantes = 5; // Réglé sur 5 secondes
+    let secondesRestantes = 5;
     const btnClaim = document.getElementById("btn-claim-points");
     if (!btnClaim) return;
 
@@ -1173,7 +1226,7 @@ function demarrerDecompte5Sec() {
 }
 
 // ======================================================
-// 4. ENCAISSEMENT FIREBASE + DESTRUCTION DE L'IFRAME
+// 5. ENCAISSEMENT FIREBASE + DESTRUCTION DE L'IFRAME
 // ======================================================
 async function executerEncaissementEtNettoyer() {
     if (typeof userId === "undefined" || !userId) {
