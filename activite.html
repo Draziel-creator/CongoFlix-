@@ -510,6 +510,129 @@
         @keyframes pulseFinger { from { transform: scale(1); } to { transform: scale(1.15); } }
         .pulse-gold-active { animation: goldGlow 0.5s ease-in-out; }
         @keyframes goldGlow { 0% { text-shadow: 0 0 0px var(--accent-cyan); } 50% { text-shadow: 0 0 15px var(--accent-cyan); } 100% { text-shadow: 0 0 0px var(--accent-cyan); } }
+        /* ======================================================
+   STYLES DÉDIÉS À LA MODALE BANNIÈRE (ISOLATION TOTALE)
+   ====================================================== */
+
+/* Overlay d'arrière-plan */
+.banniere-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(2, 3, 6, 0.96);
+    z-index: 2000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+/* Boîte de la modale */
+.banniere-modal-content {
+    background: #090d1a;
+    border: 2px solid var(--accent-cyan);
+    border-radius: 24px;
+    padding: 20px;
+    width: 85%;
+    max-width: 350px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 0 40px rgba(0, 255, 204, 0.2);
+}
+
+/* Bouton Fermer (X) */
+.btn-fermer-banniere-modal {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #8a8d9f;
+    font-size: 14px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 9999;
+}
+
+.btn-fermer-banniere-modal:hover {
+    background: rgba(255, 74, 74, 0.2);
+    color: var(--danger-red);
+    border-color: rgba(255, 74, 74, 0.4);
+}
+
+/* Cadre d'affichage 300x250 */
+.banniere-square-container {
+    width: 300px;
+    height: 250px;
+    margin: 0 auto 15px auto;
+    background: #030408;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* Écran de chargement bleu */
+.banniere-status-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #090d1a;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    gap: 8px;
+}
+
+/* Actions et Boutons */
+.banniere-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-banniere-modal-action {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-banniere-modal-claim {
+    background: #1c2235;
+    color: #686c87;
+}
+
+/* État actif prêt à réclamer (Vert animé) */
+.btn-banniere-modal-claim.pret-a-reclamer,
+.btn-banniere-modal-claim.ready {
+    background-color: #28a745 !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+    animation: pulseGreenBtn 1.5s infinite;
+}
     </style>
 </head>
 <body>
@@ -530,32 +653,34 @@
         </div>
     </div>
 
-   <!-- ZONE D'AFFICHAGE ET MODALE SOLIDIFIÉE UNIQUE -->
-<div class="pub-modal-overlay" id="global-pub-modal">
+   <!-- ====================================================== -->
+<!-- 1. MODALE VIDÉO (CLASSES SPECIFIQUES PUB-MODAL-*) -->
+<!-- ====================================================== -->
+<div class="pub-modal-overlay" id="global-pub-modal" style="display: none;">
     <div class="pub-modal-content">
         
-        <!-- Bouton Fermer (X) unique en haut à gauche -->
+        <!-- Bouton Fermer (X) Vidéo -->
         <button class="btn-fermer-modal" onclick="fermerModaleActive()" style="position: relative; z-index: 10000;">
             <i class="fa-solid fa-xmark"></i>
         </button>
         
-        <!-- 1. CADRE VIDÉO ET PUBLICITÉ -->
+        <!-- CADRE VIDÉO -->
         <div class="pub-square-container" id="square-container-area" style="position: relative; overflow: hidden;">
             
-            <!-- Analyseur de flux publicitaire actif -->
+            <!-- Analyseur de flux vidéo -->
             <div class="blue-status-layer" id="ad-stream-loader">
                 <div class="loader-spin-blue"></div>
-                <p style="font-size: 13px; font-weight: 600; margin: 0;">Analyse et détection du flux publicitaire...</p>
+                <p style="font-size: 13px; font-weight: 600; margin: 0; color: #ffffff;">Analyse et détection du flux publicitaire...</p>
                 <p style="font-size: 11px; color: #8a8d9f; margin: 5px 0 0 0;">Vérification de la source en cours</p>
             </div>
 
-            <!-- HTML du Doigt -->
+            <!-- HTML du Doigt (Exclusif Vidéo) -->
             <div class="finger-pulse-indicator" id="finger-indicator" onclick="declencherPlayFlux(event)">
                 <i class="fa-solid fa-hand-pointer"></i>
                 <span>CLIQUEZ POUR LANCER</span>
             </div>
 
-            <!-- Emplacements Physiques Cibles pour les Vidéos Clickadilla -->
+            <!-- Emplacements Vidéos Clickadilla (1 à 10) -->
             <div id="zone-pub-video1" class="ad-slot-square"></div>
             <div id="zone-pub-video2" class="ad-slot-square"></div>
             <div id="zone-pub-video3" class="ad-slot-square"></div>
@@ -572,17 +697,17 @@
                 <div class="box-banner-filler-300-250" id="box-banner-inside-modal"></div>
             </div>
 
-        </div> <!-- Fin de pub-square-container -->
+        </div> <!-- Fin cadre vidéo -->
 
-        <!-- 2. COMMANDES ET DÉCOMPTE -->
+        <!-- COMMANDES ET DÉCOMPTE VIDÉO -->
         <div class="pub-modal-actions" style="position: relative; z-index: 9999; pointer-events: auto;">
             
-            <!-- LE BOUTON 1 UNIQUE -->
+            <!-- Bouton Réclamation Vidéo -->
             <button class="btn-modal-action btn-modal-claim" id="btn-claim-points" disabled style="position: relative; z-index: 10000;">
                 <i class="fa-solid fa-lock"></i> Cliquez sur le doigt pour lancer le chrono
             </button>
             
-            <!-- INSTRUCTIONS ET RÈGLES SOUS LE BOUTON 1 -->
+            <!-- Instructions Vidéo -->
             <div style="margin-top: 10px; text-align: center;">
                 <p class="modal-instructions" id="modal-desc-instructions" style="font-size: 11px; color: #686c87; margin: 0 0 6px 0; line-height: 1.4;">
                     Une fois le flux vidéo détecté, cliquez sur l'indicateur pour démarrer le compteur de <strong>10 secondes</strong> obligatoires.
@@ -596,28 +721,29 @@
 
     </div>
 </div>
+
 <!-- ====================================================== -->
-<!-- MODALE BANNIÈRES 100% INDÉPENDANTE (MÊME DESIGN/STRUCTURE QUE LA VIDÉO) -->
+<!-- 2. MODALE BANNIÈRES 100% INDÉPENDANTE (CLASSES BANNIERE-*) -->
 <!-- ====================================================== -->
-<div class="pub-modal-overlay" id="banniere-pub-modal-exclusif" style="display: none;">
-    <div class="pub-modal-content">
+<div class="banniere-modal-overlay" id="banniere-pub-modal-exclusif" style="display: none;">
+    <div class="banniere-modal-content">
         
-        <!-- Bouton Fermer (X) Propre aux Bannières -->
-        <button class="btn-fermer-modal" onclick="fermerModaleBanniereExclusive()" style="position: relative; z-index: 10000;">
+        <!-- Bouton Fermer (X) Bannière -->
+        <button class="btn-fermer-banniere-modal" onclick="fermerModaleBanniereExclusive()" style="position: relative; z-index: 10000;">
             <i class="fa-solid fa-xmark"></i>
         </button>
         
-        <!-- 1. CADRE D'AFFICHAGE DES BANNIÈRES -->
-        <div class="pub-square-container" id="banniere-square-container-area" style="position: relative; overflow: hidden;">
+        <!-- CADRE BANNIÈRE -->
+        <div class="banniere-square-container" id="banniere-square-container-area" style="position: relative; overflow: hidden;">
             
-            <!-- Analyseur / Loader Propre aux Bannières -->
-            <div class="blue-status-layer" id="banniere-ad-loader-unique" style="display: flex;">
+            <!-- Loader Bannière -->
+            <div class="banniere-status-layer" id="banniere-ad-loader-unique" style="display: flex;">
                 <div class="loader-spin-blue"></div>
-                <p style="font-size: 13px; font-weight: 600; margin: 0; color: #fff;">Chargement de la bannière...</p>
+                <p style="font-size: 13px; font-weight: 600; margin: 0; color: #ffffff;">Chargement de la bannière...</p>
                 <p style="font-size: 11px; color: #8a8d9f; margin: 5px 0 0 0;">Analyse de la zone en cours</p>
             </div>
 
-            <!-- ZONES INDIVIDUELLES (1 à 14) POUR CHAQUE TÂCHE BANNIÈRE -->
+            <!-- Zones Bannières (1 à 14) -->
             <div id="zone-pub-banniere-1" class="ad-slot-square"></div>
             <div id="zone-pub-banniere-2" class="ad-slot-square"></div>
             <div id="zone-pub-banniere-3" class="ad-slot-square"></div>
@@ -633,19 +759,19 @@
             <div id="zone-pub-banniere-13" class="ad-slot-square"></div>
             <div id="zone-pub-banniere-14" class="ad-slot-square"></div>
 
-        </div> <!-- Fin du cadre d'affichage -->
+        </div> <!-- Fin cadre bannière -->
 
-        <!-- 2. COMMANDES ET DÉCOMPTE BANNIÈRES -->
-        <div class="pub-modal-actions" style="position: relative; z-index: 9999; pointer-events: auto;">
+        <!-- COMMANDES BANNIÈRE -->
+        <div class="banniere-modal-actions" style="position: relative; z-index: 9999; pointer-events: auto;">
             
-            <!-- Le bouton de réclamation des bannières -->
-            <button class="btn-modal-action btn-modal-claim" id="btn-claim-banniere-seul" disabled style="position: relative; z-index: 10000;">
+            <!-- Bouton Réclamation Bannière -->
+            <button class="btn-banniere-modal-action btn-banniere-modal-claim" id="btn-claim-banniere-seul" disabled style="position: relative; z-index: 10000;">
                 <i class="fa-solid fa-lock"></i> Détection de la bannière...
             </button>
             
-            <!-- Instructions sous le bouton -->
+            <!-- Instructions Bannière -->
             <div style="margin-top: 10px; text-align: center;">
-                <p class="modal-instructions" style="font-size: 11px; color: #686c87; margin: 0 0 6px 0; line-height: 1.4;">
+                <p class="banniere-modal-instructions" style="font-size: 11px; color: #686c87; margin: 0 0 6px 0; line-height: 1.4;">
                     Le chrono de <strong>10 secondes</strong> démarre automatiquement dès l'affichage de la bannière.
                 </p>
             </div>
@@ -1062,14 +1188,18 @@ function fermerIframeVIP() {
     document.getElementById("insert-zone-iframe").innerHTML = "";
 }
 
+// ======================================================
+// LOGIQUE VIDÉOS REVISÉE : 100% FIREBASE (SANS LOCALSTORAGE)
+// ======================================================
+
 // Variable globale unifiée pour le chronomètre
 if (typeof timerDecompteInterval === "undefined") {
     var timerDecompteInterval = null;
 }
 
-// ======================================================
-// 1. VÉRIFICATION DU BLOCAGE DANS FIREBASE
-// ======================================================
+/**
+ * 1. VÉRIFICATION DU BLOCAGE DANS FIREBASE (Libère la Tâche 22 et toutes les autres)
+ */
 async function verifierSiTacheBloquee(taskId) {
     if (!userId || !taskId) return false;
 
@@ -1087,9 +1217,52 @@ async function verifierSiTacheBloquee(taskId) {
     return false; // Disponible
 }
 
-// ======================================================
-// 2. INITIALISATION DE LA MISSION VIDÉO (BOUTON 1 UNIQUE)
-// ======================================================
+/**
+ * 2. TRANSFORMATION DU BOUTON DE L'ACCUEIL EN GRIS & INACCESSIBLE
+ */
+function appliquerStyleBoutonBloque(uniqueId) {
+    if (!uniqueId) return;
+
+    // Recherche du bouton vidéo sur la page d'accueil par tous ses identifiants possibles
+    const btnTache = document.getElementById("btn-video-" + uniqueId) ||
+                     document.getElementById("btn-tache-" + uniqueId) || 
+                     document.getElementById("btn-mission-" + uniqueId) || 
+                     document.getElementById("card-btn-" + uniqueId);
+
+    if (btnTache) {
+        btnTache.disabled = true;
+        btnTache.style.backgroundColor = "#6c757d"; // Gris identique aux bannières
+        btnTache.style.borderColor = "#6c757d";
+        btnTache.style.color = "#ffffff";
+        btnTache.style.cursor = "not-allowed";
+        btnTache.style.opacity = "0.75";
+        btnTache.style.pointerEvents = "none";
+        btnTache.innerHTML = '<i class="fa-solid fa-check-circle"></i> Complétée';
+    }
+}
+
+/**
+ * 3. ENREGISTREMENT DU BLOCAGE DANS FIREBASE & MISE À JOUR VISUELLE
+ */
+function marquerTacheCommeBloquee(taskId) {
+    if (!userId || !taskId) return;
+
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+
+    db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
+        dateExecution: dateAujourdhui,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+        // Applique le style gris sur le bouton d'accueil
+        appliquerStyleBoutonBloque(taskId);
+    }).catch((err) => {
+        console.error("Erreur lors de l'enregistrement de la date dans Firebase :", err);
+    });
+}
+
+/**
+ * 4. INITIALISATION DE LA MISSION VIDÉO
+ */
 async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
     if (e) {
@@ -1097,13 +1270,27 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
-    // --- VÉRIFICATION FIREBASE ANTI-TRICHE ---
+    // --- VÉRIFICATION FIREBASE ANTI-TRICHE & BLOCAGE ---
     const estBloquee = await verifierSiTacheBloquee(uniqueId);
     if (estBloquee) {
+        // Transforme le bouton d'accueil en gris
+        appliquerStyleBoutonBloque(uniqueId);
+
+        // Modale d'alerte avec le bouton "J'ai compris"
+        const msgBloque = "Vous avez déjà accompli cette mission aujourd'hui. Elle se réinitialisera automatiquement demain à 00h00 !";
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Vous avez déjà accompli cette mission aujourd'hui. Elle se réinitialisera demain à 00h00 !", "Tâche Bloquée");
+            afficherAlertePersonnalisee(
+                msgBloque, 
+                "Tâche Bloquée", 
+                "J'ai compris", 
+                function() {
+                    if (typeof fermerModaleActive === "function") fermerModaleActive();
+                }
+            );
+        } else {
+            alert(msgBloque);
         }
-        return; // On arrête tout ici !
+        return; // Stoppe le chargement de la vidéo
     }
 
     // Arrêt sécurisé du chrono s'il existe déjà
@@ -1134,7 +1321,7 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    // Réinitialisation des 10 emplacements vidéos
+    // Réinitialisation des emplacements vidéos
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
@@ -1200,9 +1387,9 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     }, 100);
 }
 
-// ======================================================
-// 3. FONCTION APPELÉE PAR LE ONCLICK DU DOIGT
-// ======================================================
+/**
+ * 5. DECLENCHEMENT PAR CLIC SUR LE DOIGT
+ */
 function declencherPlayFlux(event) {
     if (event) {
         event.preventDefault();
@@ -1217,9 +1404,9 @@ function declencherPlayFlux(event) {
     demarrerDecompte10Sec();
 }
 
-// ======================================================
-// 4. DÉTECTEUR BLUR + CHRONOMÈTRE 10S
-// ======================================================
+/**
+ * 6. DÉTECTEUR BLUR ET CHRONOMÈTRE 10 SECONDES
+ */
 window.addEventListener("blur", function() {
     const modal = document.getElementById("global-pub-modal");
     const doigt = document.getElementById("finger-indicator");
@@ -1231,7 +1418,7 @@ window.addEventListener("blur", function() {
 });
 
 function demarrerDecompte10Sec() {
-    let secondesRestantes = 10; // Passé de 30s à 10s
+    let secondesRestantes = 10;
     const btnClaim = document.getElementById("btn-claim-points");
 
     if (!btnClaim) return;
@@ -1258,7 +1445,7 @@ function demarrerDecompte10Sec() {
             btnClaim.classList.add("pret-a-reclamer", "ready");
             btnClaim.style.backgroundColor = "#28a745";
             btnClaim.style.color = "#ffffff";
-            
+
             const pointsAAttribuer = window.missionActivePoints || 100;
             btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${pointsAAttribuer} Points & 1 XP`;
 
@@ -1269,9 +1456,9 @@ function demarrerDecompte10Sec() {
     }, 1000);
 }
 
-// ======================================================
-// 5. RÉCLAMATION, FIREBASE (+100 PTS / +1 XP) & MODALE DE BLOCAGE
-// ======================================================
+/**
+ * 7. RÉCLAMATION DES POINTS, ENREGISTREMENT FIREBASE & FERMETURE
+ */
 function reclamerPointsBouton1(pts) {
     if (!userId) {
         if (typeof afficherAlertePersonnalisee === "function") {
@@ -1293,8 +1480,8 @@ function reclamerPointsBouton1(pts) {
         pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
-        
-        // Blocage de la tâche pour aujourd'hui dans Firebase
+
+        // Enregistre la tâche comme faite dans Firebase & grise immédiatement le bouton d'accueil
         marquerTacheCommeBloquee(window.missionActiveId);
 
         if (btnClaim) {
@@ -1302,9 +1489,9 @@ function reclamerPointsBouton1(pts) {
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        // Affichage de la modale d'information avec le bouton "J'ai compris"
+        // Modale d'alerte avec le bouton "J'ai compris"
         const messageBlocage = `Vous avez reçu +${pointsAAjouter} Points et +1 XP !\n\nCette tâche sera bloquée pour aujourd'hui et se réinitialisera automatiquement demain à 00h00.`;
-        
+
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee(
                 messageBlocage, 
@@ -1327,21 +1514,8 @@ function reclamerPointsBouton1(pts) {
         }
     });
 }
-
-function marquerTacheCommeBloquee(taskId) {
-    if (!userId || !taskId) return;
-
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
-
-    db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
-        dateExecution: dateAujourdhui,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch((err) => {
-        console.error("Erreur lors de l'enregistrement de la date :", err);
-    });
-}
 // ======================================================
-// LOGIQUE BANNIÈRES REVISÉE : DÉTECTION STRICTE, MULTIPLICATION & BLOCAGE GRIS
+// LOGIQUE BANNIÈRES REVISÉE : SÉCURITÉ FIREBASE PURE (SANS LOCALSTORAGE)
 // ======================================================
 
 var banniereMissionActiveId = null;
@@ -1349,18 +1523,39 @@ var banniereMissionActivePoints = 0;
 var banniereTimerInterval = null;
 
 /**
- * Applique le style gris désactivé sur le bouton de la tâche dans la liste
+ * 1. VÉRIFICATION DU BLOCAGE DANS FIREBASE (Comportement identique aux vidéos)
+ */
+async function verifierSiTacheBloquee(taskId) {
+    if (!userId || !taskId) return false;
+
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+
+    try {
+        const doc = await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).get();
+        if (doc.exists && doc.data().dateExecution === dateAujourdhui) {
+            return true; // Déjà faite aujourd'hui !
+        }
+    } catch (error) {
+        console.error("Erreur de vérification Firebase :", error);
+    }
+
+    return false; // Disponible
+}
+
+/**
+ * 2. TRANSFORMATION DU BOUTON DE L'ACCUEIL EN GRIS & INACCESSIBLE
  */
 function appliquerStyleBoutonBloque(uniqueId) {
     if (!uniqueId) return;
-    // Recherche du bouton de la tâche par ID standard ou alternatif
+
+    // Recherche du bouton sur la page d'accueil par ses identifiants possibles
     const btnTache = document.getElementById("btn-tache-" + uniqueId) || 
                      document.getElementById("btn-mission-" + uniqueId) || 
                      document.getElementById("card-btn-" + uniqueId);
 
     if (btnTache) {
         btnTache.disabled = true;
-        btnTache.style.backgroundColor = "#6c757d"; // Couleur grise comme les vidéos
+        btnTache.style.backgroundColor = "#6c757d"; // Gris identique aux vidéos
         btnTache.style.borderColor = "#6c757d";
         btnTache.style.color = "#ffffff";
         btnTache.style.cursor = "not-allowed";
@@ -1371,32 +1566,26 @@ function appliquerStyleBoutonBloque(uniqueId) {
 }
 
 /**
- * Marque la tâche comme bloquée dans le stockage et met à jour le visuel
+ * 3. ENREGISTREMENT DU BLOCAGE DANS FIREBASE & MISE À JOUR VISUELLE
  */
-function marquerTacheCommeBloquee(uniqueId) {
-    if (!uniqueId) return;
-    try {
-        let bloquees = JSON.parse(localStorage.getItem("taches_bloquees_du_jour") || "[]");
-        if (!bloquees.includes(uniqueId)) {
-            bloquees.push(uniqueId);
-            localStorage.setItem("taches_bloquees_du_jour", JSON.stringify(bloquees));
-        }
-    } catch (e) {
-        console.error("Erreur enregistrement blocage local :", e);
-    }
-    
-    // Grise immédiatement le bouton de la tâche
-    appliquerStyleBoutonBloque(uniqueId);
+function marquerTacheCommeBloquee(taskId) {
+    if (!userId || !taskId) return;
+
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+
+    db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
+        dateExecution: dateAujourdhui,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+        // Applique le style gris sur l'accueil une fois enregistré
+        appliquerStyleBoutonBloque(taskId);
+    }).catch((err) => {
+        console.error("Erreur lors de l'enregistrement de la date dans Firebase :", err);
+    });
 }
 
 /**
- * @param {string} fournisseur - 'adsterra', 'adsterra_native', 'advertica', 'clickadilla'
- * @param {string} clePub - Clé de zone publicitaire
- * @param {string} uniqueId - ID unique Firebase
- * @param {number} points - Points gagnés
- * @param {number} indexZone - Index de la zone (1 à 14)
- * @param {string|number} formatPubOrWidth - Format ex: "300x250" OU Largeur (ex: 300)
- * @param {number} [hauteurOptional] - Hauteur si le 6e paramètre est la largeur (ex: 250)
+ * 4. INITIALISATION DE LA MISSION BANNIÈRE
  */
 async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, indexZone, formatPubOrWidth = "300x250", hauteurOptional = null) {
     const e = window.event;
@@ -1405,7 +1594,30 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         e.stopPropagation();
     }
 
-    // 1. Analyse correcte des dimensions
+    // --- VÉRIFICATION FIREBASE ANTI-TRICHE & BLOCAGE ---
+    const estBloquee = await verifierSiTacheBloquee(uniqueId);
+    if (estBloquee) {
+        // Transforme le bouton d'accueil en gris
+        appliquerStyleBoutonBloque(uniqueId);
+
+        // Alerte avec le bouton "J'ai compris"
+        const msgBloque = "Vous avez déjà accompli cette mission aujourd'hui. Elle se réinitialisera automatiquement demain à 00h00 !";
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee(
+                msgBloque, 
+                "Tâche Bloquée", 
+                "J'ai compris", 
+                function() {
+                    if (typeof fermerModaleActive === "function") fermerModaleActive();
+                }
+            );
+        } else {
+            alert(msgBloque);
+        }
+        return; // Stoppe le chargement de la modale pub
+    }
+
+    // Analyse des dimensions
     let widthNum = 300;
     let heightNum = 250;
     let formatPub = "300x250";
@@ -1429,23 +1641,13 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // 2. Vérification blocage Firebase / Local
-    const estBloquee = (typeof verifierSiTacheBloquee === "function") ? await verifierSiTacheBloquee(uniqueId) : false;
-    if (estBloquee) {
-        appliquerStyleBoutonBloque(uniqueId);
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Mission déjà accomplie aujourd'hui. Réinitialisation à 00h00 !", "Tâche Bloquée");
-        }
-        return;
-    }
-
-    // 3. Réinitialisation des variables
+    // Attributions globales
     banniereMissionActiveId = uniqueId;
     banniereMissionActivePoints = points;
 
     if (banniereTimerInterval) clearInterval(banniereTimerInterval);
 
-    // 4. Masquer toutes les zones bannières (1 à 14)
+    // Masquer les 14 zones bannières
     for (let i = 1; i <= 14; i++) {
         const zone = document.getElementById("zone-pub-banniere-" + i);
         if (zone) {
@@ -1454,7 +1656,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // 5. Préparation des éléments d'interface
+    // Préparation des éléments d'interface
     const zoneCible = document.getElementById("zone-pub-banniere-" + indexZone);
     const loader = document.getElementById("banniere-ad-loader-unique");
     const btnClaim = document.getElementById("btn-claim-banniere-seul");
@@ -1472,7 +1674,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
 
     if (modal) modal.style.display = "flex";
 
-    // 6. RÈGLES DE MULTIPLICATION ET DISPOSITION
+    // Règles de disposition
     let w = widthNum + "px";
     let h = heightNum + "px";
     let nbRepetitions = 1;
@@ -1480,31 +1682,31 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
     if (formatPub === "native" || fournisseur === "adsterra_native") {
         w = "100%";
         h = "auto";
-        nbRepetitions = 1; // Native Banner reste SEULE
+        nbRepetitions = 1;
     } else if (formatPub === "300x250" || (widthNum === 300 && heightNum === 250)) {
         w = "300px";
         h = "250px";
-        nbRepetitions = 1; // 300x250 reste SEULE (carré parfait)
+        nbRepetitions = 1;
     } else if (formatPub === "160x600" || formatPub === "160x300" || formatPub === "160x250" || widthNum === 160) {
         w = "160px";
         h = heightNum + "px";
-        nbRepetitions = 2; // Répété 2 fois CÔTE À CÔTE HORIZONTALEMENT
+        nbRepetitions = 2;
     } else if (formatPub === "320x50" || formatPub === "468x60" || formatPub === "728x90" || formatPub === "bandeau") {
         w = widthNum + "px";
         h = heightNum + "px";
-        nbRepetitions = 4; // MODIFIÉ : 4 BANNIÈRES pour remplir l'espace sans vides
+        nbRepetitions = 4;
     } else {
         nbRepetitions = 1;
     }
 
-    // 7. Injection dans la zone cible
+    // Injection dans la zone
     if (zoneCible) {
         zoneCible.style.display = "flex";
         zoneCible.style.flexDirection = "row";
         zoneCible.style.justifyContent = "center";
         zoneCible.style.alignItems = "center";
         zoneCible.style.flexWrap = (widthNum === 160) ? "nowrap" : "wrap";
-        zoneCible.style.gap = "8px"; // Espace réduit entre les pubs pour un rendu compact
+        zoneCible.style.gap = "8px";
         zoneCible.style.width = "100%";
         zoneCible.style.height = "100%";
         zoneCible.style.overflowY = "auto";
@@ -1657,12 +1859,12 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // 8. Surveillance du rendu réel
+    // Surveillance du rendu
     surveillerBanniereUnique(
         "zone-pub-banniere-" + indexZone,
         function surSucces() {
             if (loader) loader.style.display = "none";
-            demarrerDecompteBanniere30Sec(); // Décompte réglé à 30s
+            demarrerDecompteBanniere30Sec();
         },
         function surEchec() {
             declencherPanneBanniereIndependante();
@@ -1670,7 +1872,9 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
     );
 }
 
-// Détection Anti-Fausse Pub Réelle
+/**
+ * 5. DÉTECTION DU RENDU DE LA BANNIÈRE
+ */
 function surveillerBanniereUnique(idZone, surSucces, surEchec) {
     const conteneur = document.getElementById(idZone);
     if (!conteneur) {
@@ -1726,9 +1930,11 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
     }, 12000);
 }
 
-// Chrono MODIFIÉ : 30 secondes
+/**
+ * 6. CHRONOMÈTRE 30 SECONDES
+ */
 function demarrerDecompteBanniere30Sec() {
-    let secs = 30; // Passer à 30 secondes
+    let secs = 30;
     const btnClaim = document.getElementById("btn-claim-banniere-seul");
 
     if (!btnClaim) return;
@@ -1759,7 +1965,9 @@ function demarrerDecompteBanniere30Sec() {
     }, 1000);
 }
 
-// Reclamer points sur Firebase
+/**
+ * 7. RÉCLAMATION, FIREBASE & FERMETURE AVEC "J'AI COMPRIS"
+ */
 function reclamerPointsBanniereSeule() {
     if (typeof userId === "undefined" || !userId) {
         if (typeof afficherAlertePersonnalisee === "function") {
@@ -1771,16 +1979,17 @@ function reclamerPointsBanniereSeule() {
     const btnClaim = document.getElementById("btn-claim-banniere-seul");
     if (btnClaim) {
         btnClaim.disabled = true;
-        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Validation...`;
+        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
     }
 
     const pts = banniereMissionActivePoints || 100;
 
+    // Enregistrement des points et XP dans Firebase
     db.collection("users").doc(userId).update({
         pointsDuJours: firebase.firestore.FieldValue.increment(pts),
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
-        // Bloquer et griser le bouton de la tâche immédiatement
+        // Enregistre la tâche comme faite dans Firebase & grise immédiatement le bouton d'accueil
         marquerTacheCommeBloquee(banniereMissionActiveId);
 
         if (btnClaim) {
@@ -1788,12 +1997,20 @@ function reclamerPointsBanniereSeule() {
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        const msg = `Vous avez reçu +${pts} Points et +1 XP !\n\nCette tâche est bloquée jusqu'à demain 00h00.`;
+        const messageAlerte = `Vous avez reçu +${pts} Points et +1 XP !\n\nCette tâche sera bloquée pour aujourd'hui et se réinitialisera automatiquement demain à 00h00.`;
+
+        // Affichage de la modale d'alerte avec le bouton "J'ai compris"
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(msg, "Tâche Complétée");
-            fermerModaleBanniereExclusive();
+            afficherAlertePersonnalisee(
+                messageAlerte,
+                "Tâche Complétée",
+                "J'ai compris",
+                function() {
+                    fermerModaleBanniereExclusive();
+                }
+            );
         } else {
-            alert(msg);
+            alert(messageAlerte);
             fermerModaleBanniereExclusive();
         }
 
@@ -1801,12 +2018,14 @@ function reclamerPointsBanniereSeule() {
         console.error("Erreur Firebase :", err);
         if (btnClaim) {
             btnClaim.disabled = false;
-            btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer`;
+            btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
         }
     });
 }
 
-// Gestion des Pannes
+/**
+ * 8. GESTION DES PANNES ET FERMETURES
+ */
 function declencherPanneBanniereIndependante() {
     const loader = document.getElementById("banniere-ad-loader-unique");
     if (loader) loader.style.display = "none";
@@ -1815,13 +2034,12 @@ function declencherPanneBanniereIndependante() {
 
     const msg = "Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.";
     if (typeof afficherAlertePersonnalisee === "function") {
-        afficherAlertePersonnalisee(msg, "Pub Indisponible");
+        afficherAlertePersonnalisee(msg, "Pub Indisponible", "J'ai compris");
     } else {
         alert(msg);
     }
 }
 
-// Fermeture de la modale banniere
 function fermerModaleBanniereExclusive() {
     if (banniereTimerInterval) clearInterval(banniereTimerInterval);
 
