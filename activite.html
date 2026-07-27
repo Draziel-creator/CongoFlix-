@@ -1011,11 +1011,8 @@ if (typeof timerDecompteInterval === "undefined") {
     var timerDecompteInterval = null;
 }
 
-window.chronoDemarre = false;
-window.ecouteurBlurActif = null;
-
 // ======================================================
-// 1. VÉRIFICATION DE L'ÉTAT DANS FIREBASE (0% LOCALSTORAGE)
+// 1. VÉRIFICATION DE L'ÉTAT DANS FIREBASE
 // ======================================================
 async function verifierEtatTacheFirebase(taskId) {
     if (typeof userId === "undefined" || !userId || !taskId) return { b1Fait: false };
@@ -1026,8 +1023,7 @@ async function verifierEtatTacheFirebase(taskId) {
         const doc = await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).get();
         if (doc.exists) {
             const data = doc.data();
-            // Tâche accomplie si enregistrée à la date d'aujourd'hui
-            const b1Fait = (data.bouton1Date === dateAujourdhui || data.dateExecution === dateAujourdhui);
+            const b1Fait = data.bouton1Date === dateAujourdhui || data.dateExecution === dateAujourdhui;
             return { b1Fait };
         }
     } catch (error) {
@@ -1038,7 +1034,7 @@ async function verifierEtatTacheFirebase(taskId) {
 }
 
 // ======================================================
-// 2. INITIALISATION DU LECTEUR ET DU MASQUE VIDÉO
+// 2. INITIALISATION DE LA MISSION VIDÉO
 // ======================================================
 async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1047,66 +1043,39 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
-    // Réinitialisation des verrous
-    window.chronoDemarre = false;
-
-    // Nettoyer un ancien écouteur de clic s'il existe
-    if (window.ecouteurBlurActif) {
-        window.removeEventListener('blur', window.ecouteurBlurActif);
-        window.ecouteurBlurActif = null;
-    }
-
-    // 1. Vérification Firebase pure (Bloqué si déjà fait aujourd'hui)
     const etat = await verifierEtatTacheFirebase(uniqueId);
+
     if (etat.b1Fait) {
-        const messageBlocage = "Cette tâche a déjà été accomplie aujourd'hui. Elle sera fermée pour le reste de la journée et réouverte demain à minuit (00h00) !";
-        
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(messageBlocage, "Tâche Bloquée jusqu'à demain");
+            afficherAlertePersonnalisee("Vous avez déjà accompli cette tâche aujourd'hui. Revenez demain !", "Tâche Bloquée");
         } else {
-            alert(messageBlocage);
+            alert("Vous avez déjà accompli cette tâche aujourd'hui.");
         }
         return;
     }
 
-    if (window.timerDecompteInterval) clearInterval(window.timerDecompteInterval);
+    if (window.timerDecompteInterval) {
+        clearInterval(window.timerDecompteInterval);
+    }
 
+    window.missionActiveType = "video";
     window.missionActiveId = uniqueId;
+    window.missionActivePoints = 100;
+    window.missionActiveIndex = indexVideo;
+    window.missionActiveZoneId = zoneId;
+
     const loader = document.getElementById("ad-stream-loader");
     const finger = document.getElementById("finger-indicator");
     const btnClaim = document.getElementById("btn-claim-points");
 
     if (loader) loader.style.display = "flex";
-
-    // Vider et masquer tous les slots de pub précédents
-    for (let i = 1; i <= 10; i++) {
-        const zoneTemp = document.getElementById("zone-pub-video" + i);
-        if (zoneTemp) {
-            zoneTemp.style.display = "none";
-            zoneTemp.innerHTML = "";
-        }
-    }
-
-    const blocAlternative = document.getElementById("zone-pub-alternative");
-    if (blocAlternative) blocAlternative.style.display = "none";
-
-    const idZoneCible = "zone-pub-video" + indexVideo;
-    const conteneurVideo = document.getElementById(idZoneCible);
-    if (!conteneurVideo) {
-        if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
-        return;
-    }
-
-    // CORRECTION : display: block pour éviter le problème de hauteur dans un flexbox
-    conteneurVideo.style.display = "block";
-    conteneurVideo.innerHTML = "";
-
-    // CORRECTION : Le doigt laisse passer le clic (pointer-events: none)
+    
+    // Réinitialisation du doigt au centre
     if (finger) {
         finger.style.display = "none";
         finger.style.opacity = "1";
-        finger.style.pointerEvents = "none";
-        finger.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo pour démarrer`;
+        finger.style.backdropFilter = "none";
+        finger.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Cliquez pour démarrer la vidéo`;
     }
 
     if (btnClaim) {
@@ -1117,12 +1086,30 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         btnClaim.onclick = null;
     }
 
+    const blocAlternative = document.getElementById("zone-pub-alternative");
+    if (blocAlternative) blocAlternative.style.display = "none";
+
+    for (let i = 1; i <= 10; i++) {
+        const zoneTemp = document.getElementById("zone-pub-video" + i);
+        if (zoneTemp) {
+            zoneTemp.style.display = "none";
+            zoneTemp.innerHTML = "";
+        }
+    }
+
+    const idZoneCible = "zone-pub-video" + indexVideo;
+    const conteneurVideo = document.getElementById(idZoneCible);
+
+    if (!conteneurVideo) {
+        if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+        return;
+    }
+
+    conteneurVideo.style.display = "block";
+
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
-    window.focus();
-
-    // Injection dynamique du script publicitaire
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1137,25 +1124,25 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
             conteneurVideo.appendChild(scriptVideo);
 
             if (typeof surveillerPresencePub === "function") {
-                surveillerPresencePub(idZoneCible, () => {
-                    setTimeout(() => {
-                        if (loader) loader.style.display = "none";
-
-                        if (finger) {
-                            finger.style.display = "flex";
-                        }
-
-                        if (btnClaim) {
-                            btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo pour lancer le chrono';
-                        }
-
-                        // ACTIVER LA DÉTECTION DE CLIC DANS L'IFRAME VIDÉO
-                        activerEcouteurClicIframe();
-
-                    }, 1200);
-                }, () => {
-                    if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
-                });
+                surveillerPresencePub(
+                    idZoneCible,
+                    () => {
+                        setTimeout(() => {
+                            if (loader) loader.style.display = "none";
+                            if (finger) {
+                                finger.style.display = "flex";
+                                // Le PREMIER CLIC lance directement le chrono
+                                finger.onclick = gererClicSurDoigt;
+                            }
+                            if (btnClaim) {
+                                btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez au centre pour lancer le chrono';
+                            }
+                        }, 1500);
+                    },
+                    () => {
+                        if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+                    }
+                );
             }
         } catch(err) {
             if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
@@ -1164,28 +1151,23 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 }
 
 // ======================================================
-// 3. DÉTECTION DU CLIC DANS L'IFRAME VIDÉO
+// 3. GESTION DU CLIC UNIQUE SUR LE DOIGT
 // ======================================================
-function activerEcouteurClicIframe() {
-    window.ecouteurBlurActif = function() {
-        // Dès que l'utilisateur clique sur la vidéo, la fenêtre perd le focus (blur)
-        if (!window.chronoDemarre) {
-            window.chronoDemarre = true;
+function gererClicSurDoigt(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
 
-            // Retirer l'écouteur pour ne pas le déclencher deux fois
-            window.removeEventListener('blur', window.ecouteurBlurActif);
-            window.ecouteurBlurActif = null;
+    const doigt = document.getElementById("finger-indicator");
 
-            // Masquer l'indicateur
-            const finger = document.getElementById("finger-indicator");
-            if (finger) finger.style.display = "none";
+    // Masque le doigt au centre dès qu'on clique
+    if (doigt) {
+        doigt.style.display = "none";
+    }
 
-            // Démarrer immédiatement le chrono de 5s
-            demarrerDecompte5Sec();
-        }
-    };
-
-    window.addEventListener('blur', window.ecouteurBlurActif);
+    // Déclenche directement le compte à rebours de 30 secondes
+    demarrerDecompte30Sec();
 }
 
 // ======================================================
@@ -1194,14 +1176,15 @@ function activerEcouteurClicIframe() {
 function demarrerDecompte5Sec() {
     let secondesRestantes = 5;
     const btnClaim = document.getElementById("btn-claim-points");
+
     if (!btnClaim) return;
 
-    btnClaim.disabled = true;
-    btnClaim.style.backgroundColor = "";
-    btnClaim.style.color = "";
-    btnClaim.innerHTML = `<i class="fa-solid fa-clock fa-spin"></i> Patientez... ${secondesRestantes}s`;
+    if (window.timerDecompteInterval) {
+        clearInterval(window.timerDecompteInterval);
+    }
 
-    if (window.timerDecompteInterval) clearInterval(window.timerDecompteInterval);
+    btnClaim.disabled = true;
+    btnClaim.innerHTML = `<i class="fa-solid fa-clock fa-spin"></i> Patientez... ${secondesRestantes}s`;
 
     window.timerDecompteInterval = setInterval(() => {
         secondesRestantes--;
@@ -1211,7 +1194,6 @@ function demarrerDecompte5Sec() {
         } else {
             clearInterval(window.timerDecompteInterval);
 
-            // Bouton de réclamation prêt
             btnClaim.disabled = false;
             btnClaim.classList.add("pret-a-reclamer", "ready");
             btnClaim.style.backgroundColor = "#28a745";
@@ -1219,38 +1201,43 @@ function demarrerDecompte5Sec() {
             btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer 100 Pts & 1 XP`;
 
             btnClaim.onclick = function() {
-                executerEncaissementEtNettoyer();
+                executerEncaissement();
             };
         }
     }, 1000);
 }
 
 // ======================================================
-// 5. ENCAISSEMENT FIREBASE + DESTRUCTION DE L'IFRAME
+// 5. ENCAISSEMENT FIREBASE (100 PTS & 1 XP DIRECTS)
 // ======================================================
-async function executerEncaissementEtNettoyer() {
+async function executerEncaissement() {
     if (typeof userId === "undefined" || !userId) {
-        alert("Connexion requise.");
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
+        } else {
+            alert("Connexion requise.");
+        }
         return;
     }
 
     const btnClaim = document.getElementById("btn-claim-points");
     if (btnClaim) {
         btnClaim.disabled = true;
-        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement Firebase...`;
+        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement en cours...`;
     }
 
     const dateAujourdhui = new Date().toISOString().split('T')[0];
+    const pointsFinals = 100;
+    const xpFinal = 1;
 
     try {
         const userRef = db.collection("users").doc(userId);
         const taskRef = userRef.collection("taches_faites").doc(window.missionActiveId);
 
-        // Enregistrement strict dans Firebase : pointsDuJours et XP
         await Promise.all([
             userRef.update({
-                pointsDuJours: firebase.firestore.FieldValue.increment(100),
-                XP: firebase.firestore.FieldValue.increment(1)
+                pointsDuJours: firebase.firestore.FieldValue.increment(pointsFinals),
+                XP: firebase.firestore.FieldValue.increment(xpFinal)
             }),
             taskRef.set({
                 bouton1Date: dateAujourdhui,
@@ -1261,32 +1248,21 @@ async function executerEncaissementEtNettoyer() {
 
         if (btnClaim) {
             btnClaim.style.backgroundColor = "#6c757d";
-            btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> +100 Pts & +1 XP encaissés !`;
+            btnClaim.style.color = "#ffffff";
+            btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> 100 Pts & 1 XP encaissés !`;
         }
 
-        const messageSucces = "Félicitations ! Vous avez gagné 100 points et +1 XP. Cette tâche est maintenant fermée et se réouvrira demain (00h00).";
+        const messageFinal = `Félicitations ! Vous avez gagné 100 points et +1 XP !`;
 
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(messageSucces, "Tâche Réussie");
+            afficherAlertePersonnalisee(messageFinal, "Tâche Réussie");
         } else {
-            alert(messageSucces);
+            alert(messageFinal);
         }
 
-        // Destruction complète des iframes et fermeture de la modale
         setTimeout(() => {
-            for (let i = 1; i <= 10; i++) {
-                const zoneTemp = document.getElementById("zone-pub-video" + i);
-                if (zoneTemp) {
-                    zoneTemp.innerHTML = ""; // Destruction physique du code iframe
-                    zoneTemp.style.display = "none";
-                }
-            }
-
             if (typeof fermerModaleActive === "function") {
                 fermerModaleActive();
-            } else {
-                const modal = document.getElementById("global-pub-modal");
-                if (modal) modal.style.display = "none";
             }
         }, 1500);
 
