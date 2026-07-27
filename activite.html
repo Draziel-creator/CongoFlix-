@@ -1004,41 +1004,33 @@ function fermerIframeVIP() {
     document.getElementById("insert-zone-iframe").innerHTML = "";
 }
 
-// ======================================================
-// VARIABLES GLOBALES
-// ======================================================
+// Variable globale unifiée pour le chronomètre
 if (typeof timerDecompteInterval === "undefined") {
     var timerDecompteInterval = null;
 }
-window.chronoDemarre = false;
-window.ecouteurBlurActif = null;
 
 // ======================================================
-// 1. VÉRIFICATION DU BLOCAGE FIREBASE (DÉBLOCAGE AUTO À 00H00)
+// 1. VÉRIFICATION DU BLOCAGE DANS FIREBASE
 // ======================================================
 async function verifierSiTacheBloquee(taskId) {
-    if (typeof userId === "undefined" || !userId || !taskId) return false;
+    if (!userId || !taskId) return false;
 
     const dateAujourdhui = new Date().toISOString().split('T')[0];
 
     try {
         const doc = await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).get();
-        if (doc.exists) {
-            const data = doc.data();
-            // Bloquée seulement si accomplie à la date d'aujourd'hui
-            if (data.dateExecution === dateAujourdhui || data.bouton1Date === dateAujourdhui) {
-                return true;
-            }
+        if (doc.exists && doc.data().dateExecution === dateAujourdhui) {
+            return true; // Déjà faite aujourd'hui !
         }
     } catch (error) {
         console.error("Erreur de vérification Firebase :", error);
     }
 
-    return false; // Disponible (débloqué automatiquement si la date a changé après 00h00)
+    return false; // Disponible
 }
 
 // ======================================================
-// 2. INITIALISATION DE LA MISSION VIDÉO (BOUTON 1)
+// 2. INITIALISATION DE LA MISSION VIDÉO (BOUTON 1 UNIQUE)
 // ======================================================
 async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1047,57 +1039,44 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
-    window.chronoDemarre = false;
-
-    if (window.ecouteurBlurActif) {
-        window.removeEventListener('blur', window.ecouteurBlurActif);
-        window.ecouteurBlurActif = null;
-    }
-
-    // Vérification du statut dans Firebase
+    // --- VÉRIFICATION FIREBASE ANTI-TRICHE ---
     const estBloquee = await verifierSiTacheBloquee(uniqueId);
     if (estBloquee) {
-        const msg = "Cette tâche a déjà été accomplie aujourd'hui. Elle sera réouverte automatiquement demain à minuit (00h00) !";
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(msg, "Tâche Bloquée jusqu'à 00h00");
-        } else {
-            alert(msg);
+            afficherAlertePersonnalisee("Vous avez déjà accompli cette mission aujourd'hui. Elle se réinitialisera demain à 00h00 !", "Tâche Bloquée");
         }
-        return;
+        return; // On arrête tout ici !
     }
 
-    if (window.timerDecompteInterval) {
-        clearInterval(window.timerDecompteInterval);
+    // Arrêt sécurisé du chrono s'il existe déjà
+    if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) {
+        clearInterval(timerDecompteInterval);
     }
 
+    // Affectation aux variables globales
+    window.missionActiveType = "video";
     window.missionActiveId = uniqueId;
-    window.missionActivePoints = 100;
+    window.missionActivePoints = points;
 
+    // Récupération des éléments HTML
     const loader = document.getElementById("ad-stream-loader");
     const finger = document.getElementById("finger-indicator");
     const btnClaim = document.getElementById("btn-claim-points");
 
     if (loader) loader.style.display = "flex";
-
-    if (finger) {
-        finger.style.display = "none";
-        finger.style.opacity = "1";
-        finger.style.pointerEvents = "none"; // Laisse passer le clic vers la vidéo
-        finger.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo pour démarrer`;
-    }
+    if (finger) finger.style.display = "none";
 
     if (btnClaim) {
         btnClaim.disabled = true;
         btnClaim.className = "btn-modal-action btn-modal-claim";
-        btnClaim.style.backgroundColor = "";
-        btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Chargement de la vidéo...';
+        btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Détection de la vidéo...';
         btnClaim.onclick = null;
     }
 
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    // Vider tous les slots de pub précédents
+    // Réinitialisation des 10 emplacements vidéos
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
@@ -1115,13 +1094,12 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     }
 
     conteneurVideo.style.display = "block";
-    conteneurVideo.innerHTML = "";
 
+    // AFFICHAGE MODALE EN FLEX
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
-    window.focus();
-
+    // Injection du script Clickadilla
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1139,24 +1117,25 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
                 surveillerPresencePub(
                     idZoneCible,
                     () => {
+                        if (btnClaim) {
+                            btnClaim.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Préparation du lecteur...';
+                        }
+
                         setTimeout(() => {
                             if (loader) loader.style.display = "none";
                             if (finger) finger.style.display = "flex";
 
                             if (btnClaim) {
-                                btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur la vidéo pour lancer le chrono';
+                                btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur le doigt pour lancer le chrono';
                             }
-
-                            // Active l'écoute de clic dans la vidéo
-                            activerEcouteurClicIframe();
-
-                        }, 1200);
+                        }, 2500);
                     },
                     () => {
                         if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
                     }
                 );
             }
+
         } catch(err) {
             if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
         }
@@ -1164,43 +1143,49 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 }
 
 // ======================================================
-// 3. DÉTECTION DU CLIC DANS L'IFRAME VIDÉO
+// 3. FONCTION APPELÉE PAR LE ONCLICK DU DOIGT
 // ======================================================
-function activerEcouteurClicIframe() {
-    window.ecouteurBlurActif = function() {
-        if (!window.chronoDemarre) {
-            window.chronoDemarre = true;
+function declencherPlayFlux(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
 
-            window.removeEventListener('blur', window.ecouteurBlurActif);
-            window.ecouteurBlurActif = null;
+    const doigt = document.getElementById("finger-indicator");
+    const loader = document.getElementById("ad-stream-loader");
+    if (doigt) doigt.style.display = "none";
+    if (loader) loader.style.display = "none";
 
-            const finger = document.getElementById("finger-indicator");
-            if (finger) finger.style.display = "none";
-
-            // Lancement du chrono de 10 secondes
-            demarrerDecompte10Sec();
-        }
-    };
-
-    window.addEventListener('blur', window.ecouteurBlurActif);
+    demarrerDecompte10Sec();
 }
 
 // ======================================================
-// 4. CHRONOMÈTRE DE 10 SECONDES
+// 4. DÉTECTEUR BLUR + CHRONOMÈTRE 10S
 // ======================================================
+window.addEventListener("blur", function() {
+    const modal = document.getElementById("global-pub-modal");
+    const doigt = document.getElementById("finger-indicator");
+
+    if (modal && modal.style.display !== "none" && doigt && doigt.style.display !== "none") {
+        doigt.style.display = "none";
+        demarrerDecompte10Sec();
+    }
+});
+
 function demarrerDecompte10Sec() {
-    let secondesRestantes = 10; // Réglé à 10 secondes
+    let secondesRestantes = 10; // Passé de 30s à 10s
     const btnClaim = document.getElementById("btn-claim-points");
 
     if (!btnClaim) return;
 
+    if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) {
+        clearInterval(timerDecompteInterval);
+    }
     if (window.timerDecompteInterval) {
         clearInterval(window.timerDecompteInterval);
     }
 
     btnClaim.disabled = true;
-    btnClaim.style.backgroundColor = "";
-    btnClaim.style.color = "";
     btnClaim.innerHTML = `<i class="fa-solid fa-clock fa-spin"></i> Patientez... ${secondesRestantes}s`;
 
     window.timerDecompteInterval = setInterval(() => {
@@ -1215,131 +1200,87 @@ function demarrerDecompte10Sec() {
             btnClaim.classList.add("pret-a-reclamer", "ready");
             btnClaim.style.backgroundColor = "#28a745";
             btnClaim.style.color = "#ffffff";
-            btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer 100 Pts & 1 XP`;
+            
+            const pointsAAttribuer = window.missionActivePoints || 100;
+            btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${pointsAAttribuer} Points & 1 XP`;
 
             btnClaim.onclick = function() {
-                encaisserEtOuvrirModalInformation();
+                reclamerPointsBouton1(window.missionActivePoints);
             };
         }
     }, 1000);
 }
 
 // ======================================================
-// 5. ENCAISSEMENT DES GAINS (+100 PTS & +1 XP)
+// 5. RÉCLAMATION, FIREBASE (+100 PTS / +1 XP) & MODALE DE BLOCAGE
 // ======================================================
-async function encaisserEtOuvrirModalInformation() {
-    if (typeof userId === "undefined" || !userId) {
-        alert("Connexion requise.");
+function reclamerPointsBouton1(pts) {
+    if (!userId) {
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
+        }
         return;
     }
 
     const btnClaim = document.getElementById("btn-claim-points");
     if (btnClaim) {
         btnClaim.disabled = true;
-        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Crédit en cours...`;
+        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
     }
 
-    try {
-        // 1. Crédit immédiat des points et XP dans Firebase
-        const userRef = db.collection("users").doc(userId);
-        await userRef.update({
-            pointsDuJours: firebase.firestore.FieldValue.increment(100),
-            XP: firebase.firestore.FieldValue.increment(1)
-        });
+    const pointsAAjouter = pts || 100;
+
+    // Enregistrement des 100 Points + 1 XP dans Firebase
+    db.collection("users").doc(userId).update({
+        pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
+        xp: firebase.firestore.FieldValue.increment(1)
+    }).then(() => {
+        
+        // Blocage de la tâche pour aujourd'hui dans Firebase
+        marquerTacheCommeBloquee(window.missionActiveId);
 
         if (btnClaim) {
-            btnClaim.style.backgroundColor = "#28a745";
-            btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> +100 Pts & +1 XP Crédités !`;
+            btnClaim.style.backgroundColor = "#6c757d";
+            btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        // 2. Ouverture de la modale d'information avec le bouton "J'ai compris"
-        afficherModalComprisEtBloquer(window.missionActiveId);
+        // Affichage de la modale d'information avec le bouton "J'ai compris"
+        const messageBlocage = `Vous avez reçu +${pointsAAjouter} Points et +1 XP !\n\nCette tâche sera bloquée pour aujourd'hui et se réinitialisera automatiquement demain à 00h00.`;
+        
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee(
+                messageBlocage, 
+                "Tâche Complétée", 
+                "J'ai compris", 
+                function() {
+                    if (typeof fermerModaleActive === "function") fermerModaleActive();
+                }
+            );
+        } else {
+            alert(messageBlocage);
+            if (typeof fermerModaleActive === "function") fermerModaleActive();
+        }
 
-    } catch (error) {
-        console.error("Erreur lors du crédit des points :", error);
+    }).catch((error) => {
+        console.error("Erreur Firebase :", error);
         if (btnClaim) {
             btnClaim.disabled = false;
-            btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer`;
+            btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
         }
-    }
-}
-
-// ======================================================
-// 6. MODALE "J'AI COMPRIS" ET VERROUILLAGE FINAL DANS FIREBASE
-// ======================================================
-function afficherModalComprisEtBloquer(taskId) {
-    const messageInfo = "Félicitations ! Vous avez gagné 100 Points et +1 XP.\n\nCette tâche sera bloquée pour le reste de la journée et se réinitialisera automatiquement demain à minuit (00h00).";
-
-    creerOuOuvrirModalCompris(messageInfo, function() {
-        finaliserBlocageEtFermer(taskId);
     });
 }
 
-// Création dynamique de la modale d'information avec bouton "J'ai compris"
-function creerOuOuvrirModalCompris(message, callbackCompris) {
-    let modalContainer = document.getElementById("modal-compris-container");
-    if (!modalContainer) {
-        modalContainer = document.createElement("div");
-        modalContainer.id = "modal-compris-container";
-        modalContainer.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:99999; padding:20px;";
-        
-        modalContainer.innerHTML = `
-            <div style="background:#1e1e2d; color:#ffffff; border-radius:14px; padding:25px; max-width:400px; width:100%; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.6); font-family:sans-serif;">
-                <div style="font-size:45px; color:#28a745; margin-bottom:15px;"><i class="fa-solid fa-circle-check"></i></div>
-                <h3 style="margin-bottom:12px; font-size:20px; font-weight:bold;">Tâche Réussie !</h3>
-                <p id="modal-compris-texte" style="font-size:14px; line-height:1.6; color:#cccccc; margin-bottom:22px; white-space:pre-line;"></p>
-                <button id="btn-modal-compris" style="background:#28a745; color:#ffffff; border:none; padding:12px 20px; border-radius:8px; font-weight:bold; cursor:pointer; width:100%; font-size:15px; transition:0.2s;">
-                    J'ai compris
-                </button>
-            </div>
-        `;
-        document.body.appendChild(modalContainer);
-    }
+function marquerTacheCommeBloquee(taskId) {
+    if (!userId || !taskId) return;
 
-    document.getElementById("modal-compris-texte").innerText = message;
-    modalContainer.style.display = "flex";
-
-    const btnCompris = document.getElementById("btn-modal-compris");
-    btnCompris.onclick = function() {
-        modalContainer.style.display = "none";
-        if (typeof callbackCompris === "function") callbackCompris();
-    };
-}
-
-// Blocage effectif dans Firebase + Destruction de l'iframe + Fermeture du lecteur
-async function finaliserBlocageEtFermer(taskId) {
     const dateAujourdhui = new Date().toISOString().split('T')[0];
 
-    try {
-        // 1. Enregistrement du blocage dans Firebase avec la date du jour
-        if (userId && taskId) {
-            await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
-                dateExecution: dateAujourdhui,
-                bouton1Date: dateAujourdhui,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-        }
-
-        // 2. Nettoyage physique des 10 emplacements vidéo
-        for (let i = 1; i <= 10; i++) {
-            const zoneTemp = document.getElementById("zone-pub-video" + i);
-            if (zoneTemp) {
-                zoneTemp.innerHTML = "";
-                zoneTemp.style.display = "none";
-            }
-        }
-
-        // 3. Fermeture de la modale de lecture principale
-        if (typeof fermerModaleActive === "function") {
-            fermerModaleActive();
-        } else {
-            const modal = document.getElementById("global-pub-modal");
-            if (modal) modal.style.display = "none";
-        }
-
-    } catch (error) {
-        console.error("Erreur lors du blocage dans Firebase :", error);
-    }
+    db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
+        dateExecution: dateAujourdhui,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch((err) => {
+        console.error("Erreur lors de l'enregistrement de la date :", err);
+    });
 }
 // ======================================================
 // LOGIQUE SPÉCIFIQUE BANNIÈRES
