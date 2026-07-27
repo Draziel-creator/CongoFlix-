@@ -744,9 +744,9 @@
     <!-- Barre Sociale -->
     <div class="video-card-small" id="card-adsterra-2">
         <i class="fa-solid fa-bolt-lightning"></i>
-        <h4>Tâche Adsterra 7 (Barre Sociale)</h4>
+        <h4>Tâche Adsterra 7 (Native Baner)</h4>
         <p>+100 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_social', 'https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js', 'adsterra-social', 100, 7, 300, 250)">Lancer</button>
+        <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_native', '2488fee72aaf9bf875080b7e81f37d58', 'task_native_7', 100, 7, 'native')">Lancer</button>
     </div>
 
     <!-- Bannière 320x50 -->
@@ -1338,7 +1338,7 @@ function marquerTacheCommeBloquee(taskId) {
     });
 }
 // ======================================================
-// LOGIQUE BANNIÈRES COMPLÈTE, SÉCURISÉE ET CORRIGÉE
+// LOGIQUE BANNIÈRES REVISÉE : DÉTECTION STRICTE & MULTIPLICATION
 // ======================================================
 
 var banniereMissionActiveId = null;
@@ -1346,12 +1346,12 @@ var banniereMissionActivePoints = 0;
 var banniereTimerInterval = null;
 
 /**
- * @param {string} fournisseur - 'adsterra', 'advertica', 'clickadilla', etc.
- * @param {string} clePub - Clé de la zone de pub
- * @param {string} uniqueId - Identifiant unique Firebase
- * @param {number} points - Points accordés
+ * @param {string} fournisseur - 'adsterra', 'adsterra_native', 'advertica', 'clickadilla'
+ * @param {string} clePub - Clé de zone publicitaire (ex: '2488fee72aaf9bf875080b7e81f37d58')
+ * @param {string} uniqueId - ID unique Firebase
+ * @param {number} points - Points gagnés
  * @param {number} indexZone - Index de la zone (1 à 14)
- * @param {string} formatPub - Format de la pub ex: "300x250", "160x600", "160x250"
+ * @param {string} formatPub - Format ex: "300x250", "160x600", "320x50", "native", "bandeau"
  */
 async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, indexZone, formatPub = "300x250") {
     const e = window.event;
@@ -1369,13 +1369,13 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         return;
     }
 
-    // 2. Initialisation des variables de tâche
+    // 2. Réinitialisation des variables
     banniereMissionActiveId = uniqueId;
     banniereMissionActivePoints = points;
 
     if (banniereTimerInterval) clearInterval(banniereTimerInterval);
 
-    // 3. Masquer TOUTES les zones bannières (1 à 14)
+    // 3. Masquer toutes les zones bannières (1 à 14)
     for (let i = 1; i <= 14; i++) {
         const zone = document.getElementById("zone-pub-banniere-" + i);
         if (zone) {
@@ -1384,7 +1384,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // 4. Préparer les éléments d'interface
+    // 4. Préparation des éléments d'interface
     const zoneCible = document.getElementById("zone-pub-banniere-" + indexZone);
     const loader = document.getElementById("banniere-ad-loader-unique");
     const btnClaim = document.getElementById("btn-claim-banniere-seul");
@@ -1396,35 +1396,39 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         btnClaim.disabled = true;
         btnClaim.style.backgroundColor = "";
         btnClaim.style.color = "";
-        btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Chargement de la publicité...';
+        btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Recherche et chargement de la pub...';
         btnClaim.onclick = null;
     }
 
     if (modal) modal.style.display = "flex";
 
-    // 5. Configuration des dimensions réelles et du taux de répétition
-    let w = 300;
-    let h = 250;
+    // 5. Calcul de la taille et du nombre de répétitions (Multiplication)
+    let w = "300px";
+    let h = "250px";
     let nbRepetitions = 1;
 
-    if (formatPub === "160x600" || formatPub === "160x250" || fournisseur.includes("160")) {
-        w = 160;
-        h = (formatPub === "160x600") ? 600 : 250;
-        nbRepetitions = 2; // Répéter côte à côte pour combler l'espace latéral
-    } else {
-        w = 300;
-        h = 250;
-        nbRepetitions = 1; // Carré standard 300x250
+    if (formatPub === "160x600" || formatPub === "160x250") {
+        w = "160px";
+        h = (formatPub === "160x600") ? "600px" : "250px";
+        nbRepetitions = 2; // Répété 2 fois côte à côte
+    } else if (formatPub === "320x50" || formatPub === "468x60" || formatPub === "728x90" || formatPub === "bandeau") {
+        w = "320px";
+        h = "50px";
+        nbRepetitions = 5; // Multiplié 5 fois verticalement/horizontalement comme un stylo
+    } else if (formatPub === "native" || fournisseur === "adsterra_native") {
+        w = "100%";
+        h = "auto";
+        nbRepetitions = 1;
     }
 
-    // 6. Injection et Multiplication dans la zone cible
+    // 6. Injection dans la zone cible
     if (zoneCible) {
         zoneCible.style.display = "flex";
         zoneCible.style.flexDirection = "row";
-        zoneCible.style.justifyContent = "space-evenly";
+        zoneCible.style.justifyContent = "center";
         zoneCible.style.alignItems = "center";
         zoneCible.style.flexWrap = "wrap";
-        zoneCible.style.gap = "8px";
+        zoneCible.style.gap = "10px";
         zoneCible.style.width = "100%";
         zoneCible.style.height = "100%";
         zoneCible.style.overflowY = "auto";
@@ -1433,15 +1437,47 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         try {
             for (let k = 0; k < nbRepetitions; k++) {
 
-                if (fournisseur.startsWith("adsterra")) {
+                if (fournisseur === "adsterra_native") {
+                    // FORMAT NATIVE ADSTERRA (Exemple Tâche 7)
                     let cadreIframe = document.createElement("iframe");
-                    cadreIframe.style.width = w + "px";
-                    cadreIframe.style.height = h + "px";
+                    cadreIframe.style.width = w;
+                    cadreIframe.style.height = "250px";
                     cadreIframe.style.border = "none";
                     cadreIframe.style.scrolling = "no";
                     cadreIframe.style.background = "transparent";
 
-                    let htmlContenu = `
+                    let htmlNative = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="utf-8">
+                            <style>
+                                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; }
+                            </style>
+                        </head>
+                        <body>
+                            <script async="async" data-cfasync="false" src="https://pl29546534.effectivecpmnetwork.com/${clePub}/invoke.js"><\/script>
+                            <div id="container-${clePub}"></div>
+                        </body>
+                        </html>
+                    `;
+
+                    zoneCible.appendChild(cadreIframe);
+                    let doc = cadreIframe.contentWindow.document;
+                    doc.open();
+                    doc.write(htmlNative);
+                    doc.close();
+
+                } else if (fournisseur.startsWith("adsterra")) {
+                    // BANNIÈRE CLASSIQUE ADSTERRA
+                    let cadreIframe = document.createElement("iframe");
+                    cadreIframe.style.width = w;
+                    cadreIframe.style.height = h;
+                    cadreIframe.style.border = "none";
+                    cadreIframe.style.scrolling = "no";
+                    cadreIframe.style.background = "transparent";
+
+                    let htmlAdsterra = `
                         <!DOCTYPE html>
                         <html>
                         <head>
@@ -1455,8 +1491,8 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                                 atOptions = {
                                     'key' : '${clePub}',
                                     'format' : 'iframe',
-                                    'height' : ${h},
-                                    'width' : ${w},
+                                    'height' : ${parseInt(h)},
+                                    'width' : ${parseInt(w)},
                                     'params' : {}
                                 };
                             <\/script>
@@ -1468,14 +1504,14 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     zoneCible.appendChild(cadreIframe);
                     let doc = cadreIframe.contentWindow.document;
                     doc.open();
-                    doc.write(htmlContenu);
+                    doc.write(htmlAdsterra);
                     doc.close();
 
                 } else if (fournisseur === "advertica") {
-                    // Injection adaptée pour Advertica
+                    // ADVERTICA
                     let cadreIframe = document.createElement("iframe");
-                    cadreIframe.style.width = w + "px";
-                    cadreIframe.style.height = h + "px";
+                    cadreIframe.style.width = w;
+                    cadreIframe.style.height = h;
                     cadreIframe.style.border = "none";
                     cadreIframe.style.scrolling = "no";
                     cadreIframe.style.background = "transparent";
@@ -1504,12 +1540,12 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     doc.close();
 
                 } else {
-                    // Clickadilla et autres fournisseurs
+                    // CLICKADILLA ET AUTRES
                     let divClickadilla = document.createElement("div");
                     divClickadilla.style.display = "inline-block";
                     divClickadilla.innerHTML = `
                         <div id="${clePub}_${k}"></div>
-                        <iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="${w}" height="${h}" style="border:none; overflow:hidden; background:transparent;"></iframe>
+                        <iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="${parseInt(w)}" height="${parseInt(h)}" style="border:none; overflow:hidden; background:transparent;"></iframe>
                     `;
                     zoneCible.appendChild(divClickadilla);
                 }
@@ -1520,22 +1556,20 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // 7. Surveillance de l'affichage (Attente max 15s)
+    // 7. Surveillance STRICTE du rendu réel (Max 15s)
     surveillerBanniereUnique(
         "zone-pub-banniere-" + indexZone,
         function surSucces() {
             if (loader) loader.style.display = "none";
-            // Démarrage du décompte UNIQUEMENT après détection de la pub
             demarrerDecompteBanniere10Sec();
         },
         function surEchec() {
-            // Pub non chargée au bout de 15s -> Panne & Alerte
             declencherPanneBanniereIndependante();
         }
     );
 }
 
-// Surveillance d'affichage dynamique
+// Détection Anti-Fausse Pub (Vérifie la présence d'images, liens ou sous-éléments)
 function surveillerBanniereUnique(idZone, surSucces, surEchec) {
     const conteneur = document.getElementById(idZone);
     if (!conteneur) {
@@ -1544,54 +1578,54 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
     }
 
     let detectee = false;
-    let observer = null;
     let timerPanne = null;
+    let intervalVerification = null;
 
-    function valider() {
-        if (!detectee) {
+    function verifierPresenceReelle() {
+        if (detectee) return;
+
+        const iframes = conteneur.querySelectorAll('iframe');
+        let pubVraimentAffichee = false;
+
+        iframes.forEach(iframe => {
+            try {
+                const doc = iframe.contentWindow.document || iframe.contentDocument;
+                if (doc && doc.body) {
+                    // Recherche d'éléments visuels réels générés par le script de pub
+                    const elementsVisuels = doc.body.querySelectorAll('img, a, iframe, canvas, video, svg, div[id*="container"]');
+                    const aPlusieursEnfants = doc.body.children.length > 2;
+
+                    if (elementsVisuels.length > 0 || aPlusieursEnfants) {
+                        pubVraimentAffichee = true;
+                    }
+                }
+            } catch (e) {
+                // Si l'iframe a été redirigée vers un domaine externe (Cross-Origin), la pub s'est affichée avec succès !
+                pubVraimentAffichee = true;
+            }
+        });
+
+        if (pubVraimentAffichee) {
             detectee = true;
-            if (observer) observer.disconnect();
+            if (intervalVerification) clearInterval(intervalVerification);
             if (timerPanne) clearTimeout(timerPanne);
             surSucces();
         }
     }
 
-    function verifierIframeRender() {
-        if (detectee) return;
-        const iframes = conteneur.querySelectorAll('iframe');
-        if (iframes.length > 0) {
-            let chargee = false;
-            iframes.forEach(iframe => {
-                try {
-                    if (iframe.contentDocument && iframe.contentDocument.body && iframe.contentDocument.body.innerHTML.trim().length > 0) {
-                        chargee = true;
-                    }
-                } catch(e) {
-                    chargee = true; // Cas cross-origin valide
-                }
-            });
+    // Vérification toutes les 500 millisecondes
+    intervalVerification = setInterval(verifierPresenceReelle, 500);
 
-            if (chargee) {
-                setTimeout(valider, 800);
-            }
-        }
-    }
-
-    observer = new MutationObserver(verifierIframeRender);
-    observer.observe(conteneur, { childList: true, subtree: true });
-
-    verifierIframeRender();
-
-    // Délai de blocage max : 15 secondes
+    // Timeout strict à 15 secondes : si la pub n'est pas chargée, déclenche la panne
     timerPanne = setTimeout(() => {
         if (!detectee) {
-            if (observer) observer.disconnect();
+            if (intervalVerification) clearInterval(intervalVerification);
             surEchec();
         }
     }, 15000);
 }
 
-// Chrono 10s automatique pour Bannières
+// Chrono 10s automatique
 function demarrerDecompteBanniere10Sec() {
     let secs = 10;
     const btnClaim = document.getElementById("btn-claim-banniere-seul");
@@ -1624,7 +1658,7 @@ function demarrerDecompteBanniere10Sec() {
     }, 1000);
 }
 
-// Validation Firebase des bannières
+// Reclamer points sur Firebase
 function reclamerPointsBanniereSeule() {
     if (typeof userId === "undefined" || !userId) {
         if (typeof afficherAlertePersonnalisee === "function") {
@@ -1672,15 +1706,13 @@ function reclamerPointsBanniereSeule() {
     });
 }
 
-// Gestion des pannes : Ferme la modale de pub ET ouvre la modale d'alerte
+// Gestion des Pannes : Ferme la pub et affiche l'alerte
 function declencherPanneBanniereIndependante() {
     const loader = document.getElementById("banniere-ad-loader-unique");
     if (loader) loader.style.display = "none";
 
-    // 1. Fermer la modale banniere
     fermerModaleBanniereExclusive();
 
-    // 2. Afficher la modale d'alerte
     const msg = "Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.";
     if (typeof afficherAlertePersonnalisee === "function") {
         afficherAlertePersonnalisee(msg, "Pub Indisponible");
@@ -1689,7 +1721,7 @@ function declencherPanneBanniereIndependante() {
     }
 }
 
-// Fermeture de la modale bannière
+// Fermeture de la modale banniere
 function fermerModaleBanniereExclusive() {
     if (banniereTimerInterval) clearInterval(banniereTimerInterval);
 
