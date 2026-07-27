@@ -21,529 +21,234 @@
     <script async="async" data-cfasync="false" src="https://pl29546534.effectivecpmnetwork.com/2488fee72aaf9bf875080b7e81f37d58/invoke.js"></script>
     <script src="https://pl29315759.effectivecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
 
-    <style>
-        :root {
-            --bg-principal: #030408;
-            --card-bg: #090d1a;
-            --accent-cyan: #00ffcc;
-            --accent-gold: #ffd700;
-            --bleu-fonce: #0a1931;
-            --danger-red: #ff4a4a;
-        }
-
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-principal); color: #ffffff;
-            overflow-x: hidden; display: flex; justify-content: center; align-items: center;
-        }
-
-        .app-container {
-            width: 100%; height: 100%; max-width: 450px; background: #020306;
-            position: relative; display: flex; flex-direction: column;
-            box-shadow: 0 0 50px rgba(0,0,0,0.9);
-        }
-
-        .app-header {
-            padding: 20px; display: flex; align-items: center; justify-content: space-between;
-            background: linear-gradient(180deg, rgba(0, 255, 204, 0.15) 0%, rgba(2,3,6,0) 100%);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05); position: relative; z-index: 10;
-        }
-        
-        .btn-back {
-            background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #ffffff; width: 40px; height: 40px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-        }
-
-        .header-title {
-            font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
-            background: linear-gradient(90deg, var(--accent-cyan), #0099ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-
-        .content-scroll {
-            flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 22px; padding-bottom: 120px;
-        }
-
-        .section-title {
-            font-size: 12px; font-weight: 800; color: #555875; text-transform: uppercase; letter-spacing: 1px; margin-bottom: -5px;
-            display: flex; align-items: center; gap: 6px; margin-top: 10px;
-        }
-
-        /* --- STYLES ET EFFETS DES CARTES ULTRA-PREMIUM --- */
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .video-card-small {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-            border: 2px solid rgba(0, 255, 204, 0.25);
-            border-radius: 16px;
-            padding: 16px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.05);
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            backdrop-filter: blur(8px);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* Effet miroir interactif au survol */
-        .video-card-small::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -150%; width: 50%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
-            transform: skewX(-25deg);
-            transition: 0.75s;
-        }
-
-        .video-card-small:hover::before {
-            left: 150%;
-        }
-
-        /* Éclat / Lumière et Contour au survol */
-        .video-card-small:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent-cyan);
-            box-shadow: 0 8px 22px rgba(0, 255, 204, 0.3);
-        }
-
-        /* Icônes vibrantes en couleur */
-        .video-card-small i {
-            font-size: 24px;
-            color: var(--accent-cyan);
-            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
-            margin-bottom: 8px;
-        }
-
-        .video-card-small h4 {
-            margin: 4px 0;
-            font-size: 13px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .video-card-small p {
-            margin: 0 0 10px 0;
-            font-size: 11px;
-            color: #8a8d9f;
-        }
-
-        .btn-launch-grid {
-            background: linear-gradient(90deg, var(--accent-cyan), #00a2ff);
-            color: #030408;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 20px;
-            font-weight: 800;
-            font-size: 11px;
-            cursor: pointer;
-            width: 100%;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 10px rgba(0, 255, 204, 0.2);
-        }
-
-        .btn-launch-grid:active {
-            transform: scale(0.96);
-        }
-
-        /* Alternance esthétique de couleurs pour le dynamisme (Paires / Impaires) */
-        .video-card-small:nth-child(even) {
-            border-color: rgba(255, 215, 0, 0.25);
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.05);
-        }
-        .video-card-small:nth-child(even):hover {
-            border-color: var(--accent-gold);
-            box-shadow: 0 8px 22px rgba(255, 215, 0, 0.3);
-        }
-        .video-card-small:nth-child(even) i {
-            color: var(--accent-gold);
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-        }
-
-        /* --- STYLES MODALE DE FLUX ET COMPOSANTS INTERNES --- */
-        .pub-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(2, 3, 6, 0.96); z-index: 2000;
-            display: none; justify-content: center; align-items: center; flex-direction: column;
-        }
-
-        .pub-modal-content {
-            background: #090d1a; border: 2px solid var(--accent-cyan); border-radius: 24px;
-            padding: 20px; width: 85%; max-width: 350px; text-align: center; position: relative;
-            box-shadow: 0 0 40px rgba(0, 255, 204, 0.2);
-        }
-
-        .pub-square-container {
-            width: 300px; height: 250px; margin: 0 auto 15px auto; background: #030408;
-            border: 1px dashed rgba(255, 255, 255, 0.1); position: relative;
-            display: flex; justify-content: center; align-items: center; overflow: hidden;
-        }
-        /* ======================================================
-   1. BOUTON VERT DE RÉCLAMATION (ANIMÉ)
-   ====================================================== */
-.btn-modal-claim.pret-a-reclamer {
-    background-color: #28a745 !important;
-    color: #ffffff !important;
-    cursor: pointer !important;
-    box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
-    animation: pulseGreenBtn 1.5s infinite;
-}
-
-@keyframes pulseGreenBtn {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.02); }
-    100% { transform: scale(1); }
-}
-
-
+   <style>
 /* ======================================================
-   2. DOIGT ANIMÉ (SUPERPOSITION AU-DESSUS DE LA VIDÉO)
+   1. VARIABLES & STYLES GLOBAUX
    ====================================================== */
-#finger-indicator {
-    position: absolute;
-    z-index: 99; /* S'assure de capturer le clic avant le lecteur vidéo */
-    cursor: pointer;
+:root {
+    --bg-principal: #030408;
+    --card-bg: #090d1a;
+    --accent-cyan: #00ffcc;
+    --accent-gold: #ffd700;
+    --bleu-fonce: #0a1931;
+    --danger-red: #ff4a4a;
 }
 
-
-/* ======================================================
-   3. MODALE D'ALERTE PERSONNALISÉE (ÉLÉGANTE)
-   ====================================================== */
-.custom-alert-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(10, 14, 29, 0.82);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 999999; /* Toujours au-dessus de tout */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    box-sizing: border-box;
-}
-
-.custom-alert-box {
-    background: #181d36;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 20px;
-    width: 100%;
-    max-width: 380px;
-    padding: 28px 24px;
-    text-align: center;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-    animation: popInAlert 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes popInAlert {
-    0% { transform: scale(0.7); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-.custom-alert-icon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 16px auto;
-    background: rgba(255, 179, 0, 0.15);
-    border: 2px solid #ffb300;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.custom-alert-icon i {
-    font-size: 30px;
-    color: #ffb300;
-}
-
-.custom-alert-box h3 {
-    margin: 0 0 10px 0;
-    color: #ffffff;
-    font-size: 19px;
-    font-weight: 700;
-}
-
-.custom-alert-box p {
-    margin: 0 0 22px 0;
-    color: #a0a5c0;
-    font-size: 13.5px;
-    line-height: 1.5;
-}
-
-.btn-custom-alert-ok {
-    width: 100%;
-    padding: 13px;
-    border: none;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #0052d4, #4364f7);
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    box-shadow: 0 8px 20px rgba(67, 100, 247, 0.4);
-}
-
-.btn-custom-alert-ok:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 25px rgba(67, 100, 247, 0.6);
-}
-
-.btn-custom-alert-ok:active {
-    transform: translateY(0);
-}
-        /* OVERLAY MODALE ALERTE */
-.custom-alert-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(10, 14, 29, 0.82);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 999999; /* Toujours au-dessus de tout */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    box-sizing: border-box;
-}
-
-/* BOÎTE D'ALERTE */
-.custom-alert-box {
-    background: #181d36;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 20px;
-    width: 100%;
-    max-width: 380px;
-    padding: 28px 24px;
-    text-align: center;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-    animation: popInAlert 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes popInAlert {
-    0% { transform: scale(0.7); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-/* ICÔNE D'AVERTISSEMENT ANIMÉE */
-.custom-alert-icon {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto 16px auto;
-    background: rgba(255, 179, 0, 0.15);
-    border: 2px solid #ffb300;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.custom-alert-icon i {
-    font-size: 30px;
-    color: #ffb300;
-}
-
-/* TITRE ET TEXTE */
-.custom-alert-box h3 {
-    margin: 0 0 10px 0;
-    color: #ffffff;
-    font-size: 19px;
-    font-weight: 700;
-}
-
-.custom-alert-box p {
-    margin: 0 0 22px 0;
-    color: #a0a5c0;
-    font-size: 13.5px;
-    line-height: 1.5;
-}
-
-/* BOUTON D'ACTION */
-.btn-custom-alert-ok {
-    width: 100%;
-    padding: 13px;
-    border: none;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #0052d4, #4364f7);
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    box-shadow: 0 8px 20px rgba(67, 100, 247, 0.4);
-}
-
-.btn-custom-alert-ok:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 25px rgba(67, 100, 247, 0.6);
-}
-
-.btn-custom-alert-ok:active {
-    transform: translateY(0);
-}
-
-        /* Style du bouton X unique en haut à gauche */
-        .btn-fermer-modal {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #8a8d9f;
-            font-size: 14px;
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            z-index: 9999;
-        }
-
-        .btn-fermer-modal:hover {
-            background: rgba(255, 74, 74, 0.2); /* Rouge semi-transparent */
-            color: var(--danger-red); /* Utilise ta variable rouge */
-            border-color: rgba(255, 74, 74, 0.4);
-        }
-
-        .blue-status-layer {
-            position: absolute; top:0; left:0; width:100%; height:100%; background:#090d1a;
-            display:flex; flex-direction:column; justify-content:center; align-items:center; z-index: 10; gap:8px;
-        }
-        .loader-spin-blue {
-            width: 28px; height: 28px; border: 3px solid rgba(0,255,204,0.1);
-            border-top: 3px solid var(--accent-cyan); border-radius: 50%; animation: spin 0.8s linear infinite;
-        }
-        .finger-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.75);
-    color: #fff;
-    padding: 15px 25px;
-    border-radius: 12px;
-    cursor: pointer;
-    text-align: center;
-}
-
-.finger-overlay i {
-    font-size: 32px;
-    color: #ffcc00;
-    margin-bottom: 8px;
-    animation: pulseFinger 1.2s infinite ease-in-out;
-}
-
-@keyframes pulseFinger {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.25); }
-    100% { transform: scale(1); }
-}
-
-        .finger-pulse-indicator {
-            position: absolute; width:100%; height:100%; background: rgba(3,4,8,0.7);
-            display: none; flex-direction:column; justify-content:center; align-items:center;
-            cursor:pointer; z-index: 5; gap: 10px; color: var(--accent-cyan);
-        }
-        .finger-pulse-indicator i { font-size: 36px; animation: pulseFinger 1s infinite alternate; }
-        .finger-pulse-indicator span { font-size: 11px; font-weight: 800; letter-spacing: 1px; }
-
-        .ad-slot-square { width: 100%; height: 100%; display: none; justify-content: center; align-items: center; }
-        .fine-banner-row { width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 4px; }
-
-        .pub-modal-actions { display: flex; flex-direction: column; gap: 10px; }
-        .btn-modal-action {
-            width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: 700; font-size: 13px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        .btn-modal-claim { background: #1c2235; color: #686c87; }
-        .btn-modal-claim.ready { background: var(--accent-cyan); color: #030408; box-shadow: 0 4px 12px rgba(0,255,204,0.3); }
-        .btn-modal-visit { background: #102a45; color: #00ffcc; border: 1px solid rgba(0,255,204,0.2); }
-
-        /* --- STYLES COMPTEUR, SÉCURITÉ ET DESIGN RESTE --- */
-        .dashboard-row { display: grid; grid-template-columns: 1fr 100px; gap: 12px; }
-        .cagnotte-card { background: var(--card-bg); padding: 16px; border-radius: 16px; position: relative; border: 1px solid rgba(255,255,255,0.03); }
-        .cagnotte-valeur { font-size: 22px; font-weight: 800; color: var(--accent-cyan); margin-top: 4px; }
-        .btn-how-it-works { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.05); border: none; color: #8a8d9f; width: 22px; height: 22px; border-radius: 50%; font-weight: 700; cursor: pointer; }
-        .chrono-card { background: #060a14; border: 1px solid rgba(255,74,74,0.1); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .timer-digits { font-size: 14px; font-weight: 800; color: var(--danger-red); margin-top: 4px; font-family: monospace; }
-        .btn-main-action-collect { background: linear-gradient(90deg, var(--accent-gold), #ff9900); border: none; padding: 14px; border-radius: 14px; color: #000; font-weight: 800; font-size: 13px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
-        
-        .vip-zone-card { background: linear-gradient(135deg, #0e122b 0%, #050714 100%); border: 1px solid rgba(255,215,0,0.15); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-        .container-iframe-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020306; z-index: 3000; display: none; flex-direction: column; }
-        
-        .nav-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 75px; background: rgba(9, 13, 26, 0.95); border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-around; align-items: center; backdrop-filter: blur(10px); box-sizing: border-box; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #555875; font-size: 10px; font-weight: 700; }
-        .nav-item.active { color: var(--accent-cyan); }
-        .nav-icon { font-size: 18px; }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulseFinger { from { transform: scale(1); } to { transform: scale(1.15); } }
-        .pulse-gold-active { animation: goldGlow 0.5s ease-in-out; }
-        @keyframes goldGlow { 0% { text-shadow: 0 0 0px var(--accent-cyan); } 50% { text-shadow: 0 0 15px var(--accent-cyan); } 100% { text-shadow: 0 0 0px var(--accent-cyan); } }
-        /* ======================================================
-   STYLES DÉDIÉS À LA MODALE BANNIÈRE (ISOLATION TOTALE)
-   ====================================================== */
-
-/* Overlay d'arrière-plan */
-.banniere-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
+body, html {
+    margin: 0; 
+    padding: 0; 
+    width: 100%; 
     height: 100%;
-    background: rgba(2, 3, 6, 0.96);
-    z-index: 2000;
-    display: none;
-    justify-content: center;
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    background-color: var(--bg-principal); 
+    color: #ffffff;
+    overflow-x: hidden; 
+    display: flex; 
+    justify-content: center; 
     align-items: center;
-    flex-direction: column;
 }
 
-/* Boîte de la modale */
-.banniere-modal-content {
-    background: #090d1a;
-    border: 2px solid var(--accent-cyan);
-    border-radius: 24px;
-    padding: 20px;
-    width: 85%;
-    max-width: 350px;
+.app-container {
+    width: 100%; 
+    height: 100%; 
+    max-width: 450px; 
+    background: #020306;
+    position: relative; 
+    display: flex; 
+    flex-direction: column;
+    box-shadow: 0 0 50px rgba(0,0,0,0.9);
+}
+
+.app-header {
+    padding: 20px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+    background: linear-gradient(180deg, rgba(0, 255, 204, 0.15) 0%, rgba(2,3,6,0) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
+    position: relative; 
+    z-index: 10;
+}
+
+.btn-back {
+    background: rgba(255, 255, 255, 0.07); 
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff; 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%;
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    cursor: pointer;
+}
+
+.header-title {
+    font-size: 18px; 
+    font-weight: 800; 
+    text-transform: uppercase; 
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--accent-cyan), #0099ff); 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent;
+}
+
+.content-scroll {
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 20px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 22px; 
+    padding-bottom: 120px;
+}
+
+.section-title {
+    font-size: 12px; 
+    font-weight: 800; 
+    color: #555875; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    margin-bottom: -5px;
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    margin-top: 10px;
+}
+
+/* ======================================================
+   2. GRILLE DE CARTES VIDÉO / OFFRES
+   ====================================================== */
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.video-card-small {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 2px solid rgba(0, 255, 204, 0.25);
+    border-radius: 16px;
+    padding: 16px;
     text-align: center;
     position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 255, 204, 0.05);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.video-card-small::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -150%; width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+    transform: skewX(-25deg);
+    transition: 0.75s;
+}
+
+.video-card-small:hover::before {
+    left: 150%;
+}
+
+.video-card-small:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 8px 22px rgba(0, 255, 204, 0.3);
+}
+
+.video-card-small i {
+    font-size: 24px;
+    color: var(--accent-cyan);
+    text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+    margin-bottom: 8px;
+}
+
+.video-card-small h4 {
+    margin: 4px 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.video-card-small p {
+    margin: 0 0 10px 0;
+    font-size: 11px;
+    color: #8a8d9f;
+}
+
+.btn-launch-grid {
+    background: linear-gradient(90deg, var(--accent-cyan), #00a2ff);
+    color: #030408;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 11px;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 10px rgba(0, 255, 204, 0.2);
+}
+
+.btn-launch-grid:active {
+    transform: scale(0.96);
+}
+
+.video-card-small:nth-child(even) {
+    border-color: rgba(255, 215, 0, 0.25);
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.05);
+}
+
+.video-card-small:nth-child(even):hover {
+    border-color: var(--accent-gold);
+    box-shadow: 0 8px 22px rgba(255, 215, 0, 0.3);
+}
+
+.video-card-small:nth-child(even) i {
+    color: var(--accent-gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* ======================================================
+   3. DASHBOARD, SÉCURITÉ & NAVIGATION
+   ====================================================== */
+.dashboard-row { display: grid; grid-template-columns: 1fr 100px; gap: 12px; }
+.cagnotte-card { background: var(--card-bg); padding: 16px; border-radius: 16px; position: relative; border: 1px solid rgba(255,255,255,0.03); }
+.cagnotte-valeur { font-size: 22px; font-weight: 800; color: var(--accent-cyan); margin-top: 4px; }
+.btn-how-it-works { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.05); border: none; color: #8a8d9f; width: 22px; height: 22px; border-radius: 50%; font-weight: 700; cursor: pointer; }
+.chrono-card { background: #060a14; border: 1px solid rgba(255,74,74,0.1); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.timer-digits { font-size: 14px; font-weight: 800; color: var(--danger-red); margin-top: 4px; font-family: monospace; }
+.btn-main-action-collect { background: linear-gradient(90deg, var(--accent-gold), #ff9900); border: none; padding: 14px; border-radius: 14px; color: #000; font-weight: 800; font-size: 13px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.vip-zone-card { background: linear-gradient(135deg, #0e122b 0%, #050714 100%); border: 1px solid rgba(255,215,0,0.15); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.container-iframe-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020306; z-index: 3000; display: none; flex-direction: column; }
+
+.nav-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 75px; background: rgba(9, 13, 26, 0.95); border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-around; align-items: center; backdrop-filter: blur(10px); box-sizing: border-box; }
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #555875; font-size: 10px; font-weight: 700; }
+.nav-item.active { color: var(--accent-cyan); }
+.nav-icon { font-size: 18px; }
+
+/* ======================================================
+   4. MODALE 1 : FLUX & VIDÉO
+   ====================================================== */
+.pub-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(2, 3, 6, 0.96); z-index: 2000;
+    display: none; justify-content: center; align-items: center; flex-direction: column;
+}
+
+.pub-modal-content {
+    background: #090d1a; border: 2px solid var(--accent-cyan); border-radius: 24px;
+    padding: 20px; width: 85%; max-width: 350px; text-align: center; position: relative;
     box-shadow: 0 0 40px rgba(0, 255, 204, 0.2);
 }
 
-/* Bouton Fermer (X) */
-.btn-fermer-banniere-modal {
+.btn-fermer-modal {
     position: absolute;
     top: 15px;
     left: 15px;
@@ -562,69 +267,127 @@
     z-index: 9999;
 }
 
+.btn-fermer-modal:hover {
+    background: rgba(255, 74, 74, 0.2);
+    color: var(--danger-red);
+    border-color: rgba(255, 74, 74, 0.4);
+}
+
+.pub-square-container {
+    width: 300px; height: 250px; margin: 0 auto 15px auto; background: #030408;
+    border: 1px dashed rgba(255, 255, 255, 0.1); position: relative;
+    display: flex; justify-content: center; align-items: center; overflow: hidden;
+}
+
+.blue-status-layer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #090d1a;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; gap: 8px;
+}
+
+.loader-spin-blue {
+    width: 28px; height: 28px; border: 3px solid rgba(0,255,204,0.1);
+    border-top: 3px solid var(--accent-cyan); border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+
+#finger-indicator {
+    position: absolute;
+    z-index: 99;
+    cursor: pointer;
+}
+
+.finger-overlay {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(0, 0, 0, 0.75); color: #fff;
+    padding: 15px 25px; border-radius: 12px; cursor: pointer; text-align: center;
+}
+
+.finger-overlay i {
+    font-size: 32px; color: #ffcc00; margin-bottom: 8px;
+    animation: pulseFinger 1.2s infinite ease-in-out;
+}
+
+.finger-pulse-indicator {
+    position: absolute; width: 100%; height: 100%; background: rgba(3,4,8,0.7);
+    display: none; flex-direction: column; justify-content: center; align-items: center;
+    cursor: pointer; z-index: 5; gap: 10px; color: var(--accent-cyan);
+}
+.finger-pulse-indicator i { font-size: 36px; animation: pulseFinger 1s infinite alternate; }
+.finger-pulse-indicator span { font-size: 11px; font-weight: 800; letter-spacing: 1px; }
+
+.ad-slot-square { width: 100%; height: 100%; display: none; justify-content: center; align-items: center; }
+.fine-banner-row { width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 4px; }
+
+.pub-modal-actions { display: flex; flex-direction: column; gap: 10px; }
+.btn-modal-action {
+    width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: 700; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-modal-claim { background: #1c2235; color: #686c87; }
+.btn-modal-claim.ready { background: var(--accent-cyan); color: #030408; box-shadow: 0 4px 12px rgba(0,255,204,0.3); }
+.btn-modal-claim.pret-a-reclamer {
+    background-color: #28a745 !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+    animation: pulseGreenBtn 1.5s infinite;
+}
+.btn-modal-visit { background: #102a45; color: #00ffcc; border: 1px solid rgba(0,255,204,0.2); }
+
+/* ======================================================
+   5. MODALE 2 : BANNIÈRE
+   ====================================================== */
+.banniere-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(2, 3, 6, 0.96); z-index: 2000;
+    display: none; justify-content: center; align-items: center; flex-direction: column;
+}
+
+.banniere-modal-content {
+    background: #090d1a; border: 2px solid var(--accent-cyan); border-radius: 24px;
+    padding: 20px; width: 85%; max-width: 350px; text-align: center; position: relative;
+    box-shadow: 0 0 40px rgba(0, 255, 204, 0.2);
+}
+
+.btn-fermer-banniere-modal {
+    position: absolute; top: 15px; left: 15px;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #8a8d9f; font-size: 14px; width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: all 0.2s ease; z-index: 9999;
+}
+
 .btn-fermer-banniere-modal:hover {
     background: rgba(255, 74, 74, 0.2);
     color: var(--danger-red);
     border-color: rgba(255, 74, 74, 0.4);
 }
 
-/* Cadre d'affichage 300x250 */
 .banniere-square-container {
-    width: 300px;
-    height: 250px;
-    margin: 0 auto 15px auto;
-    background: #030408;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
+    width: 300px; height: 250px; margin: 0 auto 15px auto; background: #030408;
+    border: 1px dashed rgba(255, 255, 255, 0.1); position: relative;
+    display: flex; justify-content: center; align-items: center; overflow: hidden;
 }
 
-/* Écran de chargement bleu */
 .banniere-status-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #090d1a;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 10;
-    gap: 8px;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #090d1a;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    z-index: 10; gap: 8px;
 }
 
-/* Actions et Boutons */
-.banniere-modal-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
+.banniere-modal-actions { display: flex; flex-direction: column; gap: 10px; }
 
 .btn-banniere-modal-action {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    border: none;
-    font-weight: 700;
-    font-size: 13px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    width: 100%; padding: 12px; border-radius: 12px; border: none;
+    font-weight: 700; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
 }
 
-.btn-banniere-modal-claim {
-    background: #1c2235;
-    color: #686c87;
-}
+.btn-banniere-modal-claim { background: #1c2235; color: #686c87; }
 
-/* État actif prêt à réclamer (Vert animé) */
 .btn-banniere-modal-claim.pret-a-reclamer,
 .btn-banniere-modal-claim.ready {
     background-color: #28a745 !important;
@@ -633,7 +396,57 @@
     box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
     animation: pulseGreenBtn 1.5s infinite;
 }
-    </style>
+
+/* ======================================================
+   6. MODALE 3 : ALERTE PERSONNALISÉE
+   ====================================================== */
+.custom-alert-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(10, 14, 29, 0.82);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    z-index: 999999;
+    display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
+}
+
+.custom-alert-box {
+    background: #181d36; border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px; width: 100%; max-width: 380px; padding: 28px 24px;
+    text-align: center; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    animation: popInAlert 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.custom-alert-icon {
+    width: 64px; height: 64px; margin: 0 auto 16px auto;
+    background: rgba(255, 179, 0, 0.15); border: 2px solid #ffb300;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+}
+
+.custom-alert-icon i { font-size: 30px; color: #ffb300; }
+
+.custom-alert-box h3 { margin: 0 0 10px 0; color: #ffffff; font-size: 19px; font-weight: 700; }
+.custom-alert-box p { margin: 0 0 22px 0; color: #a0a5c0; font-size: 13.5px; line-height: 1.5; }
+
+.btn-custom-alert-ok {
+    width: 100%; padding: 13px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, #0052d4, #4364f7);
+    color: #ffffff; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s ease; display: flex; align-items: center; justify-content: center;
+    gap: 8px; box-shadow: 0 8px 20px rgba(67, 100, 247, 0.4);
+}
+
+.btn-custom-alert-ok:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(67, 100, 247, 0.6); }
+.btn-custom-alert-ok:active { transform: translateY(0); }
+
+/* ======================================================
+   7. ANIMATIONS (@KEYFRAMES)
+   ====================================================== */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulseFinger { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@keyframes pulseGreenBtn { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+@keyframes popInAlert { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes goldGlow { 0% { text-shadow: 0 0 0px var(--accent-cyan); } 50% { text-shadow: 0 0 15px var(--accent-cyan); } 100% { text-shadow: 0 0 0px var(--accent-cyan); } }
+.pulse-gold-active { animation: goldGlow 0.5s ease-in-out; }
+</style>
 </head>
 <body>
 
@@ -653,7 +466,7 @@
         </div>
     </div>
 
-   <!-- ====================================================== -->
+<!-- ====================================================== -->
 <!-- 1. MODALE VIDÉO (CLASSES SPECIFIQUES PUB-MODAL-*) -->
 <!-- ====================================================== -->
 <div class="pub-modal-overlay" id="global-pub-modal" style="display: none;">
@@ -1188,27 +1001,22 @@ function fermerIframeVIP() {
     document.getElementById("insert-zone-iframe").innerHTML = "";
 }
 
-// ======================================================
-// LOGIQUE VIDÉOS REVISÉE : 100% FIREBASE (SANS LOCALSTORAGE)
-// ======================================================
-
-// Variable globale unifiée pour le chronomètre
-if (typeof timerDecompteInterval === "undefined") {
-    var timerDecompteInterval = null;
-}
+// =============================================================================
+// 0. UTILITAIRES COMMUNS FIREBASE & BOUTONS D'ACCUEIL (PARTAGÉS)
+// =============================================================================
 
 /**
- * 1. VÉRIFICATION DU BLOCAGE DANS FIREBASE (Libère la Tâche 22 et toutes les autres)
+ * Vérifie dans Firebase si une tâche (vidéo ou bannière) a déjà été faite aujourd'hui.
  */
 async function verifierSiTacheBloquee(taskId) {
-    if (!userId || !taskId) return false;
+    if (typeof userId === "undefined" || !userId || !taskId) return false;
 
     const dateAujourdhui = new Date().toISOString().split('T')[0];
 
     try {
         const doc = await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).get();
         if (doc.exists && doc.data().dateExecution === dateAujourdhui) {
-            return true; // Déjà faite aujourd'hui !
+            return true; // Déjà effectuée aujourd'hui
         }
     } catch (error) {
         console.error("Erreur de vérification Firebase :", error);
@@ -1218,12 +1026,11 @@ async function verifierSiTacheBloquee(taskId) {
 }
 
 /**
- * 2. TRANSFORMATION DU BOUTON DE L'ACCUEIL EN GRIS & INACCESSIBLE
+ * Applique le style gris/inaccessible sur le bouton de la carte sur la page d'accueil.
  */
 function appliquerStyleBoutonBloque(uniqueId) {
     if (!uniqueId) return;
 
-    // Recherche du bouton vidéo sur la page d'accueil par tous ses identifiants possibles
     const btnTache = document.getElementById("btn-video-" + uniqueId) ||
                      document.getElementById("btn-tache-" + uniqueId) || 
                      document.getElementById("btn-mission-" + uniqueId) || 
@@ -1231,7 +1038,7 @@ function appliquerStyleBoutonBloque(uniqueId) {
 
     if (btnTache) {
         btnTache.disabled = true;
-        btnTache.style.backgroundColor = "#6c757d"; // Gris identique aux bannières
+        btnTache.style.backgroundColor = "#6c757d";
         btnTache.style.borderColor = "#6c757d";
         btnTache.style.color = "#ffffff";
         btnTache.style.cursor = "not-allowed";
@@ -1242,10 +1049,10 @@ function appliquerStyleBoutonBloque(uniqueId) {
 }
 
 /**
- * 3. ENREGISTREMENT DU BLOCAGE DANS FIREBASE & MISE À JOUR VISUELLE
+ * Enregistre l'exécution de la tâche dans Firebase et grise le bouton d'accueil.
  */
 function marquerTacheCommeBloquee(taskId) {
-    if (!userId || !taskId) return;
+    if (typeof userId === "undefined" || !userId || !taskId) return;
 
     const dateAujourdhui = new Date().toISOString().split('T')[0];
 
@@ -1253,15 +1060,23 @@ function marquerTacheCommeBloquee(taskId) {
         dateExecution: dateAujourdhui,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
-        // Applique le style gris sur le bouton d'accueil
         appliquerStyleBoutonBloque(taskId);
     }).catch((err) => {
-        console.error("Erreur lors de l'enregistrement de la date dans Firebase :", err);
+        console.error("Erreur lors de l'enregistrement dans Firebase :", err);
     });
 }
 
+
+// =============================================================================
+// 1. LOGIQUE MISSIONS VIDÉO (MODALE VIDÉO UNIFIÉE)
+// =============================================================================
+
+if (typeof timerDecompteInterval === "undefined") {
+    var timerDecompteInterval = null;
+}
+
 /**
- * 4. INITIALISATION DE LA MISSION VIDÉO
+ * Initialise le chargement d'une publicité vidéo.
  */
 async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1270,13 +1085,11 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
-    // --- VÉRIFICATION FIREBASE ANTI-TRICHE & BLOCAGE ---
+    // VÉRIFICATION FIREBASE ANTI-TRICHE
     const estBloquee = await verifierSiTacheBloquee(uniqueId);
     if (estBloquee) {
-        // Transforme le bouton d'accueil en gris
         appliquerStyleBoutonBloque(uniqueId);
 
-        // Modale d'alerte avec le bouton "J'ai compris"
         const msgBloque = "Vous avez déjà accompli cette mission aujourd'hui. Elle se réinitialisera automatiquement demain à 00h00 !";
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee(
@@ -1290,20 +1103,17 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         } else {
             alert(msgBloque);
         }
-        return; // Stoppe le chargement de la vidéo
+        return;
     }
 
-    // Arrêt sécurisé du chrono s'il existe déjà
-    if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) {
-        clearInterval(timerDecompteInterval);
+    if (window.timerDecompteInterval) {
+        clearInterval(window.timerDecompteInterval);
     }
 
-    // Affectation aux variables globales
     window.missionActiveType = "video";
     window.missionActiveId = uniqueId;
     window.missionActivePoints = points;
 
-    // Récupération des éléments HTML
     const loader = document.getElementById("ad-stream-loader");
     const finger = document.getElementById("finger-indicator");
     const btnClaim = document.getElementById("btn-claim-points");
@@ -1321,7 +1131,7 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    // Réinitialisation des emplacements vidéos
+    // Réinitialisation des zones vidéos (1 à 10)
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
@@ -1340,11 +1150,10 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
     conteneurVideo.style.display = "block";
 
-    // AFFICHAGE MODALE EN FLEX
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
-    // Injection du script Clickadilla
+    // Injection du script Clickadilla Video
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1387,9 +1196,6 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     }, 100);
 }
 
-/**
- * 5. DECLENCHEMENT PAR CLIC SUR LE DOIGT
- */
 function declencherPlayFlux(event) {
     if (event) {
         event.preventDefault();
@@ -1404,9 +1210,6 @@ function declencherPlayFlux(event) {
     demarrerDecompte10Sec();
 }
 
-/**
- * 6. DÉTECTEUR BLUR ET CHRONOMÈTRE 10 SECONDES
- */
 window.addEventListener("blur", function() {
     const modal = document.getElementById("global-pub-modal");
     const doigt = document.getElementById("finger-indicator");
@@ -1423,9 +1226,6 @@ function demarrerDecompte10Sec() {
 
     if (!btnClaim) return;
 
-    if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) {
-        clearInterval(timerDecompteInterval);
-    }
     if (window.timerDecompteInterval) {
         clearInterval(window.timerDecompteInterval);
     }
@@ -1456,11 +1256,8 @@ function demarrerDecompte10Sec() {
     }, 1000);
 }
 
-/**
- * 7. RÉCLAMATION DES POINTS, ENREGISTREMENT FIREBASE & FERMETURE
- */
 function reclamerPointsBouton1(pts) {
-    if (!userId) {
+    if (typeof userId === "undefined" || !userId) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
         }
@@ -1475,13 +1272,11 @@ function reclamerPointsBouton1(pts) {
 
     const pointsAAjouter = pts || 100;
 
-    // Enregistrement des 100 Points + 1 XP dans Firebase
     db.collection("users").doc(userId).update({
         pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
 
-        // Enregistre la tâche comme faite dans Firebase & grise immédiatement le bouton d'accueil
         marquerTacheCommeBloquee(window.missionActiveId);
 
         if (btnClaim) {
@@ -1489,7 +1284,6 @@ function reclamerPointsBouton1(pts) {
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        // Modale d'alerte avec le bouton "J'ai compris"
         const messageBlocage = `Vous avez reçu +${pointsAAjouter} Points et +1 XP !\n\nCette tâche sera bloquée pour aujourd'hui et se réinitialisera automatiquement demain à 00h00.`;
 
         if (typeof afficherAlertePersonnalisee === "function") {
@@ -1514,78 +1308,18 @@ function reclamerPointsBouton1(pts) {
         }
     });
 }
-// ======================================================
-// LOGIQUE BANNIÈRES REVISÉE : SÉCURITÉ FIREBASE PURE (SANS LOCALSTORAGE)
-// ======================================================
+
+
+// =============================================================================
+// 2. LOGIQUE MISSIONS BANNIÈRE (MODALE EXCLUSIVES BANNIÈRES)
+// =============================================================================
 
 var banniereMissionActiveId = null;
 var banniereMissionActivePoints = 0;
 var banniereTimerInterval = null;
 
 /**
- * 1. VÉRIFICATION DU BLOCAGE DANS FIREBASE (Comportement identique aux vidéos)
- */
-async function verifierSiTacheBloquee(taskId) {
-    if (!userId || !taskId) return false;
-
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
-
-    try {
-        const doc = await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).get();
-        if (doc.exists && doc.data().dateExecution === dateAujourdhui) {
-            return true; // Déjà faite aujourd'hui !
-        }
-    } catch (error) {
-        console.error("Erreur de vérification Firebase :", error);
-    }
-
-    return false; // Disponible
-}
-
-/**
- * 2. TRANSFORMATION DU BOUTON DE L'ACCUEIL EN GRIS & INACCESSIBLE
- */
-function appliquerStyleBoutonBloque(uniqueId) {
-    if (!uniqueId) return;
-
-    // Recherche du bouton sur la page d'accueil par ses identifiants possibles
-    const btnTache = document.getElementById("btn-tache-" + uniqueId) || 
-                     document.getElementById("btn-mission-" + uniqueId) || 
-                     document.getElementById("card-btn-" + uniqueId);
-
-    if (btnTache) {
-        btnTache.disabled = true;
-        btnTache.style.backgroundColor = "#6c757d"; // Gris identique aux vidéos
-        btnTache.style.borderColor = "#6c757d";
-        btnTache.style.color = "#ffffff";
-        btnTache.style.cursor = "not-allowed";
-        btnTache.style.opacity = "0.75";
-        btnTache.style.pointerEvents = "none";
-        btnTache.innerHTML = '<i class="fa-solid fa-check-circle"></i> Complétée';
-    }
-}
-
-/**
- * 3. ENREGISTREMENT DU BLOCAGE DANS FIREBASE & MISE À JOUR VISUELLE
- */
-function marquerTacheCommeBloquee(taskId) {
-    if (!userId || !taskId) return;
-
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
-
-    db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
-        dateExecution: dateAujourdhui,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-        // Applique le style gris sur l'accueil une fois enregistré
-        appliquerStyleBoutonBloque(taskId);
-    }).catch((err) => {
-        console.error("Erreur lors de l'enregistrement de la date dans Firebase :", err);
-    });
-}
-
-/**
- * 4. INITIALISATION DE LA MISSION BANNIÈRE
+ * Initialise le chargement d'une bannière publicitaire (Adsterra, Advertica, Clickadilla).
  */
 async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, indexZone, formatPubOrWidth = "300x250", hauteurOptional = null) {
     const e = window.event;
@@ -1594,13 +1328,11 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         e.stopPropagation();
     }
 
-    // --- VÉRIFICATION FIREBASE ANTI-TRICHE & BLOCAGE ---
+    // VÉRIFICATION FIREBASE ANTI-TRICHE
     const estBloquee = await verifierSiTacheBloquee(uniqueId);
     if (estBloquee) {
-        // Transforme le bouton d'accueil en gris
         appliquerStyleBoutonBloque(uniqueId);
 
-        // Alerte avec le bouton "J'ai compris"
         const msgBloque = "Vous avez déjà accompli cette mission aujourd'hui. Elle se réinitialisera automatiquement demain à 00h00 !";
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee(
@@ -1614,10 +1346,10 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         } else {
             alert(msgBloque);
         }
-        return; // Stoppe le chargement de la modale pub
+        return;
     }
 
-    // Analyse des dimensions
+    // Calcul des dimensions
     let widthNum = 300;
     let heightNum = 250;
     let formatPub = "300x250";
@@ -1641,13 +1373,12 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // Attributions globales
     banniereMissionActiveId = uniqueId;
     banniereMissionActivePoints = points;
 
     if (banniereTimerInterval) clearInterval(banniereTimerInterval);
 
-    // Masquer les 14 zones bannières
+    // Masquer les zones bannières (1 à 14)
     for (let i = 1; i <= 14; i++) {
         const zone = document.getElementById("zone-pub-banniere-" + i);
         if (zone) {
@@ -1656,7 +1387,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // Préparation des éléments d'interface
     const zoneCible = document.getElementById("zone-pub-banniere-" + indexZone);
     const loader = document.getElementById("banniere-ad-loader-unique");
     const btnClaim = document.getElementById("btn-claim-banniere-seul");
@@ -1674,7 +1404,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
 
     if (modal) modal.style.display = "flex";
 
-    // Règles de disposition
+    // Configuration d'affichage selon le format
     let w = widthNum + "px";
     let h = heightNum + "px";
     let nbRepetitions = 1;
@@ -1695,8 +1425,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         w = widthNum + "px";
         h = heightNum + "px";
         nbRepetitions = 4;
-    } else {
-        nbRepetitions = 1;
     }
 
     // Injection dans la zone
@@ -1859,7 +1587,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // Surveillance du rendu
+    // Surveillance de l'affichage effectif
     surveillerBanniereUnique(
         "zone-pub-banniere-" + indexZone,
         function surSucces() {
@@ -1872,9 +1600,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
     );
 }
 
-/**
- * 5. DÉTECTION DU RENDU DE LA BANNIÈRE
- */
 function surveillerBanniereUnique(idZone, surSucces, surEchec) {
     const conteneur = document.getElementById(idZone);
     if (!conteneur) {
@@ -1930,9 +1655,6 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
     }, 12000);
 }
 
-/**
- * 6. CHRONOMÈTRE 30 SECONDES
- */
 function demarrerDecompteBanniere30Sec() {
     let secs = 30;
     const btnClaim = document.getElementById("btn-claim-banniere-seul");
@@ -1965,9 +1687,6 @@ function demarrerDecompteBanniere30Sec() {
     }, 1000);
 }
 
-/**
- * 7. RÉCLAMATION, FIREBASE & FERMETURE AVEC "J'AI COMPRIS"
- */
 function reclamerPointsBanniereSeule() {
     if (typeof userId === "undefined" || !userId) {
         if (typeof afficherAlertePersonnalisee === "function") {
@@ -1984,12 +1703,11 @@ function reclamerPointsBanniereSeule() {
 
     const pts = banniereMissionActivePoints || 100;
 
-    // Enregistrement des points et XP dans Firebase
     db.collection("users").doc(userId).update({
         pointsDuJours: firebase.firestore.FieldValue.increment(pts),
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
-        // Enregistre la tâche comme faite dans Firebase & grise immédiatement le bouton d'accueil
+
         marquerTacheCommeBloquee(banniereMissionActiveId);
 
         if (btnClaim) {
@@ -1999,7 +1717,6 @@ function reclamerPointsBanniereSeule() {
 
         const messageAlerte = `Vous avez reçu +${pts} Points et +1 XP !\n\nCette tâche sera bloquée pour aujourd'hui et se réinitialisera automatiquement demain à 00h00.`;
 
-        // Affichage de la modale d'alerte avec le bouton "J'ai compris"
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee(
                 messageAlerte,
@@ -2023,9 +1740,6 @@ function reclamerPointsBanniereSeule() {
     });
 }
 
-/**
- * 8. GESTION DES PANNES ET FERMETURES
- */
 function declencherPanneBanniereIndependante() {
     const loader = document.getElementById("banniere-ad-loader-unique");
     if (loader) loader.style.display = "none";
