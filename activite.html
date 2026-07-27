@@ -596,6 +596,47 @@
 
     </div>
 </div>
+    <!-- ====================================================== -->
+<!-- MODALE SPÉCIFIQUE POUR LES BANNIÈRES (SÉPARÉE DES VIDÉOS) -->
+<!-- ====================================================== -->
+<div class="pub-modal-overlay" id="banniere-pub-modal" style="display: none;">
+    <div class="pub-modal-content">
+        
+        <!-- Bouton Fermer (X) -->
+        <button class="btn-fermer-modal" onclick="fermerModaleBanniere()" style="position: relative; z-index: 10000;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        
+        <!-- CADRE D'AFFICHAGE DE LA BANNIÈRE -->
+        <div class="pub-square-container" style="position: relative; overflow: hidden; min-height: 280px; display: flex; align-items: center; justify-content: center;">
+            
+            <!-- Loader d'analyse -->
+            <div class="blue-status-layer" id="banniere-ad-loader" style="display: flex;">
+                <div class="loader-spin-blue"></div>
+                <p style="font-size: 13px; font-weight: 600; margin: 0;">Chargement et vérification de la bannière...</p>
+                <p style="font-size: 11px; color: #8a8d9f; margin: 5px 0 0 0;">Veuillez patienter quelques secondes</p>
+            </div>
+
+            <!-- Zone d'affichage unique de la bannière -->
+            <div id="banniere-slot-conteneur" style="width: 100%; display: flex; justify-content: center; align-items: center; z-index: 5;"></div>
+
+        </div>
+
+        <!-- COMMANDES ET DÉCOMPTE -->
+        <div class="pub-modal-actions" style="position: relative; z-index: 9999; margin-top: 15px;">
+            <button class="btn-modal-action btn-modal-claim" id="btn-claim-banniere" disabled style="position: relative; z-index: 10000;">
+                <i class="fa-solid fa-lock"></i> Chargement de la publicité...
+            </button>
+
+            <div style="margin-top: 10px; text-align: center;">
+                <p style="font-size: 11px; color: #686c87; margin: 0; line-height: 1.4;">
+                    Le chronomètre de <strong>10 secondes</strong> démarre automatiquement dès que la bannière s'affiche.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
     <!-- DOUBLE FENETRE FULLSCREEN MURS VIP -->
     <div class="container-iframe-wrapper" id="conteneur-iframe-vip">
         <div style="background:#070914; padding:15px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e2235;">
@@ -1279,125 +1320,152 @@ function marquerTacheCommeBloquee(taskId) {
     });
 }
 // ======================================================
-// LOGIQUE SPÉCIFIQUE BANNIÈRES
+// LOGIQUE SPÉCIFIQUE BANNIÈRES (ISOLÉE ET SÉCURISÉE)
 // ======================================================
-function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
+
+var timerDecompteBanniereInterval = null;
+
+async function initierMissionBanniere(fournisseur, clePub, uniqueId, points) {
     const e = window.event;
     if (e) {
         e.preventDefault();
         e.stopPropagation();
     }
 
-    if (verifierSiTacheBloquee(uniqueId)) {
-        afficherAlertePersonnalisee("Cette tâche est déjà validée et bloquée pour aujourd'hui.", "Tâche déjà complétée");
+    // 1. Vérification du blocage Firebase (Réinitialisation à 00h00)
+    const estBloquee = await verifierSiTacheBloquee(uniqueId);
+    if (estBloquee) {
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Vous avez déjà accompli cette mission aujourd'hui. Elle se réinitialisera demain à 00h00 !", "Tâche Bloquée");
+        }
         return;
     }
-    
-    missionActiveType = "banniere";
-    missionActiveId = uniqueId;
-    missionActivePoints = points;
-    
-    document.getElementById("ad-stream-loader").style.display = "flex";
-    document.getElementById("finger-indicator").style.display = "none"; 
-    
-    for (let i = 1; i <= 10; i++) {
-        const cibleTemporaire = document.getElementById("zone-pub-video" + i);
-        if (cibleTemporaire) cibleTemporaire.style.display = "none";
-    }
-    
-    const blocAlternative = document.getElementById("zone-pub-alternative");
-    const conteneurInterne = document.getElementById("box-banner-inside-modal");
-    
-    blocAlternative.style.display = "block";
-    conteneurInterne.innerHTML = "";
 
+    // 2. Affectation des variables globales
+    window.missionActiveType = "banniere";
+    window.missionActiveId = uniqueId;
+    window.missionActivePoints = points;
+
+    if (timerDecompteBanniereInterval) clearInterval(timerDecompteBanniereInterval);
+
+    // 3. Préparation de l'interface
+    const loader = document.getElementById("banniere-ad-loader");
+    const conteneurSlot = document.getElementById("banniere-slot-conteneur");
+    const btnClaim = document.getElementById("btn-claim-banniere");
+    const modal = document.getElementById("banniere-pub-modal");
+
+    if (loader) loader.style.display = "flex";
+    if (conteneurSlot) {
+        conteneurSlot.innerHTML = "";
+        // Réinitialisation du style de centrage / remplissage responsive
+        conteneurSlot.style.display = "flex";
+        conteneurSlot.style.justifyContent = "center";
+        conteneurSlot.style.alignItems = "center";
+        conteneurSlot.style.width = "100%";
+        conteneurSlot.style.minHeight = "250px";
+    }
+
+    if (btnClaim) {
+        btnClaim.disabled = true;
+        btnClaim.className = "btn-modal-action btn-modal-claim";
+        btnClaim.style.backgroundColor = "";
+        btnClaim.style.color = "";
+        btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Détection de la publicité...';
+        btnClaim.onclick = null;
+    }
+
+    // Affichage de la modale bannière
+    if (modal) modal.style.display = "flex";
+
+    // 4. Injection DYNAMIQUE selon la clé transmise
     try {
         if (fournisseur.startsWith("adsterra") || fournisseur === "advertica") {
             let divEnveloppe = document.createElement("div");
-            divEnveloppe.className = "ad-zone-160x600";
-            divEnveloppe.style.margin = "10px auto";
-            divEnveloppe.style.textAlign = "center";
+            divEnveloppe.style.width = "100%";
+            divEnveloppe.style.display = "flex";
+            divEnveloppe.style.justifyContent = "center";
+            divEnveloppe.style.alignItems = "center";
+            divEnveloppe.style.margin = "0 auto";
 
             let cadreIframe = document.createElement("iframe");
-            cadreIframe.style.width = "160px";
-            cadreIframe.style.height = "600px";
+            cadreIframe.style.width = "300px";
+            cadreIframe.style.height = "250px";
             cadreIframe.style.border = "none";
+            cadreIframe.style.outline = "none";
             cadreIframe.style.scrolling = "no";
+            cadreIframe.style.background = "transparent";
             cadreIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups");
             
             let htmlContenu = `
+                <!DOCTYPE html>
                 <html>
-                <body style="margin:0; padding:0; display:flex; justify-content:center;">
+                <head>
+                    <style>
+                        html, body {
+                            margin: 0;
+                            padding: 0;
+                            width: 100%;
+                            height: 100%;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            background: transparent;
+                            overflow: hidden;
+                        }
+                    </style>
+                </head>
+                <body>
                     <script type="text/javascript">
                         atOptions = {
                             'key' : '${clePub}',
                             'format' : 'iframe',
-                            'height' : 600,
-                            'width' : 160,
+                            'height' : 250,
+                            'width' : 300,
                             'params' : {}
                         };
                     <\/script>
                     <script type="text/javascript" src="https://www.highperformanceformat.com/${clePub}/invoke.js"><\/script>
-                </body>
-                </html>
+                <\/body>
+                <\/html>
             `;
             
             divEnveloppe.appendChild(cadreIframe);
-            conteneurInterne.appendChild(divEnveloppe);
+            conteneurSlot.appendChild(divEnveloppe);
             
             cadreIframe.contentWindow.document.open();
             cadreIframe.contentWindow.document.write(htmlContenu);
             cadreIframe.contentWindow.document.close();
 
         } else {
-            conteneurInterne.innerHTML = `
-                <div id="${clePub}"></div>
-                <iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="300" height="250" style="border:none; overflow:hidden;"></iframe>
+            // Clickadilla ou autre fournisseur iframe direct
+            conteneurSlot.innerHTML = `
+                <div style="width:100%; display:flex; justify-content:center; align-items:center;">
+                    <div id="${clePub}"></div>
+                    <iframe src="https://zone.clickadilla.com/ext/show/zone/${clePub}" width="300" height="250" style="border:none; overflow:hidden; background:transparent;"></iframe>
+                </div>
             `;
         }
 
     } catch(err) {
-        declencherPanneAffichagePub();
+        declencherPanneBanniere();
         return;
     }
 
-    if (typeof ouvrirCadreModaleGlobal === "function") {
-        ouvrirCadreModaleGlobal("box-banner-inside-modal");
-    }
-}
-
-// ======================================================
-// SURVEILLANCE GÉNÉRALE DES PUBS & PANNES
-// ======================================================
-function ouvrirCadreModaleGlobal(idConteneurPub) {
-    const modal = document.getElementById("global-pub-modal");
-    if (modal) modal.style.display = "flex";
-    
-    const btnClaim = document.getElementById("btn-claim-points");
-    if (btnClaim) {
-        btnClaim.disabled = true;
-        btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente de la pub...`;
-    }
-    
-    verificationPubChargee = false;
-
-    surveillerPresencePub(
-        idConteneurPub, 
-        function() {
-            verificationPubChargee = true;
-            if (missionActiveType === "banniere") {
-                const loader = document.getElementById("ad-stream-loader");
-                if (loader) loader.style.display = "none";
-                demarrerDecompte30Sec();
-            }
-        }, 
-        function() {
-            declencherPanneAffichagePub();
+    // 5. Surveillance d'affichage (15 secondes max)
+    surveillerPresencePubBanniere(
+        "banniere-slot-conteneur",
+        function surSucces() {
+            if (loader) loader.style.display = "none";
+            demarrerDecompteBanniere10Sec();
+        },
+        function surEchec() {
+            declencherPanneBanniere();
         }
     );
 }
 
-function surveillerPresencePub(idConteneur, surSucces, surEchec) {
+// Surveillance d'injection bannière (15s max)
+function surveillerPresencePubBanniere(idConteneur, surSucces, surEchec) {
     const conteneur = document.getElementById(idConteneur);
     if (!conteneur) {
         surEchec();
@@ -1421,15 +1489,12 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
         if (pubDetectee) return;
 
         const iframe = conteneur.querySelector('iframe');
-        const video = conteneur.querySelector('video');
         const elementsVisuels = Array.from(conteneur.querySelectorAll('*')).filter(
             el => el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE'
         );
 
-        if (iframe || video) {
-            validerSucces();
-        } else if (elementsVisuels.length > 0) {
-            setTimeout(validerSucces, 500);
+        if (iframe || elementsVisuels.length > 0) {
+            setTimeout(validerSucces, 800);
         }
     }
 
@@ -1441,66 +1506,133 @@ function surveillerPresencePub(idConteneur, surSucces, surEchec) {
 
     observer.observe(conteneur, { childList: true, subtree: true });
 
-    // Délai maximal de détection : 10 secondes
     timerPanne = setTimeout(() => {
         if (!pubDetectee) {
             if (observer) observer.disconnect();
             surEchec();
         }
-    }, 10000); 
+    }, 15000); 
 }
 
-function declencherPanneAffichagePub() {
-    const loader = document.getElementById("ad-stream-loader");
-    if (loader) loader.style.display = "none";
-    afficherAlertePersonnalisee("Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.", "Pub Indisponible");
-    fermerModaleActive();
+// Chrono 10 secondes automatique
+function demarrerDecompteBanniere10Sec() {
+    let secondesRestantes = 10;
+    const btnClaim = document.getElementById("btn-claim-banniere");
+
+    if (!btnClaim) return;
+
+    if (timerDecompteBanniereInterval) clearInterval(timerDecompteBanniereInterval);
+
+    btnClaim.disabled = true;
+    btnClaim.innerHTML = `<i class="fa-solid fa-clock fa-spin"></i> Patientez... ${secondesRestantes}s`;
+
+    timerDecompteBanniereInterval = setInterval(() => {
+        secondesRestantes--;
+
+        if (secondesRestantes > 0) {
+            btnClaim.innerHTML = `<i class="fa-solid fa-clock fa-spin"></i> Patientez... ${secondesRestantes}s`;
+        } else {
+            clearInterval(timerDecompteBanniereInterval);
+
+            btnClaim.disabled = false;
+            btnClaim.style.backgroundColor = "#28a745";
+            btnClaim.style.color = "#ffffff";
+            
+            const pointsAAttribuer = window.missionActivePoints || 100;
+            btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${pointsAAttribuer} Points & 1 XP`;
+
+            btnClaim.onclick = function() {
+                reclamerPointsBanniere(window.missionActivePoints);
+            };
+        }
+    }, 1000);
 }
 
-function fermerModaleActive() {
-    // 1. Arrete TOUS les chronos possibles si la modale est fermee prématurément
-    if (typeof chronoInterval !== "undefined" && chronoInterval) clearInterval(chronoInterval);
-    if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) clearInterval(timerDecompteInterval);
-    if (window.timerDecompteInterval) clearInterval(window.timerDecompteInterval);
+// Enregistrement Firebase
+function reclamerPointsBanniere(pts) {
+    if (!userId) {
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
+        }
+        return;
+    }
 
-    // 2. Masquer la modale
-    const modal = document.getElementById("global-pub-modal");
-    if (modal) modal.style.display = "none";
-
-    // 3. Réinitialiser le bouton et son style
-    const btnClaim = document.getElementById("btn-claim-points");
+    const btnClaim = document.getElementById("btn-claim-banniere");
     if (btnClaim) {
         btnClaim.disabled = true;
-        btnClaim.style.backgroundColor = ""; // Retire le vert si le bouton était prêt
-        btnClaim.style.color = "";
-        btnClaim.innerHTML = `<i class="fa-solid fa-hourglass-start"></i> En attente...`;
+        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
     }
+
+    const pointsAAjouter = pts || 100;
+
+    db.collection("users").doc(userId).update({
+        pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
+        xp: firebase.firestore.FieldValue.increment(1)
+    }).then(() => {
+        
+        marquerTacheCommeBloquee(window.missionActiveId);
+
+        if (btnClaim) {
+            btnClaim.style.backgroundColor = "#6c757d";
+            btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
+        }
+
+        const messageBlocage = `Vous avez reçu +${pointsAAjouter} Points et +1 XP !\n\nCette tâche sera bloquée pour aujourd'hui et se réinitialisera automatiquement demain à 00h00.`;
+        
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee(
+                messageBlocage, 
+                "Tâche Complétée", 
+                "J'ai compris", 
+                function() {
+                    fermerModaleBanniere();
+                }
+            );
+        } else {
+            alert(messageBlocage);
+            fermerModaleBanniere();
+        }
+
+    }).catch((error) => {
+        console.error("Erreur Firebase :", error);
+        if (btnClaim) {
+            btnClaim.disabled = false;
+            btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
+        }
+    });
 }
 
-// Actionneur de collecte alternative / Boost
-function actionnerBoostPublicitaire() {
-    if(!userId || !verificationPubChargee) return;
+// Gestion des pannes
+function declencherPanneBanniere() {
+    const loader = document.getElementById("banniere-ad-loader");
+    if (loader) loader.style.display = "none";
     
-    const bonusBoost = Math.round(missionActivePoints * 0.10);
+    const messageEchec = "Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.";
     
-    db.collection("users").doc(userId).update({
-        pointsDuJours: firebase.firestore.FieldValue.increment(bonusBoost),
-        XP: firebase.firestore.FieldValue.increment(1)
-    }).then(() => {
-        marquerTacheCommeBloquee(missionActiveId);
-        window.open(redirectionUrlActive, '_blank');
-        afficherAlertePersonnalisee(`Boost validé ! +${bonusBoost} Points (10%) transférés et +1 XP généré.`, "Boost Activé");
-        fermerModaleActive();
-    }).catch(err => {
-        db.collection("users").doc(userId).set({
-            XP: 1,
-            pointsDuJours: firebase.firestore.FieldValue.increment(bonusBoost)
-        }, { merge: true }).then(() => {
-            marquerTacheCommeBloquee(missionActiveId);
-            window.open(redirectionUrlActive, '_blank');
-            fermerModaleActive();
-        });
-    });
+    if (typeof afficherAlertePersonnalisee === "function") {
+        afficherAlertePersonnalisee(messageEchec, "Pub Indisponible");
+    } else {
+        alert(messageEchec);
+    }
+    fermerModaleBanniere();
+}
+
+function fermerModaleBanniere() {
+    if (timerDecompteBanniereInterval) clearInterval(timerDecompteBanniereInterval);
+
+    const modal = document.getElementById("banniere-pub-modal");
+    if (modal) modal.style.display = "none";
+
+    const conteneurSlot = document.getElementById("banniere-slot-conteneur");
+    if (conteneurSlot) conteneurSlot.innerHTML = "";
+
+    const btnClaim = document.getElementById("btn-claim-banniere");
+    if (btnClaim) {
+        btnClaim.disabled = true;
+        btnClaim.style.backgroundColor = "";
+        btnClaim.style.color = "";
+        btnClaim.innerHTML = `<i class="fa-solid fa-lock"></i> Chargement...`;
+    }
 }
 
         // ==========================================
