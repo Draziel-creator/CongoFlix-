@@ -1004,37 +1004,33 @@ function fermerIframeVIP() {
     document.getElementById("insert-zone-iframe").innerHTML = "";
 }
 
-// ======================================================
-// VARIABLES GLOBALES & ÉTAT
-// ======================================================
+// Variable globale unifiée pour le chronomètre
 if (typeof timerDecompteInterval === "undefined") {
     var timerDecompteInterval = null;
 }
 
 // ======================================================
-// 1. VÉRIFICATION DE L'ÉTAT DANS FIREBASE
+// 1. VÉRIFICATION DU BLOCAGE DANS FIREBASE
 // ======================================================
-async function verifierEtatTacheFirebase(taskId) {
-    if (typeof userId === "undefined" || !userId || !taskId) return { b1Fait: false };
+async function verifierSiTacheBloquee(taskId) {
+    if (!userId || !taskId) return false;
 
     const dateAujourdhui = new Date().toISOString().split('T')[0];
 
     try {
         const doc = await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).get();
-        if (doc.exists) {
-            const data = doc.data();
-            const b1Fait = data.bouton1Date === dateAujourdhui || data.dateExecution === dateAujourdhui;
-            return { b1Fait };
+        if (doc.exists && doc.data().dateExecution === dateAujourdhui) {
+            return true; // Déjà faite aujourd'hui !
         }
     } catch (error) {
-        console.error("Erreur vérification Firebase :", error);
+        console.error("Erreur de vérification Firebase :", error);
     }
 
-    return { b1Fait: false };
+    return false; // Disponible
 }
 
 // ======================================================
-// 2. INITIALISATION DE LA MISSION VIDÉO
+// 2. INITIALISATION DE LA MISSION VIDÉO (COMPLÈTE & SÉCURISÉE)
 // ======================================================
 async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1043,52 +1039,44 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
-    const etat = await verifierEtatTacheFirebase(uniqueId);
-
-    if (etat.b1Fait) {
+    // --- VÉRIFICATION FIREBASE ANTI-TRICHE ---
+    const estBloquee = await verifierSiTacheBloquee(uniqueId);
+    if (estBloquee) {
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Vous avez déjà accompli cette tâche aujourd'hui. Revenez demain !", "Tâche Bloquée");
-        } else {
-            alert("Vous avez déjà accompli cette tâche aujourd'hui.");
+            afficherAlertePersonnalisee("Vous avez déjà accompli cette mission aujourd'hui. Revenez demain !", "Tâche Bloquée");
         }
-        return;
+        return; // On arrête tout ici !
     }
 
-    if (window.timerDecompteInterval) {
-        clearInterval(window.timerDecompteInterval);
+    // Arrêt sécurisé du chrono s'il existe déjà
+    if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) {
+        clearInterval(timerDecompteInterval);
     }
 
+    // Affectation aux variables globales
     window.missionActiveType = "video";
     window.missionActiveId = uniqueId;
-    window.missionActivePoints = 100;
-    window.missionActiveIndex = indexVideo;
-    window.missionActiveZoneId = zoneId;
+    window.missionActivePoints = points;
 
+    // Récupération des éléments HTML
     const loader = document.getElementById("ad-stream-loader");
     const finger = document.getElementById("finger-indicator");
     const btnClaim = document.getElementById("btn-claim-points");
 
     if (loader) loader.style.display = "flex";
-    
-    // Réinitialisation du doigt au centre
-    if (finger) {
-        finger.style.display = "none";
-        finger.style.opacity = "1";
-        finger.style.backdropFilter = "none";
-        finger.innerHTML = `<i class="fa-solid fa-hand-pointer"></i> Cliquez pour démarrer la vidéo`;
-    }
+    if (finger) finger.style.display = "none";
 
     if (btnClaim) {
         btnClaim.disabled = true;
         btnClaim.className = "btn-modal-action btn-modal-claim";
-        btnClaim.style.backgroundColor = "";
-        btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Chargement de la vidéo...';
+        btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Détection de la vidéo...';
         btnClaim.onclick = null;
     }
 
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
+    // Réinitialisation des 10 emplacements vidéos
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
@@ -1107,9 +1095,11 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 
     conteneurVideo.style.display = "block";
 
+    // AFFICHAGE MODALE EN FLEX (Rétablit le centrage parfait au milieu de l'écran)
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
+    // Injection du script Clickadilla
     setTimeout(() => {
         try {
             let scriptVideo = document.createElement("script");
@@ -1127,23 +1117,25 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
                 surveillerPresencePub(
                     idZoneCible,
                     () => {
+                        if (btnClaim) {
+                            btnClaim.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Préparation du lecteur...';
+                        }
+
                         setTimeout(() => {
                             if (loader) loader.style.display = "none";
-                            if (finger) {
-                                finger.style.display = "flex";
-                                // Le PREMIER CLIC lance directement le chrono
-                                finger.onclick = gererClicSurDoigt;
-                            }
+                            if (finger) finger.style.display = "flex";
+
                             if (btnClaim) {
-                                btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez au centre pour lancer le chrono';
+                                btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur le doigt pour lancer le chrono';
                             }
-                        }, 1500);
+                        }, 2500);
                     },
                     () => {
                         if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
                     }
                 );
             }
+
         } catch(err) {
             if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
         }
@@ -1151,34 +1143,44 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 }
 
 // ======================================================
-// 3. GESTION DU CLIC UNIQUE SUR LE DOIGT
+// 3. FONCTION APPELÉE PAR LE ONCLICK DU DOIGT
 // ======================================================
-function gererClicSurDoigt(event) {
+function declencherPlayFlux(event) {
     if (event) {
         event.preventDefault();
         event.stopPropagation();
     }
 
     const doigt = document.getElementById("finger-indicator");
+    const loader = document.getElementById("ad-stream-loader");
+    if (doigt) doigt.style.display = "none";
+    if (loader) loader.style.display = "none";
 
-    // Masque le doigt au centre dès qu'on clique
-    if (doigt) {
-        doigt.style.display = "none";
-    }
-
-    // Déclenche directement le compte à rebours de 30 secondes
     demarrerDecompte30Sec();
 }
 
 // ======================================================
-// 4. CHRONOMÈTRE DE 5 SECONDES
+// 4. DÉTECTEUR BLUR + CHRONOMÈTRE 30S
 // ======================================================
-function demarrerDecompte5Sec() {
-    let secondesRestantes = 5;
+window.addEventListener("blur", function() {
+    const modal = document.getElementById("global-pub-modal");
+    const doigt = document.getElementById("finger-indicator");
+
+    if (modal && modal.style.display !== "none" && doigt && doigt.style.display !== "none") {
+        doigt.style.display = "none";
+        demarrerDecompte30Sec();
+    }
+});
+
+function demarrerDecompte30Sec() {
+    let secondesRestantes = 30;
     const btnClaim = document.getElementById("btn-claim-points");
 
     if (!btnClaim) return;
 
+    if (typeof timerDecompteInterval !== "undefined" && timerDecompteInterval) {
+        clearInterval(timerDecompteInterval);
+    }
     if (window.timerDecompteInterval) {
         clearInterval(window.timerDecompteInterval);
     }
@@ -1198,81 +1200,73 @@ function demarrerDecompte5Sec() {
             btnClaim.classList.add("pret-a-reclamer", "ready");
             btnClaim.style.backgroundColor = "#28a745";
             btnClaim.style.color = "#ffffff";
-            btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer 100 Pts & 1 XP`;
+            
+            const pointsAAttribuer = window.missionActivePoints || 0;
+            btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${pointsAAttribuer} Points`;
 
             btnClaim.onclick = function() {
-                executerEncaissement();
+                if (typeof reclamerPointsBouton1 === "function") {
+                    reclamerPointsBouton1(window.missionActivePoints);
+                }
             };
         }
     }, 1000);
 }
 
 // ======================================================
-// 5. ENCAISSEMENT FIREBASE (100 PTS & 1 XP DIRECTS)
+// 5. RÉCLAMATION ET ENREGISTREMENT DANS FIREBASE
 // ======================================================
-async function executerEncaissement() {
-    if (typeof userId === "undefined" || !userId) {
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
-        } else {
-            alert("Connexion requise.");
-        }
+function reclamerPointsBouton1(pts) {
+    if (!userId) {
+        afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
         return;
     }
 
     const btnClaim = document.getElementById("btn-claim-points");
     if (btnClaim) {
         btnClaim.disabled = true;
-        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement en cours...`;
+        btnClaim.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...`;
     }
 
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
-    const pointsFinals = 100;
-    const xpFinal = 1;
+    const pointsAAjouter = pts || 100;
 
-    try {
-        const userRef = db.collection("users").doc(userId);
-        const taskRef = userRef.collection("taches_faites").doc(window.missionActiveId);
-
-        await Promise.all([
-            userRef.update({
-                pointsDuJours: firebase.firestore.FieldValue.increment(pointsFinals),
-                XP: firebase.firestore.FieldValue.increment(xpFinal)
-            }),
-            taskRef.set({
-                bouton1Date: dateAujourdhui,
-                dateExecution: dateAujourdhui,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true })
-        ]);
+    db.collection("users").doc(userId).update({
+        pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter)
+    }).then(() => {
+        
+        marquerTacheCommeBloquee(window.missionActiveId);
 
         if (btnClaim) {
             btnClaim.style.backgroundColor = "#6c757d";
-            btnClaim.style.color = "#ffffff";
-            btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> 100 Pts & 1 XP encaissés !`;
+            btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> +${pointsAAjouter} Points Crédités !`;
         }
 
-        const messageFinal = `Félicitations ! Vous avez gagné 100 points et +1 XP !`;
-
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(messageFinal, "Tâche Réussie");
-        } else {
-            alert(messageFinal);
-        }
-
+        afficherAlertePersonnalisee(`Félicitations ! Vous avez gagné ${pointsAAjouter} points !`, "Victoire !");
+        
         setTimeout(() => {
-            if (typeof fermerModaleActive === "function") {
-                fermerModaleActive();
-            }
+            if (typeof fermerModaleActive === "function") fermerModaleActive();
         }, 1500);
 
-    } catch (error) {
-        console.error("Erreur d'encaissement Firebase :", error);
+    }).catch((error) => {
+        console.error("Erreur Firebase :", error);
         if (btnClaim) {
             btnClaim.disabled = false;
-            btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer`;
+            btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
         }
-    }
+    });
+}
+
+function marquerTacheCommeBloquee(taskId) {
+    if (!userId || !taskId) return;
+
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+
+    db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
+        dateExecution: dateAujourdhui,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch((err) => {
+        console.error("Erreur lors de l'enregistrement de la date :", err);
+    });
 }
 // ======================================================
 // LOGIQUE SPÉCIFIQUE BANNIÈRES
