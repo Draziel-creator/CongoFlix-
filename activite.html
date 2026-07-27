@@ -1341,12 +1341,53 @@ function marquerTacheCommeBloquee(taskId) {
     });
 }
 // ======================================================
-// LOGIQUE BANNIÈRES REVISÉE : DÉTECTION STRICTE & MULTIPLICATION
+// LOGIQUE BANNIÈRES REVISÉE : DÉTECTION STRICTE, MULTIPLICATION & BLOCAGE GRIS
 // ======================================================
 
 var banniereMissionActiveId = null;
 var banniereMissionActivePoints = 0;
 var banniereTimerInterval = null;
+
+/**
+ * Applique le style gris désactivé sur le bouton de la tâche dans la liste
+ */
+function appliquerStyleBoutonBloque(uniqueId) {
+    if (!uniqueId) return;
+    // Recherche du bouton de la tâche par ID standard ou alternatif
+    const btnTache = document.getElementById("btn-tache-" + uniqueId) || 
+                     document.getElementById("btn-mission-" + uniqueId) || 
+                     document.getElementById("card-btn-" + uniqueId);
+
+    if (btnTache) {
+        btnTache.disabled = true;
+        btnTache.style.backgroundColor = "#6c757d"; // Couleur grise comme les vidéos
+        btnTache.style.borderColor = "#6c757d";
+        btnTache.style.color = "#ffffff";
+        btnTache.style.cursor = "not-allowed";
+        btnTache.style.opacity = "0.75";
+        btnTache.style.pointerEvents = "none";
+        btnTache.innerHTML = '<i class="fa-solid fa-check-circle"></i> Complétée';
+    }
+}
+
+/**
+ * Marque la tâche comme bloquée dans le stockage et met à jour le visuel
+ */
+function marquerTacheCommeBloquee(uniqueId) {
+    if (!uniqueId) return;
+    try {
+        let bloquees = JSON.parse(localStorage.getItem("taches_bloquees_du_jour") || "[]");
+        if (!bloquees.includes(uniqueId)) {
+            bloquees.push(uniqueId);
+            localStorage.setItem("taches_bloquees_du_jour", JSON.stringify(bloquees));
+        }
+    } catch (e) {
+        console.error("Erreur enregistrement blocage local :", e);
+    }
+    
+    // Grise immédiatement le bouton de la tâche
+    appliquerStyleBoutonBloque(uniqueId);
+}
 
 /**
  * @param {string} fournisseur - 'adsterra', 'adsterra_native', 'advertica', 'clickadilla'
@@ -1388,9 +1429,10 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // 2. Vérification blocage Firebase
-    const estBloquee = await verifierSiTacheBloquee(uniqueId);
+    // 2. Vérification blocage Firebase / Local
+    const estBloquee = (typeof verifierSiTacheBloquee === "function") ? await verifierSiTacheBloquee(uniqueId) : false;
     if (estBloquee) {
+        appliquerStyleBoutonBloque(uniqueId);
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Mission déjà accomplie aujourd'hui. Réinitialisation à 00h00 !", "Tâche Bloquée");
         }
@@ -1450,7 +1492,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
     } else if (formatPub === "320x50" || formatPub === "468x60" || formatPub === "728x90" || formatPub === "bandeau") {
         w = widthNum + "px";
         h = heightNum + "px";
-        nbRepetitions = 3; // Bandeaux horizontaux
+        nbRepetitions = 4; // MODIFIÉ : 4 BANNIÈRES pour remplir l'espace sans vides
     } else {
         nbRepetitions = 1;
     }
@@ -1458,12 +1500,11 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
     // 7. Injection dans la zone cible
     if (zoneCible) {
         zoneCible.style.display = "flex";
-        zoneCible.style.flexDirection = "row"; // Alignement horizontal
+        zoneCible.style.flexDirection = "row";
         zoneCible.style.justifyContent = "center";
         zoneCible.style.alignItems = "center";
-        // Si c'est du 160px vertical, on bloque le retour à la ligne pour forcer le côte à côte
         zoneCible.style.flexWrap = (widthNum === 160) ? "nowrap" : "wrap";
-        zoneCible.style.gap = "12px";
+        zoneCible.style.gap = "8px"; // Espace réduit entre les pubs pour un rendu compact
         zoneCible.style.width = "100%";
         zoneCible.style.height = "100%";
         zoneCible.style.overflowY = "auto";
@@ -1474,7 +1515,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
             for (let k = 0; k < nbRepetitions; k++) {
 
                 if (fournisseur === "adsterra_native") {
-                    // FORMAT NATIVE ADSTERRA
                     let cadreIframe = document.createElement("iframe");
                     cadreIframe.style.width = w;
                     cadreIframe.style.height = "250px";
@@ -1505,7 +1545,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     doc.close();
 
                 } else if (fournisseur.startsWith("adsterra")) {
-                    // BANNIÈRE CLASSIQUE ADSTERRA
                     let cadreIframe = document.createElement("iframe");
                     cadreIframe.style.width = w;
                     cadreIframe.style.height = h;
@@ -1544,7 +1583,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     doc.close();
 
                 } else if (fournisseur === "advertica") {
-                    // ADVERTICA
                     let cadreIframe = document.createElement("iframe");
                     cadreIframe.style.width = w;
                     cadreIframe.style.height = h;
@@ -1583,7 +1621,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     doc.close();
 
                 } else {
-                    // CLICKADILLA (Propulsion propre sous Iframe)
+                    // CLICKADILLA
                     let cadreIframe = document.createElement("iframe");
                     cadreIframe.style.width = w;
                     cadreIframe.style.height = h;
@@ -1619,12 +1657,12 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // 8. Surveillance STRICTE du rendu réel
+    // 8. Surveillance du rendu réel
     surveillerBanniereUnique(
         "zone-pub-banniere-" + indexZone,
         function surSucces() {
             if (loader) loader.style.display = "none";
-            demarrerDecompteBanniere10Sec();
+            demarrerDecompteBanniere30Sec(); // Décompte réglé à 30s
         },
         function surEchec() {
             declencherPanneBanniereIndependante();
@@ -1632,7 +1670,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
     );
 }
 
-// Détection Anti-Fausse Pub Réelle & Case Blanche
+// Détection Anti-Fausse Pub Réelle
 function surveillerBanniereUnique(idZone, surSucces, surEchec) {
     const conteneur = document.getElementById(idZone);
     if (!conteneur) {
@@ -1653,13 +1691,11 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
         let pubVraimentAffichee = false;
 
         iframes.forEach(iframe => {
-            // L'iframe doit être visible à l'écran
             if (iframe.offsetWidth > 10 && iframe.offsetHeight > 10) {
                 try {
                     const doc = iframe.contentWindow.document || iframe.contentDocument;
                     if (doc && doc.body) {
                         const bodyContent = doc.body.innerHTML.trim();
-                        // Vérification de la présence d'éléments HTML injectés
                         const elementsVisuels = doc.querySelectorAll('iframe, img, a, ins, canvas, video, svg, div:not(:empty)');
 
                         if (bodyContent !== "" && elementsVisuels.length > 0) {
@@ -1667,7 +1703,6 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
                         }
                     }
                 } catch (e) {
-                    // Si l'iframe charge une URL externe (Cross-Origin), le réseau pub a répondu avec du vrai contenu distant
                     pubVraimentAffichee = true;
                 }
             }
@@ -1683,7 +1718,6 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
 
     intervalVerification = setInterval(verifierPresenceReelle, 600);
 
-    // Timeout de 12 secondes max pour charger la pub
     timerPanne = setTimeout(() => {
         if (!detectee) {
             if (intervalVerification) clearInterval(intervalVerification);
@@ -1692,9 +1726,9 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
     }, 12000);
 }
 
-// Chrono 10s automatique
-function demarrerDecompteBanniere10Sec() {
-    let secs = 10;
+// Chrono MODIFIÉ : 30 secondes
+function demarrerDecompteBanniere30Sec() {
+    let secs = 30; // Passer à 30 secondes
     const btnClaim = document.getElementById("btn-claim-banniere-seul");
 
     if (!btnClaim) return;
@@ -1746,9 +1780,8 @@ function reclamerPointsBanniereSeule() {
         pointsDuJours: firebase.firestore.FieldValue.increment(pts),
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
-        if (typeof marquerTacheCommeBloquee === "function") {
-            marquerTacheCommeBloquee(banniereMissionActiveId);
-        }
+        // Bloquer et griser le bouton de la tâche immédiatement
+        marquerTacheCommeBloquee(banniereMissionActiveId);
 
         if (btnClaim) {
             btnClaim.style.backgroundColor = "#6c757d";
@@ -1773,7 +1806,7 @@ function reclamerPointsBanniereSeule() {
     });
 }
 
-// Gestion des Pannes : Ferme la pub et affiche l'alerte
+// Gestion des Pannes
 function declencherPanneBanniereIndependante() {
     const loader = document.getElementById("banniere-ad-loader-unique");
     if (loader) loader.style.display = "none";
