@@ -1421,10 +1421,23 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         e.stopPropagation();
     }
 
-    // VÉRIFICATION FIREBASE ANTI-TRICHE
-    const estBloquee = await verifierSiTacheBloquee(uniqueId);
+    // VÉRIFICATION FIREBASE ANTI-TRICHE (Sous-collection historique_taches_v2)
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+    let estBloquee = false;
+
+    try {
+        if (typeof userId !== "undefined" && userId) {
+            const docRef = await db.collection("users").doc(userId).collection("historique_taches_v2").doc(uniqueId).get();
+            if (docRef.exists && docRef.data().date === dateAujourdhui) {
+                estBloquee = true;
+            }
+        }
+    } catch (err) {
+        console.error("Erreur de vérification Firebase :", err);
+    }
+
     if (estBloquee) {
-        appliquerStyleBoutonBloque(uniqueId);
+        bloquerBoutonBanniereVisuellement(uniqueId);
 
         const msgBloque = "Vous avez déjà accompli cette mission aujourd'hui. Elle se réinitialisera automatiquement demain à 00h00 !";
         if (typeof afficherAlertePersonnalisee === "function") {
@@ -1795,13 +1808,25 @@ function reclamerPointsBanniereSeule() {
     }
 
     const pts = banniereMissionActivePoints || 100;
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
 
+    // 1. Mise à jour des points
     db.collection("users").doc(userId).update({
         pointsDuJours: firebase.firestore.FieldValue.increment(pts),
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
 
-        marquerTacheCommeBloquee(banniereMissionActiveId);
+        // 2. Enregistrement du blocage dans Firestore historique_taches_v2
+        return db.collection("users").doc(userId).collection("historique_taches_v2").doc(banniereMissionActiveId).set({
+            date: dateAujourdhui,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            type: "banniere"
+        });
+
+    }).then(() => {
+
+        // 3. Bloquer instantanément le bouton sur l'interface
+        bloquerBoutonBanniereVisuellement(banniereMissionActiveId);
 
         if (btnClaim) {
             btnClaim.style.backgroundColor = "#6c757d";
@@ -1867,6 +1892,51 @@ function fermerModaleBanniereExclusive() {
         btnClaim.style.backgroundColor = "";
         btnClaim.style.color = "";
         btnClaim.innerHTML = `<i class="fa-solid fa-lock"></i> Chargement...`;
+    }
+}
+
+// =============================================================================
+// FONCTIONS COMPLÉMENTAIRES DE BLOCAGE VISUEL ET DE VÉRIFICATION BANNIÈRES
+// =============================================================================
+
+/**
+ * Bloque visuellement le bouton d'une bannière sur la page (Grisé + "Complété ✓")
+ */
+function bloquerBoutonBanniereVisuellement(uniqueId) {
+    if (!uniqueId) return;
+    const boutons = document.querySelectorAll('button, a, .btn');
+    boutons.forEach(btn => {
+        const attrOnClick = btn.getAttribute('onclick');
+        if (attrOnClick && attrOnClick.includes(`'${uniqueId}'`)) {
+            btn.disabled = true;
+            btn.style.background = "#2a2e43";
+            btn.style.color = "#686c87";
+            btn.style.cursor = "not-allowed";
+            btn.innerHTML = `<i class="fa-solid fa-check"></i> Complété ✓`;
+        }
+    });
+}
+
+/**
+ * À appeler au chargement de la page (ou dans onAuthStateChanged) pour griser
+ * toutes les bannières déjà faites aujourd'hui.
+ */
+async function verifierEtBloquerBannieresDuJour() {
+    if (typeof userId === "undefined" || !userId) return;
+
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+
+    try {
+        const snapshot = await db.collection("users").doc(userId)
+            .collection("historique_taches_v2")
+            .where("date", "==", dateAujourdhui)
+            .get();
+
+        snapshot.forEach(doc => {
+            bloquerBoutonBanniereVisuellement(doc.id);
+        });
+    } catch (err) {
+        console.error("Erreur chargement blocage bannières :", err);
     }
 }
         // ==========================================
