@@ -941,6 +941,23 @@ window.addEventListener("DOMContentLoaded", () => {
     if (typeof initialiserChronometresGlobaux === "function") initialiserChronometresGlobaux();
     if (typeof verifierBlocagesBoutonsJournaliers === "function") verifierBlocagesBoutonsJournaliers();
 });
+    firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        userId = user.uid; 
+        window.userId = user.uid;
+        console.log("Utilisateur Publicité+ détecté :", userId);
+        brancherEcouteurFirebase();
+
+        // AJOUT ICI : Vérifie et bloque les tâches du jour au chargement
+        if (typeof verifierBlocagesBoutonsJournaliers === "function") {
+            verifierBlocagesBoutonsJournaliers();
+        }
+    } else {
+        console.log("Aucun utilisateur connecté sur la page.");
+        userId = null;
+        window.userId = null;
+    }
+});
 
 // ==========================================
 // ÉTAPE 2 : ACCESSEUR DE L'ESPACE VIP (RANG 5)
@@ -995,7 +1012,7 @@ if (typeof timerDecompteInterval === "undefined") {
 }
 
 // =============================================================================
-// 1. UTILITAIRE DE DATE
+// 1. UTILITAIRE DE DATE ET FONCTIONS DE BLOCAGE VISUEL
 // =============================================================================
 
 /**
@@ -1009,20 +1026,82 @@ function obtenirDateAujourdhuiLocale() {
     return `${annee}-${mois}-${jour}`;
 }
 
+/**
+ * Applique le blocage visuel sur le bouton et la carte d'une tâche accomplie
+ */
+function verrouillerMissionVisuel(tacheId) {
+    const btn = document.getElementById(`btn-${tacheId}`);
+    const card = document.getElementById(`card-${tacheId}`);
+
+    // Blocage et modification du bouton
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add("tache-completee");
+        btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Complété ✓';
+        btn.style.backgroundColor = "#6c757d";
+        btn.style.borderColor = "#6c757d";
+        btn.style.color = "#ffffff";
+        btn.style.cursor = "not-allowed";
+        btn.style.opacity = "0.75";
+        
+        // Sécurité : au clic sur un bouton bloqué, affiche la modale personnalisée
+        btn.onclick = function(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            if (typeof afficherAlertePersonnalisee === "function") {
+                afficherAlertePersonnalisee("Cette tâche est déjà validée et bloquée pour aujourd'hui.", "Tâche indisponible");
+            }
+        };
+    }
+
+    // Effet visuel sur la carte globale
+    if (card) {
+        card.style.opacity = "0.6";
+    }
+}
+
+/**
+ * Interroge Firebase pour verrouiller toutes les tâches déjà effectuées aujourd'hui
+ */
+function verifierBlocagesBoutonsJournaliers() {
+    const idActif = window.userId || (typeof userId !== "undefined" ? userId : null);
+    if (!idActif) return;
+
+    const dateAujourdhui = obtenirDateAujourdhuiLocale();
+
+    db.collection("users")
+        .doc(idActif)
+        .collection(NOM_COLLECTION_TACHES)
+        .where("dateExecution", "==", dateAujourdhui)
+        .get()
+        .then((querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+                // doc.id correspond à 'video-1', 'video-2', etc.
+                verrouillerMissionVisuel(doc.id);
+            });
+        })
+        .catch((error) => {
+            console.error("Erreur lors de la vérification des blocages journaliers :", error);
+        });
+}
+
 // =============================================================================
-// 2. ENREGISTREMENT DANS FIREBASE (SANS AUCUN BLOCAGE DE PAGE)
+// 2. ENREGISTREMENT DANS FIREBASE
 // =============================================================================
 
 /**
  * Envoie la tâche accomplie dans la collection Firebase
  */
 function enregistrerTacheDansFirebase(taskId) {
-    if (typeof userId === "undefined" || !userId || !taskId) return;
+    const idActif = window.userId || (typeof userId !== "undefined" ? userId : null);
+    if (!idActif || !taskId) return;
 
     const dateAujourdhui = obtenirDateAujourdhuiLocale();
 
     db.collection("users")
-        .doc(userId)
+        .doc(idActif)
         .collection(NOM_COLLECTION_TACHES)
         .doc(taskId)
         .set({
@@ -1046,6 +1125,15 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     if (e) {
         e.preventDefault();
         e.stopPropagation();
+    }
+
+    // Vérification de sécurité : si la tâche est déjà bloquée
+    const btnCible = document.getElementById(`btn-${uniqueId}`);
+    if (btnCible && btnCible.disabled) {
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Cette tâche est déjà validée et bloquée pour aujourd'hui.", "Tâche indisponible");
+        }
+        return;
     }
 
     if (window.timerDecompteInterval) {
@@ -1208,7 +1296,9 @@ function demarrerDecompte10Sec() {
 // =============================================================================
 
 function reclamerPointsBouton1(pts) {
-    if (typeof userId === "undefined" || !userId) {
+    const idActif = window.userId || (typeof userId !== "undefined" ? userId : null);
+
+    if (!idActif) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
         }
@@ -1224,13 +1314,18 @@ function reclamerPointsBouton1(pts) {
     const pointsAAjouter = pts || 100;
 
     // 1. Met à jour les points et l'XP de l'utilisateur
-    db.collection("users").doc(userId).update({
+    db.collection("users").doc(idActif).update({
         pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
 
-        // 2. Envoie l'historique de la tâche à Firebase (collection `historique_taches_v2`)
+        // 2. Envoie l'historique de la tâche à Firebase
         enregistrerTacheDansFirebase(window.missionActiveId);
+
+        // 3. Verrouille immédiatement la carte et le bouton de la mission active
+        if (window.missionActiveId) {
+            verrouillerMissionVisuel(window.missionActiveId);
+        }
 
         if (btnClaim) {
             btnClaim.style.backgroundColor = "#28a745";
@@ -1299,6 +1394,13 @@ function fermerModaleActive() {
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         window.userId = user.uid;
+        userId = user.uid;
+        
+        // Exécute la vérification des tâches bloquées dès que l'utilisateur est identifié
+        verifierBlocagesBoutonsJournaliers();
+    } else {
+        window.userId = null;
+        userId = null;
     }
 });
 // =============================================================================
