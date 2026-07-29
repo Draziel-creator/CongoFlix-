@@ -988,33 +988,18 @@ function fermerIframeVIP() {
 // =============================================================================
 // CONFIGURATION GLOBALE FIREBASE & BINDINGS
 // =============================================================================
-var userId = null;
+var userId = null; // Déclaré globalement pour éviter les erreurs 'undefined'
 const NOM_COLLECTION_TACHES = "historique_taches_v2";
 
 if (typeof timerDecompteInterval === "undefined") {
     var timerDecompteInterval = null;
 }
 
-/**
- * Récupération sécurisée de Firestore (évite le crash si db n'est pas déclarée globalement)
- */
+// Fonction de secours pour éviter que db plantent si mal initialisé
 function obtenirDb() {
     if (typeof db !== "undefined" && db) return db;
     if (window.db) return window.db;
     if (typeof firebase !== "undefined" && firebase.firestore) return firebase.firestore();
-    console.error("❌ Firestore n'est pas initialisé !");
-    return null;
-}
-
-/**
- * Fonction de secours pour obtenir l'ID utilisateur
- */
-function obtenirUserId() {
-    if (userId) return userId;
-    if (window.userId) return window.userId;
-    if (typeof firebase !== "undefined" && firebase.auth() && firebase.auth().currentUser) {
-        return firebase.auth().currentUser.uid;
-    }
     return null;
 }
 
@@ -1035,11 +1020,22 @@ function trouverBoutonTache(uniqueId) {
 
     const num = uniqueId.toString().replace(/^(btn-video-|video-|card-video-|btn-tache-|btn-mission-|card-btn-)/, '');
 
-    return document.getElementById("btn-video-" + num) || 
-           document.getElementById("btn-tache-" + num) || 
-           document.getElementById("btn-mission-" + num) || 
-           document.getElementById("card-btn-" + num) || 
-           document.getElementById(uniqueId);
+    const candidates = [
+        document.getElementById("btn-video-" + num),
+        document.getElementById("btn-tache-" + num),
+        document.getElementById("btn-mission-" + num),
+        document.getElementById("card-btn-" + num),
+        document.getElementById(uniqueId)
+    ];
+
+    // SÉCURITÉ : On ne retourne l'élément QUE si c'est un bouton ou un lien (pas une div conteneur !)
+    for (let el of candidates) {
+        if (el && (el.tagName === "BUTTON" || el.tagName === "A" || el.classList.contains("btn"))) {
+            return el;
+        }
+    }
+    
+    return null;
 }
 
 function appliquerStyleBoutonBloque(uniqueId) {
@@ -1052,9 +1048,10 @@ function appliquerStyleBoutonBloque(uniqueId) {
         btnTache.style.color = "#ffffff";
         btnTache.style.opacity = "0.6";
         btnTache.style.cursor = "not-allowed";
-        // Correction : Retrait de pointerEvents: "none" pour éviter le gel de la zone parent
-        btnTache.style.pointerEvents = ""; 
+        btnTache.style.pointerEvents = "none"; // Ne bloque désormais QUE le bouton
         btnTache.innerHTML = '<i class="fa-solid fa-lock"></i> Bloqué';
+    } else {
+        console.warn("⚠️ Bouton introuvable pour blocage, ID :", uniqueId);
     }
 }
 
@@ -1068,7 +1065,7 @@ function retirerStyleBoutonBloque(uniqueId) {
         btnTache.style.color = "";
         btnTache.style.opacity = "1";
         btnTache.style.cursor = "pointer";
-        btnTache.style.pointerEvents = "";
+        btnTache.style.pointerEvents = "auto";
         btnTache.innerHTML = '<i class="fa-solid fa-play"></i> Lancer';
     }
 }
@@ -1079,7 +1076,7 @@ function retirerStyleBoutonBloque(uniqueId) {
 
 async function verifierSiTacheBloquee(taskId) {
     const firestore = obtenirDb();
-    const uId = obtenirUserId();
+    const uId = userId || window.userId;
     if (!firestore || !uId || !taskId) return false;
 
     const dateAujourdhui = obtenirDateAujourdhuiLocale();
@@ -1095,7 +1092,7 @@ async function verifierSiTacheBloquee(taskId) {
             return true;
         }
     } catch (error) {
-        console.error("Erreur de vérification Firebase :", error);
+        console.error("❌ Erreur de vérification Firebase :", error);
     }
 
     return false;
@@ -1103,22 +1100,18 @@ async function verifierSiTacheBloquee(taskId) {
 
 async function initialiserEtatBoutonsPageAccueil() {
     const firestore = obtenirDb();
-    const uId = obtenirUserId();
-    
-    if (!firestore || !uId) {
-        console.warn("⚠️ Initialisation annulée : utilisateur non connecté ou Firestore indisponible.");
-        return;
-    }
+    const uId = userId || window.userId;
+    if (!firestore || !uId) return;
 
     const dateAujourdhui = obtenirDateAujourdhuiLocale();
 
-    // 1. Débloque les boutons par défaut au démarrage
+    // 1. Force le déblocage visuel au démarrage
     for (let i = 1; i <= 10; i++) {
-        retirerStyleBoutonBloque("video-" + i);
+        retirerStyleBoutonBloque(i);
     }
 
     try {
-        // 2. Vérifie la sous-collection Firestore pour aujourd'hui
+        // 2. Interroge la sous-collection dans Firestore
         const snapshot = await firestore.collection("users")
             .doc(uId)
             .collection(NOM_COLLECTION_TACHES)
@@ -1136,22 +1129,19 @@ async function initialiserEtatBoutonsPageAccueil() {
             }
         });
     } catch (error) {
-        console.error("Erreur d'initialisation des boutons :", error);
+        console.error("❌ Erreur d'initialisation des boutons depuis Firebase :", error);
     }
 }
 
 function marquerTacheCommeBloquee(taskId) {
     const firestore = obtenirDb();
-    const uId = obtenirUserId();
-    
+    const uId = userId || window.userId;
     if (!firestore || !uId || !taskId) {
-        console.error("❌ Impossible de bloquer la tâche : ID utilisateur, Firestore ou ID tâche manquant.");
+        console.error("❌ ID utilisateur ou ID de tâche manquant pour l'enregistrement.");
         return;
     }
 
     const dateAujourdhui = obtenirDateAujourdhuiLocale();
-
-    console.log(`📡 Enregistrement dans Firestore pour l'utilisateur ${uId}, tâche : ${taskId}`);
 
     firestore.collection("users")
         .doc(uId)
@@ -1162,11 +1152,11 @@ function marquerTacheCommeBloquee(taskId) {
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true })
         .then(() => {
-            console.log("✅ Succès ! Tâche enregistrée pour aujourd'hui :", taskId);
+            console.log("✅ Tâche enregistrée avec succès dans Firebase :", taskId);
             appliquerStyleBoutonBloque(taskId);
         })
         .catch((err) => {
-            console.error("❌ Erreur lors de l'écriture dans Firestore :", err);
+            console.error("❌ Erreur d'écriture dans la sous-collection Firestore :", err);
         });
 }
 
@@ -1174,10 +1164,11 @@ function marquerTacheCommeBloquee(taskId) {
 // 3. LOGIQUE MISSIONS VIDÉO
 // =============================================================================
 
-async function initierMissionVideo(indexVideo, zoneId, uniqueId, points, evt) {
-    if (evt && typeof evt.preventDefault === "function") {
-        evt.preventDefault();
-        evt.stopPropagation();
+async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
+    const e = window.event;
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
     }
 
     const estBloquee = await verifierSiTacheBloquee(uniqueId);
@@ -1296,7 +1287,7 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points, evt) {
 }
 
 function declencherPlayFlux(event) {
-    if (event && typeof event.preventDefault === "function") {
+    if (event) {
         event.preventDefault();
         event.stopPropagation();
     }
@@ -1361,7 +1352,7 @@ function demarrerDecompte10Sec() {
 
 function reclamerPointsBouton1(pts) {
     const firestore = obtenirDb();
-    const uId = obtenirUserId();
+    const uId = userId || window.userId;
 
     if (!firestore || !uId) {
         if (typeof afficherAlertePersonnalisee === "function") {
@@ -1409,7 +1400,7 @@ function reclamerPointsBouton1(pts) {
         }
 
     }).catch((error) => {
-        console.error("Erreur Firebase lors de l'ajout des points :", error);
+        console.error("❌ Erreur Firebase lors de la mise à jour des points :", error);
         if (btnClaim) {
             btnClaim.disabled = false;
             btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
@@ -1448,7 +1439,7 @@ function fermerModaleActive() {
 }
 
 // =============================================================================
-// 5. ÉCOUTEUR D'AUTHENTIFICATION FIREBASE
+// 5. ÉCOUTEUR D'AUTHENTIFICATION
 // =============================================================================
 
 if (typeof firebase !== "undefined" && firebase.auth) {
@@ -1456,16 +1447,10 @@ if (typeof firebase !== "undefined" && firebase.auth) {
         if (user) {
             userId = user.uid;
             window.userId = user.uid;
-            console.log("🟢 Utilisateur Firebase connecté :", user.uid);
-            
-            // Exécution différée pour s'assurer que le HTML est totalement chargé
-            if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", initialiserEtatBoutonsPageAccueil);
-            } else {
-                initialiserEtatBoutonsPageAccueil();
-            }
+            console.log("🟢 Utilisateur connecté :", userId);
+            initialiserEtatBoutonsPageAccueil();
         } else {
-            console.warn("⚠️ Aucun utilisateur connecté.");
+            console.warn("⚠️ Aucun utilisateur connecté à Firebase.");
         }
     });
 }
