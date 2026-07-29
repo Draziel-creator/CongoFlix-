@@ -915,7 +915,17 @@ function brancherEcouteurFirebase() {
             const data = doc.data();
             const dateAujourdhui = ObtenirDateAujourdhuiISO();
 
-            // 1. GESTION DES POINTS DU JOUR & RESET AUTOMATIQUE MIDNIGHT
+            // 1. DÉTECTION DU RANG VIP (Sécurisé pour tolérer rank, rang, Rank, String ou Number)
+            const rawRank = (data.rank !== undefined) ? data.rank : ((data.rang !== undefined) ? data.rang : data.Rank);
+            localUserRank = Number(rawRank || 0);
+
+            // 2. AFFICHAGE DU BOUTON CASINO (Priorité absolue pour éviter d'être bloqué par d'autres fonctions)
+            const boutonCasino = document.getElementById("floating-bonus-casino");
+            if (boutonCasino) {
+                boutonCasino.style.display = (localUserRank >= 1) ? "flex" : "none";
+            }
+
+            // 3. GESTION DES POINTS DU JOUR & RESET AUTOMATIQUE MIDNIGHT
             if (data.dateDerniersPoints !== dateAujourdhui && data.pointsDuJours > 0) {
                 db.collection("users").doc(userId).update({
                     pointsDuJours: 0,
@@ -927,10 +937,14 @@ function brancherEcouteurFirebase() {
             }
 
             const elCagnotte = document.getElementById("cagnotte-valeur-txt");
-            if (elCagnotte) elCagnotte.innerText = localPointsDujour + " Points";
+            if (elCagnotte) {
+                elCagnotte.innerText = localPointsDujour + " Points";
+            }
 
-            // 2. GESTION DU RANG VIP
-            localUserRank = data.rank || 0;
+            // 4. GESTION DES TOURS DU CASINO
+            localToursFaits = data.toursfaits || 0;
+
+            // 5. EXÉCUTION DÈS DISPONIBILITÉ DES AUTRES FONCTIONS INTERFACE
             if (typeof ajusterAffichageRangVip === "function") {
                 ajusterAffichageRangVip(localUserRank);
             }
@@ -939,20 +953,12 @@ function brancherEcouteurFirebase() {
                 gererAffichageVisuelVIP();
             }
 
-            // 3. AFFICHAGE DYNAMIQUE DU BOUTON CASINO (Si Rang >= 1)
-            const boutonCasino = document.getElementById("floating-bonus-casino");
-            if (boutonCasino) {
-                boutonCasino.style.display = (localUserRank >= 1) ? "flex" : "none";
-            }
-
-            // 4. GESTION DES TOURS CASINO
-            localToursFaits = data.toursfaits || 0;
             if (typeof actualiserTexteModalCasino === "function") {
                 actualiserTexteModalCasino();
             }
 
         } else {
-            // Création du profil s'il n'existe pas encore
+            // Création automatique du profil s'il n'existe pas encore
             db.collection("users").doc(userId).set({
                 pointsDuJours: 0,
                 coin: 0,
