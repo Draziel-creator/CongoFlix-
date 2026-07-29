@@ -1319,7 +1319,42 @@ function reclamerPointsBouton1(pts) {
         }
     });
 }
+/**
+ * Ferme la modale Vidéo, stoppe le chrono et nettoie le lecteur.
+ */
+function fermerModaleActive() {
+    // 1. Masquer la modale vidéo
+    const modalVideo = document.getElementById("global-pub-modal");
+    if (modalVideo) {
+        modalVideo.style.display = "none";
+    }
 
+    // 2. Annuler le minuteur/décompte s'il est en cours
+    if (window.timerDecompteInterval) {
+        clearInterval(window.timerDecompteInterval);
+        window.timerDecompteInterval = null;
+    }
+
+    // 3. Remettre les éléments visuels à leur état initial (pour la prochaine ouverture)
+    const loader = document.getElementById("ad-stream-loader");
+    const finger = document.getElementById("finger-indicator");
+    if (loader) loader.style.display = "flex";
+    if (finger) finger.style.display = "none";
+
+    // 4. Vider les zones d'injection vidéo pour couper le flux et le son
+    for (let i = 1; i <= 10; i++) {
+        const zoneTemp = document.getElementById("zone-pub-video" + i);
+        if (zoneTemp) {
+            zoneTemp.style.display = "none";
+            zoneTemp.innerHTML = "";
+        }
+    }
+
+    const zoneAlt = document.getElementById("zone-pub-alternative");
+    if (zoneAlt) {
+        zoneAlt.style.display = "none";
+    }
+}
 
 // =============================================================================
 // 2. LOGIQUE MISSIONS BANNIÈRE (MODALE EXCLUSIVES BANNIÈRES)
