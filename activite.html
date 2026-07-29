@@ -1985,70 +1985,125 @@ document.addEventListener("DOMContentLoaded", () => {
         verifierEtBloquerBannieresDuJour();
     }, 500);
 });
-        // ==========================================
-        // ÉTAPE 5 : SYNC CHRONOMÈTRE MIDNIGHT & PERSISTANCE DE BLOCAGE
-        // ==========================================
-        function initialiserChronometresGlobaux() {
-            const horlogeTexte = document.getElementById("daily-countdown-clock");
-            
-            setInterval(() => {
-                const maintenant = new Date();
-                const minuit = new Date();
-                minuit.setHours(24, 0, 0, 0); // Décompte calé sur Minuit pile
-                
-                let differenceMs = minuit - maintenant;
-                
-                if (differenceMs <= 0) {
-                    executerReinitialisationMinuitAutomatique();
-                    return;
-                }
-                
-                let heures = Math.floor((differenceMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                let minutes = Math.floor((differenceMs % (1000 * 60 * 60)) / (1000 * 60));
-                let secondes = Math.floor((differenceMs % (1000 * 60)) / 1000);
-                
-                heures = heures < 10 ? "0" + heures : heures;
-                minutes = minutes < 10 ? "0" + minutes : minutes;
-                secondes = secondes < 10 ? "0" + secondes : secondes;
-                
-                horlogeTexte.innerText = `${heures}:${minutes}:${secondes}`;
-                
-                // Vérification spécifique pour le reset de 1h du matin du Casino
-                if (maintenant.getHours() === 1 && maintenant.getMinutes() === 0 && maintenant.getSeconds() === 0) {
-                    executerResetCasinoUneHeureDuMat();
-                }
-                
-            }, 1000);
-        }
+        // =============================================================================
+// FONCTION UTILITAIRE : OBTENIR LA DATE DU JOUR (FORMAT YYYY-MM-DD)
+// =============================================================================
+function ObtenirDateAujourdhuiISO() {
+    const d = new Date();
+    // Utilisation de UTC pour être parfaitement synchronisé avec Firebase
+    const annee = d.getUTCFullYear();
+    const mois = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const jour = String(d.getUTCDate()).padStart(2, '0');
+    return `${annee}-${mois}-${jour}`;
+}
 
-       
+// =============================================================================
+// ÉTAPE 5 : CHRONOMÈTRE MIDNIGHT ANTI-TRICHE (ALIGNÉ SUR HEURE UTC SERVEUR)
+// =============================================================================
+function initialiserChronometresGlobaux() {
+    const horlogeTexte = document.getElementById("daily-countdown-clock");
+    if (!horlogeTexte) return;
 
-        function executerResetCasinoUneHeureDuMat() {
-            if(!userId) return;
-            db.collection("users").doc(userId).update({
-                toursfaits: 0
-            });
-        }
-        // Actionneur du bouton d'encaissement global
-        function encaisserGainsDuJour() {
-            if (!userId || localPointsDujour <= 0) {
-                alert("Votre cagnotte journalière est vide. Accomplissez des tâches pour accumuler des points.");
-                return;
+    setInterval(() => {
+        const maintenant = new Date();
+
+        // Calcul du temps restant jusqu'à 00:00:00 UTC (indépendant du téléphone)
+        const heuresRestantes = 23 - maintenant.getUTCHours();
+        const minutesRestantes = 59 - maintenant.getUTCMinutes();
+        const secondesRestantes = 59 - maintenant.getUTCSeconds();
+
+        // Si Minuit pile est atteint
+        if (heuresRestantes === 0 && minutesRestantes === 0 && secondesRestantes === 0) {
+            if (typeof executerReinitialisationMinuitAutomatique === "function") {
+                executerReinitialisationMinuitAutomatique();
             }
-            
-            // Transfert de pointsDuJours vers le champ global 'coin' puis nettoyage
-            db.collection("users").doc(userId).update({
-                coin: firebase.firestore.FieldValue.increment(localPointsDujour),
-                pointsDuJours: 0
-            }).then(() => {
-                alert("Félicitations ! Vos gains du jour ont été sécurisés et ajoutés à votre solde global 'Coin'.");
-            }).catch(err => console.error(err));
         }
 
-        function ouvrirBoiteDialogueAide() {
-            alert("AIDE & FONCTIONNEMENT :\n\n- Chaque tâche accomplie ajoute des points à votre cagnotte du jour.\n- Vous devez impérativement cliquer sur 'Encaisser mes gains du jour' avant minuit, sinon les points non réclamés seront définitivement perdus lors de la réinitialisation automatique.");
+        // Formatage 00:00:00
+        let hStr = heuresRestantes < 10 ? "0" + heuresRestantes : heuresRestantes;
+        let mStr = minutesRestantes < 10 ? "0" + minutesRestantes : minutesRestantes;
+        let sStr = secondesRestantes < 10 ? "0" + secondesRestantes : secondesRestantes;
+
+        horlogeTexte.innerText = `${hStr}:${mStr}:${sStr}`;
+
+        // Reset spécifique Casino à 01h00 UTC
+        if (maintenant.getUTCHours() === 1 && maintenant.getUTCMinutes() === 0 && maintenant.getUTCSeconds() === 0) {
+            executerResetCasinoUneHeureDuMat();
         }
 
+    }, 1000);
+}
+
+function executerResetCasinoUneHeureDuMat() {
+    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    if (!currentUserId) return;
+
+    db.collection("users").doc(currentUserId).update({
+        toursfaits: 0
+    });
+}
+
+// =============================================================================
+// ÉCOUTEUR FIREBASE AUTOMATIQUE (GÈRE L'AFFICHAGE ET LA REMISE À ZÉRO DU JOUR)
+// =============================================================================
+function brancherEcouteurFirebase() {
+    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    if (!currentUserId) return;
+
+    db.collection("users").doc(currentUserId).onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            const dateAujourdhui = ObtenirDateAujourdhuiISO();
+
+            // VÉRIFICATION DE LA DATE DES POINTS DU JOUR
+            // Si l'utilisateur n'a pas encore accumulé de points aujourd'hui (date différente)
+            if (data.dateDerniersPoints !== dateAujourdhui && data.pointsDuJours > 0) {
+                // Remise à zéro automatique dans Firebase pour la nouvelle journée
+                db.collection("users").doc(currentUserId).update({
+                    pointsDuJours: 0,
+                    dateDerniersPoints: dateAujourdhui
+                }).catch(err => console.error("Erreur reset automatique des points du jour :", err));
+
+                localPointsDujour = 0;
+            } else {
+                localPointsDujour = data.pointsDuJours || 0;
+            }
+
+            // Mise à jour de l'affichage sur la page
+            const elCagnotte = document.getElementById("cagnotte-valeur-txt");
+            if (elCagnotte) {
+                elCagnotte.innerText = localPointsDujour + " Points";
+            }
+        }
+    });
+}
+
+// =============================================================================
+// ACTIONNEUR DU BOUTON D'ENCAISSEMENT GLOBAL
+// =============================================================================
+function encaisserGainsDuJour() {
+    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    
+    if (!currentUserId || localPointsDujour <= 0) {
+        alert("Votre cagnotte journalière est vide. Accomplissez des tâches pour accumuler des points.");
+        return;
+    }
+
+    const dateAujourdhui = ObtenirDateAujourdhuiISO();
+
+    // Transfert de pointsDuJours vers le solde global 'coin' puis remise à 0
+    db.collection("users").doc(currentUserId).update({
+        coin: firebase.firestore.FieldValue.increment(localPointsDujour),
+        pointsDuJours: 0,
+        dateDerniersPoints: dateAujourdhui
+    }).then(() => {
+        alert("Félicitations ! Vos gains du jour ont été sécurisés et ajoutés à votre solde global 'Coin'.");
+    }).catch(err => console.error(err));
+}
+
+function ouvrirBoiteDialogueAide() {
+    alert("AIDE & FONCTIONNEMENT :\n\n- Chaque tâche accomplie ajoute des points à votre cagnotte du jour.\n- Vous devez impérativement cliquer sur 'Encaisser mes gains du jour' avant minuit, sinon les points non réclamés seront définitivement perdus lors de la réinitialisation automatique.");
+}
         // ==========================================
         // ÉTAPE 6 : LOGIQUE DU CASINO BONUS FLOTTANT
         // ==========================================
