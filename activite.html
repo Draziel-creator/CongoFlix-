@@ -1003,19 +1003,99 @@ function fermerIframeVIP() {
 }
 
 // =============================================================================
-// 0. UTILITAIRES COMMUNS FIREBASE & BOUTONS D'ACCUEIL (PARTAGÉS)
+// CONFIGURATION GLOBALE FIREBASE & BINDINGS
+// =============================================================================
+const NOM_COLLECTION_TACHES = "historique_taches_v2";
+
+if (typeof timerDecompteInterval === "undefined") {
+    var timerDecompteInterval = null;
+}
+
+// =============================================================================
+// 1. UTILITAIRES DE DATE ET GESTION VISUELLE DES BOUTONS
 // =============================================================================
 
 /**
- * Vérifie dans Firebase si une tâche (vidéo ou bannière) a déjà été faite aujourd'hui.
+ * Calcule la date locale exacte au format YYYY-MM-DD
+ */
+function obtenirDateAujourdhuiLocale() {
+    const d = new Date();
+    const annee = d.getFullYear();
+    const mois = String(d.getMonth() + 1).padStart(2, '0');
+    const jour = String(d.getDate()).padStart(2, '0');
+    return `${annee}-${mois}-${jour}`;
+}
+
+/**
+ * Retrouve le bouton directement par son ID (gère tous les formats d'ID)
+ */
+function trouverBoutonTache(uniqueId) {
+    if (!uniqueId) return null;
+
+    const num = uniqueId.toString().replace(/^(btn-video-|video-|card-video-|btn-tache-|btn-mission-|card-btn-)/, '');
+
+    return document.getElementById("btn-video-" + num) || 
+           document.getElementById("btn-tache-" + num) || 
+           document.getElementById("btn-mission-" + num) || 
+           document.getElementById("card-btn-" + num) || 
+           document.getElementById(uniqueId);
+}
+
+/**
+ * Applique le style 'Bloqué' sur un bouton
+ */
+function appliquerStyleBoutonBloque(uniqueId) {
+    const btnTache = trouverBoutonTache(uniqueId);
+
+    if (btnTache) {
+        btnTache.disabled = true;
+        btnTache.style.backgroundColor = "#6c757d";
+        btnTache.style.borderColor = "#6c757d";
+        btnTache.style.color = "#ffffff";
+        btnTache.style.opacity = "0.6";
+        btnTache.style.cursor = "not-allowed";
+        btnTache.style.pointerEvents = "none";
+        btnTache.innerHTML = '<i class="fa-solid fa-lock"></i> Bloqué';
+    }
+}
+
+/**
+ * Retire le style 'Bloqué' et réactive le bouton (pour les jours suivants)
+ */
+function retirerStyleBoutonBloque(uniqueId) {
+    const btnTache = trouverBoutonTache(uniqueId);
+
+    if (btnTache) {
+        btnTache.disabled = false;
+        btnTache.style.backgroundColor = "";
+        btnTache.style.borderColor = "";
+        btnTache.style.color = "";
+        btnTache.style.opacity = "1";
+        btnTache.style.cursor = "pointer";
+        btnTache.style.pointerEvents = "auto";
+        btnTache.innerHTML = '<i class="fa-solid fa-play"></i> Lancer';
+    }
+}
+
+// =============================================================================
+// 2. FONCTIONS FIREBASE DE VÉRIFICATION ET BLOCAGE
+// =============================================================================
+
+/**
+ * Vérifie dans la NOUVELLE collection si une tâche a déjà été faite aujourd'hui.
  */
 async function verifierSiTacheBloquee(taskId) {
     if (typeof userId === "undefined" || !userId || !taskId) return false;
 
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
+    const dateAujourdhui = obtenirDateAujourdhuiLocale();
 
     try {
-        const doc = await db.collection("users").doc(userId).collection("taches_faites").doc(taskId).get();
+        const doc = await db.collection("users")
+            .doc(userId)
+            .collection(NOM_COLLECTION_TACHES)
+            .doc(taskId)
+            .get();
+
         if (doc.exists && doc.data().dateExecution === dateAujourdhui) {
             return true; // Déjà effectuée aujourd'hui
         }
@@ -1027,58 +1107,72 @@ async function verifierSiTacheBloquee(taskId) {
 }
 
 /**
- * Applique le style gris/inaccessible sur le bouton de la carte sur la page d'accueil.
+ * Réinitialise tous les boutons au chargement :
+ * 1. Ouvre tous les boutons par défaut.
+ * 2. Bloque UNIQUEMENT si la tâche a été faite AUJOURD'HUI dans la nouvelle collection.
  */
-function appliquerStyleBoutonBloque(uniqueId) {
-    if (!uniqueId) return;
+async function initialiserEtatBoutonsPageAccueil() {
+    if (typeof userId === "undefined" || !userId) return;
 
-    const btnTache = document.getElementById("btn-video-" + uniqueId) ||
-                     document.getElementById("btn-tache-" + uniqueId) || 
-                     document.getElementById("btn-mission-" + uniqueId) || 
-                     document.getElementById("card-btn-" + uniqueId);
+    const dateAujourdhui = obtenirDateAujourdhuiLocale();
 
-    if (btnTache) {
-        btnTache.disabled = true;
-        btnTache.style.backgroundColor = "#6c757d";
-        btnTache.style.borderColor = "#6c757d";
-        btnTache.style.color = "#ffffff";
-        btnTache.style.cursor = "not-allowed";
-        btnTache.style.opacity = "0.75";
-        btnTache.style.pointerEvents = "none";
-        btnTache.innerHTML = '<i class="fa-solid fa-check-circle"></i> Complétée';
+    // 1. Débloque TOUS les boutons (1 à 10) au démarrage
+    for (let i = 1; i <= 10; i++) {
+        retirerStyleBoutonBloque(i);
+    }
+
+    try {
+        // 2. Lit la nouvelle collection
+        const snapshot = await db.collection("users")
+            .doc(userId)
+            .collection(NOM_COLLECTION_TACHES)
+            .get();
+
+        snapshot.forEach((doc) => {
+            const taskId = doc.id;
+            const data = doc.data();
+
+            const dateEnregistree = data ? (data.dateExecution || data.date || null) : null;
+
+            if (dateEnregistree && dateEnregistree === dateAujourdhui) {
+                appliquerStyleBoutonBloque(taskId);
+            } else {
+                retirerStyleBoutonBloque(taskId);
+            }
+        });
+    } catch (error) {
+        console.error("Erreur lors de l'initialisation des boutons :", error);
     }
 }
 
 /**
- * Enregistre l'exécution de la tâche dans Firebase et grise le bouton d'accueil.
+ * Marque une tâche comme réalisée AUJOURD'HUI dans la NOUVELLE collection
  */
 function marquerTacheCommeBloquee(taskId) {
     if (typeof userId === "undefined" || !userId || !taskId) return;
 
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
+    const dateAujourdhui = obtenirDateAujourdhuiLocale();
 
-    db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
-        dateExecution: dateAujourdhui,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    }).then(() => {
-        appliquerStyleBoutonBloque(taskId);
-    }).catch((err) => {
-        console.error("Erreur lors de l'enregistrement dans Firebase :", err);
-    });
+    db.collection("users")
+        .doc(userId)
+        .collection(NOM_COLLECTION_TACHES)
+        .doc(taskId)
+        .set({
+            dateExecution: dateAujourdhui,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(() => {
+            appliquerStyleBoutonBloque(taskId);
+        })
+        .catch((err) => {
+            console.error("Erreur d'enregistrement Firebase :", err);
+        });
 }
 
-
 // =============================================================================
-// 1. LOGIQUE MISSIONS VIDÉO (MODALE VIDÉO UNIFIÉE)
+// 3. LOGIQUE MISSIONS VIDÉO (MODALE VIDÉO UNIFIÉE)
 // =============================================================================
 
-if (typeof timerDecompteInterval === "undefined") {
-    var timerDecompteInterval = null;
-}
-
-/**
- * Initialise le chargement d'une publicité vidéo (Version Sécurisée avec Secours).
- */
 async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
     if (e) {
@@ -1119,7 +1213,6 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const finger = document.getElementById("finger-indicator");
     const btnClaim = document.getElementById("btn-claim-points");
 
-    // Afficher le loader et cacher le doigt au départ
     if (loader) loader.style.display = "flex";
     if (finger) finger.style.display = "none";
 
@@ -1133,7 +1226,6 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const blocAlternative = document.getElementById("zone-pub-alternative");
     if (blocAlternative) blocAlternative.style.display = "none";
 
-    // Réinitialisation des zones vidéos (1 à 10)
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
@@ -1155,7 +1247,6 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
-    // Fonction interne pour forcer l'affichage du doigt (Sécurité)
     let doigtDejaAffiche = false;
     const afficherDoigtImmediatement = () => {
         if (doigtDejaAffiche) return;
@@ -1169,12 +1260,10 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         }
     };
 
-    // TIMER DE SECOURS (Si la détection met plus de 2.5s, on force l'affichage du doigt)
     const secoursTimer = setTimeout(() => {
         afficherDoigtImmediatement();
     }, 2500);
 
-    // Injection du script Clickadilla Video
     try {
         let scriptVideo = document.createElement("script");
         scriptVideo.async = true;
@@ -1197,7 +1286,6 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
                 },
                 () => {
                     clearTimeout(secoursTimer);
-                    // En cas d'erreur de la régie, le minuteur de secours aura déjà affiché le doigt
                     afficherDoigtImmediatement();
                 }
             );
@@ -1207,6 +1295,7 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         afficherDoigtImmediatement();
     }
 }
+
 function declencherPlayFlux(event) {
     if (event) {
         event.preventDefault();
@@ -1268,143 +1357,7 @@ function demarrerDecompte10Sec() {
 }
 
 // =============================================================================
-// 1. UTILITAIRES DE DATE ET GESTION VISUELLE DES BOUTONS
-// =============================================================================
-
-/**
- * Calcule la date locale exacte au format YYYY-MM-DD
- */
-function obtenirDateAujourdhuiLocale() {
-    const d = new Date();
-    const annee = d.getFullYear();
-    const mois = String(d.getMonth() + 1).padStart(2, '0');
-    const jour = String(d.getDate()).padStart(2, '0');
-    return `${annee}-${mois}-${jour}`;
-}
-
-/**
- * Retrouve le bouton directement par son ID (ex: 'video-1', '1', ou 'btn-video-1')
- */
-function trouverBoutonTache(uniqueId) {
-    if (!uniqueId) return null;
-
-    // Extrait uniquement le numéro (ex: "video-1" -> "1", "btn-video-1" -> "1")
-    const num = uniqueId.toString().replace(/^(btn-video-|video-|card-video-)/, '');
-
-    // Ciblage direct du bouton btn-video-X
-    return document.getElementById("btn-video-" + num) || 
-           document.getElementById(uniqueId);
-}
-
-/**
- * Applique le style 'Bloqué' sur un bouton de la page d'accueil
- */
-function appliquerStyleBoutonBloque(uniqueId) {
-    const btnTache = trouverBoutonTache(uniqueId);
-
-    if (btnTache) {
-        btnTache.disabled = true;
-        btnTache.style.backgroundColor = "#6c757d";
-        btnTache.style.borderColor = "#6c757d";
-        btnTache.style.color = "#ffffff";
-        btnTache.style.opacity = "0.6";
-        btnTache.style.cursor = "not-allowed";
-        btnTache.style.pointerEvents = "none";
-        btnTache.innerHTML = '<i class="fa-solid fa-lock"></i> Bloqué';
-    }
-}
-
-/**
- * Retire le style 'Bloqué' et réactive le bouton (pour les nouveaux jours)
- */
-function retirerStyleBoutonBloque(uniqueId) {
-    const btnTache = trouverBoutonTache(uniqueId);
-
-    if (btnTache) {
-        btnTache.disabled = false;
-        btnTache.style.backgroundColor = "";
-        btnTache.style.borderColor = "";
-        btnTache.style.color = "";
-        btnTache.style.opacity = "1";
-        btnTache.style.cursor = "pointer";
-        btnTache.style.pointerEvents = "auto";
-        btnTache.innerHTML = '<i class="fa-solid fa-play"></i> Lancer';
-    }
-}
-
-// =============================================================================
-// 2. FONCTIONS FIREBASE POUR VÉRIFIER ET BLOQUER LES TÂCHES
-// =============================================================================
-
-// NOUVEAU NOM DE COLLECTION FIREBASE (remplace 'taches_faites')
-const NOM_COLLECTION_TACHES = "historique_taches_v2";
-
-/**
- * Réinitialise l'état de tous les boutons :
- * 1. Ouvre tous les boutons par défaut.
- * 2. Vérifie Firebase : Bloque UNIQUEMENT si la tâche a été faite AUJOURD'HUI.
- */
-async function initialiserEtatBoutonsPageAccueil() {
-    if (typeof userId === "undefined" || !userId) return;
-
-    const dateAujourdhui = obtenirDateAujourdhuiLocale();
-
-    // 1. Débloque TOUS les boutons 1 à 10 au démarrage
-    for (let i = 1; i <= 10; i++) {
-        retirerStyleBoutonBloque(i);
-    }
-
-    try {
-        // 2. Lit la nouvelle collection dans Firebase
-        const snapshot = await db.collection("users")
-            .doc(userId)
-            .collection(NOM_COLLECTION_TACHES)
-            .get();
-
-        snapshot.forEach((doc) => {
-            const taskId = doc.id;
-            const data = doc.data();
-
-            const dateEnregistree = data ? (data.dateExecution || data.date || null) : null;
-
-            // Bloque SEULEMENT si la date enregistrée est EXACTEMENT celle d'aujourd'hui
-            if (dateEnregistree && dateEnregistree === dateAujourdhui) {
-                appliquerStyleBoutonBloque(taskId);
-            } else {
-                retirerStyleBoutonBloque(taskId);
-            }
-        });
-    } catch (error) {
-        console.error("Erreur lors de l'initialisation des boutons :", error);
-    }
-}
-
-/**
- * Marque une tâche comme réalisée AUJOURD'HUI dans Firebase
- */
-function marquerTacheCommeBloquee(taskId) {
-    if (typeof userId === "undefined" || !userId || !taskId) return;
-
-    const dateAujourdhui = obtenirDateAujourdhuiLocale();
-
-    db.collection("users")
-        .doc(userId)
-        .collection(NOM_COLLECTION_TACHES)
-        .doc(taskId)
-        .set({
-            dateExecution: dateAujourdhui,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        })
-        .then(() => {
-            appliquerStyleBoutonBloque(taskId);
-        })
-        .catch((err) => {
-            console.error("Erreur lors de l'enregistrement dans Firebase :", err);
-        });
-}
-
-// =============================================================================
-// 3. VOS FONCTIONS DE RÉCLAMATION ET MODALE
+// 4. RÉCLAMATION ET MODALE
 // =============================================================================
 
 function reclamerPointsBouton1(pts) {
@@ -1428,7 +1381,6 @@ function reclamerPointsBouton1(pts) {
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
 
-        // Enregistre la tâche du jour dans la nouvelle collection
         marquerTacheCommeBloquee(window.missionActiveId);
 
         if (btnClaim) {
@@ -1462,25 +1414,21 @@ function reclamerPointsBouton1(pts) {
 }
 
 function fermerModaleActive() {
-    // 1. Masquer la modale vidéo
     const modalVideo = document.getElementById("global-pub-modal");
     if (modalVideo) {
         modalVideo.style.display = "none";
     }
 
-    // 2. Annuler le minuteur/décompte s'il est en cours
     if (window.timerDecompteInterval) {
         clearInterval(window.timerDecompteInterval);
         window.timerDecompteInterval = null;
     }
 
-    // 3. Remettre les éléments visuels à leur état initial
     const loader = document.getElementById("ad-stream-loader");
     const finger = document.getElementById("finger-indicator");
     if (loader) loader.style.display = "flex";
     if (finger) finger.style.display = "none";
 
-    // 4. Vider les zones d'injection vidéo pour couper le flux et le son
     for (let i = 1; i <= 10; i++) {
         const zoneTemp = document.getElementById("zone-pub-video" + i);
         if (zoneTemp) {
@@ -1496,18 +1444,15 @@ function fermerModaleActive() {
 }
 
 // =============================================================================
-// 4. ÉCOUTEUR D'AUTHENTIFICATION (À Placer en bas de votre script)
+// 5. ÉCOUTEUR D'AUTHENTIFICATION
 // =============================================================================
 
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         window.userId = user.uid;
-        
-        // Initialise la réinitialisation et le blocage selon la date du jour
         initialiserEtatBoutonsPageAccueil();
     }
 });
-
 // =============================================================================
 // 2. LOGIQUE MISSIONS BANNIÈRE (MODALE EXCLUSIVES BANNIÈRES)
 // =============================================================================
