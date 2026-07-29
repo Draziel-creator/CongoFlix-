@@ -1283,23 +1283,46 @@ function obtenirDateAujourdhuiLocale() {
 }
 
 /**
+ * Retrouve le bouton <button> à l'intérieur de vos cartes HTML (ex: #card-video-1 button)
+ */
+function trouverBoutonTache(uniqueId) {
+    if (!uniqueId) return null;
+
+    // Nettoie l'ID pour ne garder que le numéro (ex: "video-1" ou "1" devient "1")
+    const num = uniqueId.toString().replace("video-", "").replace("card-video-", "");
+
+    // 1. Cherche d'abord dans la carte HTML (ex: #card-video-1 button)
+    const carte = document.getElementById("card-video-" + num);
+    if (carte) {
+        const btn = carte.querySelector("button");
+        if (btn) return btn;
+    }
+
+    // 2. Sécurité : cherche par ID direct si jamais il existe
+    return document.getElementById("btn-video-" + uniqueId) ||
+           document.getElementById("btn-tache-" + uniqueId) || 
+           document.getElementById("btn-mission-" + uniqueId) || 
+           document.getElementById("card-btn-" + uniqueId) ||
+           document.getElementById(uniqueId);
+}
+
+/**
  * Applique le style 'Bloqué' sur un bouton de la page d'accueil
  */
 function appliquerStyleBoutonBloque(uniqueId) {
     if (!uniqueId) return;
 
-    const btnTache = document.getElementById("btn-video-" + uniqueId) ||
-                     document.getElementById("btn-tache-" + uniqueId) || 
-                     document.getElementById("btn-mission-" + uniqueId) || 
-                     document.getElementById("card-btn-" + uniqueId);
+    const btnTache = trouverBoutonTache(uniqueId);
 
     if (btnTache) {
         btnTache.disabled = true;
         btnTache.style.backgroundColor = "#6c757d";
+        btnTache.style.borderColor = "#6c757d";
+        btnTache.style.color = "#ffffff";
         btnTache.style.opacity = "0.6";
         btnTache.style.cursor = "not-allowed";
         btnTache.style.pointerEvents = "none";
-        btnTache.innerHTML = '<i class="fa-solid fa-lock"></i> Déjà fait aujourd\'hui';
+        btnTache.innerHTML = '<i class="fa-solid fa-lock"></i> Bloqué';
     }
 }
 
@@ -1309,10 +1332,7 @@ function appliquerStyleBoutonBloque(uniqueId) {
 function retirerStyleBoutonBloque(uniqueId) {
     if (!uniqueId) return;
 
-    const btnTache = document.getElementById("btn-video-" + uniqueId) ||
-                     document.getElementById("btn-tache-" + uniqueId) || 
-                     document.getElementById("btn-mission-" + uniqueId) || 
-                     document.getElementById("card-btn-" + uniqueId);
+    const btnTache = trouverBoutonTache(uniqueId);
 
     if (btnTache) {
         btnTache.disabled = false;
@@ -1322,7 +1342,7 @@ function retirerStyleBoutonBloque(uniqueId) {
         btnTache.style.opacity = "1";
         btnTache.style.cursor = "pointer";
         btnTache.style.pointerEvents = "auto";
-        btnTache.innerHTML = '<i class="fa-solid fa-play"></i> Démarrer';
+        btnTache.innerHTML = 'Lancer';
     }
 }
 
@@ -1347,7 +1367,10 @@ async function initialiserEtatBoutonsPageAccueil() {
             const taskId = doc.id;
             const data = doc.data();
 
-            if (data && data.dateExecution === dateAujourdhui) {
+            // Compatible avec les différents formats de date stockés
+            const dateEnregistree = data ? (data.dateExecution || data.date || null) : null;
+
+            if (dateEnregistree && dateEnregistree === dateAujourdhui) {
                 // Fait aujourd'hui -> On bloque
                 appliquerStyleBoutonBloque(taskId);
             } else {
@@ -1478,8 +1501,10 @@ firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         window.userId = user.uid;
         
-        // Exécution automatique au démarrage pour débloquer/bloquer les boutons
-        initialiserEtatBoutonsPageAccueil();
+        // Petit délai de 500ms pour garantir que le HTML des cartes vidéo est chargé
+        setTimeout(() => {
+            initialiserEtatBoutonsPageAccueil();
+        }, 500);
     }
 });
 
