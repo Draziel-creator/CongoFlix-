@@ -281,42 +281,43 @@ body, html {
 
 .blue-status-layer {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #090d1a;
-    display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; gap: 8px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; 
+    z-index: 10; gap: 8px;
 }
 
-.loader-spin-blue {
-    width: 28px; height: 28px; border: 3px solid rgba(0,255,204,0.1);
-    border-top: 3px solid var(--accent-cyan); border-radius: 50%; animation: spin 0.8s linear infinite;
-}
-
+/* Le doigt doit impérativement avoir un z-index supérieur à la couche bleue (z-index: 10) */
+.finger-pulse-indicator, 
 #finger-indicator {
-    position: absolute;
-    z-index: 99;
-    cursor: pointer;
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(3, 4, 8, 0.85);
+    display: none; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center;
+    cursor: pointer; 
+    z-index: 100 !important; /* Priorité absolue au-dessus du loader et de l'iframe */
+    gap: 10px; 
+    color: var(--accent-cyan);
 }
 
-.finger-overlay {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 999;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: rgba(0, 0, 0, 0.75); color: #fff;
-    padding: 15px 25px; border-radius: 12px; cursor: pointer; text-align: center;
+.finger-pulse-indicator i, 
+#finger-indicator i { 
+    font-size: 38px; 
+    color: #00ffcc;
+    animation: pulseFinger 1s infinite alternate; 
 }
 
-.finger-overlay i {
-    font-size: 32px; color: #ffcc00; margin-bottom: 8px;
-    animation: pulseFinger 1.2s infinite ease-in-out;
+.finger-pulse-indicator span, 
+#finger-indicator span { 
+    font-size: 12px; 
+    font-weight: 800; 
+    letter-spacing: 1px; 
+    color: #ffffff;
 }
-
-.finger-pulse-indicator {
-    position: absolute; width: 100%; height: 100%; background: rgba(3,4,8,0.7);
-    display: none; flex-direction: column; justify-content: center; align-items: center;
-    cursor: pointer; z-index: 5; gap: 10px; color: var(--accent-cyan);
-}
-.finger-pulse-indicator i { font-size: 36px; animation: pulseFinger 1s infinite alternate; }
-.finger-pulse-indicator span { font-size: 11px; font-weight: 800; letter-spacing: 1px; }
 
 .ad-slot-square { width: 100%; height: 100%; display: none; justify-content: center; align-items: center; }
 .fine-banner-row { width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 4px; }
@@ -534,7 +535,64 @@ body, html {
 
     </div>
 </div>
+<!-- ====================================================== -->
+<!-- 2. MODALE BANNIÈRES 100% INDÉPENDANTE (CLASSES BANNIERE-*) -->
+<!-- ====================================================== -->
+<div class="banniere-modal-overlay" id="banniere-pub-modal-exclusif" style="display: none;">
+    <div class="banniere-modal-content">
+        
+        <!-- Bouton Fermer (X) Bannière -->
+        <button class="btn-fermer-banniere-modal" onclick="fermerModaleBanniereExclusive()" style="position: relative; z-index: 10000;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        
+        <!-- CADRE BANNIÈRE -->
+        <div class="banniere-square-container" id="banniere-square-container-area" style="position: relative; overflow: hidden;">
+            
+            <!-- Loader Bannière -->
+            <div class="banniere-status-layer" id="banniere-ad-loader-unique" style="display: flex;">
+                <div class="loader-spin-blue"></div>
+                <p style="font-size: 13px; font-weight: 600; margin: 0; color: #ffffff;">Chargement de la bannière...</p>
+                <p style="font-size: 11px; color: #8a8d9f; margin: 5px 0 0 0;">Analyse de la zone en cours</p>
+            </div>
 
+            <!-- Zones Bannières (1 à 14) -->
+            <div id="zone-pub-banniere-1" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-2" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-3" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-4" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-5" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-6" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-7" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-8" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-9" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-10" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-11" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-12" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-13" class="ad-slot-square"></div>
+            <div id="zone-pub-banniere-14" class="ad-slot-square"></div>
+
+        </div> <!-- Fin cadre bannière -->
+
+        <!-- COMMANDES BANNIÈRE -->
+        <div class="banniere-modal-actions" style="position: relative; z-index: 9999; pointer-events: auto;">
+            
+            <!-- Bouton Réclamation Bannière -->
+            <button class="btn-banniere-modal-action btn-banniere-modal-claim" id="btn-claim-banniere-seul" disabled style="position: relative; z-index: 10000;">
+                <i class="fa-solid fa-lock"></i> Détection de la bannière...
+            </button>
+            
+            <!-- Instructions Bannière -->
+            <div style="margin-top: 10px; text-align: center;">
+                <p class="banniere-modal-instructions" style="font-size: 11px; color: #686c87; margin: 0 0 6px 0; line-height: 1.4;">
+                    Le chrono de <strong>10 secondes</strong> démarre automatiquement dès l'affichage de la bannière.
+                </p>
+            </div>
+            
+        </div>
+
+    </div>
+</div>
 
     <!-- DOUBLE FENETRE FULLSCREEN MURS VIP -->
     <div class="container-iframe-wrapper" id="conteneur-iframe-vip">
@@ -1019,7 +1077,7 @@ if (typeof timerDecompteInterval === "undefined") {
 }
 
 /**
- * Initialise le chargement d'une publicité vidéo.
+ * Initialise le chargement d'une publicité vidéo (Version Sécurisée avec Secours).
  */
 async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1061,6 +1119,7 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const finger = document.getElementById("finger-indicator");
     const btnClaim = document.getElementById("btn-claim-points");
 
+    // Afficher le loader et cacher le doigt au départ
     if (loader) loader.style.display = "flex";
     if (finger) finger.style.display = "none";
 
@@ -1096,49 +1155,58 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const modal = document.getElementById("global-pub-modal");
     if (modal) modal.style.display = "flex";
 
-    // Injection du script Clickadilla Video
-    setTimeout(() => {
-        try {
-            let scriptVideo = document.createElement("script");
-            scriptVideo.async = true;
-            scriptVideo.src = "https://js.wpadmngr.com/static/adManager.js";
-            scriptVideo.setAttribute("data-admpid", zoneId);
+    // Fonction interne pour forcer l'affichage du doigt (Sécurité)
+    let doigtDejaAffiche = false;
+    const afficherDoigtImmediatement = () => {
+        if (doigtDejaAffiche) return;
+        doigtDejaAffiche = true;
 
-            scriptVideo.onerror = () => {
-                if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
-            };
+        if (loader) loader.style.display = "none";
+        if (finger) finger.style.display = "flex";
 
-            conteneurVideo.appendChild(scriptVideo);
-
-            if (typeof surveillerPresencePub === "function") {
-                surveillerPresencePub(
-                    idZoneCible,
-                    () => {
-                        if (btnClaim) {
-                            btnClaim.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Préparation du lecteur...';
-                        }
-
-                        setTimeout(() => {
-                            if (loader) loader.style.display = "none";
-                            if (finger) finger.style.display = "flex";
-
-                            if (btnClaim) {
-                                btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur le doigt pour lancer le chrono';
-                            }
-                        }, 2500);
-                    },
-                    () => {
-                        if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
-                    }
-                );
-            }
-
-        } catch(err) {
-            if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+        if (btnClaim) {
+            btnClaim.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Cliquez sur le doigt pour lancer le chrono';
         }
-    }, 100);
-}
+    };
 
+    // TIMER DE SECOURS (Si la détection met plus de 2.5s, on force l'affichage du doigt)
+    const secoursTimer = setTimeout(() => {
+        afficherDoigtImmediatement();
+    }, 2500);
+
+    // Injection du script Clickadilla Video
+    try {
+        let scriptVideo = document.createElement("script");
+        scriptVideo.async = true;
+        scriptVideo.src = "https://js.wpadmngr.com/static/adManager.js";
+        scriptVideo.setAttribute("data-admpid", zoneId);
+
+        scriptVideo.onerror = () => {
+            clearTimeout(secoursTimer);
+            if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+        };
+
+        conteneurVideo.appendChild(scriptVideo);
+
+        if (typeof surveillerPresencePub === "function") {
+            surveillerPresencePub(
+                idZoneCible,
+                () => {
+                    clearTimeout(secoursTimer);
+                    afficherDoigtImmediatement();
+                },
+                () => {
+                    clearTimeout(secoursTimer);
+                    // En cas d'erreur de la régie, le minuteur de secours aura déjà affiché le doigt
+                    afficherDoigtImmediatement();
+                }
+            );
+        }
+    } catch(err) {
+        clearTimeout(secoursTimer);
+        afficherDoigtImmediatement();
+    }
+}
 function declencherPlayFlux(event) {
     if (event) {
         event.preventDefault();
