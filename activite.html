@@ -1267,6 +1267,121 @@ function demarrerDecompte10Sec() {
     }, 1000);
 }
 
+// =============================================================================
+// 1. UTILITAIRES DE DATE ET GESTION VISUELLE DES BOUTONS
+// =============================================================================
+
+/**
+ * Calcule la date locale exacte au format YYYY-MM-DD (évite le décalage UTC/GMT)
+ */
+function obtenirDateAujourdhuiLocale() {
+    const d = new Date();
+    const annee = d.getFullYear();
+    const mois = String(d.getMonth() + 1).padStart(2, '0');
+    const jour = String(d.getDate()).padStart(2, '0');
+    return `${annee}-${mois}-${jour}`;
+}
+
+/**
+ * Applique le style 'Bloqué' sur un bouton de la page d'accueil
+ */
+function appliquerStyleBoutonBloque(uniqueId) {
+    if (!uniqueId) return;
+
+    const btnTache = document.getElementById("btn-video-" + uniqueId) ||
+                     document.getElementById("btn-tache-" + uniqueId) || 
+                     document.getElementById("btn-mission-" + uniqueId) || 
+                     document.getElementById("card-btn-" + uniqueId);
+
+    if (btnTache) {
+        btnTache.disabled = true;
+        btnTache.style.backgroundColor = "#6c757d";
+        btnTache.style.opacity = "0.6";
+        btnTache.style.cursor = "not-allowed";
+        btnTache.style.pointerEvents = "none";
+        btnTache.innerHTML = '<i class="fa-solid fa-lock"></i> Déjà fait aujourd\'hui';
+    }
+}
+
+/**
+ * Retire le style 'Bloqué' et réactive le bouton (pour le lendemain)
+ */
+function retirerStyleBoutonBloque(uniqueId) {
+    if (!uniqueId) return;
+
+    const btnTache = document.getElementById("btn-video-" + uniqueId) ||
+                     document.getElementById("btn-tache-" + uniqueId) || 
+                     document.getElementById("btn-mission-" + uniqueId) || 
+                     document.getElementById("card-btn-" + uniqueId);
+
+    if (btnTache) {
+        btnTache.disabled = false;
+        btnTache.style.backgroundColor = "";
+        btnTache.style.borderColor = "";
+        btnTache.style.color = "";
+        btnTache.style.opacity = "1";
+        btnTache.style.cursor = "pointer";
+        btnTache.style.pointerEvents = "auto";
+        btnTache.innerHTML = '<i class="fa-solid fa-play"></i> Démarrer';
+    }
+}
+
+// =============================================================================
+// 2. FONCTIONS FIREBASE POUR VÉRIFIER ET BLOQUER LES TÂCHES
+// =============================================================================
+
+/**
+ * Parcourt les tâches Firebase au chargement :
+ * - Si faite AUJOURD'HUI -> Bloque le bouton.
+ * - Si faite HIER ou AVANT -> Débloque le bouton.
+ */
+async function initialiserEtatBoutonsPageAccueil() {
+    if (typeof userId === "undefined" || !userId) return;
+
+    const dateAujourdhui = obtenirDateAujourdhuiLocale();
+
+    try {
+        const snapshot = await db.collection("users").doc(userId).collection("taches_faites").get();
+
+        snapshot.forEach((doc) => {
+            const taskId = doc.id;
+            const data = doc.data();
+
+            if (data && data.dateExecution === dateAujourdhui) {
+                // Fait aujourd'hui -> On bloque
+                appliquerStyleBoutonBloque(taskId);
+            } else {
+                // Fait un jour précédent -> On débloque !
+                retirerStyleBoutonBloque(taskId);
+            }
+        });
+    } catch (error) {
+        console.error("Erreur lors de l'initialisation des boutons :", error);
+    }
+}
+
+/**
+ * Marque une tâche comme réalisée aujourd'hui dans Firebase
+ */
+function marquerTacheCommeBloquee(taskId) {
+    if (typeof userId === "undefined" || !userId || !taskId) return;
+
+    const dateAujourdhui = obtenirDateAujourdhuiLocale();
+
+    db.collection("users").doc(userId).collection("taches_faites").doc(taskId).set({
+        dateExecution: dateAujourdhui,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+        appliquerStyleBoutonBloque(taskId);
+    }).catch((err) => {
+        console.error("Erreur lors de l'enregistrement dans Firebase :", err);
+    });
+}
+
+// =============================================================================
+// 3. VOS FONCTIONS DE RÉCLAMATION ET MODALE
+// =============================================================================
+
 function reclamerPointsBouton1(pts) {
     if (typeof userId === "undefined" || !userId) {
         if (typeof afficherAlertePersonnalisee === "function") {
@@ -1288,6 +1403,7 @@ function reclamerPointsBouton1(pts) {
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
 
+        // Enregistre dans Firebase et bloque le bouton
         marquerTacheCommeBloquee(window.missionActiveId);
 
         if (btnClaim) {
@@ -1319,9 +1435,7 @@ function reclamerPointsBouton1(pts) {
         }
     });
 }
-/**
- * Ferme la modale Vidéo, stoppe le chrono et nettoie le lecteur.
- */
+
 function fermerModaleActive() {
     // 1. Masquer la modale vidéo
     const modalVideo = document.getElementById("global-pub-modal");
@@ -1335,7 +1449,7 @@ function fermerModaleActive() {
         window.timerDecompteInterval = null;
     }
 
-    // 3. Remettre les éléments visuels à leur état initial (pour la prochaine ouverture)
+    // 3. Remettre les éléments visuels à leur état initial
     const loader = document.getElementById("ad-stream-loader");
     const finger = document.getElementById("finger-indicator");
     if (loader) loader.style.display = "flex";
@@ -1355,6 +1469,19 @@ function fermerModaleActive() {
         zoneAlt.style.display = "none";
     }
 }
+
+// =============================================================================
+// 4. ÉCOUTEUR D'AUTHENTIFICATION (À Placer en bas de votre script)
+// =============================================================================
+
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        window.userId = user.uid;
+        
+        // Exécution automatique au démarrage pour débloquer/bloquer les boutons
+        initialiserEtatBoutonsPageAccueil();
+    }
+});
 
 // =============================================================================
 // 2. LOGIQUE MISSIONS BANNIÈRE (MODALE EXCLUSIVES BANNIÈRES)
