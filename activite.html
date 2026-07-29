@@ -988,19 +988,27 @@ function fermerIframeVIP() {
 // =============================================================================
 // CONFIGURATION GLOBALE FIREBASE & BINDINGS
 // =============================================================================
+var userId = null; // Déclaré globalement
 const NOM_COLLECTION_TACHES = "historique_taches_v2";
 
 if (typeof timerDecompteInterval === "undefined") {
     var timerDecompteInterval = null;
 }
 
+/**
+ * Fonction de secours pour obtenir l'ID utilisateur à tout moment
+ */
+function obtenirUserId() {
+    if (userId) return userId;
+    if (window.userId) return window.userId;
+    if (firebase.auth().currentUser) return firebase.auth().currentUser.uid;
+    return null;
+}
+
 // =============================================================================
 // 1. UTILITAIRES DE DATE ET GESTION VISUELLE DES BOUTONS
 // =============================================================================
 
-/**
- * Calcule la date locale exacte au format YYYY-MM-DD
- */
 function obtenirDateAujourdhuiLocale() {
     const d = new Date();
     const annee = d.getFullYear();
@@ -1009,9 +1017,6 @@ function obtenirDateAujourdhuiLocale() {
     return `${annee}-${mois}-${jour}`;
 }
 
-/**
- * Retrouve le bouton directement par son ID (gère tous les formats d'ID)
- */
 function trouverBoutonTache(uniqueId) {
     if (!uniqueId) return null;
 
@@ -1024,9 +1029,6 @@ function trouverBoutonTache(uniqueId) {
            document.getElementById(uniqueId);
 }
 
-/**
- * Applique le style 'Bloqué' sur un bouton
- */
 function appliquerStyleBoutonBloque(uniqueId) {
     const btnTache = trouverBoutonTache(uniqueId);
 
@@ -1042,9 +1044,6 @@ function appliquerStyleBoutonBloque(uniqueId) {
     }
 }
 
-/**
- * Retire le style 'Bloqué' et réactive le bouton (pour les jours suivants)
- */
 function retirerStyleBoutonBloque(uniqueId) {
     const btnTache = trouverBoutonTache(uniqueId);
 
@@ -1064,57 +1063,54 @@ function retirerStyleBoutonBloque(uniqueId) {
 // 2. FONCTIONS FIREBASE DE VÉRIFICATION ET BLOCAGE
 // =============================================================================
 
-/**
- * Vérifie dans la NOUVELLE collection si une tâche a déjà été faite aujourd'hui.
- */
 async function verifierSiTacheBloquee(taskId) {
-    if (typeof userId === "undefined" || !userId || !taskId) return false;
+    const uId = obtenirUserId();
+    if (!uId || !taskId) return false;
 
     const dateAujourdhui = obtenirDateAujourdhuiLocale();
 
     try {
         const doc = await db.collection("users")
-            .doc(userId)
+            .doc(uId)
             .collection(NOM_COLLECTION_TACHES)
-            .doc(taskId)
+            .doc(String(taskId))
             .get();
 
         if (doc.exists && doc.data().dateExecution === dateAujourdhui) {
-            return true; // Déjà effectuée aujourd'hui
+            return true;
         }
     } catch (error) {
         console.error("Erreur de vérification Firebase :", error);
     }
 
-    return false; // Disponible
+    return false;
 }
 
-/**
- * Réinitialise tous les boutons au chargement :
- * 1. Ouvre tous les boutons par défaut.
- * 2. Bloque UNIQUEMENT si la tâche a été faite AUJOURD'HUI dans la nouvelle collection.
- */
 async function initialiserEtatBoutonsPageAccueil() {
-    if (typeof userId === "undefined" || !userId) return;
+    const uId = obtenirUserId();
+    if (!uId) {
+        console.warn("⚠️ Initialisation annulée : aucun utilisateur connecté.");
+        return;
+    }
 
     const dateAujourdhui = obtenirDateAujourdhuiLocale();
 
-    // 1. Débloque TOUS les boutons (1 à 10) au démarrage
+    // 1. Débloque TOUS les boutons (video-1 à video-10) par défaut au démarrage
     for (let i = 1; i <= 10; i++) {
+        retirerStyleBoutonBloque("video-" + i);
         retirerStyleBoutonBloque(i);
     }
 
     try {
-        // 2. Lit la nouvelle collection
+        // 2. Vérifie dans la sous-collection Firestore ce qui a été fait aujourd'hui
         const snapshot = await db.collection("users")
-            .doc(userId)
+            .doc(uId)
             .collection(NOM_COLLECTION_TACHES)
             .get();
 
         snapshot.forEach((doc) => {
             const taskId = doc.id;
             const data = doc.data();
-
             const dateEnregistree = data ? (data.dateExecution || data.date || null) : null;
 
             if (dateEnregistree && dateEnregistree === dateAujourdhui) {
@@ -1124,36 +1120,41 @@ async function initialiserEtatBoutonsPageAccueil() {
             }
         });
     } catch (error) {
-        console.error("Erreur lors de l'initialisation des boutons :", error);
+        console.error("Erreur d'initialisation des boutons :", error);
     }
 }
 
-/**
- * Marque une tâche comme réalisée AUJOURD'HUI dans la NOUVELLE collection
- */
 function marquerTacheCommeBloquee(taskId) {
-    if (typeof userId === "undefined" || !userId || !taskId) return;
+    const uId = obtenirUserId();
+    
+    if (!uId || !taskId) {
+        console.error("❌ Impossible de bloquer la tâche : ID utilisateur ou ID tâche manquant.");
+        return;
+    }
 
     const dateAujourdhui = obtenirDateAujourdhuiLocale();
 
+    console.log(`📡 Enregistrement dans Firestore pour l'utilisateur ${uId}, tâche : ${taskId}`);
+
     db.collection("users")
-        .doc(userId)
+        .doc(uId)
         .collection(NOM_COLLECTION_TACHES)
-        .doc(taskId)
+        .doc(String(taskId))
         .set({
             dateExecution: dateAujourdhui,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        })
+        }, { merge: true })
         .then(() => {
+            console.log("✅ Succès ! La sous-collection a été créée/mise à jour pour :", taskId);
             appliquerStyleBoutonBloque(taskId);
         })
         .catch((err) => {
-            console.error("Erreur d'enregistrement Firebase :", err);
+            console.error("❌ Erreur lors de l'écriture dans Firestore :", err);
         });
 }
 
 // =============================================================================
-// 3. LOGIQUE MISSIONS VIDÉO (MODALE VIDÉO UNIFIÉE)
+// 3. LOGIQUE MISSIONS VIDÉO
 // =============================================================================
 
 async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
@@ -1163,7 +1164,6 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
-    // VÉRIFICATION FIREBASE ANTI-TRICHE
     const estBloquee = await verifierSiTacheBloquee(uniqueId);
     if (estBloquee) {
         appliquerStyleBoutonBloque(uniqueId);
@@ -1344,9 +1344,13 @@ function demarrerDecompte10Sec() {
 // =============================================================================
 
 function reclamerPointsBouton1(pts) {
-    if (typeof userId === "undefined" || !userId) {
+    const uId = obtenirUserId();
+
+    if (!uId) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
+        } else {
+            alert("Connexion requise");
         }
         return;
     }
@@ -1359,11 +1363,13 @@ function reclamerPointsBouton1(pts) {
 
     const pointsAAjouter = pts || 100;
 
-    db.collection("users").doc(userId).update({
+    // Mise à jour des points avec .set merge: true pour éviter tout échec si le doc utilisateur est partiel
+    db.collection("users").doc(uId).set({
         pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
         xp: firebase.firestore.FieldValue.increment(1)
-    }).then(() => {
+    }, { merge: true }).then(() => {
 
+        // Appel direct de l'écriture dans la sous-collection
         marquerTacheCommeBloquee(window.missionActiveId);
 
         if (btnClaim) {
@@ -1388,7 +1394,7 @@ function reclamerPointsBouton1(pts) {
         }
 
     }).catch((error) => {
-        console.error("Erreur Firebase :", error);
+        console.error("Erreur Firebase lors de l'ajout des points :", error);
         if (btnClaim) {
             btnClaim.disabled = false;
             btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
@@ -1432,8 +1438,12 @@ function fermerModaleActive() {
 
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
+        userId = user.uid;
         window.userId = user.uid;
+        console.log("🟢 Utilisateur Firebase connecté :", user.uid);
         initialiserEtatBoutonsPageAccueil();
+    } else {
+        console.warn("⚠️ Aucun utilisateur connecté.");
     }
 });
 // =============================================================================
