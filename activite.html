@@ -1905,19 +1905,7 @@ function fermerModaleBanniereExclusive() {
             }, 1000);
         }
 
-        function executerReinitialisationMinuitAutomatique() {
-            if(!userId) return;
-            
-            // Reset impératif du champ pointsDuJours à 0 sur Firebase à minuit
-            db.collection("users").doc(userId).update({
-                pointsDuJours: 0
-            }).then(() => {
-                // Déblocage complet de toutes les tâches stockées localement
-                localStorage.removeItem("liste_taches_bloquees_du_jour");
-                verifierBlocagesBoutonsJournaliers();
-                console.log("Remise à zéro de minuit effectuée.");
-            });
-        }
+       
 
         function executerResetCasinoUneHeureDuMat() {
             if(!userId) return;
@@ -1925,46 +1913,6 @@ function fermerModaleBanniereExclusive() {
                 toursfaits: 0
             });
         }
-
-        // Utilitaires de gestion des tâches complétées pour la journée
-        function marquerTacheCommeBloquee(idTache) {
-            let liste = JSON.parse(localStorage.getItem("liste_taches_bloquees_du_jour")) || [];
-            if (!liste.includes(idTache)) {
-                liste.push(idTache);
-            }
-            localStorage.setItem("liste_taches_bloquees_du_jour", JSON.stringify(liste));
-            verifierBlocagesBoutonsJournaliers();
-        }
-
-        function verifierSiTacheBloquee(idTache) {
-            let liste = JSON.parse(localStorage.getItem("liste_taches_bloquees_du_jour")) || [];
-            return liste.includes(idTache);
-        }
-
-        function verifierBlocagesBoutonsJournaliers() {
-            let liste = JSON.parse(localStorage.getItem("liste_taches_bloquees_du_jour")) || [];
-            
-            // Recherche de tous les boutons de lancement de la grille pour griser visuellement les tâches accomplies
-            const toutesLesCartes = document.querySelectorAll(".video-card-small");
-            toutesLesCartes.forEach(carte => {
-                const idCarte = carte.id.replace("card-", "");
-                const boutonAssocie = carte.querySelector(".btn-launch-grid");
-                
-                if (liste.includes(idCarte) && boutonAssocie) {
-                    boutonAssocie.disabled = true;
-                    boutonAssocie.style.background = "#2a2e43";
-                    boutonAssocie.style.color = "#686c87";
-                    boutonAssocie.innerText = "Validée ✓";
-                } else if (boutonAssocie && boutonAssocie.innerText === "Validée ✓") {
-                    // Rétablissement si débloqué par le reset
-                    boutonAssocie.disabled = false;
-                    boutonAssocie.style.background = "";
-                    boutonAssocie.style.color = "";
-                    boutonAssocie.innerText = "Lancer";
-                }
-            });
-        }
-
         // Actionneur du bouton d'encaissement global
         function encaisserGainsDuJour() {
             if (!userId || localPointsDujour <= 0) {
