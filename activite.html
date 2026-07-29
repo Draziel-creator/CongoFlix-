@@ -988,7 +988,7 @@ function fermerIframeVIP() {
 // =============================================================================
 // CONFIGURATION GLOBALE FIREBASE & BINDINGS
 // =============================================================================
-var userId = null; // Déclaré globalement
+var userId = null;
 const NOM_COLLECTION_TACHES = "historique_taches_v2";
 
 if (typeof timerDecompteInterval === "undefined") {
@@ -996,12 +996,25 @@ if (typeof timerDecompteInterval === "undefined") {
 }
 
 /**
- * Fonction de secours pour obtenir l'ID utilisateur à tout moment
+ * Récupération sécurisée de Firestore (évite le crash si db n'est pas déclarée globalement)
+ */
+function obtenirDb() {
+    if (typeof db !== "undefined" && db) return db;
+    if (window.db) return window.db;
+    if (typeof firebase !== "undefined" && firebase.firestore) return firebase.firestore();
+    console.error("❌ Firestore n'est pas initialisé !");
+    return null;
+}
+
+/**
+ * Fonction de secours pour obtenir l'ID utilisateur
  */
 function obtenirUserId() {
     if (userId) return userId;
     if (window.userId) return window.userId;
-    if (firebase.auth().currentUser) return firebase.auth().currentUser.uid;
+    if (typeof firebase !== "undefined" && firebase.auth() && firebase.auth().currentUser) {
+        return firebase.auth().currentUser.uid;
+    }
     return null;
 }
 
@@ -1039,7 +1052,8 @@ function appliquerStyleBoutonBloque(uniqueId) {
         btnTache.style.color = "#ffffff";
         btnTache.style.opacity = "0.6";
         btnTache.style.cursor = "not-allowed";
-        btnTache.style.pointerEvents = "none";
+        // Correction : Retrait de pointerEvents: "none" pour éviter le gel de la zone parent
+        btnTache.style.pointerEvents = ""; 
         btnTache.innerHTML = '<i class="fa-solid fa-lock"></i> Bloqué';
     }
 }
@@ -1054,7 +1068,7 @@ function retirerStyleBoutonBloque(uniqueId) {
         btnTache.style.color = "";
         btnTache.style.opacity = "1";
         btnTache.style.cursor = "pointer";
-        btnTache.style.pointerEvents = "auto";
+        btnTache.style.pointerEvents = "";
         btnTache.innerHTML = '<i class="fa-solid fa-play"></i> Lancer';
     }
 }
@@ -1064,13 +1078,14 @@ function retirerStyleBoutonBloque(uniqueId) {
 // =============================================================================
 
 async function verifierSiTacheBloquee(taskId) {
+    const firestore = obtenirDb();
     const uId = obtenirUserId();
-    if (!uId || !taskId) return false;
+    if (!firestore || !uId || !taskId) return false;
 
     const dateAujourdhui = obtenirDateAujourdhuiLocale();
 
     try {
-        const doc = await db.collection("users")
+        const doc = await firestore.collection("users")
             .doc(uId)
             .collection(NOM_COLLECTION_TACHES)
             .doc(String(taskId))
@@ -1087,23 +1102,24 @@ async function verifierSiTacheBloquee(taskId) {
 }
 
 async function initialiserEtatBoutonsPageAccueil() {
+    const firestore = obtenirDb();
     const uId = obtenirUserId();
-    if (!uId) {
-        console.warn("⚠️ Initialisation annulée : aucun utilisateur connecté.");
+    
+    if (!firestore || !uId) {
+        console.warn("⚠️ Initialisation annulée : utilisateur non connecté ou Firestore indisponible.");
         return;
     }
 
     const dateAujourdhui = obtenirDateAujourdhuiLocale();
 
-    // 1. Débloque TOUS les boutons (video-1 à video-10) par défaut au démarrage
+    // 1. Débloque les boutons par défaut au démarrage
     for (let i = 1; i <= 10; i++) {
         retirerStyleBoutonBloque("video-" + i);
-        retirerStyleBoutonBloque(i);
     }
 
     try {
-        // 2. Vérifie dans la sous-collection Firestore ce qui a été fait aujourd'hui
-        const snapshot = await db.collection("users")
+        // 2. Vérifie la sous-collection Firestore pour aujourd'hui
+        const snapshot = await firestore.collection("users")
             .doc(uId)
             .collection(NOM_COLLECTION_TACHES)
             .get();
@@ -1125,10 +1141,11 @@ async function initialiserEtatBoutonsPageAccueil() {
 }
 
 function marquerTacheCommeBloquee(taskId) {
+    const firestore = obtenirDb();
     const uId = obtenirUserId();
     
-    if (!uId || !taskId) {
-        console.error("❌ Impossible de bloquer la tâche : ID utilisateur ou ID tâche manquant.");
+    if (!firestore || !uId || !taskId) {
+        console.error("❌ Impossible de bloquer la tâche : ID utilisateur, Firestore ou ID tâche manquant.");
         return;
     }
 
@@ -1136,7 +1153,7 @@ function marquerTacheCommeBloquee(taskId) {
 
     console.log(`📡 Enregistrement dans Firestore pour l'utilisateur ${uId}, tâche : ${taskId}`);
 
-    db.collection("users")
+    firestore.collection("users")
         .doc(uId)
         .collection(NOM_COLLECTION_TACHES)
         .doc(String(taskId))
@@ -1145,7 +1162,7 @@ function marquerTacheCommeBloquee(taskId) {
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true })
         .then(() => {
-            console.log("✅ Succès ! La sous-collection a été créée/mise à jour pour :", taskId);
+            console.log("✅ Succès ! Tâche enregistrée pour aujourd'hui :", taskId);
             appliquerStyleBoutonBloque(taskId);
         })
         .catch((err) => {
@@ -1157,11 +1174,10 @@ function marquerTacheCommeBloquee(taskId) {
 // 3. LOGIQUE MISSIONS VIDÉO
 // =============================================================================
 
-async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
-    const e = window.event;
-    if (e) {
-        e.preventDefault();
-        e.stopPropagation();
+async function initierMissionVideo(indexVideo, zoneId, uniqueId, points, evt) {
+    if (evt && typeof evt.preventDefault === "function") {
+        evt.preventDefault();
+        evt.stopPropagation();
     }
 
     const estBloquee = await verifierSiTacheBloquee(uniqueId);
@@ -1280,7 +1296,7 @@ async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
 }
 
 function declencherPlayFlux(event) {
-    if (event) {
+    if (event && typeof event.preventDefault === "function") {
         event.preventDefault();
         event.stopPropagation();
     }
@@ -1344,9 +1360,10 @@ function demarrerDecompte10Sec() {
 // =============================================================================
 
 function reclamerPointsBouton1(pts) {
+    const firestore = obtenirDb();
     const uId = obtenirUserId();
 
-    if (!uId) {
+    if (!firestore || !uId) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
         } else {
@@ -1363,13 +1380,11 @@ function reclamerPointsBouton1(pts) {
 
     const pointsAAjouter = pts || 100;
 
-    // Mise à jour des points avec .set merge: true pour éviter tout échec si le doc utilisateur est partiel
-    db.collection("users").doc(uId).set({
+    firestore.collection("users").doc(uId).set({
         pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
         xp: firebase.firestore.FieldValue.increment(1)
     }, { merge: true }).then(() => {
 
-        // Appel direct de l'écriture dans la sous-collection
         marquerTacheCommeBloquee(window.missionActiveId);
 
         if (btnClaim) {
@@ -1433,19 +1448,27 @@ function fermerModaleActive() {
 }
 
 // =============================================================================
-// 5. ÉCOUTEUR D'AUTHENTIFICATION
+// 5. ÉCOUTEUR D'AUTHENTIFICATION FIREBASE
 // =============================================================================
 
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        userId = user.uid;
-        window.userId = user.uid;
-        console.log("🟢 Utilisateur Firebase connecté :", user.uid);
-        initialiserEtatBoutonsPageAccueil();
-    } else {
-        console.warn("⚠️ Aucun utilisateur connecté.");
-    }
-});
+if (typeof firebase !== "undefined" && firebase.auth) {
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            userId = user.uid;
+            window.userId = user.uid;
+            console.log("🟢 Utilisateur Firebase connecté :", user.uid);
+            
+            // Exécution différée pour s'assurer que le HTML est totalement chargé
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", initialiserEtatBoutonsPageAccueil);
+            } else {
+                initialiserEtatBoutonsPageAccueil();
+            }
+        } else {
+            console.warn("⚠️ Aucun utilisateur connecté.");
+        }
+    });
+}
 // =============================================================================
 // 2. LOGIQUE MISSIONS BANNIÈRE (MODALE EXCLUSIVES BANNIÈRES)
 // =============================================================================
