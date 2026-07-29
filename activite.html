@@ -988,25 +988,19 @@ function fermerIframeVIP() {
 // =============================================================================
 // CONFIGURATION GLOBALE FIREBASE & BINDINGS
 // =============================================================================
-var userId = null; // Déclaré globalement pour éviter les erreurs 'undefined'
 const NOM_COLLECTION_TACHES = "historique_taches_v2";
 
 if (typeof timerDecompteInterval === "undefined") {
     var timerDecompteInterval = null;
 }
 
-// Fonction de secours pour éviter que db plantent si mal initialisé
-function obtenirDb() {
-    if (typeof db !== "undefined" && db) return db;
-    if (window.db) return window.db;
-    if (typeof firebase !== "undefined" && firebase.firestore) return firebase.firestore();
-    return null;
-}
-
 // =============================================================================
-// 1. UTILITAIRES DE DATE ET GESTION VISUELLE DES BOUTONS
+// 1. UTILITAIRE DE DATE
 // =============================================================================
 
+/**
+ * Calcule la date locale exacte au format YYYY-MM-DD
+ */
 function obtenirDateAujourdhuiLocale() {
     const d = new Date();
     const annee = d.getFullYear();
@@ -1015,180 +1009,43 @@ function obtenirDateAujourdhuiLocale() {
     return `${annee}-${mois}-${jour}`;
 }
 
-function trouverBoutonTache(uniqueId) {
-    if (!uniqueId) return null;
-
-    const num = uniqueId.toString().replace(/^(btn-video-|video-|card-video-|btn-tache-|btn-mission-|card-btn-)/, '');
-
-    const candidates = [
-        document.getElementById("btn-video-" + num),
-        document.getElementById("btn-tache-" + num),
-        document.getElementById("btn-mission-" + num),
-        document.getElementById("card-btn-" + num),
-        document.getElementById(uniqueId)
-    ];
-
-    // SÉCURITÉ : On ne retourne l'élément QUE si c'est un bouton ou un lien (pas une div conteneur !)
-    for (let el of candidates) {
-        if (el && (el.tagName === "BUTTON" || el.tagName === "A" || el.classList.contains("btn"))) {
-            return el;
-        }
-    }
-    
-    return null;
-}
-
-function appliquerStyleBoutonBloque(uniqueId) {
-    const btnTache = trouverBoutonTache(uniqueId);
-
-    if (btnTache) {
-        btnTache.disabled = true;
-        btnTache.style.backgroundColor = "#6c757d";
-        btnTache.style.borderColor = "#6c757d";
-        btnTache.style.color = "#ffffff";
-        btnTache.style.opacity = "0.6";
-        btnTache.style.cursor = "not-allowed";
-        btnTache.style.pointerEvents = "none"; // Ne bloque désormais QUE le bouton
-        btnTache.innerHTML = '<i class="fa-solid fa-lock"></i> Bloqué';
-    } else {
-        console.warn("⚠️ Bouton introuvable pour blocage, ID :", uniqueId);
-    }
-}
-
-function retirerStyleBoutonBloque(uniqueId) {
-    const btnTache = trouverBoutonTache(uniqueId);
-
-    if (btnTache) {
-        btnTache.disabled = false;
-        btnTache.style.backgroundColor = "";
-        btnTache.style.borderColor = "";
-        btnTache.style.color = "";
-        btnTache.style.opacity = "1";
-        btnTache.style.cursor = "pointer";
-        btnTache.style.pointerEvents = "auto";
-        btnTache.innerHTML = '<i class="fa-solid fa-play"></i> Lancer';
-    }
-}
-
 // =============================================================================
-// 2. FONCTIONS FIREBASE DE VÉRIFICATION ET BLOCAGE
+// 2. ENREGISTREMENT DANS FIREBASE (SANS AUCUN BLOCAGE DE PAGE)
 // =============================================================================
 
-async function verifierSiTacheBloquee(taskId) {
-    const firestore = obtenirDb();
-    const uId = userId || window.userId;
-    if (!firestore || !uId || !taskId) return false;
+/**
+ * Envoie la tâche accomplie dans la collection Firebase
+ */
+function enregistrerTacheDansFirebase(taskId) {
+    if (typeof userId === "undefined" || !userId || !taskId) return;
 
     const dateAujourdhui = obtenirDateAujourdhuiLocale();
 
-    try {
-        const doc = await firestore.collection("users")
-            .doc(uId)
-            .collection(NOM_COLLECTION_TACHES)
-            .doc(String(taskId))
-            .get();
-
-        if (doc.exists && doc.data().dateExecution === dateAujourdhui) {
-            return true;
-        }
-    } catch (error) {
-        console.error("❌ Erreur de vérification Firebase :", error);
-    }
-
-    return false;
-}
-
-async function initialiserEtatBoutonsPageAccueil() {
-    const firestore = obtenirDb();
-    const uId = userId || window.userId;
-    if (!firestore || !uId) return;
-
-    const dateAujourdhui = obtenirDateAujourdhuiLocale();
-
-    // 1. Force le déblocage visuel au démarrage
-    for (let i = 1; i <= 10; i++) {
-        retirerStyleBoutonBloque(i);
-    }
-
-    try {
-        // 2. Interroge la sous-collection dans Firestore
-        const snapshot = await firestore.collection("users")
-            .doc(uId)
-            .collection(NOM_COLLECTION_TACHES)
-            .get();
-
-        snapshot.forEach((doc) => {
-            const taskId = doc.id;
-            const data = doc.data();
-            const dateEnregistree = data ? (data.dateExecution || data.date || null) : null;
-
-            if (dateEnregistree && dateEnregistree === dateAujourdhui) {
-                appliquerStyleBoutonBloque(taskId);
-            } else {
-                retirerStyleBoutonBloque(taskId);
-            }
-        });
-    } catch (error) {
-        console.error("❌ Erreur d'initialisation des boutons depuis Firebase :", error);
-    }
-}
-
-function marquerTacheCommeBloquee(taskId) {
-    const firestore = obtenirDb();
-    const uId = userId || window.userId;
-    if (!firestore || !uId || !taskId) {
-        console.error("❌ ID utilisateur ou ID de tâche manquant pour l'enregistrement.");
-        return;
-    }
-
-    const dateAujourdhui = obtenirDateAujourdhuiLocale();
-
-    firestore.collection("users")
-        .doc(uId)
+    db.collection("users")
+        .doc(userId)
         .collection(NOM_COLLECTION_TACHES)
-        .doc(String(taskId))
+        .doc(taskId)
         .set({
             dateExecution: dateAujourdhui,
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true })
+        })
         .then(() => {
-            console.log("✅ Tâche enregistrée avec succès dans Firebase :", taskId);
-            appliquerStyleBoutonBloque(taskId);
+            console.log("Tâche enregistrée avec succès dans Firebase :", taskId);
         })
         .catch((err) => {
-            console.error("❌ Erreur d'écriture dans la sous-collection Firestore :", err);
+            console.error("Erreur d'enregistrement Firebase :", err);
         });
 }
 
 // =============================================================================
-// 3. LOGIQUE MISSIONS VIDÉO
+// 3. LOGIQUE MISSIONS VIDÉO (MODALE VIDÉO UNIFIÉE)
 // =============================================================================
 
-async function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
+function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
     if (e) {
         e.preventDefault();
         e.stopPropagation();
-    }
-
-    const estBloquee = await verifierSiTacheBloquee(uniqueId);
-    if (estBloquee) {
-        appliquerStyleBoutonBloque(uniqueId);
-
-        const msgBloque = "Vous avez déjà accompli cette mission aujourd'hui. Elle se réinitialisera automatiquement demain à 00h00 !";
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(
-                msgBloque, 
-                "Tâche Bloquée", 
-                "J'ai compris", 
-                function() {
-                    if (typeof fermerModaleActive === "function") fermerModaleActive();
-                }
-            );
-        } else {
-            alert(msgBloque);
-        }
-        return;
     }
 
     if (window.timerDecompteInterval) {
@@ -1347,18 +1204,13 @@ function demarrerDecompte10Sec() {
 }
 
 // =============================================================================
-// 4. RÉCLAMATION ET MODALE
+// 4. RÉCLAMATION ET MISE À JOUR FIREBASE
 // =============================================================================
 
 function reclamerPointsBouton1(pts) {
-    const firestore = obtenirDb();
-    const uId = userId || window.userId;
-
-    if (!firestore || !uId) {
+    if (typeof userId === "undefined" || !userId) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Connexion en cours... Veuillez patienter.", "Connexion Requise");
-        } else {
-            alert("Connexion requise");
         }
         return;
     }
@@ -1371,36 +1223,38 @@ function reclamerPointsBouton1(pts) {
 
     const pointsAAjouter = pts || 100;
 
-    firestore.collection("users").doc(uId).set({
+    // 1. Met à jour les points et l'XP de l'utilisateur
+    db.collection("users").doc(userId).update({
         pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
         xp: firebase.firestore.FieldValue.increment(1)
-    }, { merge: true }).then(() => {
+    }).then(() => {
 
-        marquerTacheCommeBloquee(window.missionActiveId);
+        // 2. Envoie l'historique de la tâche à Firebase (collection `historique_taches_v2`)
+        enregistrerTacheDansFirebase(window.missionActiveId);
 
         if (btnClaim) {
-            btnClaim.style.backgroundColor = "#6c757d";
+            btnClaim.style.backgroundColor = "#28a745";
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        const messageBlocage = `Vous avez reçu +${pointsAAjouter} Points et +1 XP !\n\nCette tâche sera bloquée pour aujourd'hui et se réinitialisera automatiquement demain à 00h00.`;
+        const messageSucces = `Félicitations ! Vous avez reçu +${pointsAAjouter} Points et +1 XP !`;
 
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee(
-                messageBlocage, 
+                messageSucces, 
                 "Tâche Complétée", 
-                "J'ai compris", 
+                "Super", 
                 function() {
                     if (typeof fermerModaleActive === "function") fermerModaleActive();
                 }
             );
         } else {
-            alert(messageBlocage);
+            alert(messageSucces);
             if (typeof fermerModaleActive === "function") fermerModaleActive();
         }
 
     }).catch((error) => {
-        console.error("❌ Erreur Firebase lors de la mise à jour des points :", error);
+        console.error("Erreur Firebase :", error);
         if (btnClaim) {
             btnClaim.disabled = false;
             btnClaim.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer la réclamation`;
@@ -1442,18 +1296,11 @@ function fermerModaleActive() {
 // 5. ÉCOUTEUR D'AUTHENTIFICATION
 // =============================================================================
 
-if (typeof firebase !== "undefined" && firebase.auth) {
-    firebase.auth().onAuthStateChanged((user) => {
-        if (user) {
-            userId = user.uid;
-            window.userId = user.uid;
-            console.log("🟢 Utilisateur connecté :", userId);
-            initialiserEtatBoutonsPageAccueil();
-        } else {
-            console.warn("⚠️ Aucun utilisateur connecté à Firebase.");
-        }
-    });
-}
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        window.userId = user.uid;
+    }
+});
 // =============================================================================
 // 2. LOGIQUE MISSIONS BANNIÈRE (MODALE EXCLUSIVES BANNIÈRES)
 // =============================================================================
