@@ -1412,6 +1412,17 @@ var banniereMissionActivePoints = 0;
 var banniereTimerInterval = null;
 
 /**
+ * Obtenir la date du jour au format YYYY-MM-DD
+ */
+function ObtenirDateAujourdhuiISO() {
+    const d = new Date();
+    const annee = d.getFullYear();
+    const mois = String(d.getMonth() + 1).padStart(2, '0');
+    const jour = String(d.getDate()).padStart(2, '0');
+    return `${annee}-${mois}-${jour}`;
+}
+
+/**
  * Initialise le chargement d'une bannière publicitaire (Adsterra, Advertica, Clickadilla).
  */
 async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, indexZone, formatPubOrWidth = "300x250", hauteurOptional = null) {
@@ -1421,13 +1432,14 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         e.stopPropagation();
     }
 
-    // VÉRIFICATION FIREBASE ANTI-TRICHE (Sous-collection historique_taches_v2)
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
+    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    const dateAujourdhui = ObtenirDateAujourdhuiISO();
     let estBloquee = false;
 
+    // VÉRIFICATION FIREBASE ANTI-TRICHE (Sous-collection historique_taches_v2)
     try {
-        if (typeof userId !== "undefined" && userId) {
-            const docRef = await db.collection("users").doc(userId).collection("historique_taches_v2").doc(uniqueId).get();
+        if (currentUserId) {
+            const docRef = await db.collection("users").doc(currentUserId).collection("historique_taches_v2").doc(uniqueId).get();
             if (docRef.exists && docRef.data().date === dateAujourdhui) {
                 estBloquee = true;
             }
@@ -1794,7 +1806,9 @@ function demarrerDecompteBanniere30Sec() {
 }
 
 function reclamerPointsBanniereSeule() {
-    if (typeof userId === "undefined" || !userId) {
+    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+
+    if (!currentUserId) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Connexion en cours...", "Connexion Requise");
         }
@@ -1808,16 +1822,16 @@ function reclamerPointsBanniereSeule() {
     }
 
     const pts = banniereMissionActivePoints || 100;
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
+    const dateAujourdhui = ObtenirDateAujourdhuiISO();
 
     // 1. Mise à jour des points
-    db.collection("users").doc(userId).update({
+    db.collection("users").doc(currentUserId).update({
         pointsDuJours: firebase.firestore.FieldValue.increment(pts),
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
 
         // 2. Enregistrement du blocage dans Firestore historique_taches_v2
-        return db.collection("users").doc(userId).collection("historique_taches_v2").doc(banniereMissionActiveId).set({
+        return db.collection("users").doc(currentUserId).collection("historique_taches_v2").doc(banniereMissionActiveId).set({
             date: dateAujourdhui,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             type: "banniere"
@@ -1896,7 +1910,7 @@ function fermerModaleBanniereExclusive() {
 }
 
 // =============================================================================
-// FONCTIONS COMPLÉMENTAIRES DE BLOCAGE VISUEL ET DE VÉRIFICATION BANNIÈRES
+// FONCTIONS DE BLOCAGE VISUEL ET CHARGEMENT AUTOMATIQUE
 // =============================================================================
 
 /**
@@ -1904,30 +1918,39 @@ function fermerModaleBanniereExclusive() {
  */
 function bloquerBoutonBanniereVisuellement(uniqueId) {
     if (!uniqueId) return;
-    const boutons = document.querySelectorAll('button, a, .btn');
-    boutons.forEach(btn => {
-        const attrOnClick = btn.getAttribute('onclick');
+
+    // Recherche de tous les éléments boutons ou liens avec l'attribut onclick
+    const elements = document.querySelectorAll('button, a, .btn, [onclick]');
+    elements.forEach(el => {
+        const attrOnClick = el.getAttribute('onclick');
         if (attrOnClick && attrOnClick.includes(`'${uniqueId}'`)) {
-            btn.disabled = true;
-            btn.style.background = "#2a2e43";
-            btn.style.color = "#686c87";
-            btn.style.cursor = "not-allowed";
-            btn.innerHTML = `<i class="fa-solid fa-check"></i> Complété ✓`;
+            el.disabled = true;
+            el.removeAttribute('onclick');
+            el.onclick = function(e) { if(e) e.preventDefault(); return false; };
+
+            // Styles pour griser fermement le bouton
+            el.style.setProperty("background", "#2a2e43", "important");
+            el.style.setProperty("background-color", "#2a2e43", "important");
+            el.style.setProperty("color", "#686c87", "important");
+            el.style.setProperty("border-color", "#2a2e43", "important");
+            el.style.setProperty("cursor", "not-allowed", "important");
+            el.style.setProperty("opacity", "0.7", "important");
+            el.innerHTML = `<i class="fa-solid fa-check"></i> Complété ✓`;
         }
     });
 }
 
 /**
- * À appeler au chargement de la page (ou dans onAuthStateChanged) pour griser
- * toutes les bannières déjà faites aujourd'hui.
+ * Vérifie dans Firebase toutes les bannières faites aujourd'hui et les grise.
  */
-async function verifierEtBloquerBannieresDuJour() {
-    if (typeof userId === "undefined" || !userId) return;
+async function verifierEtBloquerBannieresDuJour(uidParam = null) {
+    const uid = uidParam || ((typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null));
+    if (!uid) return;
 
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
+    const dateAujourdhui = ObtenirDateAujourdhuiISO();
 
     try {
-        const snapshot = await db.collection("users").doc(userId)
+        const snapshot = await db.collection("users").doc(uid)
             .collection("historique_taches_v2")
             .where("date", "==", dateAujourdhui)
             .get();
@@ -1939,6 +1962,29 @@ async function verifierEtBloquerBannieresDuJour() {
         console.error("Erreur chargement blocage bannières :", err);
     }
 }
+
+// =============================================================================
+// AUTOMATISATION : GRISER AU RECHARGEMENT DE LA PAGE
+// =============================================================================
+
+// 1. Déclenchement automatique dès que l'utilisateur est authentifié Firebase
+if (typeof firebase !== "undefined" && firebase.auth) {
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            // Laisse un court délai pour que le HTML/DOM soit entièrement chargé
+            setTimeout(() => {
+                verifierEtBloquerBannieresDuJour(user.uid);
+            }, 300);
+        }
+    });
+}
+
+// 2. Déclenchement au chargement du DOM si l'ID est déjà disponible
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+        verifierEtBloquerBannieresDuJour();
+    }, 500);
+});
         // ==========================================
         // ÉTAPE 5 : SYNC CHRONOMÈTRE MIDNIGHT & PERSISTANCE DE BLOCAGE
         // ==========================================
