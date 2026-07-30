@@ -1122,6 +1122,101 @@ function tenterChanceCasino(e) {
         alert("Erreur lors de la mise à jour : " + err.message);
     });
 }
+    // ==========================================
+// RENDRE LE BOUTON CASINO DÉPLAÇABLE (DRAGGABLE)
+// ==========================================
+function rendreBoutonDraggable(idBouton) {
+    const el = document.getElementById(idBouton);
+    if (!el) return;
+
+    let estEnTrainDeGlisser = false;
+    let startX = 0, startY = 0;
+    let initialX = 0, initialY = 0;
+    let aBouge = false;
+
+    // Récupérer les coordonnées (Souris ou Tactile)
+    const getCoords = (e) => e.touches ? e.touches[0] : e;
+
+    const auDebutDuToucher = (e) => {
+        estEnTrainDeGlisser = true;
+        aBouge = false;
+        
+        const coords = getCoords(e);
+        startX = coords.clientX;
+        startY = coords.clientY;
+
+        const rect = el.getBoundingClientRect();
+        initialX = rect.left;
+        initialY = rect.top;
+
+        // Bascule les styles positionnels en pixels absolus
+        el.style.bottom = 'auto';
+        el.style.right = 'auto';
+        el.style.left = initialX + 'px';
+        el.style.top = initialY + 'px';
+    };
+
+    const pendantLeDeplacement = (e) => {
+        if (!estEnTrainDeGlisser) return;
+
+        const coords = getCoords(e);
+        const deltaX = coords.clientX - startX;
+        const deltaY = coords.clientY - startY;
+
+        // Seuil de 5 pixels pour faire la différence entre un clic et un glisser
+        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+            aBouge = true;
+        }
+
+        if (aBouge) {
+            // Empêche l'écran de défiler pendant qu'on bouge le bouton sur mobile
+            if (e.cancelable) e.preventDefault();
+
+            let newX = initialX + deltaX;
+            let newY = initialY + deltaY;
+
+            // Empêche le bouton de sortir des bords de l'écran
+            const maxX = window.innerWidth - el.offsetWidth;
+            const maxY = window.innerHeight - el.offsetHeight;
+
+            newX = Math.max(0, Math.min(newX, maxX));
+            newY = Math.max(0, Math.min(newY, maxY));
+
+            el.style.left = newX + 'px';
+            el.style.top = newY + 'px';
+        }
+    };
+
+    const aLaFinDuToucher = () => {
+        estEnTrainDeGlisser = false;
+    };
+
+    // Événements Souris (PC)
+    el.addEventListener('mousedown', auDebutDuToucher);
+    window.addEventListener('mousemove', pendantLeDeplacement);
+    window.addEventListener('mouseup', aLaFinDuToucher);
+
+    // Événements Tactiles (Mobile & Tablette)
+    el.addEventListener('touchstart', auDebutDuToucher, { passive: false });
+    window.addEventListener('touchmove', pendantLeDeplacement, { passive: false });
+    window.addEventListener('touchend', aLaFinDuToucher);
+
+    // 🛑 BLOQUE L'OUVERTURE DE LA MODALE SI ON A DÉPLACÉ LE BOUTON
+    el.addEventListener('click', (e) => {
+        if (aBouge) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            aBouge = false;
+        }
+    }, true);
+}
+
+// Activation automatique au chargement de la page
+document.addEventListener("DOMContentLoaded", () => {
+    rendreBoutonDraggable("btn-casino-vip-v2");
+});
+// Sécurité au cas où la page est déjà chargée
+rendreBoutonDraggable("btn-casino-vip-v2");
 // ==========================================
 // 7. INITIALISATION DU DOM
 // ==========================================
