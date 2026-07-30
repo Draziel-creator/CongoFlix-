@@ -437,6 +437,19 @@ body, html {
 
 .btn-custom-alert-ok:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(67, 100, 247, 0.6); }
 .btn-custom-alert-ok:active { transform: translateY(0); }
+       /* Par défaut, le bouton est caché */
+#floating-bonus-casino {
+    display: none;
+    position: absolute;
+    bottom: 90px;
+    right: 20px;
+    z-index: 999;
+}
+
+/* Dès que JS ajoute la classe "visible", le bouton apparaît */
+#floating-bonus-casino.visible {
+    display: flex !important;
+}
 
 /* ======================================================
    7. ANIMATIONS (@KEYFRAMES)
@@ -452,7 +465,6 @@ body, html {
 <body>
 
    <!-- BOUTON FLOTTANT CASINO BONUS (Masqué par défaut) -->
-<!-- À PLACER À L'INTÉRIEUR DE <div class="app-container"> JUSTE AVANT LA NAV-BAR -->
 <div id="floating-bonus-casino" class="casino-pulse-btn" onclick="ouvrirModalBonus()" style="display: none; position: absolute; bottom: 90px; right: 20px; width: 60px; height: 60px; background: linear-gradient(135deg, #ff9d00 0%, #ff5100 100%); border-radius: 50%; align-items: center; justify-content: center; z-index: 999; cursor: pointer; box-shadow: 0 4px 20px rgba(255, 81, 0, 0.4); border: 2px solid #fff;">
     <i class="fa-solid fa-dice" style="color: white; font-size: 26px;"></i>
 </div>
@@ -467,7 +479,6 @@ body, html {
         <button class="btn-main-action-collect" id="btn-action-casino" onclick="tenterChanceCasino()" style="width: 100%; margin: 0;">Tenter ma chance du jour</button>
     </div>
 </div>
-
 <!-- ====================================================== -->
 <!-- 1. MODALE VIDÉO (CLASSES SPECIFIQUES PUB-MODAL-*) -->
 <!-- ====================================================== -->
@@ -859,7 +870,7 @@ function fermerAlertePersonnalisee() {
 }
 
 // ==========================================
-// INITIALISATION FIREBASE
+// 1. INITIALISATION FIREBASE
 // ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
@@ -870,36 +881,30 @@ const firebaseConfig = {
     appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b"
 }; 
 
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.firestore();
 
-// ÉTAPE 1 : CONFIGURATION GLOBALE ET ÉTATS
+// ==========================================
+// 2. VARIABLES GLOBALES
+// ==========================================
 let userId = null; 
 let localPointsDujour = 0;
 let localUserRank = 0;
 let localToursFaits = 0;
 
-let missionActiveType = ""; // "video" ou "banniere"
-let missionActiveId = "";   
+let missionActiveType = ""; 
+let missionActiveId = "";    
 let missionActivePoints = 0;
 let redirectionUrlActive = "https://www.highperformanceformat.com/305c9d0ee6ac5ec71d84d7f879fdc153/invoke.js";
 
 let chronoInterval = null;
 let verificationPubChargee = false;
 
-// SURVEILLANCE DE LA CONNEXION FIREBASE
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        userId = user.uid; 
-        console.log("Utilisateur Congoflix détecté :", userId);
-        brancherEcouteurFirebase();
-    } else {
-        console.log("Aucun utilisateur connecté sur la page.");
-        userId = null;
-    }
-});
-
-// Function utilitaire pour la date
+// ==========================================
+// 3. FONCTIONS UTILITAIRES
+// ==========================================
 function ObtenirDateAujourdhuiISO() {
     const d = new Date();
     const annee = d.getUTCFullYear();
@@ -908,6 +913,36 @@ function ObtenirDateAujourdhuiISO() {
     return `${annee}-${mois}-${jour}`;
 }
 
+// ==========================================
+// 4. SURVEILLANCE DE LA CONNEXION (UNIQUE ET NETTOYÉE)
+// ==========================================
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        userId = user.uid; 
+        window.userId = user.uid;
+        console.log("Utilisateur Congoflix détecté :", userId);
+
+        // Lancement de l'écouteur en temps réel
+        brancherEcouteurFirebase();
+
+        // Vérification des tâches journalières si la fonction existe
+        if (typeof verifierBlocagesBoutonsJournaliers === "function") {
+            verifierBlocagesBoutonsJournaliers();
+        }
+    } else {
+        console.log("Aucun utilisateur connecté.");
+        userId = null;
+        window.userId = null;
+
+        // Cacher le bouton si la personne se déconnecte
+        const boutonCasino = document.getElementById("floating-bonus-casino");
+        if (boutonCasino) boutonCasino.style.display = "none";
+    }
+});
+
+// ==========================================
+// 5. ÉCOUTEUR FIREBASE EN TEMPS RÉEL
+// ==========================================
 function brancherEcouteurFirebase() {
     if (!userId) return;
 
@@ -916,17 +951,17 @@ function brancherEcouteurFirebase() {
             const data = doc.data();
             const dateAujourdhui = ObtenirDateAujourdhuiISO();
 
-            // 1. DÉTECTION DU RANG VIP (Sécurisé pour tolérer rank, rang, Rank, String ou Number)
+            // A. Détection sécurisée du rang VIP
             const rawRank = (data.rank !== undefined) ? data.rank : ((data.rang !== undefined) ? data.rang : data.Rank);
             localUserRank = Number(rawRank || 0);
 
-            // 2. AFFICHAGE DU BOUTON CASINO (Priorité absolue pour éviter d'être bloqué par d'autres fonctions)
+            // B. Affichage dynamique du bouton Casino
             const boutonCasino = document.getElementById("floating-bonus-casino");
             if (boutonCasino) {
                 boutonCasino.style.display = (localUserRank >= 1) ? "flex" : "none";
             }
 
-            // 3. GESTION DES POINTS DU JOUR & RESET AUTOMATIQUE MIDNIGHT
+            // C. Points du jour & Reset automatique à minuit
             if (data.dateDerniersPoints !== dateAujourdhui && data.pointsDuJours > 0) {
                 db.collection("users").doc(userId).update({
                     pointsDuJours: 0,
@@ -942,24 +977,22 @@ function brancherEcouteurFirebase() {
                 elCagnotte.innerText = localPointsDujour + " Points";
             }
 
-            // 4. GESTION DES TOURS DU CASINO
+            // D. Tours faits au Casino
             localToursFaits = data.toursfaits || 0;
 
-            // 5. EXÉCUTION DÈS DISPONIBILITÉ DES AUTRES FONCTIONS INTERFACE
+            // E. Mises à jour secondaires de l'interface
             if (typeof ajusterAffichageRangVip === "function") {
                 ajusterAffichageRangVip(localUserRank);
             }
-
             if (typeof gererAffichageVisuelVIP === "function") {
                 gererAffichageVisuelVIP();
             }
-
             if (typeof actualiserTexteModalCasino === "function") {
                 actualiserTexteModalCasino();
             }
 
         } else {
-            // Création automatique du profil s'il n'existe pas encore
+            // Création automatique du profil si inexistant
             db.collection("users").doc(userId).set({
                 pointsDuJours: 0,
                 coin: 0,
@@ -971,26 +1004,60 @@ function brancherEcouteurFirebase() {
         }
     });
 }
+
+// ==========================================
+// 6. LOGIQUE DU CASINO BONUS FLOTTANT
+// ==========================================
+function ouvrirModalBonus() {
+    if (localUserRank < 1) return;
+
+    const modal = document.getElementById("modal-bonus-casino");
+    if (modal) modal.style.display = "flex";
+    actualiserTexteModalCasino();
+}
+
+function fermerModalBonus() {
+    const modal = document.getElementById("modal-bonus-casino");
+    if (modal) modal.style.display = "none";
+}
+
+function actualiserTexteModalCasino() {
+    const labelChances = document.getElementById("txt-chances-restantes");
+    const boutonCasino = document.getElementById("btn-action-casino");
+    if (!labelChances || !boutonCasino) return;
+
+    let restants = 5 - localToursFaits;
+
+    if (restants <= 0) {
+        labelChances.innerText = "Vous avez épuisé toutes vos chances de la journée, revenez demain pour retenter.";
+        boutonCasino.disabled = true;
+        boutonCasino.style.background = "#2a2e43";
+        boutonCasino.innerText = "Épuisé pour aujourd'hui";
+    } else {
+        labelChances.innerText = `Il vous reste ${restants} chance(s) pour aujourd'hui.`;
+        boutonCasino.disabled = false;
+        boutonCasino.style.background = "";
+        boutonCasino.innerText = "Tenter ma chance du jour";
+    }
+}
+
+function tenterChanceCasino() {
+    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    if (localToursFaits >= 5 || !currentUserId || localUserRank < 1) return;
+
+    db.collection("users").doc(currentUserId).update({
+        toursfaits: firebase.firestore.FieldValue.increment(1)
+    }).then(() => {
+        window.location.href = "roue.html";
+    }).catch(err => console.error("Erreur Casino:", err));
+}
+
+// ==========================================
+// 7. INITIALISATION DU DOM
+// ==========================================
 window.addEventListener("DOMContentLoaded", () => {
     if (typeof initialiserChronometresGlobaux === "function") initialiserChronometresGlobaux();
     if (typeof verifierBlocagesBoutonsJournaliers === "function") verifierBlocagesBoutonsJournaliers();
-});
-    firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        userId = user.uid; 
-        window.userId = user.uid;
-        console.log("Utilisateur Publicité+ détecté :", userId);
-        brancherEcouteurFirebase();
-
-        // AJOUT ICI : Vérifie et bloque les tâches du jour au chargement
-        if (typeof verifierBlocagesBoutonsJournaliers === "function") {
-            verifierBlocagesBoutonsJournaliers();
-        }
-    } else {
-        console.log("Aucun utilisateur connecté sur la page.");
-        userId = null;
-        window.userId = null;
-    }
 });
 
 // ==========================================
@@ -2138,53 +2205,7 @@ function encaisserGainsDuJour() {
 function ouvrirBoiteDialogueAide() {
     alert("AIDE & FONCTIONNEMENT :\n\n- Chaque tâche accomplie ajoute des points à votre cagnotte du jour.\n- Vous devez impérativement cliquer sur 'Encaisser mes gains du jour' avant minuit, sinon les points non réclamés seront définitivement perdus lors de la réinitialisation automatique.");
 }
-       // ==========================================
-// ÉTAPE 6 : LOGIQUE DU CASINO BONUS FLOTTANT
-// ==========================================
-function ouvrirModalBonus() {
-    // Sécurité supplémentaire : si le rang est inférieur à 1, la modale ne s'ouvre pas
-    if (localUserRank < 1) return;
 
-    const modal = document.getElementById("modal-bonus-casino");
-    if (modal) modal.style.display = "flex";
-    actualiserTexteModalCasino();
-}
-
-function fermerModalBonus() {
-    const modal = document.getElementById("modal-bonus-casino");
-    if (modal) modal.style.display = "none";
-}
-
-function actualiserTexteModalCasino() {
-    const labelChances = document.getElementById("txt-chances-restantes");
-    const boutonCasino = document.getElementById("btn-action-casino");
-    if (!labelChances || !boutonCasino) return;
-
-    let restants = 5 - localToursFaits;
-    
-    if (restants <= 0) {
-        labelChances.innerText = "Vous avez épuisé toutes vos chances de votre journée, revenez demain pour retenter.";
-        boutonCasino.disabled = true;
-        boutonCasino.style.background = "#2a2e43";
-        boutonCasino.innerText = "Épuisé pour aujourd'hui";
-    } else {
-        labelChances.innerText = `Il vous reste ${restants} chance(s) de votre journée.`;
-        boutonCasino.disabled = false;
-        boutonCasino.style.background = "";
-        boutonCasino.innerText = "Tenter ma chance du jour";
-    }
-}
-
-function tenterChanceCasino() {
-    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
-    if (localToursFaits >= 5 || !currentUserId || localUserRank < 1) return;
-    
-    db.collection("users").doc(currentUserId).update({
-        toursfaits: firebase.firestore.FieldValue.increment(1)
-    }).then(() => {
-        window.location.href = "https://www.highperformanceformat.com/355c9d0ee6ac5ec71d84d7f879fdc153/invoke.js";
-    }).catch(err => console.error(err));
-}
         // ==========================================
         // ÉTAPE 7 : MURS VIP EMBED IFRAME MANAGEMENT
         // ==========================================
