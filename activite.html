@@ -990,17 +990,14 @@ function brancherEcouteurFirebase() {
             const data = doc.data();
             const dateAujourdhui = ObtenirDateAujourdhuiISO();
 
-            // A. Détection du rang VIP
+            // Détection du rang et stockage GLOBAL
             const rawRank = (data.rank !== undefined) ? data.rank : ((data.rang !== undefined) ? data.rang : data.Rank);
             localUserRank = Number(rawRank || 0);
+            window.localUserRank = localUserRank; // 👈 Liaison globale obligatoire
 
-            // B. ON FORCE L'AFFICHAGE DU BOUTON (Plus aucun masquage automatique)
-            const boutonCasino = document.getElementById("floating-bonus-casino");
-            if (boutonCasino) {
-                boutonCasino.style.display = "flex";
-            }
+            console.log("🔥 Firebase à jour | User ID:", userId, "| Rang VIP:", window.localUserRank);
 
-            // C. Points du jour & Reset
+            // Points du jour & Reset
             if (data.dateDerniersPoints !== dateAujourdhui && data.pointsDuJours > 0) {
                 db.collection("users").doc(userId).update({
                     pointsDuJours: 0,
@@ -1016,7 +1013,6 @@ function brancherEcouteurFirebase() {
                 elCagnotte.innerText = localPointsDujour + " Points";
             }
 
-            // D. Tours faits
             localToursFaits = data.toursfaits || 0;
 
             if (typeof ajusterAffichageRangVip === "function") ajusterAffichageRangVip(localUserRank);
@@ -1024,7 +1020,6 @@ function brancherEcouteurFirebase() {
             if (typeof actualiserTexteModalCasino === "function") actualiserTexteModalCasino();
 
         } else {
-            // Création automatique si le document n'existe pas
             db.collection("users").doc(userId).set({
                 pointsDuJours: 0,
                 coin: 0,
@@ -1038,25 +1033,30 @@ function brancherEcouteurFirebase() {
         console.error("Erreur écouteur Firestore :", err);
     });
 }
-
 // ==========================================
 // 6. LOGIQUE DU CASINO BONUS FLOTTANT
 // ==========================================
 function ouvrirModalBonus() {
-    // 1. Récupération du rang VIP
-    const rank = (typeof localUserRank !== "undefined") ? localUserRank : 0;
+    // Lecture sécurisée du rang global
+    const userRankActuel = (typeof window.localUserRank !== "undefined") 
+        ? window.localUserRank 
+        : ((typeof localUserRank !== "undefined") ? localUserRank : 0);
 
-    // 2. Si l'utilisateur n'est pas VIP (Rang 0)
-    if (rank < 1) {
+    const currentId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
+
+    console.log("👉 Clic Casino | User ID connecté:", currentId, "| Rang lu:", userRankActuel);
+
+    // Vérification du rang
+    if (userRankActuel < 1) {
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Ce bonus Casino est réservé aux membres VIP (Rang 1 minimum).", "Accès VIP requis");
+            afficherAlertePersonnalisee(`Accès VIP requis (Rang 1 min). Votre profil est actuellement détecté au Rang : ${userRankActuel}`, "Accès Refusé");
         } else {
-            alert("Ce bonus Casino est réservé aux membres VIP (Rang 1 minimum).");
+            alert(`Accès VIP requis. Votre rang actuel détecté est : ${userRankActuel}`);
         }
         return;
     }
 
-    // 3. Si l'utilisateur est VIP, on ouvre la modale
+    // Ouverture de la modale si Rang >= 1
     const modal = document.getElementById("modal-bonus-casino");
     if (modal) {
         modal.style.display = "flex";
