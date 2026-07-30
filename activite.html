@@ -1043,8 +1043,11 @@ function brancherEcouteurFirebase() {
 // 6. LOGIQUE DU CASINO BONUS FLOTTANT
 // ==========================================
 function ouvrirModalBonus() {
-    // Si l'utilisateur n'est pas VIP, on l'informe au clic au lieu de lui cacher le bouton
-    if (localUserRank < 1) {
+    // 1. Récupération du rang VIP
+    const rank = (typeof localUserRank !== "undefined") ? localUserRank : 0;
+
+    // 2. Si l'utilisateur n'est pas VIP (Rang 0)
+    if (rank < 1) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Ce bonus Casino est réservé aux membres VIP (Rang 1 minimum).", "Accès VIP requis");
         } else {
@@ -1053,11 +1056,16 @@ function ouvrirModalBonus() {
         return;
     }
 
+    // 3. Si l'utilisateur est VIP, on ouvre la modale
     const modal = document.getElementById("modal-bonus-casino");
-    if (modal) modal.style.display = "flex";
-    actualiserTexteModalCasino();
+    if (modal) {
+        modal.style.display = "flex";
+    }
+    
+    if (typeof actualiserTexteModalCasino === "function") {
+        actualiserTexteModalCasino();
+    }
 }
-
 function fermerModalBonus() {
     const modal = document.getElementById("modal-bonus-casino");
     if (modal) modal.style.display = "none";
@@ -2304,6 +2312,26 @@ function ouvrirBoiteDialogueAide() {
     <!-- ✅ APRÈS (Forcé d'apparaître à l'écran) -->
 <div id="floating-bonus-casino" class="casino-pulse-btn" style="display: flex; position: fixed; bottom: 20px; right: 20px; z-index: 99999;">
    <i class="fa-solid fa-dice"></i>
+</div>
+    <!-- ========================================== -->
+<!-- NOUVEAU BOUTON CASINO (ZÉRO CONFLIT)       -->
+<!-- ========================================== -->
+<div id="btn-casino-vip-v2" onclick="ouvrirModalBonus()" style="
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: fixed !important;
+    bottom: 25px !important;
+    right: 25px !important;
+    width: 60px !important;
+    height: 60px !important;
+    background: linear-gradient(135deg, #ff0055, #ff5500) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 4px 20px rgba(255, 0, 85, 0.6) !important;
+    cursor: pointer !important;
+    z-index: 999999 !important;
+">
+    <i class="fa-solid fa-dice" style="color: #ffffff !important; font-size: 28px !important;"></i>
 </div>
 </body>
 </html>
