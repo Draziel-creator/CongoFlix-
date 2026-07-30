@@ -942,37 +942,55 @@ function ObtenirDateAujourdhuiISO() {
     return `${annee}-${mois}-${jour}`;
 }
 
+// Fonction couteau-suisse pour récupérer l'ID peu importe le mode de connexion
+function recupererIdentifiantUtilisateur() {
+    if (firebase.auth().currentUser) {
+        return firebase.auth().currentUser.uid;
+    }
+    return localStorage.getItem("userId") || 
+           localStorage.getItem("uid") || 
+           localStorage.getItem("congoFlix_userId") || 
+           window.userId || 
+           null;
+}
+
 // ==========================================
-// 4. SURVEILLANCE DE LA CONNEXION (UNIQUE ET NETTOYÉE)
+// 4. SURVEILLANCE DE LA CONNEXION (ROBUSTE)
 // ==========================================
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        userId = user.uid; 
-        window.userId = user.uid;
+function verifierEtLancerEcouteur() {
+    userId = recupererIdentifiantUtilisateur();
+
+    if (userId) {
+        window.userId = userId;
         console.log("Utilisateur Congoflix détecté :", userId);
 
-        // Lancement de l'écouteur en temps réel
         brancherEcouteurFirebase();
 
-        // Vérification des tâches journalières si la fonction existe
         if (typeof verifierBlocagesBoutonsJournaliers === "function") {
             verifierBlocagesBoutonsJournaliers();
         }
     } else {
         console.log("Aucun utilisateur connecté.");
-        userId = null;
-        window.userId = null;
-
-        // Cacher le bouton si la personne se déconnecte
         const boutonCasino = document.getElementById("floating-bonus-casino");
         if (boutonCasino) boutonCasino.style.display = "none";
     }
+}
+
+// Détection via la session Firebase standard
+firebase.auth().onAuthStateChanged((user) => {
+    verifierEtLancerEcouteur();
+});
+
+// Détection immédiate dès que le HTML est prêt (lit le localStorage si Firebase tarde)
+document.addEventListener("DOMContentLoaded", () => {
+    verifierEtLancerEcouteur();
 });
 
 // ==========================================
 // 5. ÉCOUTEUR FIREBASE EN TEMPS RÉEL
 // ==========================================
 function brancherEcouteurFirebase() {
+    if (!userId) userId = recupererIdentifiantUtilisateur();
     if (!userId) return;
 
     db.collection("users").doc(userId).onSnapshot((doc) => {
@@ -980,7 +998,7 @@ function brancherEcouteurFirebase() {
             const data = doc.data();
             const dateAujourdhui = ObtenirDateAujourdhuiISO();
 
-            // A. Détection sécurisée du rang VIP
+            // A. Détection sécurisée du rang VIP (gère rang, rank, Rank en nombre ou texte)
             const rawRank = (data.rank !== undefined) ? data.rank : ((data.rang !== undefined) ? data.rang : data.Rank);
             localUserRank = Number(rawRank || 0);
 
@@ -1031,6 +1049,8 @@ function brancherEcouteurFirebase() {
                 dateDerniersPoints: ObtenirDateAujourdhuiISO()
             }, { merge: true });
         }
+    }, (err) => {
+        console.error("Erreur écouteur Firestore :", err);
     });
 }
 
@@ -1071,7 +1091,7 @@ function actualiserTexteModalCasino() {
 }
 
 function tenterChanceCasino() {
-    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
     if (localToursFaits >= 5 || !currentUserId || localUserRank < 1) return;
 
     db.collection("users").doc(currentUserId).update({
@@ -1080,7 +1100,6 @@ function tenterChanceCasino() {
         window.location.href = "roue.html";
     }).catch(err => console.error("Erreur Casino:", err));
 }
-
 // ==========================================
 // 7. INITIALISATION DU DOM
 // ==========================================
