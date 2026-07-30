@@ -497,7 +497,7 @@ body, html {
             <i class="fa-solid fa-clover" style="font-size: 50px; color: #ff9d00; margin-bottom: 15px;"></i>
             <h3 style="color: #fff; margin: 0 0 10px 0;">Chance du Jour</h3>
             <p id="txt-chances-restantes" style="color: #8a8d9f; font-size: 14px; margin-bottom: 20px;">Chargement de vos chances...</p>
-            <button class="btn-main-action-collect" id="btn-action-casino" onclick="tenterChanceCasino()" style="width: 100%; margin: 0;">Tenter ma chance du jour</button>
+            <button class="btn-main-action-collect" id="btn-action-casino" onclick="tenterChanceCasino(event)" style="width: 100%; margin: 0;">Tenter ma chance du jour</button>
         </div>
     </div>
 <!-- ====================================================== -->
@@ -1101,15 +1101,26 @@ function actualiserTexteModalCasino() {
     }
 }
 
-function tenterChanceCasino() {
-    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
-    if (localToursFaits >= 5 || !currentUserId || localUserRank < 1) return;
+function tenterChanceCasino(e) {
+    if (e && e.preventDefault) e.preventDefault();
 
+    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
+    
+    if (!currentUserId) {
+        alert("Utilisateur non connecté.");
+        return;
+    }
+
+    // On retire "localUserRank < 1" car le joueur est DÉJÀ dans la modale !
     db.collection("users").doc(currentUserId).update({
         toursfaits: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
+        console.log("✅ Tour enregistré ! Redirection vers la roue...");
         window.location.href = "roue.html";
-    }).catch(err => console.error("Erreur Casino:", err));
+    }).catch(err => {
+        console.error("Erreur Casino:", err);
+        alert("Erreur lors de la mise à jour : " + err.message);
+    });
 }
 // ==========================================
 // 7. INITIALISATION DU DOM
