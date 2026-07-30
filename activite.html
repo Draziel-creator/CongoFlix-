@@ -1036,34 +1036,44 @@ function brancherEcouteurFirebase() {
 // ==========================================
 // 6. LOGIQUE DU CASINO BONUS FLOTTANT
 // ==========================================
-function ouvrirModalBonus() {
-    // Lecture sécurisée du rang global
-    const userRankActuel = (typeof window.localUserRank !== "undefined") 
-        ? window.localUserRank 
-        : ((typeof localUserRank !== "undefined") ? localUserRank : 0);
-
+async function ouvrirModalBonus() {
     const currentId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
-
-    console.log("👉 Clic Casino | User ID connecté:", currentId, "| Rang lu:", userRankActuel);
-
-    // Vérification du rang
-    if (userRankActuel < 1) {
+    
+    if (!currentId) {
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(`Accès VIP requis (Rang 1 min). Votre profil est actuellement détecté au Rang : ${userRankActuel}`, "Accès Refusé");
+            afficherAlertePersonnalisee("Veuillez vous connecter pour accéder au Casino.", "Connexion requise");
         } else {
-            alert(`Accès VIP requis. Votre rang actuel détecté est : ${userRankActuel}`);
+            alert("Veuillez vous connecter.");
         }
         return;
     }
 
-    // Ouverture de la modale si Rang >= 1
-    const modal = document.getElementById("modal-bonus-casino");
-    if (modal) {
-        modal.style.display = "flex";
-    }
-    
-    if (typeof actualiserTexteModalCasino === "function") {
-        actualiserTexteModalCasino();
+    try {
+        // LECTURE EN DIRECT DANS FIREBASE AU MOMENT DU CLIC
+        const snap = await db.collection("users").doc(currentId).get();
+        
+        if (snap.exists) {
+            const data = snap.data();
+            
+            // On vérifie tout ce qui peut prouver qu'il est VIP (rank, isVip, ou XP)
+            const estVip = (Number(data.rank) >= 1) || (Number(data.rang) >= 1) || (data.isVip === true) || (Number(data.XP) >= 1);
+
+            if (estVip) {
+                // S'IL EST VIP : ON OUVRE LA MODALE IMMEDIATEMENT
+                const modal = document.getElementById("modal-bonus-casino");
+                if (modal) modal.style.display = "flex";
+                if (typeof actualiserTexteModalCasino === "function") actualiserTexteModalCasino();
+            } else {
+                // S'IL N'EST PAS VIP
+                if (typeof afficherAlertePersonnalisee === "function") {
+                    afficherAlertePersonnalisee("Ce bonus est réservé aux membres VIP.", "Accès Refusé");
+                } else {
+                    alert("Accès réservé aux membres VIP.");
+                }
+            }
+        }
+    } catch (erreur) {
+        console.error("Erreur verification VIP en direct :", erreur);
     }
 }
 function fermerModalBonus() {
