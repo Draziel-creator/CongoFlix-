@@ -898,238 +898,222 @@ function fermerAlertePersonnalisee() {
     if (modal) modal.style.display = "none";
 }
     // ==========================================
-    // 1. IMPORTS ET INITIALISATION FIREBASE v10
-    // ==========================================
-    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 1. INITIALISATION FIREBASE
+// ==========================================
+const firebaseConfig = {
+    apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+    authDomain: "publicite-6445c.firebaseapp.com",
+    projectId: "publicite-6445c",
+    storageBucket: "publicite-6445c.firebasestorage.app",
+    messagingSenderId: "663385244466",
+    appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b"
+}; 
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
-        authDomain: "publicite-6445c.firebaseapp.com",
-        projectId: "publicite-6445c",
-        storageBucket: "publicite-6445c.firebasestorage.app",
-        messagingSenderId: "663385244466",
-        appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
-        measurementId: "G-T37TGB3SR0"
-    };
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
 
-    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+// ==========================================
+// 2. VARIABLES GLOBALES
+// ==========================================
+let userId = null; 
+let localPointsDujour = 0;
+let localUserRank = 0;
+let localToursFaits = 0;
 
-    // ==========================================
-    // 2. VARIABLES GLOBALES
-    // ==========================================
-    let userId = null; 
-    let localPointsDujour = 0;
-    let localUserRank = 0;
-    let localToursFaits = 0;
+let missionActiveType = ""; 
+let missionActiveId = "";    
+let missionActivePoints = 0;
+let redirectionUrlActive = "https://www.highperformanceformat.com/305c9d0ee6ac5ec71d84d7f879fdc153/invoke.js";
 
-    let missionActiveType = ""; 
-    let missionActiveId = "";    
-    let missionActivePoints = 0;
-    let redirectionUrlActive = "https://www.highperformanceformat.com/305c9d0ee6ac5ec71d84d7f879fdc153/invoke.js";
+let chronoInterval = null;
+let verificationPubChargee = false;
 
-    let chronoInterval = null;
-    let verificationPubChargee = false;
-    let unsubscribeEcouteur = null;
+// ==========================================
+// 3. FONCTIONS UTILITAIRES
+// ==========================================
+function ObtenirDateAujourdhuiISO() {
+    const d = new Date();
+    const annee = d.getUTCFullYear();
+    const mois = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const jour = String(d.getUTCDate()).padStart(2, '0');
+    return `${annee}-${mois}-${jour}`;
+}
 
-    // ==========================================
-    // 3. FONCTIONS UTILITAIRES
-    // ==========================================
-    function ObtenirDateAujourdhuiISO() {
-        const d = new Date();
-        const annee = d.getUTCFullYear();
-        const mois = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const jour = String(d.getUTCDate()).padStart(2, '0');
-        return `${annee}-${mois}-${jour}`;
+// Fonction pour récupérer l'ID de l'utilisateur par tous les moyens possibles
+function recupererIdentifiantUtilisateur() {
+    if (firebase.auth().currentUser) {
+        return firebase.auth().currentUser.uid;
     }
+    return localStorage.getItem("userId") || 
+           localStorage.getItem("uid") || 
+           localStorage.getItem("congoFlix_userId") || 
+           window.userId || 
+           null;
+}
 
-    function recupererIdentifiantUtilisateur() {
-        if (auth.currentUser) {
-            return auth.currentUser.uid;
+// ==========================================
+// 4. SURVEILLANCE DE LA CONNEXION
+// ==========================================
+function verifierEtLancerEcouteur() {
+    userId = recupererIdentifiantUtilisateur();
+
+    if (userId) {
+        window.userId = userId;
+        console.log("Utilisateur détecté :", userId);
+
+        brancherEcouteurFirebase();
+
+        if (typeof verifierBlocagesBoutonsJournaliers === "function") {
+            verifierBlocagesBoutonsJournaliers();
         }
-        return localStorage.getItem("userId") || 
-               localStorage.getItem("uid") || 
-               localStorage.getItem("congoFlix_userId") || 
-               window.userId || 
-               null;
-    }
-
-    // ==========================================
-    // 4. SURVEILLANCE DE LA CONNEXION (v10)
-    // ==========================================
-    function verifierEtLancerEcouteur() {
-        userId = recupererIdentifiantUtilisateur();
-
-        if (userId) {
-            window.userId = userId;
-            console.log("Utilisateur détecté via v10 :", userId);
-
-            brancherEcouteurFirebase();
-
-            if (typeof window.verifierBlocagesBoutonsJournaliers === "function") {
-                window.verifierBlocagesBoutonsJournaliers();
-            }
-        } else {
-            console.log("Aucun utilisateur connecté.");
-            const boutonCasino = document.getElementById("floating-bonus-casino");
-            if (boutonCasino) boutonCasino.style.display = "none";
-        }
-    }
-
-    // Écoute de la session Firebase v10
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            userId = user.uid;
-            window.userId = user.uid;
-        }
-        verifierEtLancerEcouteur();
-    });
-
-    document.addEventListener("DOMContentLoaded", () => {
-        verifierEtLancerEcouteur();
-    });
-
-    // ==========================================
-    // 5. ÉCOUTEUR FIREBASE EN TEMPS RÉEL (v10)
-    // ==========================================
-    function brancherEcouteurFirebase() {
-        if (!userId) userId = recupererIdentifiantUtilisateur();
-        if (!userId) return;
-
-        // Évite de réabonner plusieurs fois
-        if (unsubscribeEcouteur) unsubscribeEcouteur();
-
-        const userRef = doc(db, "users", userId);
-
-        unsubscribeEcouteur = onSnapshot(userRef, async (docSnap) => {
-            if (docSnap.exists()) {
-                traiterDonneesUtilisateur(docSnap.data());
-            } else {
-                // Si non trouvé dans 'users', on tente 'rewards_users'
-                try {
-                    const rewardRef = doc(db, "rewards_users", userId);
-                    const rewardSnap = await getDoc(rewardRef);
-
-                    if (rewardSnap.exists()) {
-                        traiterDonneesUtilisateur(rewardSnap.data());
-                    } else {
-                        // Profil inexistant : Création initiale dans Firestore v10
-                        await setDoc(userRef, {
-                            pointsDuJours: 0,
-                            coin: 0,
-                            rank: 0,
-                            toursfaits: 0,
-                            XP: 0,
-                            dateDerniersPoints: ObtenirDateAujourdhuiISO()
-                        }, { merge: true });
-                    }
-                } catch (err) {
-                    console.error("Erreur vérification collection rewards_users :", err);
-                }
-            }
-        }, (err) => {
-            console.error("Erreur écouteur Firestore v10 :", err);
-        });
-    }
-
-    function traiterDonneesUtilisateur(data) {
-        const dateAujourdhui = ObtenirDateAujourdhuiISO();
-
-        // A. Détection du Rang (rank, rang, Rank)
-        const rawRank = (data.rank !== undefined) ? data.rank : ((data.rang !== undefined) ? data.rang : data.Rank);
-        localUserRank = Number(rawRank || 0);
-
-        // B. Affichage du bouton Casino (Rang >= 1)
+    } else {
+        console.log("Aucun utilisateur connecté.");
         const boutonCasino = document.getElementById("floating-bonus-casino");
-        if (boutonCasino) {
-            boutonCasino.style.display = (localUserRank >= 1) ? "flex" : "none";
-        }
+        if (boutonCasino) boutonCasino.style.display = "none";
+    }
+}
 
-        // C. Points du jour & Reset
-        if (data.dateDerniersPoints !== dateAujourdhui && data.pointsDuJours > 0) {
-            const userRef = doc(db, "users", userId);
-            updateDoc(userRef, {
-                pointsDuJours: 0,
-                dateDerniersPoints: dateAujourdhui
-            }).catch(() => {});
-            localPointsDujour = 0;
+// Détection de la connexion
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        userId = user.uid;
+        window.userId = user.uid;
+    }
+    verifierEtLancerEcouteur();
+});
+
+// Lancement automatique dès le chargement de la page
+document.addEventListener("DOMContentLoaded", () => {
+    verifierEtLancerEcouteur();
+});
+
+// ==========================================
+// 5. ÉCOUTEUR FIREBASE EN TEMPS RÉEL
+// ==========================================
+function brancherEcouteurFirebase() {
+    if (!userId) userId = recupererIdentifiantUtilisateur();
+    if (!userId) return;
+
+    // A. Écoute dans la collection principale "users"
+    db.collection("users").doc(userId).onSnapshot((doc) => {
+        if (doc.exists) {
+            traiterDonneesUtilisateur(doc.data());
         } else {
-            localPointsDujour = data.pointsDuJours || data.coins || 0;
+            // B. Si introuvable dans "users", recherche dans "rewards_users"
+            db.collection("rewards_users").doc(userId).get().then((rewardDoc) => {
+                if (rewardDoc.exists) {
+                    traiterDonneesUtilisateur(rewardDoc.data());
+                } else {
+                    // Création du profil s'il n'existe nulle part
+                    db.collection("users").doc(userId).set({
+                        pointsDuJours: 0,
+                        coin: 0,
+                        rank: 0,
+                        toursfaits: 0,
+                        XP: 0,
+                        dateDerniersPoints: ObtenirDateAujourdhuiISO()
+                    }, { merge: true });
+                }
+            }).catch(err => console.error("Erreur lecture rewards_users:", err));
         }
+    }, (err) => {
+        console.error("Erreur écouteur Firestore :", err);
+    });
+}
 
-        const elCagnotte = document.getElementById("cagnotte-valeur-txt");
-        if (elCagnotte) {
-            elCagnotte.innerText = localPointsDujour + " Points";
-        }
+// Fonction centrale pour appliquer les données au bouton et à la page
+function traiterDonneesUtilisateur(data) {
+    const dateAujourdhui = ObtenirDateAujourdhuiISO();
 
-        // D. Tours faits
-        localToursFaits = data.toursfaits || 0;
+    // 1. Détection du Rang (gère rank, rang, Rank)
+    const rawRank = (data.rank !== undefined) ? data.rank : ((data.rang !== undefined) ? data.rang : data.Rank);
+    localUserRank = Number(rawRank || 0);
 
-        // E. Mises à jour d'interface
-        if (typeof window.ajusterAffichageRangVip === "function") {
-            window.ajusterAffichageRangVip(localUserRank);
-        }
-        if (typeof window.gererAffichageVisuelVIP === "function") {
-            window.gererAffichageVisuelVIP();
-        }
-        actualiserTexteModalCasino();
+    // 2. Affichage dynamique du bouton Casino
+    const boutonCasino = document.getElementById("floating-bonus-casino");
+    if (boutonCasino) {
+        boutonCasino.style.display = (localUserRank >= 1) ? "flex" : "none";
     }
 
-    // ==========================================
-    // 6. LOGIQUE DU CASINO BONUS FLOTTANT
-    // ==========================================
-    // Note : On attache les fonctions à 'window' pour que tes événements HTML (onclick="...") continuent de marcher !
-    window.ouvrirModalBonus = function() {
-        if (localUserRank < 1) return;
-
-        const modal = document.getElementById("modal-bonus-casino");
-        if (modal) modal.style.display = "flex";
-        actualiserTexteModalCasino();
-    };
-
-    window.fermerModalBonus = function() {
-        const modal = document.getElementById("modal-bonus-casino");
-        if (modal) modal.style.display = "none";
-    };
-
-    function actualiserTexteModalCasino() {
-        const labelChances = document.getElementById("txt-chances-restantes");
-        const boutonCasino = document.getElementById("btn-action-casino");
-        if (!labelChances || !boutonCasino) return;
-
-        let restants = 5 - localToursFaits;
-
-        if (restants <= 0) {
-            labelChances.innerText = "Vous avez épuisé toutes vos chances de la journée, revenez demain pour retenter.";
-            boutonCasino.disabled = true;
-            boutonCasino.style.background = "#2a2e43";
-            boutonCasino.innerText = "Épuisé pour aujourd'hui";
-        } else {
-            labelChances.innerText = `Il vous reste ${restants} chance(s) pour aujourd'hui.`;
-            boutonCasino.disabled = false;
-            boutonCasino.style.background = "";
-            boutonCasino.innerText = "Tenter ma chance du jour";
-        }
+    // 3. Points du jour & Reset à minuit
+    if (data.dateDerniersPoints !== dateAujourdhui && data.pointsDuJours > 0) {
+        db.collection("users").doc(userId).update({
+            pointsDuJours: 0,
+            dateDerniersPoints: dateAujourdhui
+        }).catch(() => {});
+        localPointsDujour = 0;
+    } else {
+        localPointsDujour = data.pointsDuJours || data.coins || 0;
     }
-    window.actualiserTexteModalCasino = actualiserTexteModalCasino;
 
-    window.tenterChanceCasino = async function() {
-        const currentUserId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
-        if (localToursFaits >= 5 || !currentUserId || localUserRank < 1) return;
+    const elCagnotte = document.getElementById("cagnotte-valeur-txt");
+    if (elCagnotte) {
+        elCagnotte.innerText = localPointsDujour + " Points";
+    }
 
-        try {
-            const userRef = doc(db, "users", currentUserId);
-            await updateDoc(userRef, {
-                toursfaits: increment(1)
-            });
-            window.location.href = "roue.html";
-        } catch (err) {
-            console.error("Erreur Casino v10 :", err);
-        }
-    };
+    // 4. Tours faits au Casino
+    localToursFaits = data.toursfaits || 0;
+
+    // 5. Mises à jour secondaires
+    if (typeof ajusterAffichageRangVip === "function") {
+        ajusterAffichageRangVip(localUserRank);
+    }
+    if (typeof gererAffichageVisuelVIP === "function") {
+        gererAffichageVisuelVIP();
+    }
+    if (typeof actualiserTexteModalCasino === "function") {
+        actualiserTexteModalCasino();
+    }
+}
+
+// ==========================================
+// 6. LOGIQUE DU CASINO BONUS FLOTTANT
+// ==========================================
+function ouvrirModalBonus() {
+    if (localUserRank < 1) return;
+
+    const modal = document.getElementById("modal-bonus-casino");
+    if (modal) modal.style.display = "flex";
+    actualiserTexteModalCasino();
+}
+
+function fermerModalBonus() {
+    const modal = document.getElementById("modal-bonus-casino");
+    if (modal) modal.style.display = "none";
+}
+
+function actualiserTexteModalCasino() {
+    const labelChances = document.getElementById("txt-chances-restantes");
+    const boutonCasino = document.getElementById("btn-action-casino");
+    if (!labelChances || !boutonCasino) return;
+
+    let restants = 5 - localToursFaits;
+
+    if (restants <= 0) {
+        labelChances.innerText = "Vous avez épuisé toutes vos chances de la journée, revenez demain pour retenter.";
+        boutonCasino.disabled = true;
+        boutonCasino.style.background = "#2a2e43";
+        boutonCasino.innerText = "Épuisé pour aujourd'hui";
+    } else {
+        labelChances.innerText = `Il vous reste ${restants} chance(s) pour aujourd'hui.`;
+        boutonCasino.disabled = false;
+        boutonCasino.style.background = "";
+        boutonCasino.innerText = "Tenter ma chance du jour";
+    }
+}
+
+function tenterChanceCasino() {
+    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
+    if (localToursFaits >= 5 || !currentUserId || localUserRank < 1) return;
+
+    db.collection("users").doc(currentUserId).update({
+        toursfaits: firebase.firestore.FieldValue.increment(1)
+    }).then(() => {
+        window.location.href = "roue.html";
+    }).catch(err => console.error("Erreur Casino:", err));
+}
 // ==========================================
 // 7. INITIALISATION DU DOM
 // ==========================================
