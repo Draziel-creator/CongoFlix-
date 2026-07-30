@@ -997,17 +997,17 @@ function brancherEcouteurFirebase() {
             const data = doc.data();
             const dateAujourdhui = ObtenirDateAujourdhuiISO();
 
-            // A. Détection sécurisée du rang VIP (gère rang, rank, Rank en nombre ou texte)
+            // A. Détection du rang VIP
             const rawRank = (data.rank !== undefined) ? data.rank : ((data.rang !== undefined) ? data.rang : data.Rank);
             localUserRank = Number(rawRank || 0);
 
-            // B. Affichage dynamique du bouton Casino
+            // B. ON FORCE L'AFFICHAGE DU BOUTON (Plus aucun masquage automatique)
             const boutonCasino = document.getElementById("floating-bonus-casino");
             if (boutonCasino) {
-                boutonCasino.style.display = (localUserRank >= 1) ? "flex" : "none";
+                boutonCasino.style.display = "flex";
             }
 
-            // C. Points du jour & Reset automatique à minuit
+            // C. Points du jour & Reset
             if (data.dateDerniersPoints !== dateAujourdhui && data.pointsDuJours > 0) {
                 db.collection("users").doc(userId).update({
                     pointsDuJours: 0,
@@ -1023,22 +1023,15 @@ function brancherEcouteurFirebase() {
                 elCagnotte.innerText = localPointsDujour + " Points";
             }
 
-            // D. Tours faits au Casino
+            // D. Tours faits
             localToursFaits = data.toursfaits || 0;
 
-            // E. Mises à jour secondaires de l'interface
-            if (typeof ajusterAffichageRangVip === "function") {
-                ajusterAffichageRangVip(localUserRank);
-            }
-            if (typeof gererAffichageVisuelVIP === "function") {
-                gererAffichageVisuelVIP();
-            }
-            if (typeof actualiserTexteModalCasino === "function") {
-                actualiserTexteModalCasino();
-            }
+            if (typeof ajusterAffichageRangVip === "function") ajusterAffichageRangVip(localUserRank);
+            if (typeof gererAffichageVisuelVIP === "function") gererAffichageVisuelVIP();
+            if (typeof actualiserTexteModalCasino === "function") actualiserTexteModalCasino();
 
         } else {
-            // Création automatique du profil si inexistant
+            // Création automatique si le document n'existe pas
             db.collection("users").doc(userId).set({
                 pointsDuJours: 0,
                 coin: 0,
@@ -1057,7 +1050,15 @@ function brancherEcouteurFirebase() {
 // 6. LOGIQUE DU CASINO BONUS FLOTTANT
 // ==========================================
 function ouvrirModalBonus() {
-    if (localUserRank < 1) return;
+    // Si l'utilisateur n'est pas VIP, on l'informe au clic au lieu de lui cacher le bouton
+    if (localUserRank < 1) {
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Ce bonus Casino est réservé aux membres VIP (Rang 1 minimum).", "Accès VIP requis");
+        } else {
+            alert("Ce bonus Casino est réservé aux membres VIP (Rang 1 minimum).");
+        }
+        return;
+    }
 
     const modal = document.getElementById("modal-bonus-casino");
     if (modal) modal.style.display = "flex";
