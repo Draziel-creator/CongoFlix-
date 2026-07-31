@@ -807,18 +807,32 @@ body, html {
     </div>
 </div>
 
-            <!-- ZONE ACCÈS DIRECT PAR COIN VIP (Superposition Grise avec Cadenas par défaut) -->
-            <div class="section-title">👑 Murs d'Offres VIP</div>
-            <div class="vip-zone-card" id="bloc-zone-vip" style="position: relative; background: #131722; padding: 15px; border-radius: 12px;">
-                <!-- Calque d'emprisonnement VIP -->
-                <div id="vip-lock-overlay" onclick="intercepterClicVip(event)" style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(7, 9, 20, 0.85); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; cursor:pointer;">
-                    <i class="fa-solid fa-lock" style="font-size: 32px; color: #ff3b30; margin-bottom: 8px;"></i>
-                    <span style="color: #fff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Bloqué - Rang 5 VIP Requis</span>
-                </div>
-                <button style="width:100%; margin-bottom: 8px;" class="btn-launch-grid" onclick="ouvrirIframeOffresVIP('mur1')">Accéder Offerwall RewardMe</button>
-                <button style="width:100%; margin-bottom: 8px;" class="btn-launch-grid" onclick="ouvrirIframeOffresVIP('mur2')">Accéder Offerwall OGAds</button>
-                <button style="width:100%;" class="btn-launch-grid" onclick="ouvrirIframeOffresVIP('mur3')">Accéder Offerwall CPAGrip</button>
-            </div>
+           <!-- ZONE ACCÈS DIRECT PAR COIN VIP -->
+<div class="section-title">👑 Murs d'Offres VIP</div>
+<div class="vip-zone-card" id="bloc-zone-vip" style="position: relative; background: #131722; padding: 15px; border-radius: 12px;">
+
+    <!-- Calque d'emprisonnement VIP avec animations CSS -->
+    <div id="vip-lock-overlay" onclick="intercepterClicVip(event)" style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(7, 9, 20, 0.92); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; cursor:pointer; transition: opacity 0.8s ease, background 0.5s ease;">
+        
+        <!-- Cadenas (Couleur et Icône animées par JS) -->
+        <i class="fa-solid fa-lock" id="vip-lock-icon" style="font-size: 36px; color: #ff3b30; margin-bottom: 10px; transition: all 0.5s ease;"></i>
+        
+        <!-- Titre -->
+        <span id="vip-lock-title" style="color: #fff; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; transition: color 0.5s ease;">
+            Espace VIP Verrouillé
+        </span>
+        
+        <!-- Sous-titre -->
+        <span id="vip-lock-subtitle" style="color: #8a8d9f; font-size: 11px; margin-top: 5px; transition: color 0.5s ease;">
+            Clé de Rang 5 requise pour débloquer
+        </span>
+    </div>
+
+    <!-- Boutons d'offres sous le calque -->
+    <button style="width:100%; margin-bottom: 8px;" class="btn-launch-grid" onclick="ouvrirIframeOffresVIP('mur1')">Accéder Offerwall</button>
+    <button style="width:100%; margin-bottom: 8px;" class="btn-launch-grid" onclick="ouvrirIframeOffresVIP('mur2')">Accéder Offerwall</button>
+    <button style="width:100%;" class="btn-launch-grid" onclick="ouvrirIframeOffresVIP('mur3')">Accéder Offerwall</button>
+</div>
         </div>
         
         <nav class="nav-bar">
@@ -2323,61 +2337,107 @@ function ouvrirBoiteDialogueAide() {
 }
 
 // ==========================================
-// ACCÈS ET GESTION ESPACE VIP (RANG 5)
+// ANIMATION ET GESTION VIP (RANG 5)
 // ==========================================
 
-// 1. Masque ou affiche le cadenas selon le rang
+// 1. Gestion visuelle avec animation fluide pour les VIP
 function gererAffichageVisuelVIP(rang) {
     const cadenasVip = document.getElementById("vip-lock-overlay");
-    
-    // Si l'élément HTML n'est pas encore prêt, on ne fait rien
+    const iconVip = document.getElementById("vip-lock-icon");
+    const titleVip = document.getElementById("vip-lock-title");
+    const subVip = document.getElementById("vip-lock-subtitle");
+
     if (!cadenasVip) return;
 
     const userRank = (typeof rang !== "undefined") ? Number(rang) : Number(window.localUserRank || 0);
 
     if (userRank >= 5) {
-        cadenasVip.style.display = "none"; // 🔓 DÉBLOQUÉ
+        // Si la modale est déjà masquée, on ne rejoue pas l'animation
+        if (cadenasVip.style.display === "none") return;
+
+        // 🟢 ÉTAPE 1 : Le cadenas passe en Vert, s'ouvre et affiche le message VIP
+        if (iconVip) {
+            iconVip.className = "fa-solid fa-lock-open"; // Icône cadenas ouvert
+            iconVip.style.color = "#2ecc71";             // Vert néon
+            iconVip.style.transform = "scale(1.2)";
+        }
+        if (titleVip) {
+            titleVip.innerText = "Heureux de vous revoir, VIP !";
+            titleVip.style.color = "#2ecc71";
+        }
+        if (subVip) {
+            subVip.innerText = "Accès aux Murs d'Offres autorisé";
+            subVip.style.color = "#a3e635";
+        }
+
+        // 🟢 ÉTAPE 2 : Attente de 1.2s puis Disparition progressive (Fondu en ralenti)
+        setTimeout(() => {
+            cadenasVip.style.opacity = "0"; // Fondu CSS (durée 0.8s défini dans le HTML)
+
+            // 🟢 ÉTAPE 3 : Masquage complet de l'élément HTML après la fin du fondu
+            setTimeout(() => {
+                cadenasVip.style.display = "none";
+            }, 800);
+        }, 1200);
+
     } else {
-        cadenasVip.style.display = "flex"; // 🔒 BLOQUÉ
+        // 🔒 POUR LES NON-VIP (Rang < 5)
+        cadenasVip.style.display = "flex";
+        cadenasVip.style.opacity = "1";
+        if (iconVip) {
+            iconVip.className = "fa-solid fa-lock";
+            iconVip.style.color = "#ff3b30";
+            iconVip.style.transform = "scale(1)";
+        }
+        if (titleVip) {
+            titleVip.innerText = "Espace VIP Verrouillé";
+            titleVip.style.color = "#fff";
+        }
+        if (subVip) {
+            subVip.innerText = "Clé de Rang 5 requise pour débloquer";
+            subVip.style.color = "#8a8d9f";
+        }
     }
 }
 
-// 2. Intercepte le clic sur le calque cadenas rouge
-// CLIC SUR LE CADENAS : Vérification live dans Firebase (comme le Casino)
+// 2. Interception du clic pour les non-VIP
 async function intercepterClicVip(event) {
     if (event && event.stopPropagation) event.stopPropagation();
 
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
 
     if (!currentUserId) {
-        alert("Veuillez vous connecter.");
+        alert("Veuillez vous connecter pour accéder à l'Espace VIP.");
         return;
     }
 
     try {
-        // Lecture en direct dans Firebase au moment où l'utilisateur clique
+        // Vérification live dans Firebase
         const snap = await db.collection("users").doc(currentUserId).get();
         if (snap.exists) {
-            const data = snap.data();
-            const rankDirect = Number(data.rank || data.rang || 0);
-            window.localUserRank = rankDirect;
-
-            // Si Firebase confirme qu'il est Rang 5+, on DÉBLOQUE TOUT DE SUITE !
-            if (rankDirect >= 5) {
-                gererAffichageVisuelVIP(rankDirect);
+            const currentRank = Number(snap.data().rank || snap.data().rang || 0);
+            
+            // Si l'utilisateur est Rang 5, on déclenche la super animation !
+            if (currentRank >= 5) {
+                gererAffichageVisuelVIP(currentRank);
                 return;
             }
         }
-    } catch (err) {
-        console.error("Erreur vérification VIP au clic:", err);
+    } catch (e) {
+        console.error("Erreur vérification VIP au clic :", e);
     }
 
-    // Si le rang est vraiment inférieur à 5 :
-    const message = "Vous devez atteindre le Rang 5 VIP pour accéder aux murs d'offres.";
+    // Message professionnel explicatif pour les utilisateurs < Rang 5
+    const messageVIP = 
+        "Pour déverrouiller cet espace exclusif, vous devez obtenir la Clé de Rang 5 VIP.\n\n" +
+        "👑 Privilèges des membres VIP :\n" +
+        "L'accès VIP vous accorde le privilège d'accéder aux murs d'offres premium contenants des missions hautement rémunérées. " +
+        "Vous pourrez générer plus de 5 000 points par jour, soit jusqu'à 30 000 points par semaine selon les opportunités disponibles !";
+
     if (typeof afficherAlertePersonnalisee === "function") {
-        afficherAlertePersonnalisee(message, "Accès VIP Réservé");
+        afficherAlertePersonnalisee(messageVIP, "Clé Rang 5 Requise");
     } else {
-        alert(message);
+        alert("🔒 Clé Rang 5 Requise\n\n" + messageVIP);
     }
 }
 // 3. OUVERTURE SÉCURISÉE AVEC LECTURE EN DIRECT DANS FIREBASE
