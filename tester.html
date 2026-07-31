@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bannière Clickadilla</title>
+    <!-- FontAwesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #0b0e14;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #00ffcc;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .video-card-small {
+            background: #131722;
+            border: 1px solid #1e2333;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .btn-launch-grid {
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        /* MODALE BANNIÈRE */
+        .banniere-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+        }
+
+        .banniere-modal-content {
+            background: #131722;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+
+        .btn-fermer-banniere-modal {
+            position: absolute;
+            top: 10px; right: 10px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .banniere-square-container {
+            width: 100%;
+            min-height: 270px;
+            background: #0b0e14;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .banniere-status-layer {
+            position: absolute;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .loader-spin-blue {
+            width: 30px; height: 30px;
+            border: 3px solid #1e2333;
+            border-top: 3px solid #00ffcc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .btn-banniere-modal-claim {
+            width: 100%;
+            padding: 12px;
+            background: #2a2e43;
+            color: #8a8d9f;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="section-title">🚀 Test Clickadilla Banner System</div>
+    
+    <div class="video-grid">
+        <!-- CARTE DE TEST CLICKADILLA -->
+        <div class="video-card-small">
+            <i class="fa-solid fa-rectangle-ad" style="font-size: 30px; color: #00ffcc;"></i>
+            <h4>Bannière Clickadilla 300x250</h4>
+            <p>+100 Points</p>
+            <button class="btn-launch-grid" onclick="initierMissionBanniere('clickadilla', '1497744', 'clickadilla-test-1', 100, 1, '300x250')">
+                Lancer le Test Clickadilla
+            </button>
+        </div>
+    </div>
+
+    <!-- MODALE BANNIÈRE -->
+    <div class="banniere-modal-overlay" id="banniere-pub-modal-exclusif" style="display: none;">
+        <div class="banniere-modal-content">
+            
+            <button class="btn-fermer-banniere-modal" onclick="fermerModaleBanniereExclusive()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="banniere-square-container" id="banniere-square-container-area">
+                
+                <!-- Loader -->
+                <div class="banniere-status-layer" id="banniere-ad-loader-unique" style="display: flex;">
+                    <div class="loader-spin-blue"></div>
+                    <p style="font-size: 13px; font-weight: 600; margin: 0; color: #ffffff;">Chargement Clickadilla...</p>
+                </div>
+
+                <!-- Zone d'affichage 1 -->
+                <div id="zone-pub-banniere-1" class="ad-slot-square" style="width:100%; height:100%; display:none;"></div>
+                
+            </div>
+
+            <div class="banniere-modal-actions">
+                <button class="btn-banniere-modal-action btn-banniere-modal-claim" id="btn-claim-banniere-seul" disabled>
+                    <i class="fa-solid fa-lock"></i> Détection de la bannière...
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Variables globales simulant l'environnement
+        var userId = "test_user_123";
+        var banniereMissionActiveId = null;
+        var banniereMissionActivePoints = 0;
+        var banniereTimerInterval = null;
+
+        function ObtenirDateAujourdhuiISO() {
+            const d = new Date();
+            return d.toISOString().split('T')[0];
+        }
+
+        async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, indexZone, formatPubOrWidth = "300x250") {
+            banniereMissionActiveId = uniqueId;
+            banniereMissionActivePoints = points;
+
+            if (banniereTimerInterval) clearInterval(banniereTimerInterval);
+
+            const zoneCible = document.getElementById("zone-pub-banniere-" + indexZone);
+            const loader = document.getElementById("banniere-ad-loader-unique");
+            const btnClaim = document.getElementById("btn-claim-banniere-seul");
+            const modal = document.getElementById("banniere-pub-modal-exclusif");
+
+            if (loader) loader.style.display = "flex";
+            if (btnClaim) {
+                btnClaim.disabled = true;
+                btnClaim.style.backgroundColor = "";
+                btnClaim.innerHTML = '<i class="fa-solid fa-lock"></i> Chargement...';
+            }
+            if (modal) modal.style.display = "flex";
+
+            if (zoneCible) {
+                zoneCible.style.display = "flex";
+                zoneCible.style.justifyContent = "center";
+                zoneCible.style.alignItems = "center";
+                zoneCible.innerHTML = "";
+
+                let cadreIframe = document.createElement("iframe");
+                cadreIframe.style.width = "300px";
+                cadreIframe.style.height = "250px";
+                cadreIframe.style.border = "none";
+                cadreIframe.style.scrolling = "no";
+                cadreIframe.style.background = "transparent";
+
+                if (fournisseur === "clickadilla") {
+                    // 💡 CORRECTION CLICKADILLA : Injection du script Moteur + du DIV Bannière
+                    var htmlClickadilla = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="utf-8">
+                            <style>
+                                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
+                            </style>
+                            <!-- ÉTAPE 1 : Script Moteur Clickadilla -->
+                            <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="450053"><\/script>
+                        </head>
+                        <body>
+                            <!-- ÉTAPE 2 : Div Emplacement Bannière -->
+                            <div data-banner-id="${clePub}"></div>
+                        </body>
+                        </html>
+                    `;
+
+                    zoneCible.appendChild(cadreIframe);
+                    let doc = cadreIframe.contentWindow.document;
+                    doc.open();
+                    doc.write(htmlClickadilla);
+                    doc.close();
+                }
+            }
+
+            // Lancement du détecteur visuel
+            surveillerBanniereUnique(
+                "zone-pub-banniere-" + indexZone,
+                function surSucces() {
+                    if (loader) loader.style.display = "none";
+                    demarrerDecompteBanniere30Sec();
+                },
+                function surEchec() {
+                    alert("Pub indisponible pour le moment.");
+                    fermerModaleBanniereExclusive();
+                }
+            );
+        }
+
+        function surveillerBanniereUnique(idZone, surSucces, surEchec) {
+            const conteneur = document.getElementById(idZone);
+            if (!conteneur) return surEchec();
+
+            let detectee = false;
+            let timerPanne = null;
+            let intervalVerification = null;
+
+            function verifierPresenceReelle() {
+                if (detectee) return;
+                const iframes = conteneur.querySelectorAll('iframe');
+                if (iframes.length === 0) return;
+
+                iframes.forEach(iframe => {
+                    try {
+                        const doc = iframe.contentWindow.document || iframe.contentDocument;
+                        if (doc && doc.body) {
+                            const bodyContent = doc.body.innerHTML.trim();
+                            const elementsVisuels = doc.querySelectorAll('iframe, img, a, ins, canvas, div:not(:empty)');
+
+                            if (bodyContent !== "" && elementsVisuels.length > 0) {
+                                detectee = true;
+                                if (intervalVerification) clearInterval(intervalVerification);
+                                if (timerPanne) clearTimeout(timerPanne);
+                                surSucces();
+                            }
+                        }
+                    } catch (e) {
+                        // Si le domaine change/charge, c'est un succès
+                        detectee = true;
+                        if (intervalVerification) clearInterval(intervalVerification);
+                        if (timerPanne) clearTimeout(timerPanne);
+                        surSucces();
+                    }
+                });
+            }
+
+            intervalVerification = setInterval(verifierPresenceReelle, 600);
+            timerPanne = setTimeout(() => {
+                if (!detectee) {
+                    if (intervalVerification) clearInterval(intervalVerification);
+                    surEchec();
+                }
+            }, 12000);
+        }
+
+        function demarrerDecompteBanniere30Sec() {
+            let secs = 10;
+            const btnClaim = document.getElementById("btn-claim-banniere-seul");
+            if (!btnClaim) return;
+
+            btnClaim.disabled = true;
+            btnClaim.innerHTML = `<i class="fa-solid fa-clock fa-spin"></i> Patientez... ${secs}s`;
+
+            banniereTimerInterval = setInterval(() => {
+                secs--;
+                if (secs > 0) {
+                    btnClaim.innerHTML = `<i class="fa-solid fa-clock fa-spin"></i> Patientez... ${secs}s`;
+                } else {
+                    clearInterval(banniereTimerInterval);
+                    btnClaim.disabled = false;
+                    btnClaim.style.backgroundColor = "#28a745";
+                    btnClaim.style.color = "#ffffff";
+                    btnClaim.innerHTML = `<i class="fa-solid fa-gift"></i> Réclamer ${banniereMissionActivePoints} Points`;
+                }
+            }, 1000);
+        }
+
+        function fermerModaleBanniereExclusive() {
+            if (banniereTimerInterval) clearInterval(banniereTimerInterval);
+            const modal = document.getElementById("banniere-pub-modal-exclusif");
+            if (modal) modal.style.display = "none";
+        }
+    </script>
+</body>
+</html>
