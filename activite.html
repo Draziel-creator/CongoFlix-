@@ -2358,29 +2358,21 @@ function ouvrirBoiteDialogueAide() {
     alert("AIDE & FONCTIONNEMENT :\n\n- Chaque tâche accomplie ajoute des points à votre cagnotte du jour.\n- Vous devez impérativement cliquer sur 'Encaisser mes gains du jour' avant minuit, sinon les points non réclamés seront définitivement perdus lors de la réinitialisation automatique.");
 }
 
- // ==========================================
+// ==========================================
 // ACCÈS ET GESTION ESPACE VIP (RANG 5)
 // ==========================================
 
 // 1. Masque ou affiche le cadenas selon le rang
 function gererAffichageVisuelVIP(rang) {
     const cadenasVip = document.getElementById("vip-lock-overlay");
+    
+    // Si l'élément HTML n'est pas encore prêt, on ne fait rien
     if (!cadenasVip) return;
 
-    // Récupération du rang passé ou en mémoire globale
     const userRank = (typeof rang !== "undefined") ? Number(rang) : Number(window.localUserRank || 0);
 
     if (userRank >= 5) {
         cadenasVip.style.display = "none"; // 🔓 DÉBLOQUÉ
-        
-        if (!localStorage.getItem("premium_unlocked_alert_seen")) {
-            if (typeof afficherAlertePersonnalisee === "function") {
-                afficherAlertePersonnalisee("Félicitations, vous avez débloqué votre accès VIP Rang 5 !", "Espace VIP Débloqué");
-            } else {
-                alert("Félicitations, vous avez débloqué votre accès VIP Rang 5 !");
-            }
-            localStorage.setItem("premium_unlocked_alert_seen", "true");
-        }
     } else {
         cadenasVip.style.display = "flex"; // 🔒 BLOQUÉ
     }
@@ -2390,8 +2382,7 @@ function gererAffichageVisuelVIP(rang) {
 function intercepterClicVip(event) {
     if (event && event.stopPropagation) event.stopPropagation();
     
-    const message = "Vous devez atteindre le rang 5 VIP pour accéder aux murs d'offres.\n\nL'accès VIP vous permet d'accéder à des missions exclusives rapportant plus de 5000 points par jour.";
-    
+    const message = "Vous devez atteindre le Rang 5 VIP pour accéder aux murs d'offres.";
     if (typeof afficherAlertePersonnalisee === "function") {
         afficherAlertePersonnalisee(message, "Accès VIP Réservé");
     } else {
@@ -2399,63 +2390,60 @@ function intercepterClicVip(event) {
     }
 }
 
-// 3. Ouverture sécurisée des Murs d'Offres (Avec double vérification)
+// 3. OUVERTURE SÉCURISÉE AVEC LECTURE EN DIRECT DANS FIREBASE
 async function ouvrirIframeOffresVIP(mur) {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
     
     if (!currentUserId) {
-        alert("Veuillez vous connecter pour accéder à l'espace VIP.");
+        alert("Veuillez vous connecter.");
         return;
     }
 
-    let currentRank = Number(window.localUserRank || 0);
+    try {
+        // 🔥 LECTURE EN DIRECT DE FIREBASE AU MOMENT DU CLIC
+        const snap = await db.collection("users").doc(currentUserId).get();
+        
+        if (snap.exists) {
+            const data = snap.data();
+            const userRank = Number(data.rank || data.rang || 0);
 
-    // Sécurité : Vérification directe dans Firebase au clic si le rang local est inférieur à 5
-    if (currentRank < 5) {
-        try {
-            const snap = await db.collection("users").doc(currentUserId).get();
-            if (snap.exists) {
-                currentRank = Number(snap.data().rank || snap.data().rang || 0);
-                window.localUserRank = currentRank;
+            if (userRank < 5) {
+                if (typeof afficherAlertePersonnalisee === "function") {
+                    afficherAlertePersonnalisee("Accès restreint. Vous devez atteindre le Rang 5 VIP.", "Accès VIP Refusé");
+                } else {
+                    alert("Accès restreint. Vous devez atteindre le Rang 5 VIP.");
+                }
+                return;
             }
-        } catch (e) {
-            console.error("Erreur vérification rang VIP :", e);
-        }
-    }
 
-    if (currentRank < 5) {
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Accès restreint. Vous devez atteindre le Rang 5 pour débloquer cet espace VIP.", "Accès VIP Refusé");
-        } else {
-            alert("Accès restreint. Vous devez atteindre le Rang 5 pour débloquer cet espace VIP.");
-        }
-        return;
-    }
+            // SI RANG >= 5 : ON OUVRE L'IFRAME
+            const conteneur = document.getElementById('conteneur-iframe-vip');
+            const insert = document.getElementById('insert-zone-iframe');
+            
+            if (conteneur && insert) {
+                conteneur.style.display = 'flex';
 
-    // Si Rang >= 5 -> Ouverture de l'Iframe
-    const conteneur = document.getElementById('conteneur-iframe-vip');
-    const insert = document.getElementById('insert-zone-iframe');
-    
-    if (conteneur && insert) {
-        conteneur.style.display = 'flex';
-
-        if (mur === 'mur1') {
-            insert.innerHTML = `<iframe src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${currentUserId}" style="width:100%; height:100%; border:none;"></iframe>`;
-        } else if (mur === 'mur2') {
-            insert.innerHTML = `<iframe src="https://appsave.online/cl/i/grjgep?aff_sub=${currentUserId}" style="width:100%; height:100%; border:none;"></iframe>`;
-        } else if (mur === 'mur3') {
-            insert.innerHTML = `<iframe src="https://getafilenow.com/script_include.php?id=1904067&tracking_id=${currentUserId}" style="width:100%; height:100%; border:none;"></iframe>`;
+                if (mur === 'mur1') {
+                    insert.innerHTML = `<iframe src="https://reward-me.eu/840ccbb0-79f9-11f1-9081-8a5fb7be40ea?player_id=${currentUserId}" style="width:100%; height:100%; border:none;"></iframe>`;
+                } else if (mur === 'mur2') {
+                    insert.innerHTML = `<iframe src="https://appsave.online/cl/i/grjgep?aff_sub=${currentUserId}" style="width:100%; height:100%; border:none;"></iframe>`;
+                } else if (mur === 'mur3') {
+                    insert.innerHTML = `<iframe src="https://getafilenow.com/script_include.php?id=1904067&tracking_id=${currentUserId}" style="width:100%; height:100%; border:none;"></iframe>`;
+                }
+            }
         }
+    } catch (e) {
+        console.error("Erreur vérification VIP :", e);
     }
 }
 
-// 4. Fermeture de l'Iframe
+// 4. Fermeture de l'Iframe VIP
 function fermerIframeVIP() {
     const conteneur = document.getElementById('conteneur-iframe-vip');
     const insert = document.getElementById('insert-zone-iframe');
     if (conteneur && insert) {
         conteneur.style.display = 'none';
-        insert.innerHTML = ''; // Arrête le chargement de la pub
+        insert.innerHTML = ''; 
     }
 }
     </script>
