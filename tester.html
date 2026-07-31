@@ -89,12 +89,14 @@
             align-items: center;
             margin-bottom: 15px;
             position: relative;
+            overflow: hidden;
         }
 
         .banniere-status-layer {
             position: absolute;
             flex-direction: column;
             align-items: center;
+            z-index: 2;
         }
 
         .loader-spin-blue {
@@ -153,7 +155,7 @@
                 </div>
 
                 <!-- Zone d'affichage 1 -->
-                <div id="zone-pub-banniere-1" class="ad-slot-square" style="width:100%; height:100%; display:none;"></div>
+                <div id="zone-pub-banniere-1" class="ad-slot-square" style="width:100%; height:100%; min-height: 250px; display:none; justify-content:center; align-items:center;"></div>
                 
             </div>
 
@@ -199,46 +201,31 @@
 
             if (zoneCible) {
                 zoneCible.style.display = "flex";
-                zoneCible.style.justifyContent = "center";
-                zoneCible.style.alignItems = "center";
-                zoneCible.innerHTML = "";
-
-                let cadreIframe = document.createElement("iframe");
-                cadreIframe.style.width = "300px";
-                cadreIframe.style.height = "250px";
-                cadreIframe.style.border = "none";
-                cadreIframe.style.scrolling = "no";
-                cadreIframe.style.background = "transparent";
+                zoneCible.innerHTML = ""; // Vider la zone
 
                 if (fournisseur === "clickadilla") {
-                    // 💡 CORRECTION CLICKADILLA : Injection du script Moteur + du DIV Bannière
-                    var htmlClickadilla = `
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <meta charset="utf-8">
-                            <style>
-                                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
-                            </style>
-                            <!-- ÉTAPE 1 : Script Moteur Clickadilla -->
-                            <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="450053"><\/script>
-                        </head>
-                        <body>
-                            <!-- ÉTAPE 2 : Div Emplacement Bannière -->
-                            <div data-banner-id="${clePub}"></div>
-                        </body>
-                        </html>
-                    `;
+                    // ⚡ INJECTION DIRECTE DANS LE DOM (Sans Iframe)
+                    
+                    // 1. Balise DIV réceptrice réclamée par Clickadilla
+                    const divBanner = document.createElement("div");
+                    divBanner.setAttribute("data-banner-id", clePub);
+                    zoneCible.appendChild(divBanner);
 
-                    zoneCible.appendChild(cadreIframe);
-                    let doc = cadreIframe.contentWindow.document;
-                    doc.open();
-                    doc.write(htmlClickadilla);
-                    doc.close();
+                    // 2. Script Moteur de Clickadilla
+                    const scriptMoteur = document.createElement("script");
+                    scriptMoteur.src = "https://js.wpadmngr.com/static/adManager.js?t=" + Date.now();
+                    scriptMoteur.setAttribute("data-admpid", "450053");
+                    scriptMoteur.async = true;
+
+                    scriptMoteur.onerror = function() {
+                        console.error("❌ Le script Clickadilla n'a pas pu être chargé (Possible bloqueur de pub).");
+                    };
+
+                    zoneCible.appendChild(scriptMoteur);
                 }
             }
 
-            // Lancement du détecteur visuel
+            // Lancement du détecteur visuel mis à jour
             surveillerBanniereUnique(
                 "zone-pub-banniere-" + indexZone,
                 function surSucces() {
@@ -246,7 +233,7 @@
                     demarrerDecompteBanniere30Sec();
                 },
                 function surEchec() {
-                    alert("Pub indisponible pour le moment.");
+                    alert("Pub indisponible ou bloquée par votre navigateur.");
                     fermerModaleBanniereExclusive();
                 }
             );
@@ -262,40 +249,32 @@
 
             function verifierPresenceReelle() {
                 if (detectee) return;
-                const iframes = conteneur.querySelectorAll('iframe');
-                if (iframes.length === 0) return;
 
-                iframes.forEach(iframe => {
-                    try {
-                        const doc = iframe.contentWindow.document || iframe.contentDocument;
-                        if (doc && doc.body) {
-                            const bodyContent = doc.body.innerHTML.trim();
-                            const elementsVisuels = doc.querySelectorAll('iframe, img, a, ins, canvas, div:not(:empty)');
+                // On vérifie si la DIV de Clickadilla s'est remplie avec du contenu pub
+                const divBanner = conteneur.querySelector('[data-banner-id]');
+                
+                if (divBanner) {
+                    const elementsVisuels = divBanner.querySelectorAll('iframe, img, a, ins, canvas, div');
+                    const aDuContenuTextuel = divBanner.innerHTML.trim().length > 0;
 
-                            if (bodyContent !== "" && elementsVisuels.length > 0) {
-                                detectee = true;
-                                if (intervalVerification) clearInterval(intervalVerification);
-                                if (timerPanne) clearTimeout(timerPanne);
-                                surSucces();
-                            }
-                        }
-                    } catch (e) {
-                        // Si le domaine change/charge, c'est un succès
+                    if (elementsVisuels.length > 0 || aDuContenuTextuel) {
                         detectee = true;
                         if (intervalVerification) clearInterval(intervalVerification);
                         if (timerPanne) clearTimeout(timerPanne);
                         surSucces();
                     }
-                });
+                }
             }
 
-            intervalVerification = setInterval(verifierPresenceReelle, 600);
+            intervalVerification = setInterval(verifierPresenceReelle, 500);
+
+            // Temps d'attente maximum : 10 secondes
             timerPanne = setTimeout(() => {
                 if (!detectee) {
                     if (intervalVerification) clearInterval(intervalVerification);
                     surEchec();
                 }
-            }, 12000);
+            }, 10000);
         }
 
         function demarrerDecompteBanniere30Sec() {
