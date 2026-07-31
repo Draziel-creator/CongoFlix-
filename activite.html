@@ -1899,56 +1899,109 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     doc.write(htmlAdvertica);
                     doc.close();
 
-                } else {
-                    // CLICKADILLA
-                    let cadreIframe = document.createElement("iframe");
-                    cadreIframe.style.width = w;
-                    cadreIframe.style.height = h;
-                    cadreIframe.style.border = "none";
-                    cadreIframe.style.scrolling = "no";
-                    cadreIframe.style.background = "transparent";
+                } else if (fournisseur === "clickadilla") {
+                    // ⚡ ZONE ISOLÉE CLICKADILLA : Injection directe DOM sans iframe
+                    let divTarget = document.createElement("div");
+                    divTarget.id = clePub;
+                    divTarget.setAttribute("data-banner-id", clePub);
+                    divTarget.style.width = w;
+                    divTarget.style.height = h;
+                    divTarget.style.display = "flex";
+                    divTarget.style.justifyContent = "center";
+                    divTarget.style.alignItems = "center";
 
-                    let htmlClickadilla = `
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <meta charset="utf-8">
-                            <style>
-                                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
-                            </style>
-                        </head>
-                        <body>
-                            <script async src="https://zone.clickadilla.com/ext/show/zone/${clePub}"><\/script>
-                        </body>
-                        </html>
-                    `;
+                    let scriptClick = document.createElement("script");
+                    scriptClick.async = true;
+                    scriptClick.src = `https://zone.clickadilla.com/ext/show/zone/${clePub}`;
 
-                    zoneCible.appendChild(cadreIframe);
-                    let doc = cadreIframe.contentWindow.document;
-                    doc.open();
-                    doc.write(htmlClickadilla);
-                    doc.close();
+                    zoneCible.appendChild(divTarget);
+                    zoneCible.appendChild(scriptClick);
                 }
             }
         } catch(err) {
-            declencherPanneBanniereIndependante();
+            if (fournisseur === "clickadilla") {
+                declencherPanneClickadillaIndependante();
+            } else {
+                declencherPanneBanniereIndependante();
+            }
             return;
         }
     }
 
-    // Surveillance de l'affichage effectif
-    surveillerBanniereUnique(
-        "zone-pub-banniere-" + indexZone,
-        function surSucces() {
-            if (loader) loader.style.display = "none";
-            demarrerDecompteBanniere30Sec();
-        },
-        function surEchec() {
-            declencherPanneBanniereIndependante();
-        }
-    );
+    // Directement router vers la bonne méthode de surveillance
+    if (fournisseur === "clickadilla") {
+        surveillerClickadillaUnique(
+            "zone-pub-banniere-" + indexZone,
+            clePub,
+            function surSucces() {
+                if (loader) loader.style.display = "none";
+                demarrerDecompteBanniere30Sec();
+            },
+            function surEchec() {
+                declencherPanneClickadillaIndependante();
+            }
+        );
+    } else {
+        // Surveillance 100% originale pour Adsterra & Advertica
+        surveillerBanniereUnique(
+            "zone-pub-banniere-" + indexZone,
+            function surSucces() {
+                if (loader) loader.style.display = "none";
+                demarrerDecompteBanniere30Sec();
+            },
+            function surEchec() {
+                declencherPanneBanniereIndependante();
+            }
+        );
+    }
 }
 
+// -----------------------------------------------------------------------------
+// SURVEILLANCE UNIQUE POUR CLICKADILLA (ISOLÉE, N'IMPACTE PAS LES AUTRES)
+// -----------------------------------------------------------------------------
+function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
+    const conteneur = document.getElementById(idZone);
+    if (!conteneur) {
+        surEchec();
+        return;
+    }
+
+    let detectee = false;
+    let timerPanne = null;
+    let intervalVerification = null;
+
+    function verifierPresenceReelleClickadilla() {
+        if (detectee) return;
+
+        const divTarget = conteneur.querySelector(`[data-banner-id="${clePub}"]`) || document.getElementById(clePub);
+
+        if (divTarget) {
+            const enfants = divTarget.querySelectorAll('iframe, img, a, ins, canvas, svg, div');
+            const hauteur = divTarget.offsetHeight || divTarget.clientHeight;
+            const contenu = divTarget.innerHTML.trim();
+
+            if (enfants.length > 0 || hauteur > 20 || contenu !== "") {
+                detectee = true;
+                if (intervalVerification) clearInterval(intervalVerification);
+                if (timerPanne) clearTimeout(timerPanne);
+                surSucces();
+            }
+        }
+    }
+
+    intervalVerification = setInterval(verifierPresenceReelleClickadilla, 500);
+
+    timerPanne = setTimeout(() => {
+        if (!detectee) {
+            if (intervalVerification) clearInterval(intervalVerification);
+            surEchec();
+        }
+    }, 10000);
+}
+
+// -----------------------------------------------------------------------------
+// SURVEILLANCE PAR DÉFAUT (ADSTERRA & ADVERTICA - CONSERVÉE EXACTEMENT À L'IDENTIQUE)
+// -----------------------------------------------------------------------------
 function surveillerBanniereUnique(idZone, surSucces, surEchec) {
     const conteneur = document.getElementById(idZone);
     if (!conteneur) {
@@ -2103,6 +2156,7 @@ function reclamerPointsBanniereSeule() {
     });
 }
 
+// Alerte en cas de panne sur Adsterra / Advertica (Inchangée)
 function declencherPanneBanniereIndependante() {
     const loader = document.getElementById("banniere-ad-loader-unique");
     if (loader) loader.style.display = "none";
@@ -2112,6 +2166,21 @@ function declencherPanneBanniereIndependante() {
     const msg = "Cette tâche n'est pas disponible pour le moment, revenez plus tard pour revérifier.";
     if (typeof afficherAlertePersonnalisee === "function") {
         afficherAlertePersonnalisee(msg, "Pub Indisponible", "J'ai compris");
+    } else {
+        alert(msg);
+    }
+}
+
+// Alerte spécifique en cas de panne Clickadilla
+function declencherPanneClickadillaIndependante() {
+    const loader = document.getElementById("banniere-ad-loader-unique");
+    if (loader) loader.style.display = "none";
+
+    fermerModaleBanniereExclusive();
+
+    const msg = "La pub Clickadilla n'est pas disponible actuellement ou est bloquée par votre navigateur. Revenez plus tard.";
+    if (typeof afficherAlertePersonnalisee === "function") {
+        afficherAlertePersonnalisee(msg, "Clickadilla Indisponible", "J'ai compris");
     } else {
         alert(msg);
     }
