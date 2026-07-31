@@ -1049,26 +1049,27 @@ async function ouvrirModalBonus() {
     }
 
     try {
-        // LECTURE EN DIRECT DANS FIREBASE AU MOMENT DU CLIC
+        // LECTURE EN DIRECT DANS FIREBASE
         const snap = await db.collection("users").doc(currentId).get();
         
         if (snap.exists) {
             const data = snap.data();
             
-            // On vérifie tout ce qui peut prouver qu'il est VIP (rank, isVip, ou XP)
-            const estVip = (Number(data.rank) >= 1) || (Number(data.rang) >= 1) || (data.isVip === true) || (Number(data.XP) >= 1);
+            // ON VÉRIFIE UNIQUEMENT LE CHAMP RANK (Rang >= 1)
+            const userRank = Number(data.rank || 0);
+            const estVip = (userRank >= 1);
 
             if (estVip) {
-                // S'IL EST VIP : ON OUVRE LA MODALE IMMEDIATEMENT
+                // RANG OK (1 ou +) -> Ouverture
                 const modal = document.getElementById("modal-bonus-casino");
                 if (modal) modal.style.display = "flex";
                 if (typeof actualiserTexteModalCasino === "function") actualiserTexteModalCasino();
             } else {
-                // S'IL N'EST PAS VIP
+                // RANG INSUFFISANT (0) -> Refus
                 if (typeof afficherAlertePersonnalisee === "function") {
-                    afficherAlertePersonnalisee("Ce bonus est réservé aux membres VIP.", "Accès Refusé");
+                    afficherAlertePersonnalisee("Ce bonus est réservé aux membres VIP (Rang 1 minimum).", "Accès Refusé");
                 } else {
-                    alert("Accès réservé aux membres VIP.");
+                    alert("Accès réservé aux rang élevée (Rang 1 minimum).");
                 }
             }
         }
