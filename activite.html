@@ -1211,49 +1211,13 @@ window.addEventListener("DOMContentLoaded", () => {
     if (typeof initialiserChronometresGlobaux === "function") initialiserChronometresGlobaux();
     if (typeof verifierBlocagesBoutonsJournaliers === "function") verifierBlocagesBoutonsJournaliers();
 });
-
-// ==========================================
-// ÉTAPE 2 : ACCESSEUR DE L'ESPACE VIP (RANG 5)
-// ==========================================
-function ajusterAffichageRangVip(rang) {
-    const calqueVerrou = document.getElementById("vip-lock-overlay");
-    if (!calqueVerrou) return;
-
-    if (rang >= 5) {
-        calqueVerrou.style.display = "none";
-        
-        if (!localStorage.getItem("premium_unlocked_alert_seen")) {
-            afficherAlertePersonnalisee("Félicitations, vous avez débloqué votre rang premium !", "Rang Premium Débloqué");
-            localStorage.setItem("premium_unlocked_alert_seen", "true");
-        }
-    } else {
-        calqueVerrou.style.display = "flex";
+    // SÉCURITÉ : Relance la vérification du cadenas dès que le HTML est 100% prêt
+document.addEventListener("DOMContentLoaded", () => {
+    if (typeof window.localUserRank !== "undefined") {
+        gererAffichageVisuelVIP(window.localUserRank);
     }
-}
+});
 
-function intercepterClicVip(event) {
-    if (event) event.stopPropagation();
-    afficherAlertePersonnalisee(
-        "Vous devez atteindre le rang 5 VIP pour accéder aux murs d'offres.\n\nÊtre au rang VIP (Premium) vous offre le privilège d'ouvrir les murs d'offres exclusifs contenant des missions qui vous rapporteront plus de 5000 points par jour selon les opportunités.",
-        "Accès VIP Réservé"
-    );
-}
-
-function ouvrirIframeOffresVIP(identifiantMur) {
-    if (localUserRank < 5) return;
-    let urlCible = "";
-    if(identifiantMur === 'mur1') urlCible = "https://example-rewardme-wall.com/api?user=" + userId;
-    if(identifiantMur === 'mur2') urlCible = "https://example-ogads-wall.com/api?user=" + userId;
-    if(identifiantMur === 'mur3') urlCible = "https://example-cpagrip-wall.com/api?user=" + userId;
-    
-    document.getElementById("insert-zone-iframe").innerHTML = `<iframe src="${urlCible}" style="width:100%; height:100%; border:none;"></iframe>`;
-    document.getElementById("conteneur-iframe-vip").style.display = "flex";
-}
-
-function fermerIframeVIP() {
-    document.getElementById("conteneur-iframe-vip").style.display = "none";
-    document.getElementById("insert-zone-iframe").innerHTML = "";
-}
 
 // =============================================================================
 // CONFIGURATION GLOBALE FIREBASE & BINDINGS
@@ -2379,9 +2343,36 @@ function gererAffichageVisuelVIP(rang) {
 }
 
 // 2. Intercepte le clic sur le calque cadenas rouge
-function intercepterClicVip(event) {
+// CLIC SUR LE CADENAS : Vérification live dans Firebase (comme le Casino)
+async function intercepterClicVip(event) {
     if (event && event.stopPropagation) event.stopPropagation();
-    
+
+    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
+
+    if (!currentUserId) {
+        alert("Veuillez vous connecter.");
+        return;
+    }
+
+    try {
+        // Lecture en direct dans Firebase au moment où l'utilisateur clique
+        const snap = await db.collection("users").doc(currentUserId).get();
+        if (snap.exists) {
+            const data = snap.data();
+            const rankDirect = Number(data.rank || data.rang || 0);
+            window.localUserRank = rankDirect;
+
+            // Si Firebase confirme qu'il est Rang 5+, on DÉBLOQUE TOUT DE SUITE !
+            if (rankDirect >= 5) {
+                gererAffichageVisuelVIP(rankDirect);
+                return;
+            }
+        }
+    } catch (err) {
+        console.error("Erreur vérification VIP au clic:", err);
+    }
+
+    // Si le rang est vraiment inférieur à 5 :
     const message = "Vous devez atteindre le Rang 5 VIP pour accéder aux murs d'offres.";
     if (typeof afficherAlertePersonnalisee === "function") {
         afficherAlertePersonnalisee(message, "Accès VIP Réservé");
@@ -2389,7 +2380,6 @@ function intercepterClicVip(event) {
         alert(message);
     }
 }
-
 // 3. OUVERTURE SÉCURISÉE AVEC LECTURE EN DIRECT DANS FIREBASE
 async function ouvrirIframeOffresVIP(mur) {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
