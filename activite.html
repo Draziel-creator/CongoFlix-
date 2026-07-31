@@ -1036,7 +1036,7 @@ function brancherEcouteurFirebase() {
 // ==========================================
 // 6. LOGIQUE DU CASINO BONUS FLOTTANT
 // ==========================================
-async function ouvrirModalBonus() {
+    async function ouvrirModalBonus() {
     const currentId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
     
     if (!currentId) {
@@ -1055,17 +1055,22 @@ async function ouvrirModalBonus() {
         if (snap.exists) {
             const data = snap.data();
             
-            // ON VÉRIFIE UNIQUEMENT LE CHAMP RANK (Rang >= 1)
+            // 🎯 LIAISON DIRECTE DES TOURS FAITS DEPUIS FIREBASE
+            const userTours = Number(data.toursfaits || 0);
+            window.localToursFaits = userTours;
+            if (typeof localToursFaits !== "undefined") localToursFaits = userTours;
+
+            // VÉRIFICATION DU RANG VIP
             const userRank = Number(data.rank || 0);
             const estVip = (userRank >= 1);
 
             if (estVip) {
-                // RANG OK (1 ou +) -> Ouverture
+                // RANG OK -> Ouverture de la modale
                 const modal = document.getElementById("modal-bonus-casino");
                 if (modal) modal.style.display = "flex";
                 if (typeof actualiserTexteModalCasino === "function") actualiserTexteModalCasino();
             } else {
-                // RANG INSUFFISANT (0) -> Refus
+                // RANG INSUFFISANT -> Message d'erreur
                 if (typeof afficherAlertePersonnalisee === "function") {
                     afficherAlertePersonnalisee("Ce bonus est réservé aux rang élevée (Rang 1 minimum).", "Accès Refusé");
                 } else {
