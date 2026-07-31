@@ -1025,37 +1025,37 @@ function brancherEcouteurFirebase() {
     }
 
     try {
-        // LECTURE EN DIRECT DANS FIREBASE
-        const snap = await db.collection("users").doc(currentId).get();
-        
-        if (snap.exists) {
-            const data = snap.data();
-            
-            // 🎯 LIAISON DIRECTE DES TOURS FAITS DEPUIS FIREBASE
-            const userTours = Number(data.toursfaits || 0);
-            window.localToursFaits = userTours;
-            if (typeof localToursFaits !== "undefined") localToursFaits = userTours;
+        // A. Vérification du Rang VIP dans la collection "users"
+        const userSnap = await db.collection("users").doc(currentId).get();
+        const userRank = userSnap.exists ? Number(userSnap.data().rank || 0) : 0;
 
-            // VÉRIFICATION DU RANG VIP
-            const userRank = Number(data.rank || 0);
-            const estVip = (userRank >= 1);
-
-            if (estVip) {
-                // RANG OK -> Ouverture de la modale
-                const modal = document.getElementById("modal-bonus-casino");
-                if (modal) modal.style.display = "flex";
-                if (typeof actualiserTexteModalCasino === "function") actualiserTexteModalCasino();
+        if (userRank < 1) {
+            if (typeof afficherAlertePersonnalisee === "function") {
+                afficherAlertePersonnalisee("Ce bonus est réservé aux rang élevée (Rang 1 minimum).", "Accès Refusé");
             } else {
-                // RANG INSUFFISANT -> Message d'erreur
-                if (typeof afficherAlertePersonnalisee === "function") {
-                    afficherAlertePersonnalisee("Ce bonus est réservé aux rang élevée (Rang 1 minimum).", "Accès Refusé");
-                } else {
-                    alert("Accès réservé aux rang élevée (Rang 1 minimum).");
-                }
+                alert("Accès réservé aux rang élevée (Rang 1 minimum).");
             }
+            return;
         }
+
+        // B. Lecture des "toursFaits" dans "rewards_users" (comme la page roue.html)
+        const rewardSnap = await db.collection("rewards_users").doc(currentId).get();
+        let userTours = 0;
+        
+        if (rewardSnap.exists) {
+            userTours = Number(rewardSnap.data().toursFaits || 0); // 👈 F majuscule
+        }
+
+        window.localToursFaits = userTours;
+        if (typeof localToursFaits !== "undefined") localToursFaits = userTours;
+
+        // C. Ouverture de la modale
+        const modal = document.getElementById("modal-bonus-casino");
+        if (modal) modal.style.display = "flex";
+        if (typeof actualiserTexteModalCasino === "function") actualiserTexteModalCasino();
+
     } catch (erreur) {
-        console.error("Erreur verification VIP en direct :", erreur);
+        console.error("Erreur vérification Casino :", erreur);
     }
 }
 function fermerModalBonus() {
@@ -1093,11 +1093,11 @@ function tenterChanceCasino(e) {
         return;
     }
 
-    // On retire "localUserRank < 1" car le joueur est DÉJÀ dans la modale !
-    db.collection("users").doc(currentUserId).update({
-        toursfaits: firebase.firestore.FieldValue.increment(1)
-    }).then(() => {
-        console.log("✅ Tour enregistré ! Redirection vers la roue...");
+    // On incrémente "toursFaits" (F majuscule) dans la collection "rewards_users"
+    db.collection("rewards_users").doc(currentUserId).set({
+        toursFaits: firebase.firestore.FieldValue.increment(1)
+    }, { merge: true }).then(() => {
+        console.log("✅ Tour enregistré dans rewards_users ! Redirection vers la roue...");
         window.location.href = "roue.html";
     }).catch(err => {
         console.error("Erreur Casino:", err);
