@@ -1949,9 +1949,9 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
     }
 }
 
-// -----------------------------------------------------------------------------
-// SURVEILLANCE SPÉCIFIQUE IFRAME CLICKADILLA
-// -----------------------------------------------------------------------------
+// =============================================================================
+// SURVEILLANCE SPÉCIFIQUE IFRAME CLICKADILLA (INFAILLIBLE & ANTI-TRICHE)
+// =============================================================================
 function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
     const conteneur = document.getElementById(idZone);
     if (!conteneur) {
@@ -1966,37 +1966,69 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
     function verifierPresenceReelleClickadilla() {
         if (detectee) return;
 
-        const iframe = conteneur.querySelector('iframe');
-        if (iframe) {
-            try {
-                const doc = iframe.contentWindow.document || iframe.contentDocument;
-                if (doc) {
-                    const divTarget = doc.querySelector(`[data-banner-id="${clePub}"]`);
-                    if (divTarget) {
-                        const enfants = divTarget.querySelectorAll('iframe, img, a, ins, canvas, svg, div');
-                        const hauteur = divTarget.offsetHeight || divTarget.clientHeight;
-                        const contenu = divTarget.innerHTML.trim();
+        const iframeLocale = conteneur.querySelector('iframe');
+        if (!iframeLocale) return;
 
-                        if (enfants.length > 0 || hauteur > 20 || contenu !== "") {
-                            detectee = true;
-                            if (intervalVerification) clearInterval(intervalVerification);
-                            if (timerPanne) clearTimeout(timerPanne);
-                            surSucces();
-                        }
-                    }
+        try {
+            const doc = iframeLocale.contentWindow.document || iframeLocale.contentDocument;
+            if (!doc) return;
+
+            const divTarget = doc.querySelector(`[data-banner-id="${clePub}"]`);
+            if (!divTarget) return;
+
+            let pubVraimentAffichee = false;
+
+            // 1. Détection des IMAGES RÉELLES (Filtre strictement les pixels 1x1 de tracking)
+            const images = divTarget.querySelectorAll('img');
+            images.forEach(img => {
+                if (img.complete && img.naturalWidth > 10 && img.naturalHeight > 10) {
+                    pubVraimentAffichee = true;
                 }
-            } catch (e) {
-                // Si la pub s'est chargée avec redirection Cross-Origin dans l'iframe
+            });
+
+            // 2. Détection des SOUS-IFRAMES (Mesure la taille physique réelle sur l'écran)
+            const subIframes = divTarget.querySelectorAll('iframe');
+            subIframes.forEach(subIframe => {
+                const rect = subIframe.getBoundingClientRect();
+                if (rect.width >= 100 && rect.height >= 40) {
+                    pubVraimentAffichee = true;
+                }
+            });
+
+            // 3. Détection des Médias HTML5 (Canvas, Video, SVG)
+            const medias = divTarget.querySelectorAll('canvas, video, svg');
+            medias.forEach(med => {
+                const rect = med.getBoundingClientRect();
+                if (rect.width >= 50 && rect.height >= 50) {
+                    pubVraimentAffichee = true;
+                }
+            });
+
+            // 4. Détection des Blocs/Liens ayant une surface d'affichage réelle
+            const liensOuDivs = divTarget.querySelectorAll('a, div');
+            liensOuDivs.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.width >= 120 && rect.height >= 40) {
+                    pubVraimentAffichee = true;
+                }
+            });
+
+            // VALIDE ET DÉCLENCHE LE TIMER UNIQUEMENT SI LE VISUEL EST VISIBLE
+            if (pubVraimentAffichee) {
                 detectee = true;
                 if (intervalVerification) clearInterval(intervalVerification);
                 if (timerPanne) clearTimeout(timerPanne);
                 surSucces();
             }
+
+        } catch (e) {
+            // Sécurité anti-triche : On ne valide plus aveuglément en cas d'erreur Cross-Origin
         }
     }
 
     intervalVerification = setInterval(verifierPresenceReelleClickadilla, 500);
 
+    // Si après 12 secondes aucun visuel physique n'est dessiné à l'écran -> Panne
     timerPanne = setTimeout(() => {
         if (!detectee) {
             if (intervalVerification) clearInterval(intervalVerification);
