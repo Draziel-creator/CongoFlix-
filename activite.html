@@ -1667,7 +1667,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
     const dateAujourdhui = ObtenirDateAujourdhuiISO();
     let estBloquee = false;
 
-    // VÉRIFICATION FIREBASE ANTI-TRICHE (Sous-collection historique_taches_v2)
+    // VÉRIFICATION FIREBASE ANTI-TRICHE
     try {
         if (currentUserId) {
             const docRef = await db.collection("users").doc(currentUserId).collection("historique_taches_v2").doc(uniqueId).get();
@@ -1900,22 +1900,34 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     doc.close();
 
                 } else if (fournisseur === "clickadilla") {
-                    // ⚡ ZONE ISOLÉE CLICKADILLA : Injection directe DOM sans iframe
-                    let divTarget = document.createElement("div");
-                    divTarget.id = clePub;
-                    divTarget.setAttribute("data-banner-id", clePub);
-                    divTarget.style.width = w;
-                    divTarget.style.height = h;
-                    divTarget.style.display = "flex";
-                    divTarget.style.justifyContent = "center";
-                    divTarget.style.alignItems = "center";
+                    // ⚡ INJECTION CLICKADILLA AVEC LE SCRIPT MAÎTRE ENTIER ET INTACT
+                    let cadreIframe = document.createElement("iframe");
+                    cadreIframe.style.width = w;
+                    cadreIframe.style.height = h;
+                    cadreIframe.style.border = "none";
+                    cadreIframe.style.scrolling = "no";
+                    cadreIframe.style.background = "transparent";
 
-                    let scriptClick = document.createElement("script");
-                    scriptClick.async = true;
-                    scriptClick.src = `https://zone.clickadilla.com/ext/show/zone/${clePub}`;
+                    let htmlClickadilla = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="utf-8">
+                            <style>
+                                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
+                            </style>
+                        </head>
+                        <body>
+                            <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="${clePub}"><\/script>
+                        </body>
+                        </html>
+                    `;
 
-                    zoneCible.appendChild(divTarget);
-                    zoneCible.appendChild(scriptClick);
+                    zoneCible.appendChild(cadreIframe);
+                    let doc = cadreIframe.contentWindow.document;
+                    doc.open();
+                    doc.write(htmlClickadilla);
+                    doc.close();
                 }
             }
         } catch(err) {
@@ -1928,7 +1940,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // Directement router vers la bonne méthode de surveillance
+    // Surveillance de l'affichage
     if (fournisseur === "clickadilla") {
         surveillerClickadillaUnique(
             "zone-pub-banniere-" + indexZone,
@@ -1942,7 +1954,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
             }
         );
     } else {
-        // Surveillance 100% originale pour Adsterra & Advertica
         surveillerBanniereUnique(
             "zone-pub-banniere-" + indexZone,
             function surSucces() {
@@ -1955,7 +1966,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         );
     }
 }
-
 // -----------------------------------------------------------------------------
 // SURVEILLANCE UNIQUE POUR CLICKADILLA (ISOLÉE, N'IMPACTE PAS LES AUTRES)
 // -----------------------------------------------------------------------------
