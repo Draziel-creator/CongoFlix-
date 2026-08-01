@@ -1653,9 +1653,10 @@ function ObtenirDateAujourdhuiISO() {
     return `${annee}-${mois}-${jour}`;
 }
 
-/**
- * Initialise le chargement d'une bannière publicitaire (Adsterra, Advertica, Clickadilla).
- */
+// =============================================================================
+// LOGIQUE MISSIONS BANNIÈRE (CLICKADILLA ADMANAGER CORRIGÉ)
+// =============================================================================
+
 async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, indexZone, formatPubOrWidth = "300x250", hauteurOptional = null) {
     const e = window.event;
     if (e) {
@@ -1681,17 +1682,11 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
 
     if (estBloquee) {
         bloquerBoutonBanniereVisuellement(uniqueId);
-
         const msgBloque = "Vous avez déjà accompli cette mission aujourd'hui. Elle se réinitialisera automatiquement demain à 00h00 !";
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(
-                msgBloque, 
-                "Tâche Bloquée", 
-                "J'ai compris", 
-                function() {
-                    if (typeof fermerModaleActive === "function") fermerModaleActive();
-                }
-            );
+            afficherAlertePersonnalisee(msgBloque, "Tâche Bloquée", "J'ai compris", function() {
+                if (typeof fermerModaleActive === "function") fermerModaleActive();
+            });
         } else {
             alert(msgBloque);
         }
@@ -1727,7 +1722,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
 
     if (banniereTimerInterval) clearInterval(banniereTimerInterval);
 
-    // Masquer les zones bannières (1 à 14)
+    // Masquer toutes les zones bannières
     for (let i = 1; i <= 14; i++) {
         const zone = document.getElementById("zone-pub-banniere-" + i);
         if (zone) {
@@ -1753,7 +1748,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
 
     if (modal) modal.style.display = "flex";
 
-    // Configuration d'affichage selon le format
     let w = widthNum + "px";
     let h = heightNum + "px";
     let nbRepetitions = 1;
@@ -1776,7 +1770,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         nbRepetitions = 4;
     }
 
-    // Injection dans la zone
     if (zoneCible) {
         zoneCible.style.display = "flex";
         zoneCible.style.flexDirection = "row";
@@ -1804,12 +1797,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     let htmlNative = `
                         <!DOCTYPE html>
                         <html>
-                        <head>
-                            <meta charset="utf-8">
-                            <style>
-                                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; }
-                            </style>
-                        </head>
+                        <head><meta charset="utf-8"><style>html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; }</style></head>
                         <body>
                             <script async="async" data-cfasync="false" src="https://pl29546534.effectivecpmnetwork.com/${clePub}/invoke.js"><\/script>
                             <div id="container-${clePub}"></div>
@@ -1834,12 +1822,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     let htmlAdsterra = `
                         <!DOCTYPE html>
                         <html>
-                        <head>
-                            <meta charset="utf-8">
-                            <style>
-                                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
-                            </style>
-                        </head>
+                        <head><meta charset="utf-8"><style>html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }</style></head>
                         <body>
                             <script type="text/javascript">
                                 atOptions = {
@@ -1874,12 +1857,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     let htmlAdvertica = `
                         <!DOCTYPE html>
                         <html>
-                        <head>
-                            <meta charset="utf-8">
-                            <style>
-                                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
-                            </style>
-                        </head>
+                        <head><meta charset="utf-8"><style>html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }</style></head>
                         <body>
                             <ins style="width: ${widthNum}px; height: ${heightNum}px;"
                                  data-width="${widthNum}"
@@ -1900,7 +1878,10 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     doc.close();
 
                 } else if (fournisseur === "clickadilla") {
-                    // ⚡ INJECTION CLICKADILLA AVEC LE SCRIPT MAÎTRE ENTIER ET INTACT
+                    // ⚡ IMPLÉMENTATION PARFAITE CLICKADILLA ADMANAGER
+                    // ID Maître du script adManager = 447738
+                    // ID Emplacement de la bannière = clePub (ex: 1496058)
+                    
                     let cadreIframe = document.createElement("iframe");
                     cadreIframe.style.width = w;
                     cadreIframe.style.height = h;
@@ -1918,7 +1899,8 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                             </style>
                         </head>
                         <body>
-                            <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="${clePub}"><\/script>
+                            <div data-banner-id="${clePub}"></div>
+                            <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="447738"><\/script>
                         </body>
                         </html>
                     `;
@@ -1940,7 +1922,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // Surveillance de l'affichage
+    // Surveillance
     if (fournisseur === "clickadilla") {
         surveillerClickadillaUnique(
             "zone-pub-banniere-" + indexZone,
@@ -1966,8 +1948,9 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         );
     }
 }
+
 // -----------------------------------------------------------------------------
-// SURVEILLANCE UNIQUE POUR CLICKADILLA (ISOLÉE, N'IMPACTE PAS LES AUTRES)
+// SURVEILLANCE SPÉCIFIQUE IFRAME CLICKADILLA
 // -----------------------------------------------------------------------------
 function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
     const conteneur = document.getElementById(idZone);
@@ -1983,14 +1966,27 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
     function verifierPresenceReelleClickadilla() {
         if (detectee) return;
 
-        const divTarget = conteneur.querySelector(`[data-banner-id="${clePub}"]`) || document.getElementById(clePub);
+        const iframe = conteneur.querySelector('iframe');
+        if (iframe) {
+            try {
+                const doc = iframe.contentWindow.document || iframe.contentDocument;
+                if (doc) {
+                    const divTarget = doc.querySelector(`[data-banner-id="${clePub}"]`);
+                    if (divTarget) {
+                        const enfants = divTarget.querySelectorAll('iframe, img, a, ins, canvas, svg, div');
+                        const hauteur = divTarget.offsetHeight || divTarget.clientHeight;
+                        const contenu = divTarget.innerHTML.trim();
 
-        if (divTarget) {
-            const enfants = divTarget.querySelectorAll('iframe, img, a, ins, canvas, svg, div');
-            const hauteur = divTarget.offsetHeight || divTarget.clientHeight;
-            const contenu = divTarget.innerHTML.trim();
-
-            if (enfants.length > 0 || hauteur > 20 || contenu !== "") {
+                        if (enfants.length > 0 || hauteur > 20 || contenu !== "") {
+                            detectee = true;
+                            if (intervalVerification) clearInterval(intervalVerification);
+                            if (timerPanne) clearTimeout(timerPanne);
+                            surSucces();
+                        }
+                    }
+                }
+            } catch (e) {
+                // Si la pub s'est chargée avec redirection Cross-Origin dans l'iframe
                 detectee = true;
                 if (intervalVerification) clearInterval(intervalVerification);
                 if (timerPanne) clearTimeout(timerPanne);
@@ -2006,9 +2002,8 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
             if (intervalVerification) clearInterval(intervalVerification);
             surEchec();
         }
-    }, 10000);
+    }, 12000);
 }
-
 // -----------------------------------------------------------------------------
 // SURVEILLANCE PAR DÉFAUT (ADSTERRA & ADVERTICA - CONSERVÉE EXACTEMENT À L'IDENTIQUE)
 // -----------------------------------------------------------------------------
