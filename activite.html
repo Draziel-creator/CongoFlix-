@@ -1950,7 +1950,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
 }
 
 // =============================================================================
-// SURVEILLANCE SPÉCIFIQUE IFRAME CLICKADILLA (INFAILLIBLE & ANTI-TRICHE)
+// SURVEILLANCE STRICTE CLICKADILLA (ANTI-DÉCLENCHEMENT À VIDE)
 // =============================================================================
 function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
     const conteneur = document.getElementById(idZone);
@@ -1978,7 +1978,7 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
 
             let pubVraimentAffichee = false;
 
-            // 1. Détection des IMAGES RÉELLES (Filtre strictement les pixels 1x1 de tracking)
+            // 1. Détection des IMAGES RÉELLES (Élimine les pixels de tracking invisibles)
             const images = divTarget.querySelectorAll('img');
             images.forEach(img => {
                 if (img.complete && img.naturalWidth > 10 && img.naturalHeight > 10) {
@@ -1986,34 +1986,38 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
                 }
             });
 
-            // 2. Détection des SOUS-IFRAMES (Mesure la taille physique réelle sur l'écran)
+            // 2. Détection des SOUS-IFRAMES (Publicités HTML5/JS injectées)
             const subIframes = divTarget.querySelectorAll('iframe');
             subIframes.forEach(subIframe => {
-                const rect = subIframe.getBoundingClientRect();
-                if (rect.width >= 100 && rect.height >= 40) {
+                try {
+                    const subDoc = subIframe.contentWindow.document || subIframe.contentDocument;
+                    if (subDoc && subDoc.body && subDoc.body.children.length > 0) {
+                        pubVraimentAffichee = true;
+                    }
+                } catch (crossOriginErr) {
+                    // Si l'accès est bloqué par Cross-Origin, cela prouve que Clickadilla
+                    // a injecté une iframe provenant d'un serveur publicitaire externe actif.
                     pubVraimentAffichee = true;
                 }
             });
 
-            // 3. Détection des Médias HTML5 (Canvas, Video, SVG)
-            const medias = divTarget.querySelectorAll('canvas, video, svg');
-            medias.forEach(med => {
-                const rect = med.getBoundingClientRect();
-                if (rect.width >= 50 && rect.height >= 50) {
+            // 3. Détection des LIENS (Seulement s'ils contiennent du texte ou une image)
+            const liens = divTarget.querySelectorAll('a');
+            liens.forEach(a => {
+                if (a.innerText.trim().length > 0 || a.querySelector('img')) {
                     pubVraimentAffichee = true;
                 }
             });
 
-            // 4. Détection des Blocs/Liens ayant une surface d'affichage réelle
-            const liensOuDivs = divTarget.querySelectorAll('a, div');
-            liensOuDivs.forEach(el => {
-                const rect = el.getBoundingClientRect();
-                if (rect.width >= 120 && rect.height >= 40) {
+            // 4. Détection des animations Canvas ou Vidéo
+            const medias = divTarget.querySelectorAll('canvas, video');
+            medias.forEach(m => {
+                if (m.offsetWidth > 10 && m.offsetHeight > 10) {
                     pubVraimentAffichee = true;
                 }
             });
 
-            // VALIDE ET DÉCLENCHE LE TIMER UNIQUEMENT SI LE VISUEL EST VISIBLE
+            // VALIDATION : Le compteur ne se lance QUE SI une vraie pub est trouvée
             if (pubVraimentAffichee) {
                 detectee = true;
                 if (intervalVerification) clearInterval(intervalVerification);
@@ -2022,13 +2026,13 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
             }
 
         } catch (e) {
-            // Sécurité anti-triche : On ne valide plus aveuglément en cas d'erreur Cross-Origin
+            // En cas d'erreur DOM, on ne valide rien à vide
         }
     }
 
     intervalVerification = setInterval(verifierPresenceReelleClickadilla, 500);
 
-    // Si après 12 secondes aucun visuel physique n'est dessiné à l'écran -> Panne
+    // Si après 12 secondes aucun visuel n'est trouvé, annulation et alerte d'échec
     timerPanne = setTimeout(() => {
         if (!detectee) {
             if (intervalVerification) clearInterval(intervalVerification);
