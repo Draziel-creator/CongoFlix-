@@ -1599,7 +1599,7 @@ function demarrerDecompte10Sec() {
 }
 
 // =============================================================================
-// RÉCLAMATION VIDÉO : SÉPARATION (users = Points/XP | rewards_users = Tâches)
+// RÉCLAMATION VIDÉO AVEC VÉRIFICATION STRICTE DU RANG (RANG >= 1)
 // =============================================================================
 function reclamerPointsBouton1(pts) {
     const idActif = window.userId || (typeof userId !== "undefined" ? userId : null);
@@ -1619,27 +1619,38 @@ function reclamerPointsBouton1(pts) {
 
     const pointsAAjouter = pts || 100;
 
-    // A) Envoi des Points et XP dans la collection "users"
-    const majUsers = db.collection("users").doc(idActif).update({
-        pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
-        xp: firebase.firestore.FieldValue.increment(1)
-    });
+    // 1. Lecture préalable de l'utilisateur pour vérifier le champ 'rank'
+    db.collection("users").doc(idActif).get().then((docUser) => {
+        const donneesUser = docUser.exists ? docUser.data() : {};
+        const rangUtilisateur = Number(donneesUser.rank || 0);
 
-    // B) Envoi des compteurs de tâches dans la collection "rewards_users"
-    const majRewards = db.collection("rewards_users").doc(idActif).update({
-        pointsDuJour: firebase.firestore.FieldValue.increment(1), // +1 pour le compteur x/15
-        tasksCompleted: firebase.firestore.FieldValue.increment(1)
-    });
+        // Préparation de la mise à jour pour 'users'
+        const majUsersData = {
+            xp: firebase.firestore.FieldValue.increment(1)
+        };
 
-    // Exécution des deux mises à jour en même temps
-    Promise.all([majUsers, majRewards]).then(() => {
+        // CONDITION RANG : Seuls les rangs 1 et plus cumulent des pointsDuJours
+        if (rangUtilisateur >= 1) {
+            majUsersData.pointsDuJours = firebase.firestore.FieldValue.increment(pointsAAjouter);
+        }
 
-        // Envoie l'historique de la tâche à Firebase
+        // A) Mise à jour de la collection "users"
+        const majUsers = db.collection("users").doc(idActif).update(majUsersData);
+
+        // B) Mise à jour des compteurs de tâches dans "rewards_users"
+        const majRewards = db.collection("rewards_users").doc(idActif).update({
+            pointsDuJour: firebase.firestore.FieldValue.increment(1), // Compteur de tâches x/15
+            tasksCompleted: firebase.firestore.FieldValue.increment(1)
+        });
+
+        // 2. Exécution des mises à jour
+        return Promise.all([majUsers, majRewards]).then(() => rangUtilisateur);
+    }).then((rangUtilisateur) => {
+
+        // Enregistrement de l'historique et verrouillage visuel
         if (typeof enregistrerTacheDansFirebase === "function") {
             enregistrerTacheDansFirebase(window.missionActiveId);
         }
-
-        // Verrouille le visuel de la mission
         if (window.missionActiveId && typeof verrouillerMissionVisuel === "function") {
             verrouillerMissionVisuel(window.missionActiveId);
         }
@@ -1649,19 +1660,28 @@ function reclamerPointsBouton1(pts) {
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        const messageSucces = `Félicitations ! Vous avez reçu +${pointsAAjouter} Points et +1 XP !`;
+        // Message adapté selon le rang
+        let messageModale = "";
+        let titreModale = "Tâche Complétée";
+
+        if (rangUtilisateur >= 1) {
+            messageModale = `Félicitations ! Vous avez reçu +${pointsAAjouter} Points et +1 XP !`;
+        } else {
+            messageModale = `Tâche validée (+1 XP) !\n\nAttention : Votre compte est actuellement au Rang 0. Passez au Rang 1 pour pouvoir accumuler des points du jour.`;
+            titreModale = "Rang 0 - Points non cumulés";
+        }
 
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee(
-                messageSucces, 
-                "Tâche Complétée", 
+                messageModale, 
+                titreModale, 
                 "Super", 
                 function() {
                     if (typeof fermerModaleActive === "function") fermerModaleActive();
                 }
             );
         } else {
-            alert(messageSucces);
+            alert(messageModale);
             if (typeof fermerModaleActive === "function") fermerModaleActive();
         }
 
@@ -2216,7 +2236,7 @@ function demarrerDecompteBanniere30Sec() {
 }
 
 // =============================================================================
-// RÉCLAMATION BANNIÈRE : SÉPARATION (users = Points/XP | rewards_users = Tâches)
+// RÉCLAMATION BANNIÈRE AVEC VÉRIFICATION STRICTE DU RANG (RANG >= 1)
 // =============================================================================
 function reclamerPointsBanniereSeule() {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
@@ -2237,31 +2257,42 @@ function reclamerPointsBanniereSeule() {
     const pts = banniereMissionActivePoints || 100;
     const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
-    // A) Envoi des Points et XP dans la collection "users"
-    const majUsers = db.collection("users").doc(currentUserId).update({
-        pointsDuJours: firebase.firestore.FieldValue.increment(pts),
-        xp: firebase.firestore.FieldValue.increment(1)
-    });
+    // 1. Lecture préalable de l'utilisateur pour vérifier le champ 'rank'
+    db.collection("users").doc(currentUserId).get().then((docUser) => {
+        const donneesUser = docUser.exists ? docUser.data() : {};
+        const rangUtilisateur = Number(donneesUser.rank || 0);
 
-    // B) Envoi des compteurs de tâches dans la collection "rewards_users"
-    const majRewards = db.collection("rewards_users").doc(currentUserId).update({
-        pointsDuJour: firebase.firestore.FieldValue.increment(1), // +1 pour le compteur x/15
-        tasksCompleted: firebase.firestore.FieldValue.increment(1)
-    });
+        const majUsersData = {
+            xp: firebase.firestore.FieldValue.increment(1)
+        };
 
-    // Exécution des deux mises à jour simultanées
-    Promise.all([majUsers, majRewards]).then(() => {
+        // CONDITION RANG : Seuls les rangs >= 1 accumulent des points
+        if (rangUtilisateur >= 1) {
+            majUsersData.pointsDuJours = firebase.firestore.FieldValue.increment(pts);
+        }
 
-        // Enregistrement de l'historique dans la sous-collection de rewards_users
+        // A) Mise à jour dans "users"
+        const majUsers = db.collection("users").doc(currentUserId).update(majUsersData);
+
+        // B) Mise à jour des compteurs dans "rewards_users"
+        const majRewards = db.collection("rewards_users").doc(currentUserId).update({
+            pointsDuJour: firebase.firestore.FieldValue.increment(1),
+            tasksCompleted: firebase.firestore.FieldValue.increment(1)
+        });
+
+        // 2. Exécution des deux requêtes
+        return Promise.all([majUsers, majRewards]).then(() => rangUtilisateur);
+    }).then((rangUtilisateur) => {
+
+        // Enregistrement dans l'historique
         return db.collection("rewards_users").doc(currentUserId).collection("historique_taches_v2").doc(banniereMissionActiveId).set({
             date: dateAujourdhui,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             type: "banniere"
-        });
+        }).then(() => rangUtilisateur);
 
-    }).then(() => {
+    }).then((rangUtilisateur) => {
 
-        // Bloquer instantanément le bouton sur l'interface
         if (typeof bloquerBoutonBanniereVisuellement === "function") {
             bloquerBoutonBanniereVisuellement(banniereMissionActiveId);
         }
@@ -2271,12 +2302,20 @@ function reclamerPointsBanniereSeule() {
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        const messageAlerte = `Vous avez reçu +${pts} Points et +1 XP !\n\nCette tâche sera bloquée pour aujourd'hui et se réinitialisera automatiquement demain à 00h00.`;
+        let messageAlerte = "";
+        let titreAlerte = "Tâche Complétée";
+
+        if (rangUtilisateur >= 1) {
+            messageAlerte = `Vous avez reçu +${pts} Points et +1 XP !\n\nCette tâche sera bloquée pour aujourd'hui et se réinitialisera automatiquement demain à 00h00.`;
+        } else {
+            messageAlerte = `Tâche validée (+1 XP) !\n\nAttention : Vous êtes actuellement au Rang 0. Seuls les utilisateurs de Rang 1 ou supérieur accumulent des points du jour.`;
+            titreAlerte = "Rang 0 - Points non cumulés";
+        }
 
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee(
                 messageAlerte,
-                "Tâche Complétée",
+                titreAlerte,
                 "J'ai compris",
                 function() {
                     if (typeof fermerModaleBanniereExclusive === "function") {
