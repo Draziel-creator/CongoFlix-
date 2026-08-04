@@ -504,7 +504,7 @@
     checkReferral();
 
    // =========================================================================
-// GENERATION HISTORIQUE + RÈGLE FERMABLE (ADAPTÉ À VOTRE HTML)
+// 1. GENERATION HISTORIQUE + RÈGLE FERMABLE (ADAPTÉ À VOTRE HTML)
 // =========================================================================
 function generateHistoryUI(userHistoryData = {}, userRank = 0) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -681,6 +681,70 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
     }
 }
 
+
+// =========================================================================
+// 2. ÉCOUTEUR FIREBASE AUTOMATIQUE (REWARDS_USERS)
+// =========================================================================
+function startHistorySync(userId) {
+    if (!userId) return;
+
+    // Écoute en temps réel de la collection rewards_users
+    db.collection("rewards_users").doc(userId).onSnapshot(async (doc) => {
+        if (!doc.exists) return;
+
+        const userData = doc.data();
+
+        // Récupérer la date locale du jour (format YYYY-MM-DD)
+        const now = new Date();
+        const dateAujourdhui = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+        const lastActiveDate = userData.lastActiveDate || dateAujourdhui;
+        const userRank = userData.rank || 0;
+        let historyData = userData.history || {};
+        const pointsDuJour = userData.pointsDuJour || 0;
+        const activeKey = userData.currentDayKey || "w1_d1"; // Ex: w1_d1, w1_d2...
+
+        // --- DÉTECTION DU CHANGEMENT DE JOUR (NOUVEAU JOUR) ---
+        if (lastActiveDate !== dateAujourdhui) {
+
+            // 1. Règle des 15 tâches : si >= 15 on enregistre 15, sinon 0 (échec)
+            historyData[activeKey] = pointsDuJour >= 15 ? 15 : 0;
+
+            // 2. Mise à jour de Firebase : réinitialisation pour le nouveau jour
+            await db.collection("rewards_users").doc(userId).update({
+                pointsDuJour: 0,
+                lastActiveDate: dateAujourdhui,
+                history: historyData
+            });
+
+            // Mise à jour locale pour le rendu immédiat
+            userData.pointsDuJour = 0;
+        }
+
+        // --- GÉNÉRATION AUTOMATIQUE DE L'INTERFACE ---
+        generateHistoryUI(historyData, userRank);
+
+    }, (error) => {
+        console.error("Erreur de synchronisation historique :", error);
+    });
+}
+    // =========================================================================
+// COMMENT LANCER LA SYNCHRONISATION AUTOMATIQUE
+// =========================================================================
+
+// Firebase détecte quand l'utilisateur est connecté
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        // 1. L'utilisateur est connecté, on récupère son ID unique Firebase
+        const ID_DE_L_UTILISATEUR = user.uid;
+
+        // 2. ON LANCE LA SYNCHRO ICI :
+        startHistorySync(ID_DE_L_UTILISATEUR);
+        
+    } else {
+        console.log("Aucun utilisateur connecté.");
+    }
+});
     function applyRankDesign(rankLevel) {
         globalUserRank = parseInt(rankLevel) || 0;
         const currentRank = RANKS_METADATA[globalUserRank] || RANKS_METADATA[0];
