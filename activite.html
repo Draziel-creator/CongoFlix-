@@ -1599,10 +1599,9 @@ function demarrerDecompte10Sec() {
 }
 
 // =============================================================================
-// RÉCLAMATION VIDÉO (COMMUNICATION ALIGNÉE SUR LE CODE VIP)
+// RÉCLAMATION VIDÉO (CORRIGÉE & DÉFINITIVEMENT VERROUILLÉE)
 // =============================================================================
 async function reclamerPointsBouton1(pts) {
-    // Récupération de l'utilisateur comme dans le code VIP
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (typeof recupererIdentifiantUtilisateur === "function" ? recupererIdentifiantUtilisateur() : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null));
 
     if (!currentUserId) {
@@ -1621,9 +1620,10 @@ async function reclamerPointsBouton1(pts) {
     }
 
     const pointsAAjouter = pts || 100;
+    const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
     try {
-        // 🔥 1. LECTURE EN DIRECT DANS LA COLLECTION "users" (Même méthode que le VIP)
+        // 1. Lecture du rang utilisateur
         const snap = await db.collection("users").doc(currentUserId).get();
         
         let rangUtilisateur = 0;
@@ -1632,29 +1632,39 @@ async function reclamerPointsBouton1(pts) {
             rangUtilisateur = Number(data.rank || data.rang || 0);
         }
 
-        // 🔥 2. PRÉPARATION DE LA MISE À JOUR
+        // 2. Préparation des mises à jour Profil
         let majUsersData = {
-            xp: firebase.firestore.FieldValue.increment(1) // Le XP est toujours attribué
+            xp: firebase.firestore.FieldValue.increment(1)
         };
 
-        // RÈGLE RANG : On incrémente 'pointsDuJours' SEULEMENT si rang >= 1
         if (rangUtilisateur >= 1) {
             majUsersData.pointsDuJours = firebase.firestore.FieldValue.increment(pointsAAjouter);
         }
 
-        // 🔥 3. ENVOI PARALLÈLE FIREBASE
+        // 3. Promesses Firebase simultanées
         const majUsers = db.collection("users").doc(currentUserId).update(majUsersData);
+        
         const majRewards = db.collection("rewards_users").doc(currentUserId).update({
             pointsDuJour: firebase.firestore.FieldValue.increment(1),
             tasksCompleted: firebase.firestore.FieldValue.increment(1)
         });
 
-        await Promise.all([majUsers, majRewards]);
+        // 🔥 ENREGISTREMENT DU BLOCAGE (Aligné sur la collection standard users/historique_taches_v2)
+        const idMission = window.missionActiveId || "video_generique";
+        const majHistorique = db.collection("users")
+            .doc(currentUserId)
+            .collection("historique_taches_v2")
+            .doc(idMission)
+            .set({
+                date: dateAujourdhui,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                type: "video"
+            });
 
-        // 🔥 4. SUCCÈS ET VERROUILLAGE VISUEL
-        if (typeof enregistrerTacheDansFirebase === "function") {
-            enregistrerTacheDansFirebase(window.missionActiveId);
-        }
+        // Attente de la validation globale
+        await Promise.all([majUsers, majRewards, majHistorique]);
+
+        // 4. Verrouillage Visuel Instantané
         if (window.missionActiveId && typeof verrouillerMissionVisuel === "function") {
             verrouillerMissionVisuel(window.missionActiveId);
         }
@@ -1664,7 +1674,7 @@ async function reclamerPointsBouton1(pts) {
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        // 🔥 5. MESSAGE EXPICATIF ADAPTÉ AU RANG
+        // 5. Message selon le Rang
         if (rangUtilisateur >= 1) {
             const msg = `Félicitations ! Vos +${pointsAAjouter} Points et +1 XP ont été crédités !`;
             if (typeof afficherAlertePersonnalisee === "function") {
@@ -2238,7 +2248,7 @@ function demarrerDecompteBanniere30Sec() {
 }
 
 // =============================================================================
-// RÉCLAMATION BANNIÈRE (COMMUNICATION ALIGNÉE SUR LE CODE VIP)
+// RÉCLAMATION BANNIÈRE (CORRIGÉE & DÉFINITIVEMENT VERROUILLÉE)
 // =============================================================================
 async function reclamerPointsBanniereSeule() {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (typeof recupererIdentifiantUtilisateur === "function" ? recupererIdentifiantUtilisateur() : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null));
@@ -2262,7 +2272,7 @@ async function reclamerPointsBanniereSeule() {
     const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
     try {
-        // 🔥 1. LECTURE DIRECTE DANS "users" (Même structure async/await)
+        // 1. Lecture du Rang
         const snap = await db.collection("users").doc(currentUserId).get();
 
         let rangUtilisateur = 0;
@@ -2271,7 +2281,7 @@ async function reclamerPointsBanniereSeule() {
             rangUtilisateur = Number(data.rank || data.rang || 0);
         }
 
-        // 🔥 2. CONSTRUCTION DES DONNÉES
+        // 2. Données à mettre à jour
         let majUsersData = {
             xp: firebase.firestore.FieldValue.increment(1)
         };
@@ -2280,21 +2290,28 @@ async function reclamerPointsBanniereSeule() {
             majUsersData.pointsDuJours = firebase.firestore.FieldValue.increment(pts);
         }
 
-        // 🔥 3. MISES À JOUR SIMULTANÉES
+        // 3. Mises à jour simultanées
         const majUsers = db.collection("users").doc(currentUserId).update(majUsersData);
+        
         const majRewards = db.collection("rewards_users").doc(currentUserId).update({
             pointsDuJour: firebase.firestore.FieldValue.increment(1),
             tasksCompleted: firebase.firestore.FieldValue.increment(1)
         });
-        const majHistorique = db.collection("rewards_users").doc(currentUserId).collection("historique_taches_v2").doc(banniereMissionActiveId).set({
-            date: dateAujourdhui,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            type: "banniere"
-        });
+
+        // 🔥 REMISE DU BON CHEMIN : users/.../historique_taches_v2
+        const majHistorique = db.collection("users")
+            .doc(currentUserId)
+            .collection("historique_taches_v2")
+            .doc(banniereMissionActiveId)
+            .set({
+                date: dateAujourdhui,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                type: "banniere"
+            });
 
         await Promise.all([majUsers, majRewards, majHistorique]);
 
-        // 🔥 4. VERROUILLAGE VISUEL ET BOUTON
+        // 4. Verrouillage Visuel Instantané
         if (typeof bloquerBoutonBanniereVisuellement === "function") {
             bloquerBoutonBanniereVisuellement(banniereMissionActiveId);
         }
@@ -2304,7 +2321,7 @@ async function reclamerPointsBanniereSeule() {
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        // 🔥 5. MODALE ADAPTÉE AU RANG
+        // 5. Modale adaptée au Rang
         if (rangUtilisateur >= 1) {
             const msg = `Vous avez reçu +${pts} Points et +1 XP !\n\nCette mission est validée pour aujourd'hui.`;
             if (typeof afficherAlertePersonnalisee === "function") {
@@ -2335,7 +2352,6 @@ async function reclamerPointsBanniereSeule() {
         }
     }
 }
-
 // Alerte en cas de panne sur Adsterra / Advertica (Inchangée)
 function declencherPanneBanniereIndependante() {
     const loader = document.getElementById("banniere-ad-loader-unique");
