@@ -594,7 +594,7 @@ body, html {
             <!-- Instructions Bannière -->
             <div style="margin-top: 10px; text-align: center;">
                 <p class="banniere-modal-instructions" style="font-size: 11px; color: #686c87; margin: 0 0 6px 0; line-height: 1.4;">
-                    Le chrono de <strong>10 secondes</strong> démarre automatiquement dès l'affichage de la bannière.
+                    Le chrono de <strong>30 secondes</strong> démarre automatiquement dès l'affichage de la bannière.
                 </p>
             </div>
             
@@ -1031,7 +1031,8 @@ function brancherEcouteurFirebase() {
 // ==========================================
 // 6. LOGIQUE DU CASINO BONUS FLOTTANT
 // ==========================================
-    async function ouvrirModalBonus() {
+
+async function ouvrirModalBonus() {
     const currentId = (typeof userId !== "undefined" && userId) ? userId : recupererIdentifiantUtilisateur();
     
     if (!currentId) {
@@ -1050,21 +1051,43 @@ function brancherEcouteurFirebase() {
 
         if (userRank < 1) {
             if (typeof afficherAlertePersonnalisee === "function") {
-                afficherAlertePersonnalisee("Ce bonus est réservé aux rang élevée (Rang 1 minimum).", "Accès Refusé");
+                afficherAlertePersonnalisee("Ce bonus est réservé aux rangs élevés (Rang 1 minimum).", "Accès Refusé");
             } else {
-                alert("Accès réservé aux rang élevée (Rang 1 minimum).");
+                alert("Accès réservé aux rangs élevés (Rang 1 minimum).");
             }
             return;
         }
 
-        // B. Lecture des "toursFaits" dans "rewards_users" (comme la page roue.html)
+        // B. Lecture des "toursFaits" et de la "dateDernierTour" dans "rewards_users"
         const rewardSnap = await db.collection("rewards_users").doc(currentId).get();
+        const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
+        
         let userTours = 0;
         
         if (rewardSnap.exists) {
-            userTours = Number(rewardSnap.data().toursFaits || 0); // 👈 F majuscule
+            const rewardData = rewardSnap.data();
+            const dateDernierTour = rewardData.dateDernierTour || "";
+
+            // 🔄 RÉINITIALISATION QUOTIDIENNE (Si changement de date)
+            if (dateDernierTour !== dateAujourdhui) {
+                userTours = 0;
+                // Remise à zéro dans Firebase pour le nouveau jour
+                await db.collection("rewards_users").doc(currentId).set({
+                    toursFaits: 0,
+                    dateDernierTour: dateAujourdhui
+                }, { merge: true });
+            } else {
+                userTours = Number(rewardData.toursFaits || 0);
+            }
+        } else {
+            // Création initiale si le document n'existe pas
+            await db.collection("rewards_users").doc(currentId).set({
+                toursFaits: 0,
+                dateDernierTour: dateAujourdhui
+            }, { merge: true });
         }
 
+        // Mise à jour de la variable globale
         window.localToursFaits = userTours;
         if (typeof localToursFaits !== "undefined") localToursFaits = userTours;
 
@@ -1077,6 +1100,7 @@ function brancherEcouteurFirebase() {
         console.error("Erreur vérification Casino :", erreur);
     }
 }
+
 function fermerModalBonus() {
     const modal = document.getElementById("modal-bonus-casino");
     if (modal) modal.style.display = "none";
@@ -1087,7 +1111,7 @@ function actualiserTexteModalCasino() {
     const boutonCasino = document.getElementById("btn-action-casino");
     if (!labelChances || !boutonCasino) return;
 
-    let restants = 5 - localToursFaits;
+    let restants = 5 - (window.localToursFaits || 0);
 
     if (restants <= 0) {
         labelChances.innerText = "Vous avez épuisé toutes vos chances de la journée, revenez demain pour retenter.";
@@ -1112,9 +1136,12 @@ function tenterChanceCasino(e) {
         return;
     }
 
-    // On incrémente "toursFaits" (F majuscule) dans la collection "rewards_users"
+    const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
+
+    // 🔥 On incrémente "toursFaits" ET on enregistre la date de la journée
     db.collection("rewards_users").doc(currentUserId).set({
-        toursFaits: firebase.firestore.FieldValue.increment(1)
+        toursFaits: firebase.firestore.FieldValue.increment(1),
+        dateDernierTour: dateAujourdhui
     }, { merge: true }).then(() => {
         console.log("✅ Tour enregistré dans rewards_users ! Redirection vers la roue...");
         window.location.href = "roue.html";
