@@ -1373,7 +1373,6 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
         // 1. Recherche d'une balise <video> réelle qui s'exécute dans le DOM
         const videos = conteneur.querySelectorAll('video');
         videos.forEach(v => {
-            // Vérifie si la vidéo a une taille réelle ou a commencé à charger du flux
             if (v.offsetWidth > 10 && v.offsetHeight > 10 && (v.readyState > 0 || v.currentTime > 0 || v.videoWidth > 0)) {
                 pubVraimentAffichee = true;
             }
@@ -1389,18 +1388,17 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
                     subVideos.forEach(v => {
                         if (v.offsetWidth > 10 || v.readyState > 0) pubVraimentAffichee = true;
                     });
-                    // Si la structure VAST/Player est présente avec des éléments
                     if (doc.querySelector('.vast-player, .video-ad, canvas')) {
                         pubVraimentAffichee = true;
                     }
                 }
             } catch (crossOriginErr) {
-                // Si l'accès est bloqué Cross-Origin, le lecteur vidéo externe est bien injecté
+                // Si l'accès est bloqué par Cross-Origin, cela confirme qu'un lecteur vidéo externe actif est injecté !
                 pubVraimentAffichee = true;
             }
         });
 
-        // VALIDATION : Si une vraie vidéo est en cours de lecture
+        // VALIDATION : Si une vraie vidéo est en cours
         if (pubVraimentAffichee) {
             detectee = true;
             if (intervalVerification) clearInterval(intervalVerification);
@@ -1411,7 +1409,7 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
 
     intervalVerification = setInterval(verifierLecteurVideoActif, 500);
 
-    // Si après 9 secondes aucun lecteur vidéo valide n'est affiché, DECLENCHER LA PANNE
+    // Si après 9 secondes aucun visuel n'est trouvé, annulation et alerte d'échec
     timerPanne = setTimeout(() => {
         if (!detectee) {
             if (intervalVerification) clearInterval(intervalVerification);
@@ -1421,7 +1419,7 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
 }
 
 // =============================================================================
-// INITIALISATION DE LA MISSION VIDÉO CORRIGÉE
+// INITIALISATION DE LA MISSION VIDÉO
 // =============================================================================
 function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
@@ -1474,8 +1472,22 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const idZoneCible = "zone-pub-video" + indexVideo;
     const conteneurVideo = document.getElementById(idZoneCible);
 
+    // Gestion d'erreur si la zone est introuvable
+    const afficherErreurPanne = () => {
+        fermerModaleActive();
+        if (typeof declencherPanneAffichagePub === "function") {
+            declencherPanneAffichagePub();
+        } else if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee(
+                "Aucune publicité vidéo disponible dans votre région actuellement. Réessayez plus tard.", 
+                "Publicité Indisponible", 
+                "Compris"
+            );
+        }
+    };
+
     if (!conteneurVideo) {
-        if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+        afficherErreurPanne();
         return;
     }
 
@@ -1504,31 +1516,26 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         scriptVideo.setAttribute("data-admpid", zoneId);
 
         scriptVideo.onerror = () => {
-            if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+            afficherErreurPanne();
         };
 
         conteneurVideo.appendChild(scriptVideo);
 
-        // Lancement de la détection stricte sans timer automatique permissif
+        // Lancement de la détection
         surveillerVideoClickadillaReelle(
             idZoneCible,
             () => {
-                // SUCCÈS : Une vraie vidéo s'affiche !
+                // SUCCÈS : Vraie vidéo détectée !
                 afficherDoigtImmediatement();
             },
             () => {
-                // ÉCHEC : Écran noir ou absence de pub -> On déclenche la panne !
-                if (typeof declencherPanneAffichagePub === "function") {
-                    declencherPanneAffichagePub();
-                } else {
-                    alert("Aucune publicité vidéo disponible pour le moment. Réessayez plus tard.");
-                    fermerModaleActive();
-                }
+                // ÉCHEC : Écran noir ou absence de pub -> Modale d'alerte personnalisée
+                afficherErreurPanne();
             }
         );
 
     } catch(err) {
-        if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
+        afficherErreurPanne();
     }
 }
 function declencherPlayFlux(event) {
