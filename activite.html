@@ -1599,9 +1599,8 @@ function demarrerDecompte10Sec() {
 }
 
 // =============================================================================
-// 4. RÉCLAMATION ET MISE À JOUR FIREBASE
+// RÉCLAMATION ET SYNCHRONISATION EXACTE AVEC LA PAGE COMPTE (rewards_users)
 // =============================================================================
-
 function reclamerPointsBouton1(pts) {
     const idActif = window.userId || (typeof userId !== "undefined" ? userId : null);
 
@@ -1620,17 +1619,21 @@ function reclamerPointsBouton1(pts) {
 
     const pointsAAjouter = pts || 100;
 
-    // 1. Met à jour les points et l'XP de l'utilisateur
-    db.collection("users").doc(idActif).update({
-        pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
+    // MISE À JOUR DANS LA BONNE COLLECTION ("rewards_users") ET LE BON CHAMP ("pointsDuJour")
+    db.collection("rewards_users").doc(idActif).update({
+        coins: firebase.firestore.FieldValue.increment(pointsAAjouter),
+        pointsDuJour: firebase.firestore.FieldValue.increment(1), // +1 pour le compteur x/15 du tableau de bord
+        tasksCompleted: firebase.firestore.FieldValue.increment(1),
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
 
-        // 2. Envoie l'historique de la tâche à Firebase
-        enregistrerTacheDansFirebase(window.missionActiveId);
+        // Envoie l'historique de la tâche à Firebase
+        if (typeof enregistrerTacheDansFirebase === "function") {
+            enregistrerTacheDansFirebase(window.missionActiveId);
+        }
 
-        // 3. Verrouille immédiatement la carte et le bouton de la mission active
-        if (window.missionActiveId) {
+        // Verrouille le visuel de la mission
+        if (window.missionActiveId && typeof verrouillerMissionVisuel === "function") {
             verrouillerMissionVisuel(window.missionActiveId);
         }
 
@@ -1663,7 +1666,6 @@ function reclamerPointsBouton1(pts) {
         }
     });
 }
-
 function fermerModaleActive() {
     const modalVideo = document.getElementById("global-pub-modal");
     if (modalVideo) {
@@ -2206,6 +2208,9 @@ function demarrerDecompteBanniere30Sec() {
     }, 1000);
 }
 
+// =============================================================================
+// RÉCLAMATION BANNIÈRE SEULE ET SYNCHRONISATION (rewards_users)
+// =============================================================================
 function reclamerPointsBanniereSeule() {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
 
@@ -2223,16 +2228,18 @@ function reclamerPointsBanniereSeule() {
     }
 
     const pts = banniereMissionActivePoints || 100;
-    const dateAujourdhui = ObtenirDateAujourdhuiISO();
+    const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
-    // 1. Mise à jour des points
-    db.collection("users").doc(currentUserId).update({
-        pointsDuJours: firebase.firestore.FieldValue.increment(pts),
+    // 1. Mise à jour dans rewards_users avec les bons noms de champs
+    db.collection("rewards_users").doc(currentUserId).update({
+        coins: firebase.firestore.FieldValue.increment(pts),
+        pointsDuJour: firebase.firestore.FieldValue.increment(1), // +1 pour le compteur x/15 de la page compte
+        tasksCompleted: firebase.firestore.FieldValue.increment(1),
         xp: firebase.firestore.FieldValue.increment(1)
     }).then(() => {
 
-        // 2. Enregistrement du blocage dans Firestore historique_taches_v2
-        return db.collection("users").doc(currentUserId).collection("historique_taches_v2").doc(banniereMissionActiveId).set({
+        // 2. Enregistrement de l'historique dans la sous-collection de rewards_users
+        return db.collection("rewards_users").doc(currentUserId).collection("historique_taches_v2").doc(banniereMissionActiveId).set({
             date: dateAujourdhui,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             type: "banniere"
@@ -2241,7 +2248,9 @@ function reclamerPointsBanniereSeule() {
     }).then(() => {
 
         // 3. Bloquer instantanément le bouton sur l'interface
-        bloquerBoutonBanniereVisuellement(banniereMissionActiveId);
+        if (typeof bloquerBoutonBanniereVisuellement === "function") {
+            bloquerBoutonBanniereVisuellement(banniereMissionActiveId);
+        }
 
         if (btnClaim) {
             btnClaim.style.backgroundColor = "#6c757d";
@@ -2256,12 +2265,16 @@ function reclamerPointsBanniereSeule() {
                 "Tâche Complétée",
                 "J'ai compris",
                 function() {
-                    fermerModaleBanniereExclusive();
+                    if (typeof fermerModaleBanniereExclusive === "function") {
+                        fermerModaleBanniereExclusive();
+                    }
                 }
             );
         } else {
             alert(messageAlerte);
-            fermerModaleBanniereExclusive();
+            if (typeof fermerModaleBanniereExclusive === "function") {
+                fermerModaleBanniereExclusive();
+            }
         }
 
     }).catch((err) => {
