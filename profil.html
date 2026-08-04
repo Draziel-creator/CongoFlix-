@@ -503,9 +503,13 @@
     }
     checkReferral();
 
+    // =========================================================================
+    // 1. AFFICHAGE DU TABLEAU DE BORD (ROUGE SI < 15 / VERT SI >= 15)
+    // =========================================================================
     function generateHistoryUI(userHistoryData = {}) {
         const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
         const container = document.getElementById('history-rows-container');
+        if(!container) return;
         container.innerHTML = "";
         
         days.forEach((day, index) => {
@@ -519,7 +523,21 @@
                 const tdWeek = document.createElement('td');
                 tdWeek.className = "coin-cell";
                 const cellKey = `w${w}_d${index + 1}`;
-                tdWeek.innerText = userHistoryData[cellKey] || "0";
+                const val = userHistoryData[cellKey] || 0;
+
+                tdWeek.innerText = `${val} / 15`;
+
+                // COULEURS DYNAMIQUES
+                if (val >= 15) {
+                    tdWeek.style.color = "#00ff88"; // VERT : Journée accomplie !
+                    tdWeek.style.fontWeight = "bold";
+                } else if (val > 0) {
+                    tdWeek.style.color = "#ff4d4d"; // ROUGE : En cours / Incomplet
+                    tdWeek.style.fontWeight = "600";
+                } else {
+                    tdWeek.style.color = "#555875"; // GRIS : Pas encore démarré
+                }
+
                 tr.appendChild(tdWeek);
             }
             container.appendChild(tr);
@@ -547,7 +565,6 @@
 
     function evalWithdrawGateStatus() {
         const btn = document.getElementById('withdraw-gate-button');
-        // Toujours actif pour permettre la consultation ou le changement de rang fluide
         btn.disabled = false;
     }
 
@@ -576,7 +593,6 @@
         showPremiumToast(`Option choisie : ${label} (${amount}$)`);
     };
 
-    // LOGIQUE DE COMMUNICATON DIRECTE AVEC LE PORTAIL FLUTTERWAVE SDK
     window.startFlutterwavePaymentFlow = () => {
         const phoneNumber = document.getElementById('payment-phone-number').value.trim();
         const networkSelection = document.getElementById('user-country-network').value;
@@ -591,20 +607,19 @@
             return;
         }
 
-        // Dynamisation de la monnaie d'échange selon le réseau pays sélectionné
         let currencyCode = "USD";
         let finalAmount = selectedAmountUSD;
 
         if(networkSelection.startsWith("CAM") || networkSelection.startsWith("GAB")) {
             currencyCode = "XAF";
-            finalAmount = selectedAmountUSD * 615; // Conversion indicative Franc CFA Équatorial
+            finalAmount = selectedAmountUSD * 615;
         } else if(networkSelection.startsWith("CI") || networkSelection.startsWith("SEN")) {
             currencyCode = "XOF";
-            finalAmount = selectedAmountUSD * 615; // Conversion indicative Franc CFA Occidental
+            finalAmount = selectedAmountUSD * 615;
         }
 
         FlutterwaveCheckout({
-            public_key: "FLWPUBK_TEST-a386ef8bf2cb859bcf72c36a4ba2cc05-X", // Remplace par ta clé publique Flutterwave Live
+            public_key: "FLWPUBK_TEST-a386ef8bf2cb859bcf72c36a4ba2cc05-X",
             tx_ref: "CFX-REV-" + Date.now(),
             amount: finalAmount,
             currency: currencyCode,
@@ -623,7 +638,6 @@
                 if (data.status === "successful" || data.status === "completed") {
                     showPremiumToast("Paiement validé avec succès par Flutterwave !");
                     closeRankModal();
-                    // Code de mise à jour du rang de l'utilisateur dans Firestore après succès
                     try {
                         let newRankCalculated = selectedAmountUSD === 1 ? 1 : (selectedAmountUSD === 3 ? 2 : 3);
                         if(selectedAmountUSD === 10) newRankCalculated = 10;
@@ -756,6 +770,7 @@
                     invitedCount: 0,
                     tasksCompleted: 0,
                     daysActive: 1,
+                    pointsDuJour: 0,
                     parrainePar: referrerId,
                     statutParrainage: referrerId ? "en_attente" : "aucun",
                     photoURL: "", 
@@ -773,6 +788,9 @@
         }
     };
 
+    // =========================================================================
+    // 2. LECTURE & SYNCHRONISATION AUTOMATIQUE SUR pointsDuJour
+    // =========================================================================
     onAuthStateChanged(auth, async (user) => {
         if(user) {
             document.getElementById('auth-screen').classList.add('hidden');
@@ -792,7 +810,6 @@
                 const computedCash = (totalCoins * 0.001).toFixed(2);
                 document.getElementById('user-cash-value').innerText = `$${computedCash}`;
                 
-                // --- RÉPARATIONS ET CORRECTIONS DE CHARGEMENT DES DEUX IMAGES ---
                 if(d.photoURL) {
                     document.getElementById('user-photo').src = d.photoURL;
                 }
@@ -800,9 +817,38 @@
                     document.getElementById('user-banner').src = d.bannerURL;
                 }
                 
-                const userRank = d.rank !== undefined ? d.rank : 0;
+                let userRank = d.rank !== undefined ? d.rank : 0;
+                let currentHistory = d.history || { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 };
+                
+                // A) Récupération directe de pointsDuJour
+                const pointsDuJourActuel = d.pointsDuJour || 0;
+                const currentDayKey = `w1_d${d.daysActive || 1}`;
+
+                // B) Si pointsDuJour a changé sur la page Activités, on met à jour l'historique dans Firebase
+                if (pointsDuJourActuel !== currentHistory[currentDayKey]) {
+                    currentHistory[currentDayKey] = pointsDuJourActuel;
+                    await updateDoc(doc(db, "rewards_users", user.uid), {
+                        history: currentHistory
+                    });
+                }
+
+                // C) Vérification si les 7 jours ont atteint 15 tâches pour le Rang 1
+                let joursAuVert = 0;
+                for (let day = 1; day <= 7; day++) {
+                    if ((currentHistory[`w1_d${day}`] || 0) >= 15) {
+                        joursAuVert++;
+                    }
+                }
+
+                if (joursAuVert >= 7 && userRank === 0) {
+                    userRank = 1;
+                    await updateDoc(doc(db, "rewards_users", user.uid), { rank: 1 });
+                    showPremiumToast("🎉 Félicitations ! Semaine 1 validée : Rang 1 débloqué !");
+                }
+
+                // D) Application du Design et affichage du tableau (Rouge / Vert)
                 applyRankDesign(userRank);
-                generateHistoryUI(d.history || {});
+                generateHistoryUI(currentHistory);
 
                 let condInv = false;
                 let condTsk = false;
