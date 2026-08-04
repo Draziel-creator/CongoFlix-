@@ -1351,6 +1351,78 @@ function enregistrerTacheDansFirebase(taskId) {
 // 3. LOGIQUE MISSIONS VIDÉO (MODALE VIDÉO UNIFIÉE)
 // =============================================================================
 
+// =============================================================================
+// SURVEILLANCE STRICTE VIDÉO CLICKADILLA / VAST (ANTI-POINTS GRATUITS)
+// =============================================================================
+function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
+    const conteneur = document.getElementById(idZone);
+    if (!conteneur) {
+        surEchec();
+        return;
+    }
+
+    let detectee = false;
+    let timerPanne = null;
+    let intervalVerification = null;
+
+    function verifierLecteurVideoActif() {
+        if (detectee) return;
+
+        let pubVraimentAffichee = false;
+
+        // 1. Recherche d'une balise <video> réelle qui s'exécute dans le DOM
+        const videos = conteneur.querySelectorAll('video');
+        videos.forEach(v => {
+            // Vérifie si la vidéo a une taille réelle ou a commencé à charger du flux
+            if (v.offsetWidth > 10 && v.offsetHeight > 10 && (v.readyState > 0 || v.currentTime > 0 || v.videoWidth > 0)) {
+                pubVraimentAffichee = true;
+            }
+        });
+
+        // 2. Recherche d'une iframe injectée par le lecteur VAST
+        const iframes = conteneur.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            try {
+                const doc = iframe.contentWindow.document || iframe.contentDocument;
+                if (doc) {
+                    const subVideos = doc.querySelectorAll('video');
+                    subVideos.forEach(v => {
+                        if (v.offsetWidth > 10 || v.readyState > 0) pubVraimentAffichee = true;
+                    });
+                    // Si la structure VAST/Player est présente avec des éléments
+                    if (doc.querySelector('.vast-player, .video-ad, canvas')) {
+                        pubVraimentAffichee = true;
+                    }
+                }
+            } catch (crossOriginErr) {
+                // Si l'accès est bloqué Cross-Origin, le lecteur vidéo externe est bien injecté
+                pubVraimentAffichee = true;
+            }
+        });
+
+        // VALIDATION : Si une vraie vidéo est en cours de lecture
+        if (pubVraimentAffichee) {
+            detectee = true;
+            if (intervalVerification) clearInterval(intervalVerification);
+            if (timerPanne) clearTimeout(timerPanne);
+            surSucces();
+        }
+    }
+
+    intervalVerification = setInterval(verifierLecteurVideoActif, 500);
+
+    // Si après 9 secondes aucun lecteur vidéo valide n'est affiché, DECLENCHER LA PANNE
+    timerPanne = setTimeout(() => {
+        if (!detectee) {
+            if (intervalVerification) clearInterval(intervalVerification);
+            surEchec();
+        }
+    }, 9000);
+}
+
+// =============================================================================
+// INITIALISATION DE LA MISSION VIDÉO CORRIGÉE
+// =============================================================================
 function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     const e = window.event;
     if (e) {
@@ -1358,7 +1430,6 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         e.stopPropagation();
     }
 
-    // Vérification de sécurité : si la tâche est déjà bloquée
     const btnCible = document.getElementById(`btn-${uniqueId}`);
     if (btnCible && btnCible.disabled) {
         if (typeof afficherAlertePersonnalisee === "function") {
@@ -1426,10 +1497,6 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         }
     };
 
-    const secoursTimer = setTimeout(() => {
-        afficherDoigtImmediatement();
-    }, 2500);
-
     try {
         let scriptVideo = document.createElement("script");
         scriptVideo.async = true;
@@ -1437,31 +1504,33 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         scriptVideo.setAttribute("data-admpid", zoneId);
 
         scriptVideo.onerror = () => {
-            clearTimeout(secoursTimer);
             if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
         };
 
         conteneurVideo.appendChild(scriptVideo);
 
-        if (typeof surveillerPresencePub === "function") {
-            surveillerPresencePub(
-                idZoneCible,
-                () => {
-                    clearTimeout(secoursTimer);
-                    afficherDoigtImmediatement();
-                },
-                () => {
-                    clearTimeout(secoursTimer);
-                    afficherDoigtImmediatement();
+        // Lancement de la détection stricte sans timer automatique permissif
+        surveillerVideoClickadillaReelle(
+            idZoneCible,
+            () => {
+                // SUCCÈS : Une vraie vidéo s'affiche !
+                afficherDoigtImmediatement();
+            },
+            () => {
+                // ÉCHEC : Écran noir ou absence de pub -> On déclenche la panne !
+                if (typeof declencherPanneAffichagePub === "function") {
+                    declencherPanneAffichagePub();
+                } else {
+                    alert("Aucune publicité vidéo disponible pour le moment. Réessayez plus tard.");
+                    fermerModaleActive();
                 }
-            );
-        }
+            }
+        );
+
     } catch(err) {
-        clearTimeout(secoursTimer);
-        afficherDoigtImmediatement();
+        if (typeof declencherPanneAffichagePub === "function") declencherPanneAffichagePub();
     }
 }
-
 function declencherPlayFlux(event) {
     if (event) {
         event.preventDefault();
