@@ -1599,7 +1599,7 @@ function demarrerDecompte10Sec() {
 }
 
 // =============================================================================
-// RÉCLAMATION ET SYNCHRONISATION EXACTE AVEC LA PAGE COMPTE (rewards_users)
+// RÉCLAMATION VIDÉO : SÉPARATION (users = Points/XP | rewards_users = Tâches)
 // =============================================================================
 function reclamerPointsBouton1(pts) {
     const idActif = window.userId || (typeof userId !== "undefined" ? userId : null);
@@ -1619,13 +1619,20 @@ function reclamerPointsBouton1(pts) {
 
     const pointsAAjouter = pts || 100;
 
-    // MISE À JOUR DANS LA BONNE COLLECTION ("rewards_users") ET LE BON CHAMP ("pointsDuJour")
-    db.collection("rewards_users").doc(idActif).update({
-        coins: firebase.firestore.FieldValue.increment(pointsAAjouter),
-        pointsDuJour: firebase.firestore.FieldValue.increment(1), // +1 pour le compteur x/15 du tableau de bord
-        tasksCompleted: firebase.firestore.FieldValue.increment(1),
+    // A) Envoi des Points et XP dans la collection "users"
+    const majUsers = db.collection("users").doc(idActif).update({
+        pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
         xp: firebase.firestore.FieldValue.increment(1)
-    }).then(() => {
+    });
+
+    // B) Envoi des compteurs de tâches dans la collection "rewards_users"
+    const majRewards = db.collection("rewards_users").doc(idActif).update({
+        pointsDuJour: firebase.firestore.FieldValue.increment(1), // +1 pour le compteur x/15
+        tasksCompleted: firebase.firestore.FieldValue.increment(1)
+    });
+
+    // Exécution des deux mises à jour en même temps
+    Promise.all([majUsers, majRewards]).then(() => {
 
         // Envoie l'historique de la tâche à Firebase
         if (typeof enregistrerTacheDansFirebase === "function") {
@@ -2209,7 +2216,7 @@ function demarrerDecompteBanniere30Sec() {
 }
 
 // =============================================================================
-// RÉCLAMATION BANNIÈRE SEULE ET SYNCHRONISATION (rewards_users)
+// RÉCLAMATION BANNIÈRE : SÉPARATION (users = Points/XP | rewards_users = Tâches)
 // =============================================================================
 function reclamerPointsBanniereSeule() {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
@@ -2230,15 +2237,22 @@ function reclamerPointsBanniereSeule() {
     const pts = banniereMissionActivePoints || 100;
     const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
-    // 1. Mise à jour dans rewards_users avec les bons noms de champs
-    db.collection("rewards_users").doc(currentUserId).update({
-        coins: firebase.firestore.FieldValue.increment(pts),
-        pointsDuJour: firebase.firestore.FieldValue.increment(1), // +1 pour le compteur x/15 de la page compte
-        tasksCompleted: firebase.firestore.FieldValue.increment(1),
+    // A) Envoi des Points et XP dans la collection "users"
+    const majUsers = db.collection("users").doc(currentUserId).update({
+        pointsDuJours: firebase.firestore.FieldValue.increment(pts),
         xp: firebase.firestore.FieldValue.increment(1)
-    }).then(() => {
+    });
 
-        // 2. Enregistrement de l'historique dans la sous-collection de rewards_users
+    // B) Envoi des compteurs de tâches dans la collection "rewards_users"
+    const majRewards = db.collection("rewards_users").doc(currentUserId).update({
+        pointsDuJour: firebase.firestore.FieldValue.increment(1), // +1 pour le compteur x/15
+        tasksCompleted: firebase.firestore.FieldValue.increment(1)
+    });
+
+    // Exécution des deux mises à jour simultanées
+    Promise.all([majUsers, majRewards]).then(() => {
+
+        // Enregistrement de l'historique dans la sous-collection de rewards_users
         return db.collection("rewards_users").doc(currentUserId).collection("historique_taches_v2").doc(banniereMissionActiveId).set({
             date: dateAujourdhui,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -2247,7 +2261,7 @@ function reclamerPointsBanniereSeule() {
 
     }).then(() => {
 
-        // 3. Bloquer instantanément le bouton sur l'interface
+        // Bloquer instantanément le bouton sur l'interface
         if (typeof bloquerBoutonBanniereVisuellement === "function") {
             bloquerBoutonBanniereVisuellement(banniereMissionActiveId);
         }
@@ -2509,32 +2523,99 @@ function brancherEcouteurFirebase() {
 }
 
 // =============================================================================
-// ACTIONNEUR DU BOUTON D'ENCAISSEMENT GLOBAL
+// ACTIONNEUR DU BOUTON D'ENCAISSEMENT GLOBAL (MULTI-COLLECTIONS)
 // =============================================================================
 function encaisserGainsDuJour() {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
     
-    if (!currentUserId || localPointsDujour <= 0) {
-        alert("Votre cagnotte journalière est vide. Accomplissez des tâches pour accumuler des points.");
+    // Récupération de la valeur courante de la cagnotte
+    const montantAEncaisser = (typeof localPointsDujour !== "undefined") ? localPointsDujour : 0;
+
+    // 1. Vérification : Si le compte n'est pas identifié ou que la cagnotte est vide
+    if (!currentUserId || montantAEncaisser <= 0) {
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee(
+                "Votre cagnotte journalière est vide. Accomplissez des tâches pour accumuler des points.", 
+                "Cagnotte Vide", 
+                "D'accord"
+            );
+        } else {
+            alert("Votre cagnotte journalière est vide. Accomplissez des tâches pour accumuler des points.");
+        }
         return;
     }
 
-    const dateAujourdhui = ObtenirDateAujourdhuiISO();
+    const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
-    // Transfert de pointsDuJours vers le solde global 'coin' puis remise à 0
-    db.collection("users").doc(currentUserId).update({
-        coin: firebase.firestore.FieldValue.increment(localPointsDujour),
+    // 2. Préparation des deux mises à jour séparées
+
+    // A) Remise à 0 de pointsDuJours dans la collection "users"
+    const majUsers = db.collection("users").doc(currentUserId).update({
         pointsDuJours: 0,
         dateDerniersPoints: dateAujourdhui
-    }).then(() => {
-        alert("Félicitations ! Vos gains du jour ont été sécurisés et ajoutés à votre solde global 'Coin'.");
-    }).catch(err => console.error(err));
+    });
+
+    // B) Transfert des points dans le champ 'coins' de la collection "rewards_users"
+    const majRewards = db.collection("rewards_users").doc(currentUserId).update({
+        coins: firebase.firestore.FieldValue.increment(montantAEncaisser)
+    });
+
+    // 3. Exécution simultanée des deux opérations Firebase
+    Promise.all([majUsers, majRewards]).then(() => {
+
+        // Remise à zéro locale de la variable pour mettre à jour l'affichage immédiatement
+        if (typeof localPointsDujour !== "undefined") {
+            window.localPointsDujour = 0;
+        }
+
+        // Rafraîchissement de l'affichage local de la cagnotte si la fonction existe
+        if (typeof rafraichirAichageCagnotte === "function") {
+            rafraichirAichageCagnotte();
+        }
+
+        const messageSucces = `Félicitations ! Vos ${montantAEncaisser} points du jour ont été sécurisés et ajoutés à votre solde "Coins".`;
+
+        // Modale personnalisée de succès
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee(
+                messageSucces, 
+                "Encaissement Réussi !", 
+                "Super"
+            );
+        } else {
+            alert(messageSucces);
+        }
+
+    }).catch(err => {
+        console.error("Erreur d'encaissement :", err);
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee(
+                "Une erreur est survenue lors de l'encaissement. Veuillez réessayer.", 
+                "Erreur", 
+                "Fermer"
+            );
+        } else {
+            alert("Une erreur est survenue lors de l'encaissement.");
+        }
+    });
 }
 
+// =============================================================================
+// MODALE D'AIDE ET DE FONCTIONNEMENT
+// =============================================================================
 function ouvrirBoiteDialogueAide() {
-    alert("AIDE & FONCTIONNEMENT :\n\n- Chaque tâche accomplie ajoute des points à votre cagnotte du jour.\n- Vous devez impérativement cliquer sur 'Encaisser mes gains du jour' avant minuit, sinon les points non réclamés seront définitivement perdus lors de la réinitialisation automatique.");
-}
+    const texteAide = "Chaque tâche accomplie ajoute des points à votre cagnotte du jour.\n\nVous devez impérativement cliquer sur 'Encaisser mes gains du jour' avant minuit, sinon les points non réclamés seront définitivement perdus lors de la réinitialisation automatique.";
 
+    if (typeof afficherAlertePersonnalisee === "function") {
+        afficherAlertePersonnalisee(
+            texteAide, 
+            "Aide & Fonctionnement", 
+            "J'ai compris"
+        );
+    } else {
+        alert("AIDE & FONCTIONNEMENT :\n\n" + texteAide);
+    }
+}
 // ==========================================
 // ANIMATION ET GESTION VIP (RANG 5)
 // ==========================================
