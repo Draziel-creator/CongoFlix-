@@ -503,90 +503,126 @@
     }
     checkReferral();
 
-    // =========================================================================
-// 1. AFFICHAGE DU TABLEAU DE BORD & MESSAGE EN SUPERPOSITION
+   // =========================================================================
+// GENERATION HISTORIQUE + RÈGLE FERMABLE (ADAPTÉ À VOTRE HTML)
 // =========================================================================
 function generateHistoryUI(userHistoryData = {}, userRank = 0) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
     const container = document.getElementById('history-rows-container');
-    if(!container) return;
+    if (!container) return;
     container.innerHTML = "";
 
-    // A. Gestion dynamique de l'en-tête du tableau <thead>
+    // 1. Gestion de l'en-tête du tableau <thead>
     const tableElement = container.closest('table');
     let tableHead = tableElement ? tableElement.querySelector('thead') : null;
     if (tableHead) {
-        if (userRank === 0) {
+        if (parseInt(userRank) === 0) {
             tableHead.innerHTML = `
                 <tr>
                     <th>Jour</th>
-                    <th>Semaine 1</th>
-                    <th>Semaine 2</th>
-                    <th>Semaine 3</th>
-                    <th>Semaine 4</th>
+                    <th>Sem. 1</th>
+                    <th>Sem. 2</th>
+                    <th>Sem. 3</th>
+                    <th>Sem. 4</th>
                 </tr>`;
         } else {
             tableHead.innerHTML = `
                 <tr>
                     <th>Jour</th>
-                    <th>Semaine 2</th>
-                    <th>Semaine 3</th>
-                    <th>Semaine 4</th>
+                    <th>Sem. 2</th>
+                    <th>Sem. 3</th>
+                    <th>Sem. 4</th>
                 </tr>`;
         }
     }
 
-    // B. Création / Gestion du Message de Règle en Superposition
-    const tableWrapper = container.closest('.table-responsive') || container.parentElement;
-    if (tableWrapper) tableWrapper.style.position = 'relative';
+    // 2. Ciblage précis du conteneur HTML (.history-table-wrapper)
+    const tableWrapper = container.closest('.history-table-wrapper');
+    if (tableWrapper) {
+        tableWrapper.style.position = 'relative'; // Obligatoire pour l'overlay
+    }
 
+    // 3. Création / Gestion de la boîte d'overlay
     let overlayMsg = document.getElementById('history-rule-overlay');
     if (!overlayMsg && tableWrapper) {
         overlayMsg = document.createElement('div');
         overlayMsg.id = 'history-rule-overlay';
+        
+        // CSS ajusté pour épouser parfaitement le conteneur .history-table-wrapper
         overlayMsg.style.cssText = `
             position: absolute;
-            top: 40px;
-            right: 5px;
-            width: 65%;
-            height: calc(100% - 45px);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(15, 17, 26, 0.95);
-            border: 1px solid #ff4d4d;
-            border-radius: 10px;
+            border: 1.5px solid #ff4d4d;
+            border-radius: 12px;
             color: #ffffff;
-            padding: 15px;
-            font-size: 0.82rem;
-            line-height: 1.5;
+            padding: 25px 15px 15px 15px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            box-shadow: 0 4px 20px rgba(255, 77, 77, 0.25);
-            z-index: 10;
-            backdrop-filter: blur(5px);
+            z-index: 20;
+            box-sizing: border-box;
+            backdrop-filter: blur(6px);
         `;
         tableWrapper.appendChild(overlayMsg);
     }
 
-    const textRule = `📌 <b>RÈGLE IMPORTANTE :</b><br>Vous devez accomplir <b>15 TÂCHES</b> par jour pour compléter la journée et que celle-ci soit comptabilisée.<br><br>Si vous faites même <b>14/15 tâches</b>, votre journée ne sera pas comptée ! Vous devez obligatoirement compléter les 15 tâches dans la journée. Si les tâches n'atteignent pas 15/15, cette journée sera réinitialisée et vous devrez la recommencer le jour suivant.`;
+    // Contenu du message + Bouton Croix (✕)
+    if (overlayMsg) {
+        overlayMsg.innerHTML = `
+            <button id="close-history-rule" style="
+                position: absolute;
+                top: 8px;
+                right: 10px;
+                background: rgba(255, 77, 77, 0.2);
+                border: 1px solid #ff4d4d;
+                color: #ffffff;
+                font-size: 0.9rem;
+                font-weight: bold;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            " onclick="document.getElementById('history-rule-overlay').style.display='none'">✕</button>
+            
+            <div style="font-size: 0.95rem; font-weight: bold; color: #ff4d4d; margin-bottom: 6px;">
+                📌 RÈGLE IMPORTANTE (RANG 0)
+            </div>
+            <div style="font-size: 0.8rem; color: #d1d5db; max-width: 95%; line-height: 1.4;">
+                Vous devez accomplir <b>15 TÂCHES par jour</b> pour compléter la journée et qu'elle soit comptabilisée.<br><br>
+                Si vous faites même <b>14/15 tâches</b>, la journée ne sera pas comptée ! Vous devez compléter les 15 tâches dans la journée sinon elle sera réinitialisée le jour suivant.
+            </div>
+        `;
 
-    // C. RANG 0 : Semaine 1 active (X/15), Semaines 2 à 4 affichent un seul nombre (0) + Message présent
-    if (parseInt(userRank) === 0) {
-        if (overlayMsg) {
-            overlayMsg.innerHTML = textRule;
+        // Afficher seulement au Rang 0
+        if (parseInt(userRank) === 0) {
             overlayMsg.style.display = 'flex';
+        } else {
+            overlayMsg.style.display = 'none';
         }
+    }
 
+    // 4. Rendu des lignes de données dans le <tbody>
+    if (parseInt(userRank) === 0) {
         days.forEach((day, index) => {
             const tr = document.createElement('tr');
             
-            // Colonne Jour
             const tdDay = document.createElement('td');
             tdDay.className = "day-label";
             tdDay.innerText = day;
             tr.appendChild(tdDay);
 
-            // Semaine 1 (Comptage X / 15)
+            // Semaine 1
             const tdW1 = document.createElement('td');
             tdW1.className = "coin-cell";
             const val1 = userHistoryData[`w1_d${index + 1}`] || 0;
@@ -597,13 +633,12 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
                 tdW1.style.fontWeight = "bold";
             } else if (val1 > 0) {
                 tdW1.style.color = "#ff4d4d";
-                tdW1.style.fontWeight = "600";
             } else {
                 tdW1.style.color = "#555875";
             }
             tr.appendChild(tdW1);
 
-            // Semaines 2, 3, 4 (Un seul nombre simple)
+            // Semaines 2, 3, 4
             for(let w = 2; w <= 4; w++) {
                 const tdWeek = document.createElement('td');
                 tdWeek.className = "coin-cell";
@@ -616,26 +651,19 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
         });
 
     } else {
-        // D. RANG >= 1 : Semaine 1 a disparu, Semaines 2, 3, 4 sont actives (X/15) + Message masqué
-        if (overlayMsg) {
-            overlayMsg.style.display = 'none';
-        }
-
+        // Rang >= 1
         days.forEach((day, index) => {
             const tr = document.createElement('tr');
             
-            // Colonne Jour
             const tdDay = document.createElement('td');
             tdDay.className = "day-label";
             tdDay.innerText = day;
             tr.appendChild(tdDay);
 
-            // Affichage Semaines 2, 3 et 4 uniquement
             for(let w = 2; w <= 4; w++) {
                 const tdWeek = document.createElement('td');
                 tdWeek.className = "coin-cell";
                 const val = userHistoryData[`w${w}_d${index + 1}`] || 0;
-
                 tdWeek.innerText = `${val} / 15`;
 
                 if (val >= 15) {
@@ -643,7 +671,6 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
                     tdWeek.style.fontWeight = "bold";
                 } else if (val > 0) {
                     tdWeek.style.color = "#ff4d4d";
-                    tdWeek.style.fontWeight = "600";
                 } else {
                     tdWeek.style.color = "#555875";
                 }
