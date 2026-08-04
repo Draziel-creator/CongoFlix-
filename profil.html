@@ -504,45 +504,155 @@
     checkReferral();
 
     // =========================================================================
-    // 1. AFFICHAGE DU TABLEAU DE BORD (ROUGE SI < 15 / VERT SI >= 15)
-    // =========================================================================
-    function generateHistoryUI(userHistoryData = {}) {
-        const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-        const container = document.getElementById('history-rows-container');
-        if(!container) return;
-        container.innerHTML = "";
-        
+// 1. AFFICHAGE DU TABLEAU DE BORD & MESSAGE EN SUPERPOSITION
+// =========================================================================
+function generateHistoryUI(userHistoryData = {}, userRank = 0) {
+    const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+    const container = document.getElementById('history-rows-container');
+    if(!container) return;
+    container.innerHTML = "";
+
+    // A. Gestion dynamique de l'en-tête du tableau <thead>
+    const tableElement = container.closest('table');
+    let tableHead = tableElement ? tableElement.querySelector('thead') : null;
+    if (tableHead) {
+        if (userRank === 0) {
+            tableHead.innerHTML = `
+                <tr>
+                    <th>Jour</th>
+                    <th>Semaine 1</th>
+                    <th>Semaine 2</th>
+                    <th>Semaine 3</th>
+                    <th>Semaine 4</th>
+                </tr>`;
+        } else {
+            tableHead.innerHTML = `
+                <tr>
+                    <th>Jour</th>
+                    <th>Semaine 2</th>
+                    <th>Semaine 3</th>
+                    <th>Semaine 4</th>
+                </tr>`;
+        }
+    }
+
+    // B. Création / Gestion du Message de Règle en Superposition
+    const tableWrapper = container.closest('.table-responsive') || container.parentElement;
+    if (tableWrapper) tableWrapper.style.position = 'relative';
+
+    let overlayMsg = document.getElementById('history-rule-overlay');
+    if (!overlayMsg && tableWrapper) {
+        overlayMsg = document.createElement('div');
+        overlayMsg.id = 'history-rule-overlay';
+        overlayMsg.style.cssText = `
+            position: absolute;
+            top: 40px;
+            right: 5px;
+            width: 65%;
+            height: calc(100% - 45px);
+            background: rgba(15, 17, 26, 0.95);
+            border: 1px solid #ff4d4d;
+            border-radius: 10px;
+            color: #ffffff;
+            padding: 15px;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(255, 77, 77, 0.25);
+            z-index: 10;
+            backdrop-filter: blur(5px);
+        `;
+        tableWrapper.appendChild(overlayMsg);
+    }
+
+    const textRule = `📌 <b>RÈGLE IMPORTANTE :</b><br>Vous devez accomplir <b>15 TÂCHES</b> par jour pour compléter la journée et que celle-ci soit comptabilisée.<br><br>Si vous faites même <b>14/15 tâches</b>, votre journée ne sera pas comptée ! Vous devez obligatoirement compléter les 15 tâches dans la journée. Si les tâches n'atteignent pas 15/15, cette journée sera réinitialisée et vous devrez la recommencer le jour suivant.`;
+
+    // C. RANG 0 : Semaine 1 active (X/15), Semaines 2 à 4 affichent un seul nombre (0) + Message présent
+    if (parseInt(userRank) === 0) {
+        if (overlayMsg) {
+            overlayMsg.innerHTML = textRule;
+            overlayMsg.style.display = 'flex';
+        }
+
         days.forEach((day, index) => {
             const tr = document.createElement('tr');
+            
+            // Colonne Jour
             const tdDay = document.createElement('td');
             tdDay.className = "day-label";
             tdDay.innerText = day;
             tr.appendChild(tdDay);
-            
-            for(let w = 1; w <= 4; w++) {
+
+            // Semaine 1 (Comptage X / 15)
+            const tdW1 = document.createElement('td');
+            tdW1.className = "coin-cell";
+            const val1 = userHistoryData[`w1_d${index + 1}`] || 0;
+            tdW1.innerText = `${val1} / 15`;
+
+            if (val1 >= 15) {
+                tdW1.style.color = "#00ff88";
+                tdW1.style.fontWeight = "bold";
+            } else if (val1 > 0) {
+                tdW1.style.color = "#ff4d4d";
+                tdW1.style.fontWeight = "600";
+            } else {
+                tdW1.style.color = "#555875";
+            }
+            tr.appendChild(tdW1);
+
+            // Semaines 2, 3, 4 (Un seul nombre simple)
+            for(let w = 2; w <= 4; w++) {
                 const tdWeek = document.createElement('td');
                 tdWeek.className = "coin-cell";
-                const cellKey = `w${w}_d${index + 1}`;
-                const val = userHistoryData[cellKey] || 0;
+                const val = userHistoryData[`w${w}_d${index + 1}`] || 0;
+                tdWeek.innerText = `${val}`;
+                tdWeek.style.color = "#3a3d52";
+                tr.appendChild(tdWeek);
+            }
+            container.appendChild(tr);
+        });
+
+    } else {
+        // D. RANG >= 1 : Semaine 1 a disparu, Semaines 2, 3, 4 sont actives (X/15) + Message masqué
+        if (overlayMsg) {
+            overlayMsg.style.display = 'none';
+        }
+
+        days.forEach((day, index) => {
+            const tr = document.createElement('tr');
+            
+            // Colonne Jour
+            const tdDay = document.createElement('td');
+            tdDay.className = "day-label";
+            tdDay.innerText = day;
+            tr.appendChild(tdDay);
+
+            // Affichage Semaines 2, 3 et 4 uniquement
+            for(let w = 2; w <= 4; w++) {
+                const tdWeek = document.createElement('td');
+                tdWeek.className = "coin-cell";
+                const val = userHistoryData[`w${w}_d${index + 1}`] || 0;
 
                 tdWeek.innerText = `${val} / 15`;
 
-                // COULEURS DYNAMIQUES
                 if (val >= 15) {
-                    tdWeek.style.color = "#00ff88"; // VERT : Journée accomplie !
+                    tdWeek.style.color = "#00ff88";
                     tdWeek.style.fontWeight = "bold";
                 } else if (val > 0) {
-                    tdWeek.style.color = "#ff4d4d"; // ROUGE : En cours / Incomplet
+                    tdWeek.style.color = "#ff4d4d";
                     tdWeek.style.fontWeight = "600";
                 } else {
-                    tdWeek.style.color = "#555875"; // GRIS : Pas encore démarré
+                    tdWeek.style.color = "#555875";
                 }
-
                 tr.appendChild(tdWeek);
             }
             container.appendChild(tr);
         });
     }
+}
 
     function applyRankDesign(rankLevel) {
         globalUserRank = parseInt(rankLevel) || 0;
@@ -788,103 +898,102 @@
         }
     };
 
-    // =========================================================================
-    // 2. LECTURE & SYNCHRONISATION AUTOMATIQUE SUR pointsDuJour
-    // =========================================================================
-    onAuthStateChanged(auth, async (user) => {
-        if(user) {
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('main-app').classList.remove('hidden');
+// =========================================================================
+// 2. LECTURE & SYNCHRONISATION AUTOMATIQUE SUR pointsDuJour
+// =========================================================================
+onAuthStateChanged(auth, async (user) => {
+    if(user) {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('main-app').classList.remove('hidden');
+        
+        const domain = window.location.origin + window.location.pathname;
+        document.getElementById('share-link-text').innerText = `${domain}?ref=${user.uid}`;
+
+        const snap = await getDoc(doc(db, "rewards_users", user.uid));
+        if(snap.exists()){
+            const d = snap.data();
+            const totalCoins = d.coins || 0;
             
-            const domain = window.location.origin + window.location.pathname;
-            document.getElementById('share-link-text').innerText = `${domain}?ref=${user.uid}`;
+            document.getElementById('user-name').value = d.name || "Utilisateur";
+            document.getElementById('user-coins').innerText = totalCoins;
+            
+            const computedCash = (totalCoins * 0.001).toFixed(2);
+            document.getElementById('user-cash-value').innerText = `$${computedCash}`;
+            
+            if(d.photoURL) document.getElementById('user-photo').src = d.photoURL;
+            if(d.bannerURL) document.getElementById('user-banner').src = d.bannerURL;
+            
+            let userRank = d.rank !== undefined ? d.rank : 0;
+            let currentHistory = d.history || { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 };
+            
+            const todayISO = new Date().toISOString().split('T')[0];
+            const lastActiveDate = d.lastActiveDate || todayISO;
+            const currentActiveDay = d.daysActive || 1;
+            const currentDayKey = `w1_d${currentActiveDay}`;
 
-            const snap = await getDoc(doc(db, "rewards_users", user.uid));
-            if(snap.exists()){
-                const d = snap.data();
-                const totalCoins = d.coins || 0;
-                
-                document.getElementById('user-name').value = d.name || "Utilisateur";
-                document.getElementById('user-coins').innerText = totalCoins;
-                
-                const computedCash = (totalCoins * 0.001).toFixed(2);
-                document.getElementById('user-cash-value').innerText = `$${computedCash}`;
-                
-                if(d.photoURL) {
-                    document.getElementById('user-photo').src = d.photoURL;
+            // A) Réinitialisation si la journée précédente est incomplète (< 15/15) lors du changement de jour
+            if (lastActiveDate !== todayISO) {
+                if ((currentHistory[currentDayKey] || 0) < 15) {
+                    currentHistory[currentDayKey] = 0; // Réinitialisation de la journée incomplète
                 }
-                if(d.bannerURL) {
-                    document.getElementById('user-banner').src = d.bannerURL;
-                }
-                
-                let userRank = d.rank !== undefined ? d.rank : 0;
-                let currentHistory = d.history || { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 };
-                
-                // A) Récupération directe de pointsDuJour
-                const pointsDuJourActuel = d.pointsDuJour || 0;
-                const currentDayKey = `w1_d${d.daysActive || 1}`;
-
-                // B) Si pointsDuJour a changé sur la page Activités, on met à jour l'historique dans Firebase
-                if (pointsDuJourActuel !== currentHistory[currentDayKey]) {
-                    currentHistory[currentDayKey] = pointsDuJourActuel;
-                    await updateDoc(doc(db, "rewards_users", user.uid), {
-                        history: currentHistory
-                    });
-                }
-
-                // C) Vérification si les 7 jours ont atteint 15 tâches pour le Rang 1
-                let joursAuVert = 0;
-                for (let day = 1; day <= 7; day++) {
-                    if ((currentHistory[`w1_d${day}`] || 0) >= 15) {
-                        joursAuVert++;
-                    }
-                }
-
-                if (joursAuVert >= 7 && userRank === 0) {
-                    userRank = 1;
-                    await updateDoc(doc(db, "rewards_users", user.uid), { rank: 1 });
-                    showPremiumToast("🎉 Félicitations ! Semaine 1 validée : Rang 1 débloqué !");
-                }
-
-                // D) Application du Design et affichage du tableau (Rouge / Vert)
-                applyRankDesign(userRank);
-                generateHistoryUI(currentHistory);
-
-                let condInv = false;
-                let condTsk = false;
-                let condDay = false;
-
-                document.getElementById('m-cond-invite').innerText = `${d.invitedCount || 0} / 10`;
-                if((d.invitedCount || 0) >= 10) {
-                    document.getElementById('m-cond-invite').className = "badge-status status-ok";
-                    condInv = true;
-                }
-
-                document.getElementById('m-cond-tasks').innerText = `${d.tasksCompleted || 0} / 50`;
-                if((d.tasksCompleted || 0) >= 50) {
-                    document.getElementById('m-cond-tasks').className = "badge-status status-ok";
-                    condTsk = true;
-                }
-
-                document.getElementById('m-cond-days').innerText = `${d.daysActive || 0} / 14 Jours`;
-                if((d.daysActive || 0) >= 14) {
-                    document.getElementById('m-cond-days').className = "badge-status status-ok";
-                    condDay = true;
-                }
-                
-                if(condInv && condTsk && condDay) {
-                    globalConditionsMet = true;
-                } else {
-                    globalConditionsMet = false;
-                }
-                evalWithdrawGateStatus();
+                await updateDoc(doc(db, "rewards_users", user.uid), {
+                    pointsDuJour: 0,
+                    lastActiveDate: todayISO,
+                    history: currentHistory
+                });
             }
-        } else {
-            document.getElementById('auth-screen').classList.remove('hidden');
-            document.getElementById('main-app').classList.add('hidden');
-            if(!isLoginMode) checkLocalStorageDeviceLock();
+
+            // B) Synchronisation directe de pointsDuJour dans l'historique
+            const pointsDuJourActuel = d.pointsDuJour || 0;
+            if (pointsDuJourActuel !== currentHistory[currentDayKey]) {
+                currentHistory[currentDayKey] = pointsDuJourActuel;
+                await updateDoc(doc(db, "rewards_users", user.uid), {
+                    history: currentHistory,
+                    lastActiveDate: todayISO
+                });
+            }
+
+            // C) Validation du Rang 1 si les 7 jours ont atteint 15/15
+            let joursAuVert = 0;
+            for (let day = 1; day <= 7; day++) {
+                if ((currentHistory[`w1_d${day}`] || 0) >= 15) {
+                    joursAuVert++;
+                }
+            }
+
+            if (joursAuVert >= 7 && userRank === 0) {
+                userRank = 1;
+                await updateDoc(doc(db, "rewards_users", user.uid), { rank: 1 });
+                showPremiumToast("🎉 Félicitations ! Semaine 1 validée : Rang 1 débloqué !");
+            }
+
+            // D) Application du Design et rendu du Tableau de l'Historique
+            applyRankDesign(userRank);
+            generateHistoryUI(currentHistory, userRank);
+
+            // E) Conditions secondaires
+            let condInv = (d.invitedCount || 0) >= 10;
+            let condTsk = (d.tasksCompleted || 0) >= 50;
+            let condDay = (d.daysActive || 0) >= 14;
+
+            document.getElementById('m-cond-invite').innerText = `${d.invitedCount || 0} / 10`;
+            if(condInv) document.getElementById('m-cond-invite').className = "badge-status status-ok";
+
+            document.getElementById('m-cond-tasks').innerText = `${d.tasksCompleted || 0} / 50`;
+            if(condTsk) document.getElementById('m-cond-tasks').className = "badge-status status-ok";
+
+            document.getElementById('m-cond-days').innerText = `${d.daysActive || 0} / 14 Jours`;
+            if(condDay) document.getElementById('m-cond-days').className = "badge-status status-ok";
+            
+            globalConditionsMet = condInv && condTsk && condDay;
+            evalWithdrawGateStatus();
         }
-    });
+    } else {
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('main-app').classList.add('hidden');
+        if(!isLoginMode) checkLocalStorageDeviceLock();
+    }
+});
 
     window.uploadImage = (e, type) => {
         const file = e.target.files[0];
