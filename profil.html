@@ -504,63 +504,84 @@
     checkReferral();
 
    // =========================================================================
-// 1. CALCUL DE LA CLE DU JOUR SUIVANT
+// 1. UTILITAIRES DE DATE LOCALE & CALENDRIER
 // =========================================================================
-function ObtenirCleJourSuivante(cleActuelle) {
-    if (!cleActuelle) return "w1_d1";
-    
-    const match = cleActuelle.match(/^w(\d+)_d(\d+)$/);
-    if (!match) return "w1_d1";
 
-    let sem = parseInt(match[1], 10);
-    let jour = parseInt(match[2], 10);
+// Convertit un objet Date en chaîne ISO locale (YYYY-MM-DD)
+function ObtenirDateISO(d = new Date()) {
+    const annee = d.getFullYear();
+    const mois = String(d.getMonth() + 1).padStart(2, '0');
+    const jour = String(d.getDate()).padStart(2, '0');
+    return `${annee}-${mois}-${jour}`;
+}
 
-    jour++;
-    if (jour > 7) {
-        jour = 1;
-        sem++;
-        if (sem > 4) sem = 4; // Limite à la semaine 4
-    }
-    return `w${sem}_d${jour}`;
+// Trouve le Lundi de la semaine pour une date donnée
+function ObtenirLundiDeLaSemaine(d) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(date.setDate(diff));
 }
 
 // =========================================================================
-// 2. GENERATION VISUELLE DU TABLEAU D'HISTORIQUE
+// 2. GENERATION DU TABLEAU DE L'HISTORIQUE CALENDRIER
 // =========================================================================
-function generateHistoryUI(userHistoryData = {}, userRank = 0) {
+function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO = null) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
     const container = document.getElementById('history-rows-container');
     if (!container) return;
     container.innerHTML = "";
 
-    // 1. Gestion du thead selon le rang
+    const dateAujourdhuiObj = new Date();
+    const dateAujourdhuiISO = ObtenirDateISO(dateAujourdhuiObj);
+
+    // Déterminer le lundi de départ (Date d'inscription ou Lundi d'il y a 3 semaines)
+    let dateDepart = userStartDateISO ? new Date(userStartDateISO) : new Date();
+    let premierLundi = ObtenirLundiDeLaSemaine(dateDepart);
+
+    // Noms des mois en français
+    const moisNoms = ["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"];
+    const moisCourantTexte = `${moisNoms[dateAujourdhuiObj.getMonth()]} ${dateAujourdhuiObj.getFullYear()}`;
+
+    // --- A. GESTION DE L'EN-TÊTE ET DU MOIS EN GRAND ---
+    const tableWrapper = container.closest('.history-table-wrapper');
+    if (tableWrapper) {
+        tableWrapper.style.position = 'relative';
+        tableWrapper.style.overflowX = 'auto'; // Active le glissement au doigt (Swipe)
+        tableWrapper.style.webkitOverflowScrolling = 'touch';
+
+        // Ajout/Mise à jour du titre du mois au-dessus du tableau
+        let monthHeader = document.getElementById('history-month-header');
+        if (!monthHeader) {
+            monthHeader = document.createElement('div');
+            monthHeader.id = 'history-month-header';
+            monthHeader.style.cssText = `
+                font-size: 1.1rem; font-weight: 800; color: #00ff88;
+                text-transform: uppercase; letter-spacing: 1.5px;
+                margin-bottom: 12px; text-align: center;
+                background: rgba(0, 255, 136, 0.08); padding: 8px 15px;
+                border-radius: 8px; border: 1px solid rgba(0, 255, 136, 0.2);
+            `;
+            tableWrapper.parentNode.insertBefore(monthHeader, tableWrapper);
+        }
+        monthHeader.innerText = `📅 HISTORIQUE - ${moisCourantTexte}`;
+    }
+
+    // --- B. GESTION DU THEAD (Semaines) ---
     const tableElement = container.closest('table');
     let tableHead = tableElement ? tableElement.querySelector('thead') : null;
     if (tableHead) {
-        if (parseInt(userRank) === 0) {
-            tableHead.innerHTML = `
-                <tr>
-                    <th>Jour</th>
-                    <th>Sem. 1</th>
-                    <th>Sem. 2</th>
-                    <th>Sem. 3</th>
-                    <th>Sem. 4</th>
-                </tr>`;
-        } else {
-            tableHead.innerHTML = `
-                <tr>
-                    <th>Jour</th>
-                    <th>Sem. 2</th>
-                    <th>Sem. 3</th>
-                    <th>Sem. 4</th>
-                </tr>`;
+        const isRankZero = parseInt(userRank) === 0;
+        const startWeek = isRankZero ? 1 : 2;
+        let headHTML = `<tr><th>Jour</th>`;
+        for (let w = startWeek; w <= 4; w++) {
+            headHTML += `<th>Sem. ${w}</th>`;
         }
+        headHTML += `</tr>`;
+        tableHead.innerHTML = headHTML;
     }
 
-    // 2. Gestion Overlay Rang 0
-    const tableWrapper = container.closest('.history-table-wrapper');
-    if (tableWrapper) tableWrapper.style.position = 'relative';
-
+    // --- C. GESTION OVERLAY RANG 0 ---
     let overlayMsg = document.getElementById('history-rule-overlay');
     if (!overlayMsg && tableWrapper) {
         overlayMsg = document.createElement('div');
@@ -589,22 +610,22 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
                 📌 RÈGLE IMPORTANTE (RANG 0)
             </div>
             <div style="font-size: 0.8rem; color: #d1d5db; max-width: 95%; line-height: 1.4;">
-                Vous devez accomplir <b>15 TÂCHES par jour</b> pour compléter la journée.<br><br>
-                Si vous faites moins de 15 tâches, la journée sera réinitialisée le jour suivant.
+                Vous devez accomplir <b>15 TÂCHES par jour</b> pour valider chaque date.<br><br>
+                Si une journée passée est incomplète, elle passe automatiquement à 0.
             </div>
         `;
         overlayMsg.style.display = (parseInt(userRank) === 0) ? 'flex' : 'none';
     }
 
-    // 3. Rendu des données
+    // --- D. RENDU DES CASES BASE SUR LES DATES REELLES ---
     const isRankZero = parseInt(userRank) === 0;
 
-    days.forEach((day, index) => {
+    days.forEach((dayName, dayIndex) => {
         const tr = document.createElement('tr');
         
         const tdDay = document.createElement('td');
         tdDay.className = "day-label";
-        tdDay.innerText = day;
+        tdDay.innerText = dayName;
         tr.appendChild(tdDay);
 
         const startWeek = isRankZero ? 1 : 2;
@@ -612,33 +633,60 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
         for (let w = startWeek; w <= 4; w++) {
             const tdWeek = document.createElement('td');
             tdWeek.className = "coin-cell";
-            
-            const key = `w${w}_d${index + 1}`;
-            const val = Number(userHistoryData[key] || 0);
 
-            if (val >= 15) {
-                // 🟢 JOURNÉE COMPLÉTÉE ET BLOQUÉE EN VERT
+            // Calcul de la date exacte pour cette case spécifique
+            const joursAAjouter = ((w - 1) * 7) + dayIndex;
+            const dateCaseObj = new Date(premierLundi);
+            dateCaseObj.setDate(premierLundi.getDate() + joursAAjouter);
+
+            const dateCaseISO = ObtenirDateISO(dateCaseObj);
+            const jourMoisTexte = `${String(dateCaseObj.getDate()).padStart(2, '0')}/${String(dateCaseObj.getMonth() + 1).padStart(2, '0')}`;
+
+            const val = Number(userHistoryData[dateCaseISO] || 0);
+
+            // LOGIQUE DE COMPARAISON AUTOMATIQUE DES DATES
+            if (dateCaseISO < dateAujourdhuiISO) {
+                // 🕒 JOUR PASSÉ
+                if (val >= 15) {
+                    tdWeek.innerHTML = `
+                        <div style="line-height: 1.1;">
+                            <span style="font-size: 0.65rem; color: #888; display:block;">${jourMoisTexte}</span>
+                            <span style="font-size: 0.82rem; font-weight: bold; color: #00ff88;">✔ 15/15</span>
+                        </div>`;
+                    tdWeek.style.background = "rgba(0, 255, 136, 0.12)";
+                    tdWeek.style.border = "1px solid rgba(0, 255, 136, 0.3)";
+                } else {
+                    tdWeek.innerHTML = `
+                        <div style="line-height: 1.1;">
+                            <span style="font-size: 0.65rem; color: #666; display:block;">${jourMoisTexte}</span>
+                            <span style="font-size: 0.8rem; color: #ff4d4d; font-weight: bold;">0 / 15</span>
+                        </div>`;
+                    tdWeek.style.background = "rgba(255, 77, 77, 0.05)";
+                    tdWeek.style.border = "1px solid rgba(255, 77, 77, 0.15)";
+                }
+            } else if (dateCaseISO === dateAujourdhuiISO) {
+                // 🌟 AUJOURD'HUI (Case active)
+                const couleurEtat = val >= 15 ? "#00ff88" : "#ffb700";
                 tdWeek.innerHTML = `
-                    <div style="line-height: 1.2;">
-                        <span style="font-size: 0.85rem; font-weight: bold; color: #00ff88;">✔ 15 / 15</span><br>
-                        <span style="font-size: 0.68rem; color: #00ff88; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9;">Complet</span>
-                    </div>
-                `;
-                tdWeek.style.background = "rgba(0, 255, 136, 0.12)";
-                tdWeek.style.border = "1px solid rgba(0, 255, 136, 0.3)";
-                tdWeek.style.borderRadius = "6px";
-            } else if (val > 0) {
-                // 🟠/🔴 EN COURS
-                tdWeek.innerHTML = `<span style="color: #ff4d4d; font-weight: bold;">${val} / 15</span>`;
-                tdWeek.style.background = "transparent";
-                tdWeek.style.border = "none";
+                    <div style="line-height: 1.1;">
+                        <span style="font-size: 0.65rem; color: #00ff88; font-weight:bold; display:block;">AUJ. (${jourMoisTexte})</span>
+                        <span style="font-size: 0.85rem; color: ${couleurEtat}; font-weight: bold;">${val} / 15</span>
+                    </div>`;
+                tdWeek.style.background = "rgba(0, 255, 255, 0.1)";
+                tdWeek.style.border = "1.5px solid #00ffff";
             } else {
-                // ⚪ PAS ENCORE DÉMARRÉE
-                tdWeek.innerHTML = `<span style="color: #555875;">-</span>`;
+                // 🔒 FUTUR (Pas encore atteint)
+                tdWeek.innerHTML = `
+                    <div style="line-height: 1.1;">
+                        <span style="font-size: 0.65rem; color: #444; display:block;">${jourMoisTexte}</span>
+                        <span style="color: #444;">-</span>
+                    </div>`;
                 tdWeek.style.background = "transparent";
                 tdWeek.style.border = "none";
             }
 
+            tdWeek.style.borderRadius = "6px";
+            tdWeek.style.padding = "6px 4px";
             tr.appendChild(tdWeek);
         }
 
@@ -647,9 +695,9 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
 }
 
 // =========================================================================
-// 3. CHARGEMENT ET VERIFICATION UNIQUE (SANS BOUCLE INFINIE)
+// 3. CHARGEMENT SANS BOUCLE NI ERREUR DE DATE
 // =========================================================================
-let isSyncingProfilDate = false; // Verrou pour éviter les exécutions multiples
+let isSyncingProfilDate = false;
 
 async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
     if (!currentUserId || isSyncingProfilDate) return;
@@ -657,60 +705,42 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
     try {
         isSyncingProfilDate = true;
 
-        // 1. Récupération du Rang de l'utilisateur (users)
+        // 1. Récupération du Rang
         const userSnap = await db.collection("users").doc(currentUserId).get();
         let userRank = 0;
+        let userStartDateISO = null;
+
         if (userSnap.exists) {
-            userRank = Number(userSnap.data().rank || userSnap.data().rang || 0);
+            const uData = userSnap.data();
+            userRank = Number(uData.rank || uData.rang || 0);
+            userStartDateISO = uData.startDate || null;
+
+            // Si l'utilisateur n'a pas encore de date de début, on l'initialise aujourd'hui
+            if (!userStartDateISO) {
+                userStartDateISO = ObtenirDateISO(new Date());
+                await db.collection("users").doc(currentUserId).set({ startDate: userStartDateISO }, { merge: true });
+            }
         }
 
         // 2. Récupération des données d'historique (rewards_users)
         const rewardsRef = db.collection("rewards_users").doc(currentUserId);
         const rewardsSnap = await rewardsRef.get();
 
-        if (!rewardsSnap.exists) {
-            generateHistoryUI({}, userRank);
-            isSyncingProfilDate = false;
-            return;
+        let historyData = {};
+        let pointsDuJour = 0;
+        const dateAujourdhuiISO = ObtenirDateISO(new Date());
+
+        if (rewardsSnap.exists()) {
+            let rewardsData = rewardsSnap.data();
+            historyData = rewardsData.history || {};
+            pointsDuJour = Number(rewardsData.pointsDuJour || 0);
+
+            // Inscrire automatiquement les points d'aujourd'hui sous la clé date du jour
+            historyData[dateAujourdhuiISO] = pointsDuJour;
         }
 
-        let rewardsData = rewardsSnap.data();
-        let historyData = rewardsData.history || {};
-        let activeKey = rewardsData.currentDayKey || "w1_d1";
-        let lastActiveDate = rewardsData.lastActiveDate || "";
-        let pointsDuJour = Number(rewardsData.pointsDuJour || 0);
-
-        // Date du jour en ISO local (YYYY-MM-DD)
-        const now = new Date();
-        const dateAujourdhui = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-        // VERIFICATION DE LA DATE : Si la date enregistrée est différente d'aujourd'hui
-        if (lastActiveDate && lastActiveDate !== dateAujourdhui) {
-            
-            if (pointsDuJour >= 15) {
-                // 🟢 VALIDE : Bloqué à 15 (vert) et avance au jour suivant
-                historyData[activeKey] = 15;
-                activeKey = ObtenirCleJourSuivante(activeKey);
-            } else {
-                // 🔴 INCOMPLET : Réinitialisation de la case à 0
-                historyData[activeKey] = 0;
-            }
-
-            // Réinitialisation du compteur pour la nouvelle journée
-            pointsDuJour = 0;
-            lastActiveDate = dateAujourdhui;
-
-            // Mise à jour unique dans Firebase
-            await rewardsRef.set({
-                pointsDuJour: 0,
-                lastActiveDate: dateAujourdhui,
-                currentDayKey: activeKey,
-                history: historyData
-            }, { merge: true });
-        }
-
-        // Rendu visuel dans le tableau
-        generateHistoryUI(historyData, userRank);
+        // 3. Génération du rendu visuel
+        generateHistoryUI(historyData, userRank, userStartDateISO);
 
     } catch (error) {
         console.error("Erreur de synchronisation du profil :", error);
@@ -718,7 +748,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         isSyncingProfilDate = false;
     }
 }
-
+    
     function applyRankDesign(rankLevel) {
         globalUserRank = parseInt(rankLevel) || 0;
         const currentRank = RANKS_METADATA[globalUserRank] || RANKS_METADATA[0];
