@@ -644,6 +644,92 @@ function ObtenirCleJourSuivante(cleActuelle) {
     }
     return `w${sem}_d${jour}`;
 }
+    // =========================================================================
+// CHARGEMENT ET VERIFICATION STRICTE DE LA DATE DANS LE PROFIL
+// =========================================================================
+async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
+    if (!currentUserId) return;
+
+    try {
+        // 1. Récupération du Rang de l'utilisateur (users)
+        const userSnap = await db.collection("users").doc(currentUserId).get();
+        let userRank = 0;
+        if (userSnap.exists) {
+            userRank = Number(userSnap.data().rank || userSnap.data().rang || 0);
+        }
+
+        // 2. Récupération des données d'historique (rewards_users)
+        const rewardsRef = db.collection("rewards_users").doc(currentUserId);
+        const rewardsSnap = await rewardsRef.get();
+
+        if (!rewardsSnap.exists) {
+            generateHistoryUI({}, userRank);
+            return;
+        }
+
+        let rewardsData = rewardsSnap.data();
+        let historyData = rewardsData.history || {};
+        let activeKey = rewardsData.currentDayKey || "w1_d1";
+        let lastActiveDate = rewardsData.lastActiveDate || "";
+        let pointsDuJour = Number(rewardsData.pointsDuJour || 0);
+
+        // Date d'aujourd'hui en local (YYYY-MM-DD)
+        const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" 
+            ? ObtenirDateAujourdhuiISO() 
+            : new Date().toISOString().split('T')[0];
+
+        let majAEffectuer = false;
+
+        // =========================================================================
+        // VERIFICATION DE LA DATE : NOUVEAU JOUR DETECTE DANS LE PROFIL
+        // =========================================================================
+        if (lastActiveDate && lastActiveDate !== dateAujourdhui) {
+            
+            if (pointsDuJour >= 15) {
+                // 🟢 VALIDE : Hier est complété. Verrouillage définitif à 15 (vert)
+                historyData[activeKey] = 15;
+                // Passage à la clé du jour suivant
+                activeKey = typeof ObtenirCleJourSuivante === "function" 
+                    ? ObtenirCleJourSuivante(activeKey) 
+                    : activeKey;
+            } else {
+                // 🔴 INCOMPLET : Hier avait < 15 tâches. Réinitialisation de la case à 0
+                historyData[activeKey] = 0;
+            }
+
+            // Réinitialisation du compteur quotidien pour le nouveau jour
+            pointsDuJour = 0;
+            lastActiveDate = dateAujourdhui;
+            majAEffectuer = true;
+        }
+
+        // Si la date a changé, on met à jour Firebase immédiatement depuis le Profil
+        if (majAEffectuer) {
+            await rewardsRef.set({
+                pointsDuJour: pointsDuJour,
+                lastActiveDate: lastActiveDate,
+                currentDayKey: activeKey,
+                history: historyData
+            }, { merge: true });
+        }
+
+        // 3. Rendu visuel dans le tableau de l'historique
+        generateHistoryUI(historyData, userRank);
+
+    } catch (error) {
+        console.error("Erreur lors de la synchronisation de l'historique dans le profil :", error);
+    }
+}
+
+// =========================================================================
+// DECLENCHEMENT AUTOMATIQUE A LA CONNEXION SUR LA PAGE PROFIL
+// =========================================================================
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        // Lance la vérification et le rendu de l'historique dès que l'utilisateur est chargé
+        chargerEtSynchroniserHistoriqueProfil(user.uid);
+    }
+});
 // =========================================================================
 // 2. ÉCOUTEUR FIREBASE AUTOMATIQUE (REWARDS_USERS)
 // =========================================================================
