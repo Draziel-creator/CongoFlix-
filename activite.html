@@ -1626,7 +1626,7 @@ function demarrerDecompte10Sec() {
 }
 
 // =============================================================================
-// RÉCLAMATION VIDÉO (CORRIGÉE & DÉFINITIVEMENT VERROUILLÉE)
+// RÉCLAMATION VIDÉO (CORRIGÉE AVEC GESTION DE LA DATE DU JOUR)
 // =============================================================================
 async function reclamerPointsBouton1(pts) {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (typeof recupererIdentifiantUtilisateur === "function" ? recupererIdentifiantUtilisateur() : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null));
@@ -1647,19 +1647,58 @@ async function reclamerPointsBouton1(pts) {
     }
 
     const pointsAAjouter = pts || 100;
+    // Utilisation de votre fonction de date ISO
     const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
     try {
-        // 1. Lecture du rang utilisateur
+        // 1. Lecture du profil utilisateur (users)
         const snap = await db.collection("users").doc(currentUserId).get();
-        
         let rangUtilisateur = 0;
         if (snap.exists) {
             const data = snap.data();
             rangUtilisateur = Number(data.rank || data.rang || 0);
         }
 
-        // 2. Préparation des mises à jour Profil
+        // 2. Lecture du document rewards_users pour vérifier la date
+        const rewardsSnap = await db.collection("rewards_users").doc(currentUserId).get();
+        let rewardsData = rewardsSnap.exists ? rewardsSnap.data() : {};
+
+        const lastActiveDate = rewardsData.lastActiveDate || "";
+        const pointsDuJourActuels = rewardsData.pointsDuJour || 0;
+        let historyData = rewardsData.history || {};
+        const activeKey = rewardsData.currentDayKey || "w1_d1"; // Exemple: w1_d1
+
+        let majRewardsData = {};
+
+        // =========================================================================
+        // VERIFICATION DE LA DATE : NOUVEAU JOUR VS MÊME JOUR
+        // =========================================================================
+        if (lastActiveDate !== dateAujourdhui) {
+            // --- C'EST UN NOUVEAU JOUR ! ---
+            
+            // A. Sauvegarde du résultat du jour précédent dans l'historique
+            // Si hier l'utilisateur avait >= 15 tâches, on enregistre 15, sinon 0
+            if (lastActiveDate !== "") {
+                historyData[activeKey] = pointsDuJourActuels >= 15 ? 15 : 0;
+            }
+
+            // B. On démarre la nouvelle journée : le compteur passe à 1 (1ère tâche faite aujourd'hui)
+            majRewardsData = {
+                pointsDuJour: 1,
+                lastActiveDate: dateAujourdhui,
+                history: historyData,
+                tasksCompleted: firebase.firestore.FieldValue.increment(1)
+            };
+        } else {
+            // --- C'EST LA MÊME JOURNÉE ---
+            // On incrémente normalement le compteur du jour
+            majRewardsData = {
+                pointsDuJour: firebase.firestore.FieldValue.increment(1),
+                tasksCompleted: firebase.firestore.FieldValue.increment(1)
+            };
+        }
+
+        // 3. Préparation des mises à jour Profil
         let majUsersData = {
             xp: firebase.firestore.FieldValue.increment(1)
         };
@@ -1668,15 +1707,11 @@ async function reclamerPointsBouton1(pts) {
             majUsersData.pointsDuJours = firebase.firestore.FieldValue.increment(pointsAAjouter);
         }
 
-        // 3. Promesses Firebase simultanées
+        // 4. Exécution des mises à jour Firebase
         const majUsers = db.collection("users").doc(currentUserId).update(majUsersData);
-        
-        const majRewards = db.collection("rewards_users").doc(currentUserId).update({
-            pointsDuJour: firebase.firestore.FieldValue.increment(1),
-            tasksCompleted: firebase.firestore.FieldValue.increment(1)
-        });
+        const majRewards = db.collection("rewards_users").doc(currentUserId).set(majRewardsData, { merge: true });
 
-        // 🔥 ENREGISTREMENT DU BLOCAGE (Aligné sur la collection standard users/historique_taches_v2)
+        // Enregistrement dans l'historique des tâches quotidiennes v2
         const idMission = window.missionActiveId || "video_generique";
         const majHistorique = db.collection("users")
             .doc(currentUserId)
@@ -1688,10 +1723,10 @@ async function reclamerPointsBouton1(pts) {
                 type: "video"
             });
 
-        // Attente de la validation globale
+        // Attente des validations
         await Promise.all([majUsers, majRewards, majHistorique]);
 
-        // 4. Verrouillage Visuel Instantané
+        // 5. Verrouillage Visuel
         if (window.missionActiveId && typeof verrouillerMissionVisuel === "function") {
             verrouillerMissionVisuel(window.missionActiveId);
         }
@@ -1701,7 +1736,7 @@ async function reclamerPointsBouton1(pts) {
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        // 5. Message selon le Rang
+        // 6. Messages de confirmation
         if (rangUtilisateur >= 1) {
             const msg = `Félicitations ! Vos +${pointsAAjouter} Points et +1 XP ont été crédités !`;
             if (typeof afficherAlertePersonnalisee === "function") {
@@ -2275,7 +2310,7 @@ function demarrerDecompteBanniere30Sec() {
 }
 
 // =============================================================================
-// RÉCLAMATION BANNIÈRE (CORRIGÉE & DÉFINITIVEMENT VERROUILLÉE)
+// RÉCLAMATION BANNIÈRE (CORRIGÉE AVEC GESTION DU NOUVEAU JOUR)
 // =============================================================================
 async function reclamerPointsBanniereSeule() {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (typeof recupererIdentifiantUtilisateur === "function" ? recupererIdentifiantUtilisateur() : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null));
@@ -2308,7 +2343,45 @@ async function reclamerPointsBanniereSeule() {
             rangUtilisateur = Number(data.rank || data.rang || 0);
         }
 
-        // 2. Données à mettre à jour
+        // 2. Lecture du document rewards_users pour vérifier le changement de jour
+        const rewardsSnap = await db.collection("rewards_users").doc(currentUserId).get();
+        let rewardsData = rewardsSnap.exists ? rewardsSnap.data() : {};
+
+        const lastActiveDate = rewardsData.lastActiveDate || "";
+        const pointsDuJourActuels = rewardsData.pointsDuJour || 0;
+        let historyData = rewardsData.history || {};
+        const activeKey = rewardsData.currentDayKey || "w1_d1";
+
+        let majRewardsData = {};
+
+        // =========================================================================
+        // VERIFICATION DE LA DATE : NOUVEAU JOUR VS MÊME JOUR
+        // =========================================================================
+        if (lastActiveDate !== dateAujourdhui) {
+            // --- C'EST UN NOUVEAU JOUR ! ---
+            
+            // A. Sauvegarde de la journée précédente dans l'historique
+            if (lastActiveDate !== "") {
+                historyData[activeKey] = pointsDuJourActuels >= 15 ? 15 : 0;
+            }
+
+            // B. Réinitialisation : le compteur de la nouvelle journée démarre à 1
+            majRewardsData = {
+                pointsDuJour: 1,
+                lastActiveDate: dateAujourdhui,
+                history: historyData,
+                tasksCompleted: firebase.firestore.FieldValue.increment(1)
+            };
+        } else {
+            // --- C'EST LA MÊME JOURNÉE ---
+            // On continue d'incrémenter normalement
+            majRewardsData = {
+                pointsDuJour: firebase.firestore.FieldValue.increment(1),
+                tasksCompleted: firebase.firestore.FieldValue.increment(1)
+            };
+        }
+
+        // 3. Préparation des données Utilisateur
         let majUsersData = {
             xp: firebase.firestore.FieldValue.increment(1)
         };
@@ -2317,15 +2390,13 @@ async function reclamerPointsBanniereSeule() {
             majUsersData.pointsDuJours = firebase.firestore.FieldValue.increment(pts);
         }
 
-        // 3. Mises à jour simultanées
+        // 4. Mises à jour simultanées
         const majUsers = db.collection("users").doc(currentUserId).update(majUsersData);
         
-        const majRewards = db.collection("rewards_users").doc(currentUserId).update({
-            pointsDuJour: firebase.firestore.FieldValue.increment(1),
-            tasksCompleted: firebase.firestore.FieldValue.increment(1)
-        });
+        // On utilise .set avec { merge: true } au lieu de .update() pour plus de sécurité
+        const majRewards = db.collection("rewards_users").doc(currentUserId).set(majRewardsData, { merge: true });
 
-        // 🔥 REMISE DU BON CHEMIN : users/.../historique_taches_v2
+        // Enregistrement dans l'historique v2
         const majHistorique = db.collection("users")
             .doc(currentUserId)
             .collection("historique_taches_v2")
@@ -2338,7 +2409,7 @@ async function reclamerPointsBanniereSeule() {
 
         await Promise.all([majUsers, majRewards, majHistorique]);
 
-        // 4. Verrouillage Visuel Instantané
+        // 5. Verrouillage Visuel Instantané
         if (typeof bloquerBoutonBanniereVisuellement === "function") {
             bloquerBoutonBanniereVisuellement(banniereMissionActiveId);
         }
@@ -2348,11 +2419,11 @@ async function reclamerPointsBanniereSeule() {
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        // 5. Modale adaptée au Rang
+        // 6. Modale adaptée au Rang
         if (rangUtilisateur >= 1) {
             const msg = `Vous avez reçu +${pts} Points et +1 XP !\n\nCette mission est validée pour aujourd'hui.`;
             if (typeof afficherAlertePersonnalisee === "function") {
-                afficherAlertePersonnalisee(msg, "Mission Bannière Validée", "Super", function() {
+                afficherAlertePersonnalisee(msg, "Mission Validée", "Super", function() {
                     if (typeof fermerModaleBanniereExclusive === "function") fermerModaleBanniereExclusive();
                 });
             } else {
