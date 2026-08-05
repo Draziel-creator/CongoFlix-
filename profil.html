@@ -504,7 +504,7 @@
     checkReferral();
 
    // =========================================================================
-// 1. GENERATION HISTORIQUE + RÈGLE FERMABLE (ADAPTÉ À VOTRE HTML)
+// GENERATION HISTORIQUE EN DIRECT DANS LE PROFIL
 // =========================================================================
 function generateHistoryUI(userHistoryData = {}, userRank = 0) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -512,7 +512,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
     if (!container) return;
     container.innerHTML = "";
 
-    // 1. Gestion de l'en-tête du tableau <thead>
+    // 1. Gestion du thead selon le rang
     const tableElement = container.closest('table');
     let tableHead = tableElement ? tableElement.querySelector('thead') : null;
     if (tableHead) {
@@ -536,149 +536,99 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
         }
     }
 
-    // 2. Ciblage précis du conteneur HTML (.history-table-wrapper)
+    // 2. Gestion Overlay Rang 0
     const tableWrapper = container.closest('.history-table-wrapper');
-    if (tableWrapper) {
-        tableWrapper.style.position = 'relative'; // Obligatoire pour l'overlay
-    }
+    if (tableWrapper) tableWrapper.style.position = 'relative';
 
-    // 3. Création / Gestion de la boîte d'overlay
     let overlayMsg = document.getElementById('history-rule-overlay');
     if (!overlayMsg && tableWrapper) {
         overlayMsg = document.createElement('div');
         overlayMsg.id = 'history-rule-overlay';
-        
-        // CSS ajusté pour épouser parfaitement le conteneur .history-table-wrapper
         overlayMsg.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 17, 26, 0.95);
-            border: 1.5px solid #ff4d4d;
-            border-radius: 12px;
-            color: #ffffff;
-            padding: 25px 15px 15px 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            z-index: 20;
-            box-sizing: border-box;
-            backdrop-filter: blur(6px);
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%; height: 100%; background: rgba(15, 17, 26, 0.95);
+            border: 1.5px solid #ff4d4d; border-radius: 12px; color: #ffffff;
+            padding: 25px 15px 15px 15px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
+            z-index: 20; box-sizing: border-box; backdrop-filter: blur(6px);
         `;
         tableWrapper.appendChild(overlayMsg);
     }
 
-    // Contenu du message + Bouton Croix (✕)
     if (overlayMsg) {
         overlayMsg.innerHTML = `
             <button id="close-history-rule" style="
-                position: absolute;
-                top: 8px;
-                right: 10px;
-                background: rgba(255, 77, 77, 0.2);
-                border: 1px solid #ff4d4d;
-                color: #ffffff;
-                font-size: 0.9rem;
-                font-weight: bold;
-                width: 28px;
-                height: 28px;
-                border-radius: 50%;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                position: absolute; top: 8px; right: 10px; background: rgba(255, 77, 77, 0.2);
+                border: 1px solid #ff4d4d; color: #ffffff; font-size: 0.9rem; font-weight: bold;
+                width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+                display: flex; align-items: center; justify-content: center;
             " onclick="document.getElementById('history-rule-overlay').style.display='none'">✕</button>
             
             <div style="font-size: 0.95rem; font-weight: bold; color: #ff4d4d; margin-bottom: 6px;">
                 📌 RÈGLE IMPORTANTE (RANG 0)
             </div>
             <div style="font-size: 0.8rem; color: #d1d5db; max-width: 95%; line-height: 1.4;">
-                Vous devez accomplir <b>15 TÂCHES par jour</b> pour compléter la journée et qu'elle soit comptabilisée.<br><br>
-                Si vous faites même <b>14/15 tâches</b>, la journée ne sera pas comptée ! Vous devez compléter les 15 tâches dans la journée sinon elle sera réinitialisée le jour suivant.
+                Vous devez accomplir <b>15 TÂCHES par jour</b> pour compléter la journée.<br><br>
+                Si vous faites moins de 15 tâches, la journée sera réinitialisée le jour suivant.
             </div>
         `;
-
-        // Afficher seulement au Rang 0
-        if (parseInt(userRank) === 0) {
-            overlayMsg.style.display = 'flex';
-        } else {
-            overlayMsg.style.display = 'none';
-        }
+        overlayMsg.style.display = (parseInt(userRank) === 0) ? 'flex' : 'none';
     }
 
-    // 4. Rendu des lignes de données dans le <tbody>
-    if (parseInt(userRank) === 0) {
-        days.forEach((day, index) => {
-            const tr = document.createElement('tr');
+    // 3. Rendu des données
+    const isRankZero = parseInt(userRank) === 0;
+
+    days.forEach((day, index) => {
+        const tr = document.createElement('tr');
+        
+        const tdDay = document.createElement('td');
+        tdDay.className = "day-label";
+        tdDay.innerText = day;
+        tr.appendChild(tdDay);
+
+        const startWeek = isRankZero ? 1 : 2;
+
+        for (let w = startWeek; w <= 4; w++) {
+            const tdWeek = document.createElement('td');
+            tdWeek.className = "coin-cell";
             
-            const tdDay = document.createElement('td');
-            tdDay.className = "day-label";
-            tdDay.innerText = day;
-            tr.appendChild(tdDay);
+            const key = `w${w}_d${index + 1}`;
+            const val = userHistoryData[key] || 0;
 
-            // Semaine 1
-            const tdW1 = document.createElement('td');
-            tdW1.className = "coin-cell";
-            const val1 = userHistoryData[`w1_d${index + 1}`] || 0;
-            tdW1.innerText = `${val1} / 15`;
+            tdWeek.innerText = `${val} / 15`;
 
-            if (val1 >= 15) {
-                tdW1.style.color = "#00ff88";
-                tdW1.style.fontWeight = "bold";
-            } else if (val1 > 0) {
-                tdW1.style.color = "#ff4d4d";
+            if (val >= 15) {
+                tdWeek.style.color = "#00ff88"; // Vert : Journée validée
+                tdWeek.style.fontWeight = "bold";
+            } else if (val > 0) {
+                tdWeek.style.color = "#ff4d4d"; // Rouge : Journée en cours ou échouée
             } else {
-                tdW1.style.color = "#555875";
+                tdWeek.style.color = "#555875"; // Gris : Pas encore démarrée
             }
-            tr.appendChild(tdW1);
 
-            // Semaines 2, 3, 4
-            for(let w = 2; w <= 4; w++) {
-                const tdWeek = document.createElement('td');
-                tdWeek.className = "coin-cell";
-                const val = userHistoryData[`w${w}_d${index + 1}`] || 0;
-                tdWeek.innerText = `${val}`;
-                tdWeek.style.color = "#3a3d52";
-                tr.appendChild(tdWeek);
-            }
-            container.appendChild(tr);
-        });
+            tr.appendChild(tdWeek);
+        }
 
-    } else {
-        // Rang >= 1
-        days.forEach((day, index) => {
-            const tr = document.createElement('tr');
-            
-            const tdDay = document.createElement('td');
-            tdDay.className = "day-label";
-            tdDay.innerText = day;
-            tr.appendChild(tdDay);
+        container.appendChild(tr);
+    });
+}
+    // Fonction pour calculer la clé du jour suivant (ex: w1_d1 -> w1_d2 ... -> w1_d7 -> w2_d1)
+function ObtenirCleJourSuivante(cleActuelle) {
+    if (!cleActuelle) return "w1_d1";
+    
+    const match = cleActuelle.match(/^w(\d+)_d(\d+)$/);
+    if (!match) return "w1_d1";
 
-            for(let w = 2; w <= 4; w++) {
-                const tdWeek = document.createElement('td');
-                tdWeek.className = "coin-cell";
-                const val = userHistoryData[`w${w}_d${index + 1}`] || 0;
-                tdWeek.innerText = `${val} / 15`;
+    let sem = parseInt(match[1], 10);
+    let jour = parseInt(match[2], 10);
 
-                if (val >= 15) {
-                    tdWeek.style.color = "#00ff88";
-                    tdWeek.style.fontWeight = "bold";
-                } else if (val > 0) {
-                    tdWeek.style.color = "#ff4d4d";
-                } else {
-                    tdWeek.style.color = "#555875";
-                }
-                tr.appendChild(tdWeek);
-            }
-            container.appendChild(tr);
-        });
+    jour++;
+    if (jour > 7) {
+        jour = 1;
+        sem++;
+        if (sem > 4) sem = 4; // Limite à la semaine 4
     }
+    return `w${sem}_d${jour}`;
 }
 
 
