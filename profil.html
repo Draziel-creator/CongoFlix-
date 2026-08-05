@@ -504,7 +504,28 @@
     checkReferral();
 
    // =========================================================================
-// GENERATION HISTORIQUE EN DIRECT DANS LE PROFIL
+// 1. CALCUL DE LA CLE DU JOUR SUIVANT
+// =========================================================================
+function ObtenirCleJourSuivante(cleActuelle) {
+    if (!cleActuelle) return "w1_d1";
+    
+    const match = cleActuelle.match(/^w(\d+)_d(\d+)$/);
+    if (!match) return "w1_d1";
+
+    let sem = parseInt(match[1], 10);
+    let jour = parseInt(match[2], 10);
+
+    jour++;
+    if (jour > 7) {
+        jour = 1;
+        sem++;
+        if (sem > 4) sem = 4; // Limite à la semaine 4
+    }
+    return `w${sem}_d${jour}`;
+}
+
+// =========================================================================
+// 2. GENERATION VISUELLE DU TABLEAU D'HISTORIQUE
 // =========================================================================
 function generateHistoryUI(userHistoryData = {}, userRank = 0) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -595,7 +616,6 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
             const key = `w${w}_d${index + 1}`;
             const val = Number(userHistoryData[key] || 0);
 
-            // --- AFFICHAGE ET VERROUILLAGE DES CASES ---
             if (val >= 15) {
                 // 🟢 JOURNÉE COMPLÉTÉE ET BLOQUÉE EN VERT
                 tdWeek.innerHTML = `
@@ -604,11 +624,11 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
                         <span style="font-size: 0.68rem; color: #00ff88; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9;">Complet</span>
                     </div>
                 `;
-                tdWeek.style.background = "rgba(0, 255, 136, 0.12)"; // Fond vert translucide
-                tdWeek.style.border = "1px solid rgba(0, 255, 136, 0.3)"; // Bordure verte
+                tdWeek.style.background = "rgba(0, 255, 136, 0.12)";
+                tdWeek.style.border = "1px solid rgba(0, 255, 136, 0.3)";
                 tdWeek.style.borderRadius = "6px";
             } else if (val > 0) {
-                // 🟠/🔴 EN COURS OU INCOMPLET
+                // 🟠/🔴 EN COURS
                 tdWeek.innerHTML = `<span style="color: #ff4d4d; font-weight: bold;">${val} / 15</span>`;
                 tdWeek.style.background = "transparent";
                 tdWeek.style.border = "none";
@@ -626,31 +646,17 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
     });
 }
 
-// Fonction pour calculer la clé du jour suivant (ex: w1_d1 -> w1_d2 ... -> w1_d7 -> w2_d1)
-function ObtenirCleJourSuivante(cleActuelle) {
-    if (!cleActuelle) return "w1_d1";
-    
-    const match = cleActuelle.match(/^w(\d+)_d(\d+)$/);
-    if (!match) return "w1_d1";
-
-    let sem = parseInt(match[1], 10);
-    let jour = parseInt(match[2], 10);
-
-    jour++;
-    if (jour > 7) {
-        jour = 1;
-        sem++;
-        if (sem > 4) sem = 4; // Limite à la semaine 4
-    }
-    return `w${sem}_d${jour}`;
-}
-    // =========================================================================
-// CHARGEMENT ET VERIFICATION STRICTE DE LA DATE DANS LE PROFIL
 // =========================================================================
+// 3. CHARGEMENT ET VERIFICATION UNIQUE (SANS BOUCLE INFINIE)
+// =========================================================================
+let isSyncingProfilDate = false; // Verrou pour éviter les exécutions multiples
+
 async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
-    if (!currentUserId) return;
+    if (!currentUserId || isSyncingProfilDate) return;
 
     try {
+        isSyncingProfilDate = true;
+
         // 1. Récupération du Rang de l'utilisateur (users)
         const userSnap = await db.collection("users").doc(currentUserId).get();
         let userRank = 0;
@@ -664,6 +670,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
 
         if (!rewardsSnap.exists) {
             generateHistoryUI({}, userRank);
+            isSyncingProfilDate = false;
             return;
         }
 
@@ -673,100 +680,53 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         let lastActiveDate = rewardsData.lastActiveDate || "";
         let pointsDuJour = Number(rewardsData.pointsDuJour || 0);
 
-        // Date d'aujourd'hui en local (YYYY-MM-DD)
-        const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" 
-            ? ObtenirDateAujourdhuiISO() 
-            : new Date().toISOString().split('T')[0];
+        // Date du jour en ISO local (YYYY-MM-DD)
+        const now = new Date();
+        const dateAujourdhui = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-        let majAEffectuer = false;
-
-        // =========================================================================
-        // VERIFICATION DE LA DATE : NOUVEAU JOUR DETECTE DANS LE PROFIL
-        // =========================================================================
+        // VERIFICATION DE LA DATE : Si la date enregistrée est différente d'aujourd'hui
         if (lastActiveDate && lastActiveDate !== dateAujourdhui) {
             
             if (pointsDuJour >= 15) {
-                // 🟢 VALIDE : Hier est complété. Verrouillage définitif à 15 (vert)
+                // 🟢 VALIDE : Bloqué à 15 (vert) et avance au jour suivant
                 historyData[activeKey] = 15;
-                // Passage à la clé du jour suivant
-                activeKey = typeof ObtenirCleJourSuivante === "function" 
-                    ? ObtenirCleJourSuivante(activeKey) 
-                    : activeKey;
+                activeKey = ObtenirCleJourSuivante(activeKey);
             } else {
-                // 🔴 INCOMPLET : Hier avait < 15 tâches. Réinitialisation de la case à 0
+                // 🔴 INCOMPLET : Réinitialisation de la case à 0
                 historyData[activeKey] = 0;
             }
 
-            // Réinitialisation du compteur quotidien pour le nouveau jour
+            // Réinitialisation du compteur pour la nouvelle journée
             pointsDuJour = 0;
             lastActiveDate = dateAujourdhui;
-            majAEffectuer = true;
-        }
 
-        // Si la date a changé, on met à jour Firebase immédiatement depuis le Profil
-        if (majAEffectuer) {
+            // Mise à jour unique dans Firebase
             await rewardsRef.set({
-                pointsDuJour: pointsDuJour,
-                lastActiveDate: lastActiveDate,
+                pointsDuJour: 0,
+                lastActiveDate: dateAujourdhui,
                 currentDayKey: activeKey,
                 history: historyData
             }, { merge: true });
         }
 
-        // 3. Rendu visuel dans le tableau de l'historique
+        // Rendu visuel dans le tableau
         generateHistoryUI(historyData, userRank);
 
     } catch (error) {
-        console.error("Erreur lors de la synchronisation de l'historique dans le profil :", error);
+        console.error("Erreur de synchronisation du profil :", error);
+    } finally {
+        isSyncingProfilDate = false;
     }
 }
 
 // =========================================================================
-// 2. ÉCOUTEUR FIREBASE AUTOMATIQUE (REWARDS_USERS)
+// 4. DECLENCHEMENT A LA CONNEXION
 // =========================================================================
-function startHistorySync(userId) {
-    if (!userId) return;
-
-    // Écoute en temps réel de la collection rewards_users
-    db.collection("rewards_users").doc(userId).onSnapshot(async (doc) => {
-        if (!doc.exists) return;
-
-        const userData = doc.data();
-
-        // Récupérer la date locale du jour (format YYYY-MM-DD)
-        const now = new Date();
-        const dateAujourdhui = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-        const lastActiveDate = userData.lastActiveDate || dateAujourdhui;
-        const userRank = userData.rank || 0;
-        let historyData = userData.history || {};
-        const pointsDuJour = userData.pointsDuJour || 0;
-        const activeKey = userData.currentDayKey || "w1_d1"; // Ex: w1_d1, w1_d2...
-
-        // --- DÉTECTION DU CHANGEMENT DE JOUR (NOUVEAU JOUR) ---
-        if (lastActiveDate !== dateAujourdhui) {
-
-            // 1. Règle des 15 tâches : si >= 15 on enregistre 15, sinon 0 (échec)
-            historyData[activeKey] = pointsDuJour >= 15 ? 15 : 0;
-
-            // 2. Mise à jour de Firebase : réinitialisation pour le nouveau jour
-            await db.collection("rewards_users").doc(userId).update({
-                pointsDuJour: 0,
-                lastActiveDate: dateAujourdhui,
-                history: historyData
-            });
-
-            // Mise à jour locale pour le rendu immédiat
-            userData.pointsDuJour = 0;
-        }
-
-        // --- GÉNÉRATION AUTOMATIQUE DE L'INTERFACE ---
-        generateHistoryUI(historyData, userRank);
-
-    }, (error) => {
-        console.error("Erreur de synchronisation historique :", error);
-    });
-}
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        chargerEtSynchroniserHistoriqueProfil(user.uid);
+    }
+});
     function applyRankDesign(rankLevel) {
         globalUserRank = parseInt(rankLevel) || 0;
         const currentRank = RANKS_METADATA[globalUserRank] || RANKS_METADATA[0];
