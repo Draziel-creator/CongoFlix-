@@ -593,17 +593,30 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
             tdWeek.className = "coin-cell";
             
             const key = `w${w}_d${index + 1}`;
-            const val = userHistoryData[key] || 0;
+            const val = Number(userHistoryData[key] || 0);
 
-            tdWeek.innerText = `${val} / 15`;
-
+            // --- AFFICHAGE ET VERROUILLAGE DES CASES ---
             if (val >= 15) {
-                tdWeek.style.color = "#00ff88"; // Vert : Journée validée
-                tdWeek.style.fontWeight = "bold";
+                // 🟢 JOURNÉE COMPLÉTÉE ET BLOQUÉE EN VERT
+                tdWeek.innerHTML = `
+                    <div style="line-height: 1.2;">
+                        <span style="font-size: 0.85rem; font-weight: bold; color: #00ff88;">✔ 15 / 15</span><br>
+                        <span style="font-size: 0.68rem; color: #00ff88; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9;">Complet</span>
+                    </div>
+                `;
+                tdWeek.style.background = "rgba(0, 255, 136, 0.12)"; // Fond vert translucide
+                tdWeek.style.border = "1px solid rgba(0, 255, 136, 0.3)"; // Bordure verte
+                tdWeek.style.borderRadius = "6px";
             } else if (val > 0) {
-                tdWeek.style.color = "#ff4d4d"; // Rouge : Journée en cours ou échouée
+                // 🟠/🔴 EN COURS OU INCOMPLET
+                tdWeek.innerHTML = `<span style="color: #ff4d4d; font-weight: bold;">${val} / 15</span>`;
+                tdWeek.style.background = "transparent";
+                tdWeek.style.border = "none";
             } else {
-                tdWeek.style.color = "#555875"; // Gris : Pas encore démarrée
+                // ⚪ PAS ENCORE DÉMARRÉE
+                tdWeek.innerHTML = `<span style="color: #555875;">-</span>`;
+                tdWeek.style.background = "transparent";
+                tdWeek.style.border = "none";
             }
 
             tr.appendChild(tdWeek);
@@ -612,7 +625,8 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0) {
         container.appendChild(tr);
     });
 }
-    // Fonction pour calculer la clé du jour suivant (ex: w1_d1 -> w1_d2 ... -> w1_d7 -> w2_d1)
+
+// Fonction pour calculer la clé du jour suivant (ex: w1_d1 -> w1_d2 ... -> w1_d7 -> w2_d1)
 function ObtenirCleJourSuivante(cleActuelle) {
     if (!cleActuelle) return "w1_d1";
     
@@ -630,8 +644,6 @@ function ObtenirCleJourSuivante(cleActuelle) {
     }
     return `w${sem}_d${jour}`;
 }
-
-
 // =========================================================================
 // 2. ÉCOUTEUR FIREBASE AUTOMATIQUE (REWARDS_USERS)
 // =========================================================================
