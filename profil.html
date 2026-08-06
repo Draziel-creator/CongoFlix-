@@ -629,7 +629,7 @@
 })();
 
 // =========================================================================
-// 2. FONCTIONS DE DATES ET anti-TRICHE
+// 2. FONCTIONS DE DATES
 // =========================================================================
 async function ObtenirVraieDateServeur() {
     try {
@@ -659,7 +659,7 @@ function ObtenirLundiDeLaSemaine(d) {
 }
 
 // =========================================================================
-// 3. GÉNÉRATION ULTRA-MODERNE DE L'HISTORIQUE
+// 3. GÉNÉRATION ULTRA-MODERNE DE L'HISTORIQUE (LOGIQUE CORRIGÉE)
 // =========================================================================
 function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO = null, dateAujourdhuiObj = new Date()) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -668,10 +668,19 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
     container.innerHTML = "";
 
     const dateAujourdhuiISO = FormaterDateISO(dateAujourdhuiObj);
-    const dateInscriptionISO = userStartDateISO || dateAujourdhuiISO;
-    const dateInscriptionObj = new Date(dateInscriptionISO);
 
-    // Début sur le Lundi de la semaine d'inscription
+    // 1. Déterminer la date minimale d'inscription (priorité aux clés réelles existantes dans l'historique)
+    const datesHistorique = Object.keys(userHistoryData).filter(d => Number(userHistoryData[d]) > 0);
+    let dateInscriptionEffective = userStartDateISO || dateAujourdhuiISO;
+
+    if (datesHistorique.length > 0) {
+        datesHistorique.sort(); // Tri chronologique
+        if (datesHistorique[0] < dateInscriptionEffective) {
+            dateInscriptionEffective = datesHistorique[0];
+        }
+    }
+
+    const dateInscriptionObj = new Date(dateInscriptionEffective);
     let premierLundi = ObtenirLundiDeLaSemaine(dateInscriptionObj);
 
     // Titre du mois premium
@@ -713,7 +722,6 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
         tableHead.innerHTML = headHTML;
     }
 
-    // Rendu des jours
     const isRankZero = parseInt(userRank) === 0;
 
     days.forEach((dayName, dayIndex) => {
@@ -739,36 +747,11 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
             const val = Number(userHistoryData[dateCaseISO] || 0);
 
             // =========================================================================
-            // AFFICHAGE SELON LA DATE ET L'INSCRIPTION
+            // CONDITIONS DE RENDU VISUEL CORRIGÉES
             // =========================================================================
 
-            if (dateCaseISO < dateInscriptionISO) {
-                // 1. AVANT L'INSCRIPTION (Non inscrit)
-                tdWeek.className += " state-unregistered";
-                tdWeek.innerHTML = `
-                    <span class="cell-date">${jourMoisTexte}</span>
-                    <span class="status-badge">Non inscrit</span>
-                `;
-
-            } else if (dateCaseISO < dateAujourdhuiISO) {
-                // 2. JOURS PASSÉS
-                if (val >= 15) {
-                    tdWeek.className += " state-completed";
-                    tdWeek.innerHTML = `
-                        <span class="cell-date" style="color:rgba(0,255,136,0.8);">${jourMoisTexte}</span>
-                        <span class="status-badge">✔ Complété</span>
-                    `;
-                } else {
-                    tdWeek.className += " state-incomplete";
-                    tdWeek.innerHTML = `
-                        <span class="cell-date" style="color:rgba(255,85,85,0.8);">${jourMoisTexte}</span>
-                        <span class="status-badge">Non complété</span>
-                        <div style="font-size:0.65rem; margin-top:2px; opacity:0.8;">(${val}/15)</div>
-                    `;
-                }
-
-            } else if (dateCaseISO === dateAujourdhuiISO) {
-                // 3. AUJOURD'HUI (En cours)
+            if (dateCaseISO === dateAujourdhuiISO) {
+                // 1. AUJOURD'HUI (En cours)
                 tdWeek.className += " state-today";
                 const isDoneToday = val >= 15;
                 tdWeek.innerHTML = `
@@ -776,8 +759,35 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
                     <span class="status-badge">${isDoneToday ? '✔ Complété' : val + ' / 15'}</span>
                 `;
 
+            } else if (dateCaseISO < dateAujourdhuiISO) {
+                // 2. JOURS PASSÉS
+                // Si l'utilisateur a des données (val > 0) OU si la date est >= date d'inscription
+                if (val > 0 || dateCaseISO >= dateInscriptionEffective) {
+                    if (val >= 15) {
+                        tdWeek.className += " state-completed";
+                        tdWeek.innerHTML = `
+                            <span class="cell-date" style="color:rgba(0,255,136,0.8);">${jourMoisTexte}</span>
+                            <span class="status-badge">✔ Complété</span>
+                        `;
+                    } else {
+                        tdWeek.className += " state-incomplete";
+                        tdWeek.innerHTML = `
+                            <span class="cell-date" style="color:rgba(255,85,85,0.8);">${jourMoisTexte}</span>
+                            <span class="status-badge">Non complété</span>
+                            <div style="font-size:0.65rem; margin-top:2px; opacity:0.8;">(${val}/15)</div>
+                        `;
+                    }
+                } else {
+                    // Jour passé avant inscription sans aucune donnée
+                    tdWeek.className += " state-unregistered";
+                    tdWeek.innerHTML = `
+                        <span class="cell-date">${jourMoisTexte}</span>
+                        <span class="status-badge">Non inscrit</span>
+                    `;
+                }
+
             } else {
-                // 4. FUTUR (Bloqué)
+                // 3. FUTUR (Bloqué)
                 tdWeek.className += " state-future";
                 tdWeek.innerHTML = `
                     <span class="cell-date">${jourMoisTexte}</span>
@@ -803,30 +813,11 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
     try {
         isSyncingProfilDate = true;
 
-        // 1. Horloge exacte serveur anti-triche
+        // 1. Date active (serveur ou appareil)
         const dateAujourdhuiObj = await ObtenirVraieDateServeur();
         const dateAujourdhuiISO = FormaterDateISO(dateAujourdhuiObj);
 
-        // 2. Profil Utilisateur
-        const userSnap = await db.collection("users").doc(currentUserId).get();
-        let userRank = 0;
-        let userStartDateISO = null;
-
-        if (userSnap.exists) {
-            const uData = userSnap.data();
-            userRank = Number(uData.rank || uData.rang || 0);
-            userStartDateISO = uData.startDate || null;
-
-            // Fixation de la date d'inscription la toute première fois
-            if (!userStartDateISO) {
-                userStartDateISO = dateAujourdhuiISO;
-                await db.collection("users").doc(currentUserId).set({ 
-                    startDate: userStartDateISO 
-                }, { merge: true });
-            }
-        }
-
-        // 3. Récupération des données d'historique
+        // 2. Récupération des données d'historique en premier
         const rewardsSnap = await db.collection("rewards_users").doc(currentUserId).get();
         let historyData = {};
         let pointsDuJour = 0;
@@ -844,9 +835,34 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             historyData[dateAujourdhuiISO] = pointsDuJour;
         }
 
-        // =========================================================================
-        // LOGIQUE D'INCREMENTATION AUTOMATIQUE DU RANG (7 JOURS SEMAINE 1)
-        // =========================================================================
+        // 3. Profil Utilisateur & date d'inscription minimale
+        const userSnap = await db.collection("users").doc(currentUserId).get();
+        let userRank = 0;
+        let userStartDateISO = null;
+
+        if (userSnap.exists) {
+            const uData = userSnap.data();
+            userRank = Number(uData.rank || uData.rang || 0);
+            userStartDateISO = uData.startDate || null;
+
+            // Trouver la date la plus ancienne enregistrée
+            const datesEnregistrees = Object.keys(historyData).filter(d => Number(historyData[d]) > 0);
+            let dateMinimale = userStartDateISO || dateAujourdhuiISO;
+            if (datesEnregistrees.length > 0) {
+                datesEnregistrees.sort();
+                if (datesEnregistrees[0] < dateMinimale) dateMinimale = datesEnregistrees[0];
+            }
+
+            // Mettre à jour la date d'inscription dans Firestore si elle était absente ou incorrecte
+            if (!userStartDateISO || dateMinimale < userStartDateISO) {
+                userStartDateISO = dateMinimale;
+                await db.collection("users").doc(currentUserId).set({ 
+                    startDate: userStartDateISO 
+                }, { merge: true });
+            }
+        }
+
+        // 4. Vérification d'augmentation automatique du Rang
         const dateInscriptionObj = new Date(userStartDateISO || dateAujourdhuiISO);
         const premierLundi = ObtenirLundiDeLaSemaine(dateInscriptionObj);
 
@@ -860,18 +876,14 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             }
         }
 
-        // Si Rang 0 ET que les 7 jours de la semaine 1 sont complétés (15/15)
         if (userRank === 0 && joursValidesSemaine1 >= 7) {
-            console.log("🚀 Félicitations ! 7 jours complétés en Semaine 1. Augmentation du Rang à 1...");
-            
             await db.collection("users").doc(currentUserId).update({
                 rank: firebase.firestore.FieldValue.increment(1)
             });
-            
-            userRank = 1; // Mise à jour locale instantanée pour ré-afficher le tableau propre
+            userRank = 1;
         }
 
-        // 4. Génération du Rendu Visuel
+        // 5. Rendu Visuel
         generateHistoryUI(historyData, userRank, userStartDateISO, dateAujourdhuiObj);
 
     } catch (error) {
