@@ -1626,7 +1626,7 @@ function demarrerDecompte10Sec() {
 }
 
 // =============================================================================
-// RÉCLAMATION VIDÉO (AVEC AVANCEMENT DU JOUR ET HISTORIQUE DYNAMIQUE)
+// RÉCLAMATION VIDÉO (ÉCRITURE DIRECTE PAR DATE YYYY-MM-DD)
 // =============================================================================
 async function reclamerPointsBouton1(pts) {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (typeof recupererIdentifiantUtilisateur === "function" ? recupererIdentifiantUtilisateur() : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null));
@@ -1658,59 +1658,38 @@ async function reclamerPointsBouton1(pts) {
             rangUtilisateur = Number(data.rank || data.rang || 0);
         }
 
-        // 2. Lecture du document rewards_users pour vérifier la date et le jour
+        // 2. Lecture du document rewards_users
         const rewardsSnap = await db.collection("rewards_users").doc(currentUserId).get();
         let rewardsData = rewardsSnap.exists ? rewardsSnap.data() : {};
 
         const lastActiveDate = rewardsData.lastActiveDate || "";
         const pointsDuJourActuels = rewardsData.pointsDuJour || 0;
         let historyData = rewardsData.history || {};
-        const activeKey = rewardsData.currentDayKey || "w1_d1";
 
-        let majRewardsData = {};
-        let keyAUtiliser = activeKey;
+        let nouveauScoreDuJour = 1;
 
         // =========================================================================
-        // VERIFICATION DE LA DATE : NOUVEAU JOUR VS MÊME JOUR
+        // ENREGISTREMENT DIRECT PAR DATE
         // =========================================================================
-        if (lastActiveDate !== dateAujourdhui) {
-            // --- C'EST UN NOUVEAU JOUR ! ---
-            if (lastActiveDate !== "") {
-                if (pointsDuJourActuels >= 15) {
-                    // 🟢 Hier validé : On verrouille à 15 et on passe au jour suivant
-                    historyData[activeKey] = 15;
-                    keyAUtiliser = typeof ObtenirCleJourSuivante === "function" ? ObtenirCleJourSuivante(activeKey) : activeKey;
-                } else {
-                    // 🔴 Hier incomplet : On réinitialise la même case
-                    historyData[activeKey] = 0;
-                    keyAUtiliser = activeKey;
-                }
-            }
-
-            // Première tâche du nouveau jour
-            historyData[keyAUtiliser] = 1;
-
-            majRewardsData = {
-                pointsDuJour: 1,
-                lastActiveDate: dateAujourdhui,
-                currentDayKey: keyAUtiliser,
-                history: historyData,
-                tasksCompleted: firebase.firestore.FieldValue.increment(1)
-            };
+        if (lastActiveDate === dateAujourdhui) {
+            // MÊME JOURNÉE : On incrémente le total du jour
+            nouveauScoreDuJour = pointsDuJourActuels + 1;
         } else {
-            // --- C'EST LA MÊME JOURNÉE ---
-            const nouveauTotal = pointsDuJourActuels + 1;
-            historyData[activeKey] = nouveauTotal;
-
-            majRewardsData = {
-                pointsDuJour: firebase.firestore.FieldValue.increment(1),
-                currentDayKey: activeKey,
-                history: historyData,
-                tasksCompleted: firebase.firestore.FieldValue.increment(1)
-            };
+            // NOUVEAU JOUR : On repart à 1 pour la nouvelle date
+            nouveauScoreDuJour = 1;
         }
 
-        // 3. Préparation des mises à jour Profil
+        // Enregistrement immédiat dans l'objet d'historique avec la date du jour comme clé
+        historyData[dateAujourdhui] = nouveauScoreDuJour;
+
+        let majRewardsData = {
+            pointsDuJour: nouveauScoreDuJour,
+            lastActiveDate: dateAujourdhui,
+            history: historyData,
+            tasksCompleted: firebase.firestore.FieldValue.increment(1)
+        };
+
+        // 3. Préparation des mises à jour Profil (users)
         let majUsersData = {
             xp: firebase.firestore.FieldValue.increment(1)
         };
@@ -2322,7 +2301,7 @@ function demarrerDecompteBanniere30Sec() {
 }
 
 // =============================================================================
-// RÉCLAMATION BANNIÈRE (AVEC AVANCEMENT DU JOUR ET HISTORIQUE DYNAMIQUE)
+// RÉCLAMATION BANNIÈRE (ÉCRITURE DIRECTE PAR DATE YYYY-MM-DD)
 // =============================================================================
 async function reclamerPointsBanniereSeule() {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (typeof recupererIdentifiantUtilisateur === "function" ? recupererIdentifiantUtilisateur() : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null));
@@ -2355,57 +2334,36 @@ async function reclamerPointsBanniereSeule() {
             rangUtilisateur = Number(data.rank || data.rang || 0);
         }
 
-        // 2. Lecture du document rewards_users pour vérifier le changement de jour
+        // 2. Lecture du document rewards_users
         const rewardsSnap = await db.collection("rewards_users").doc(currentUserId).get();
         let rewardsData = rewardsSnap.exists ? rewardsSnap.data() : {};
 
         const lastActiveDate = rewardsData.lastActiveDate || "";
         const pointsDuJourActuels = rewardsData.pointsDuJour || 0;
         let historyData = rewardsData.history || {};
-        const activeKey = rewardsData.currentDayKey || "w1_d1";
 
-        let majRewardsData = {};
-        let keyAUtiliser = activeKey;
+        let nouveauScoreDuJour = 1;
 
         // =========================================================================
-        // VERIFICATION DE LA DATE : NOUVEAU JOUR VS MÊME JOUR
+        // ENREGISTREMENT DIRECT PAR DATE
         // =========================================================================
-        if (lastActiveDate !== dateAujourdhui) {
-            // --- C'EST UN NOUVEAU JOUR ! ---
-            if (lastActiveDate !== "") {
-                if (pointsDuJourActuels >= 15) {
-                    // 🟢 Hier validé : On verrouille à 15 et on passe au jour suivant
-                    historyData[activeKey] = 15;
-                    keyAUtiliser = typeof ObtenirCleJourSuivante === "function" ? ObtenirCleJourSuivante(activeKey) : activeKey;
-                } else {
-                    // 🔴 Hier incomplet : On réinitialise la même case
-                    historyData[activeKey] = 0;
-                    keyAUtiliser = activeKey;
-                }
-            }
-
-            // Première tâche du nouveau jour
-            historyData[keyAUtiliser] = 1;
-
-            majRewardsData = {
-                pointsDuJour: 1,
-                lastActiveDate: dateAujourdhui,
-                currentDayKey: keyAUtiliser,
-                history: historyData,
-                tasksCompleted: firebase.firestore.FieldValue.increment(1)
-            };
+        if (lastActiveDate === dateAujourdhui) {
+            // MÊME JOURNÉE : On incrémente le total du jour
+            nouveauScoreDuJour = pointsDuJourActuels + 1;
         } else {
-            // --- C'EST LA MÊME JOURNÉE ---
-            const nouveauTotal = pointsDuJourActuels + 1;
-            historyData[activeKey] = nouveauTotal;
-
-            majRewardsData = {
-                pointsDuJour: firebase.firestore.FieldValue.increment(1),
-                currentDayKey: activeKey,
-                history: historyData,
-                tasksCompleted: firebase.firestore.FieldValue.increment(1)
-            };
+            // NOUVEAU JOUR : On repart à 1 pour la nouvelle date
+            nouveauScoreDuJour = 1;
         }
+
+        // Enregistrement immédiat dans l'objet d'historique avec la date du jour comme clé
+        historyData[dateAujourdhui] = nouveauScoreDuJour;
+
+        let majRewardsData = {
+            pointsDuJour: nouveauScoreDuJour,
+            lastActiveDate: dateAujourdhui,
+            history: historyData,
+            tasksCompleted: firebase.firestore.FieldValue.increment(1)
+        };
 
         // 3. Préparation des données Utilisateur
         let majUsersData = {
@@ -2418,8 +2376,6 @@ async function reclamerPointsBanniereSeule() {
 
         // 4. Mises à jour simultanées
         const majUsers = db.collection("users").doc(currentUserId).update(majUsersData);
-        
-        // Mise à jour de rewards_users
         const majRewards = db.collection("rewards_users").doc(currentUserId).set(majRewardsData, { merge: true });
 
         // Enregistrement dans l'historique v2
