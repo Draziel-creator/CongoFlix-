@@ -519,10 +519,11 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
             padding: 16px;
-            overflow-x: auto;
+            overflow-x: auto; /* Défilement horizontal natif fluide */
+            -webkit-overflow-scrolling: touch;
             margin-top: 15px;
             user-select: none;
-            touch-action: pan-y;
+            touch-action: pan-x pan-y;
         }
 
         /* Navigation Entête Calendrier */
@@ -579,6 +580,7 @@
             letter-spacing: 1px;
             padding: 10px;
             text-align: center;
+            white-space: nowrap;
         }
 
         .history-table td.day-label {
@@ -589,6 +591,9 @@
             white-space: nowrap;
             background: rgba(255, 255, 255, 0.03);
             border-radius: 10px;
+            position: sticky;
+            left: 0;
+            z-index: 2;
         }
 
         .coin-cell {
@@ -704,7 +709,7 @@
 // =========================================================================
 // 2. ÉTAT GLOBAL DE NAVIGATION & DATES
 // =========================================================================
-let g_moisAfficheDate = new Date(); // Mois/Année actuellement consultés
+let g_moisAfficheDate = new Date();
 let g_userHistoryData = {};
 let g_userRank = 0;
 let g_userStartDateISO = null;
@@ -775,32 +780,11 @@ function fermerModalRang1() {
 }
 
 // =========================================================================
-// 4. NAVIGATION MOIS / ANNÉE (SUPPORT BOUTONS ET SWIPE MOBILE)
+// 4. NAVIGATION MOIS (SEULEMENT VIA BOUTONS)
 // =========================================================================
 function changerMoisAffiche(delta) {
     g_moisAfficheDate.setMonth(g_moisAfficheDate.getMonth() + delta);
     generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
-}
-
-function initialiserGestureSwipe(containerWrapper) {
-    if (!containerWrapper || containerWrapper.dataset.swipeInitialized) return;
-    containerWrapper.dataset.swipeInitialized = "true";
-
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    containerWrapper.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
-    }, { passive: true });
-
-    containerWrapper.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].screenX;
-        const diff = touchStartX - touchEndX;
-        if (Math.abs(diff) > 50) { // Seuil de glissement (50px)
-            if (diff > 0) changerMoisAffiche(1);  // Swipe gauche -> Mois suivant
-            else changerMoisAffiche(-1);          // Swipe droite -> Mois précédent
-        }
-    }, { passive: true });
 }
 
 // =========================================================================
@@ -821,9 +805,14 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
         dateInscriptionISO = datesHistoriqueActives[0];
     }
 
-    // Calcul du premier lundi pour le mois sélectionné
+    // Calcul du premier lundi et dernier jour pour inclure TOUTES les semaines du mois
     const premierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth(), 1, 12, 0, 0);
+    const dernierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth() + 1, 0, 12, 0, 0);
     const premierLundi = ObtenirLundiDeLaSemaine(premierJourDuMois);
+
+    // Calcul dynamique du nombre de semaines totales couvrant ce mois (généralement 5 ou 6)
+    const diffJours = Math.round((dernierJourDuMois.getTime() - premierLundi.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const totalSemaines = Math.ceil(diffJours / 7);
 
     // Entête dynamique du Mois et Année
     const moisNoms = ["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"];
@@ -831,8 +820,6 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
     const tableWrapper = container.closest('.history-table-wrapper');
     if (tableWrapper) {
-        initialiserGestureSwipe(tableWrapper);
-
         let monthHeader = document.getElementById('history-month-header');
         if (!monthHeader) {
             monthHeader = document.createElement('div');
@@ -848,24 +835,21 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
         `;
     }
 
-    // Construction de la structure du tableau
+    // Construction de l'entête du tableau (Semaines 1 à N)
     const tableElement = container.closest('table');
     if (tableElement) tableElement.classList.add('history-table');
     
     let tableHead = tableElement ? tableElement.querySelector('thead') : null;
     if (tableHead) {
-        const isRankZero = parseInt(userRank) === 0;
-        const startWeek = isRankZero ? 1 : 2;
         let headHTML = `<tr><th>Jour</th>`;
-        for (let w = startWeek; w <= 4; w++) {
+        for (let w = 1; w <= totalSemaines; w++) {
             headHTML += `<th>Semaine ${w}</th>`;
         }
         headHTML += `</tr>`;
         tableHead.innerHTML = headHTML;
     }
 
-    const isRankZero = parseInt(userRank) === 0;
-
+    // Construction des lignes
     days.forEach((dayName, dayIndex) => {
         const tr = document.createElement('tr');
         
@@ -874,9 +858,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
         tdDay.innerText = dayName;
         tr.appendChild(tdDay);
 
-        const startWeek = isRankZero ? 1 : 2;
-
-        for (let w = startWeek; w <= 4; w++) {
+        for (let w = 1; w <= totalSemaines; w++) {
             const tdWeek = document.createElement('td');
             tdWeek.className = "coin-cell";
 
@@ -949,7 +931,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         g_moisAfficheDate = new Date(g_dateAujourdhuiObj.getTime());
         const dateAujourdhuiISO = FormaterDateISO(g_dateAujourdhuiObj);
 
-        // 1. Récupération du profil
+        // 1. Récupération du profil utilisateur
         const userSnap = await db.collection("users").doc(currentUserId).get();
         let userRank = 0;
         let userStartDateISO = null;
@@ -962,7 +944,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             rank1Notified = uData.rank1Notified === true;
         }
 
-        // 2. Récupération complète de l'historique
+        // 2. Récupération de l'historique complet
         const rewardsSnap = await db.collection("rewards_users").doc(currentUserId).get();
         let historyData = {};
 
@@ -975,7 +957,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             }
         }
 
-        // Fixer la date d'inscription si inexistante
+        // Sauvegarde de la date d'inscription si manquante
         if (!userStartDateISO) {
             const datesActives = Object.keys(historyData).filter(d => Number(historyData[d]) > 0).sort();
             userStartDateISO = datesActives.length > 0 ? datesActives[0] : dateAujourdhuiISO;
@@ -985,12 +967,12 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             }, { merge: true });
         }
 
-        // 3. COMPTAGE DES CASES EN VERT (Toutes les dates ayant val >= 15)
+        // 3. COMPTAGE EXACT DES JOURS COMPLÉTÉS (score >= 15)
         const joursVertsTotal = Object.keys(historyData).filter(isoDate => Number(historyData[isoDate]) >= 15).length;
 
-        // 4. INCRÉMENTATION DU RANG (0 -> 1) ET NOTIFICATION UNIQUE
+        // 4. MISE À JOUR DU RANG 1 DANS FIREBASE ET POPUP
         if (userRank === 0 && joursVertsTotal >= 7) {
-            console.log("🚀 7 jours complétés ! Passage au Rang 1...");
+            console.log("🚀 7 jours complétés ! Passage au Rang 1 dans Firebase...");
             
             await db.collection("users").doc(currentUserId).set({
                 rank: 1,
@@ -1000,23 +982,23 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             userRank = 1;
             afficherModalFelicitationsRang1();
         } else if (userRank >= 1 && !rank1Notified) {
-            // Sécurité : si le rang avait déjà été augmenté sans afficher le message
+            // Sécurité : si le rang a déjà été augmenté manuellement mais sans notification
             await db.collection("users").doc(currentUserId).set({
                 rank1Notified: true
             }, { merge: true });
             afficherModalFelicitationsRang1();
         }
 
-        // Sauvegarde dans l'état global
+        // Sauvegarde locale dans l'état global
         g_userHistoryData = historyData;
         g_userRank = userRank;
         g_userStartDateISO = userStartDateISO;
 
-        // 5. Rendu initial de l'UI
+        // 5. Rendu de l'UI
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
-        console.error("Erreur de synchronisation du profil :", error);
+        console.error("Erreur lors de la synchronisation de l'historique :", error);
     } finally {
         isSyncingProfilDate = false;
     }
