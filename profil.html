@@ -734,17 +734,19 @@ let g_dateAujourdhuiObj = new Date();
 
 const moisNomsCourts = ["Janv.", "Févr.", "Mars", "Avril", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
 
-// Fonction utilitaire pour attendre la restauration de la session Firebase Auth
-function attendreInitialisationAuth() {
-    return new Promise((resolve) => {
-        const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
-            unsubscribe(); // On stoppe l'écoute dès qu'on a la réponse
-            resolve(user);
-        });
-    });
-}
+async function ObtenirVraieDateServeur() {
+    try {
+        // Interrogation directe d'un serveur horaire (rapide & incassable par le téléphone)
+        const response = await fetch("https://worldtimeapi.org/api/timezone/Etc/UTC", { cache: "no-store" });
+        if (response.ok) {
+            const data = await response.json();
+            return new Date(data.datetime);
+        }
+    } catch (e) {
+        console.warn("API horaire indisponible, repli sur Firestore...", e);
+    }
 
-// =========================================================================
+    // =========================================================================
 // 2. OBTENIR LA VRAIE DATE SERVEUR DEPUIS FIREBASE (CORRIGÉE)
 // =========================================================================
 async function ObtenirVraieDateServeur() {
@@ -776,7 +778,6 @@ async function ObtenirVraieDateServeur() {
     // Si l'utilisateur n'est pas connecté ou en cas d'erreur réseau
     return new Date();
 }
-
 function FormaterDateISO(d) {
     const annee = d.getFullYear();
     const mois = String(d.getMonth() + 1).padStart(2, '0');
