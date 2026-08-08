@@ -978,7 +978,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 }
 
 // =========================================================================
-// 6. SYNCHRONISATION FIRESTORE ET CHARGEMENT DU PROFIL (CORRIGÉ)
+// 6. SYNCHRONISATION FIRESTORE ET PASSAGE RANG 1 (CORRIGÉ & ROBUSTE)
 // =========================================================================
 let isSyncingProfilDate = false;
 
@@ -987,77 +987,75 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
 
     try {
         isSyncingProfilDate = true;
+        console.log("🔄 Synchronisation démarrée pour UID :", currentUserId);
 
-        g_dateAujourdhuiObj = await ObtenirVraieDateServeur();
+        g_dateAujourdhuiObj = new Date();
         g_moisAfficheDate = new Date(g_dateAujourdhuiObj.getTime());
         const dateAujourdhuiISO = FormaterDateISO(g_dateAujourdhuiObj);
 
-        // 1. Lecture du profil Utilisateur
-        const userSnap = await db.collection("users").doc(currentUserId).get();
-        let userRank = 0;
-        let userStartDateISO = null;
-        let rank1Notified = false;
-
-        if (userSnap.exists) {
-            const uData = userSnap.data();
-            // Prise en compte sécurisée du champ 'rank' ou 'rang'
-            const rawRank = uData.rank !== undefined ? uData.rank : uData.rang;
-            userRank = Number(rawRank) || 0;
-            userStartDateISO = uData.startDate || null;
-            rank1Notified = uData.rank1Notified === true;
-        }
-
-        // 2. Historique des Récompenses
+        // 1. Lecture du document rewards_users
         const rewardsSnap = await db.collection("rewards_users").doc(currentUserId).get();
         let historyData = {};
 
         if (rewardsSnap.exists) {
-            let rewardsData = rewardsSnap.data();
+            const rewardsData = rewardsSnap.data();
             historyData = rewardsData.history || {};
             
-            // Correction : On n'écrase pas si pointsDuJour est inférieur à ce qui est déjà enregistré
             if (rewardsData.lastActiveDate === dateAujourdhuiISO && rewardsData.pointsDuJour !== undefined) {
                 const ptJ = Number(rewardsData.pointsDuJour);
                 if (!historyData[dateAujourdhuiISO] || ptJ > Number(historyData[dateAujourdhuiISO])) {
                     historyData[dateAujourdhuiISO] = ptJ;
                 }
             }
+        } else {
+            console.warn("⚠️ Document 'rewards_users' introuvable pour cet UID !");
+        }
+
+        // 2. Comptage des jours verts (points >= 15)
+        const joursVertsTotal = Object.keys(historyData).filter(isoDate => Number(historyData[isoDate]) >= 15).length;
+        console.log(`📊 Jours verts détectés dans Firebase : ${joursVertsTotal} / 7`);
+
+        // 3. Lecture et mise à jour du profil utilisateur dans "users"
+        const userRef = db.collection("users").doc(currentUserId);
+        const userSnap = await userRef.get();
+        
+        let userRank = 0;
+        let userStartDateISO = null;
+        let rank1Notified = false;
+
+        if (userSnap.exists) {
+            const uData = userSnap.data();
+            userRank = Number(uData.rank || uData.rang || 0);
+            userStartDateISO = uData.startDate || null;
+            rank1Notified = uData.rank1Notified === true;
         }
 
         if (!userStartDateISO) {
             const datesActives = Object.keys(historyData).filter(d => Number(historyData[d]) > 0).sort();
             userStartDateISO = datesActives.length > 0 ? datesActives[0] : dateAujourdhuiISO;
-            
-            await db.collection("users").doc(currentUserId).set({ 
-                startDate: userStartDateISO 
-            }, { merge: true });
+            await userRef.set({ startDate: userStartDateISO }, { merge: true });
         }
 
-        // 3. Comptage des jours complétés en vert (points >= 15)
-        const joursVertsTotal = Object.keys(historyData).filter(isoDate => Number(historyData[isoDate]) >= 15).length;
+        // 4. DÉTECTION 7 JOURS ET INC RANG 1 DANS FIREBASE
+        if (joursVertsTotal >= 7) {
+            console.log("🎯 Condition >= 7 jours remplie ! Passage au Rang 1 en cours...");
 
-        console.log(`📊 [VÉRIFICATION RANG 1] Jours verts trouvés dans Firebase : ${joursVertsTotal} / 7 | Rang actuel : ${userRank}`);
+            if (userRank < 1 || !rank1Notified) {
+                // Écriture forcée dans la collection 'users'
+                await userRef.set({
+                    rank: 1,
+                    rank1Notified: true
+                }, { merge: true });
 
-        // 4. Détection et passage au Rang 1
-        if (userRank === 0 && joursVertsTotal >= 7) {
-            console.log("🎉 7 jours complétés ! Mise à jour du Rang 1 dans Firebase...");
-            
-            await db.collection("users").doc(currentUserId).set({
-                rank: 1,
-                rank1Notified: true
-            }, { merge: true });
-
-            userRank = 1;
-            afficherModalFelicitationsRang1();
-        } else if (userRank >= 1 && !rank1Notified) {
-            await db.collection("users").doc(currentUserId).set({
-                rank1Notified: true
-            }, { merge: true });
-            
-            afficherModalFelicitationsRang1();
+                userRank = 1;
+                console.log("✅ Collection 'users' mise à jour avec succès (rank: 1) !");
+                
+                // Affichage du modal de félicitations
+                afficherModalFelicitationsRang1();
+            }
         }
 
-        // Sauvegarde Globale
+        // Sauvegarde globale
         g_userHistoryData = historyData;
         g_userRank = userRank;
         g_userStartDateISO = userStartDateISO;
@@ -1066,19 +1064,22 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
-        console.error("⚠️ Erreur lors de la synchronisation du profil :", error);
+        console.error("❌ Erreur lors de la synchronisation :", error);
     } finally {
         isSyncingProfilDate = false;
     }
 }
 
 // =========================================================================
-// 7. Lancement automatique au chargement / connexion de l'utilisateur
+// 7. ÉCOUTEUR ET DÉCLENCHEMENT AUTOMATIQUE À LA CONNEXION
 // =========================================================================
 if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged((user) => {
         if (user) {
+            console.log("👤 Utilisateur connecté avec l'UID :", user.uid);
             chargerEtSynchroniserHistoriqueProfil(user.uid);
+        } else {
+            console.warn("🔒 Aucun utilisateur connecté à Firebase Auth.");
         }
     });
 }
