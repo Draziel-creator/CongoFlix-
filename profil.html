@@ -734,22 +734,37 @@ let g_dateAujourdhuiObj = new Date();
 
 const moisNomsCourts = ["Janv.", "Févr.", "Mars", "Avril", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
 
+// Fonction utilitaire pour attendre la restauration de la session Firebase Auth
+function attendreInitialisationAuth() {
+    return new Promise((resolve) => {
+        const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+            unsubscribe(); // On stoppe l'écoute dès qu'on a la réponse
+            resolve(user);
+        });
+    });
+}
+
 // =========================================================================
-// 2. OBTENIR LA VRAIE DATE SERVEUR DEPUIS FIREBASE (SÉCURISÉ)
+// 2. OBTENIR LA VRAIE DATE SERVEUR DEPUIS FIREBASE (CORRIGÉE)
 // =========================================================================
 async function ObtenirVraieDateServeur() {
     try {
-        const currentUserId = (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
-        
-        // Si l'utilisateur est connecté, on crée un horodatage serveur temporaire dans Firebase
-        if (currentUserId) {
-            const ref = db.collection("users").doc(currentUserId).collection("server_time").doc("ping");
-            
-            // 1. On écrit l'heure exacte du serveur Google
+        // 1. On attend que Firebase Auth soit complètement prêt
+        let user = firebase.auth().currentUser;
+        if (!user) {
+            user = await attendreInitialisationAuth();
+        }
+
+        // 2. Si l'utilisateur est bien connecté
+        if (user) {
+            const ref = db.collection("users").doc(user.uid).collection("server_time").doc("ping");
+
+            // Écriture de l'horodatage serveur
             await ref.set({ timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+
+            // Forcer la lecture DEPUIS LE SERVEUR GOOGLE (source: 'server')
+            const snap = await ref.get({ source: 'server' });
             
-            // 2. On relit le document pour récupérer la vraie date serveur
-            const snap = await ref.get();
             if (snap.exists && snap.data().timestamp) {
                 return snap.data().timestamp.toDate();
             }
@@ -757,9 +772,8 @@ async function ObtenirVraieDateServeur() {
     } catch (e) {
         console.error("⚠️ Impossible de lire l'heure du serveur Firebase :", e);
     }
-    
-    // En dernier recours si Firebase ne répond pas, on utilise la date UTC courante
-    // (Mais le système de validation Firebase bloquera toute tentative de triche)
+
+    // Si l'utilisateur n'est pas connecté ou en cas d'erreur réseau
     return new Date();
 }
 
