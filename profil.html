@@ -746,38 +746,7 @@ async function ObtenirVraieDateServeur() {
         console.warn("API horaire indisponible, repli sur Firestore...", e);
     }
 
-    // =========================================================================
-// 2. OBTENIR LA VRAIE DATE SERVEUR DEPUIS FIREBASE (CORRIGÉE)
-// =========================================================================
-async function ObtenirVraieDateServeur() {
-    try {
-        // 1. On attend que Firebase Auth soit complètement prêt
-        let user = firebase.auth().currentUser;
-        if (!user) {
-            user = await attendreInitialisationAuth();
-        }
-
-        // 2. Si l'utilisateur est bien connecté
-        if (user) {
-            const ref = db.collection("users").doc(user.uid).collection("server_time").doc("ping");
-
-            // Écriture de l'horodatage serveur
-            await ref.set({ timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-
-            // Forcer la lecture DEPUIS LE SERVEUR GOOGLE (source: 'server')
-            const snap = await ref.get({ source: 'server' });
-            
-            if (snap.exists && snap.data().timestamp) {
-                return snap.data().timestamp.toDate();
-            }
-        }
-    } catch (e) {
-        console.error("⚠️ Impossible de lire l'heure du serveur Firebase :", e);
-    }
-
-    // Si l'utilisateur n'est pas connecté ou en cas d'erreur réseau
-    return new Date();
-}
+    
 function FormaterDateISO(d) {
     const annee = d.getFullYear();
     const mois = String(d.getMonth() + 1).padStart(2, '0');
