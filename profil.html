@@ -780,9 +780,11 @@ function fermerModalRang1() {
 }
 
 // =========================================================================
-// 4. NAVIGATION MOIS (SEULEMENT VIA BOUTONS)
+// 4. NAVIGATION MOIS (SEULEMENT VIA BOUTONS FLÈCHES)
 // =========================================================================
 function changerMoisAffiche(delta) {
+    // Évite le débordement des jours de fin de mois (ex: 31 Janvier -> 31 Février -> 3 Mars)
+    g_moisAfficheDate.setDate(1);
     g_moisAfficheDate.setMonth(g_moisAfficheDate.getMonth() + delta);
     generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 }
@@ -810,7 +812,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
     const dernierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth() + 1, 0, 12, 0, 0);
     const premierLundi = ObtenirLundiDeLaSemaine(premierJourDuMois);
 
-    // Calcul dynamique du nombre de semaines totales couvrant ce mois (généralement 5 ou 6)
+    // Calcul dynamique du nombre de semaines totales couvrant ce mois (généralement 4 à 6 semaines)
     const diffJours = Math.round((dernierJourDuMois.getTime() - premierLundi.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     const totalSemaines = Math.ceil(diffJours / 7);
 
@@ -877,7 +879,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
                 tdWeek.className += " state-unregistered";
                 tdWeek.innerHTML = `
                     <span class="cell-date">${jourMoisTexte}</span>
-                    <span class="status-badge">Non inscrit</span>
+                    <span class="status-badge">Aucune activité</span>
                 `;
             } else if (dateCaseISO < dateAujourdhuiISO) {
                 if (val >= 15) {
