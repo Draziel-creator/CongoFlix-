@@ -636,7 +636,6 @@
             letter-spacing: 0.3px;
         }
 
-        /* État : Jour appartenant à un autre mois */
         .state-out-of-month {
             opacity: 0.45 !important;
             filter: grayscale(30%);
@@ -682,7 +681,7 @@
             to { box-shadow: 0 0 22px rgba(0, 229, 255, 0.45); }
         }
 
-        /* MODAL RANG 1 ET EFFETS DE FLEURS/CONFETTIS */
+        /* MODAL RANG ET EFFETS DE FLEURS/CONFETTIS */
         .rank-modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -734,7 +733,6 @@
             opacity: 0.6; cursor: not-allowed; transform: none;
         }
 
-        /* Animation de chute de fleurs/confettis en HTML/CSS */
         .confetti-particle {
             position: absolute;
             top: -50px;
@@ -766,6 +764,17 @@ let g_userStartDateISO = null;
 let g_dateAujourdhuiObj = new Date();
 
 const moisNomsCourts = ["Janv.", "Févr.", "Mars", "Avril", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
+
+// Fonction d'extraction universelle pour lire la valeur quel que soit son format dans Firebase
+function extraireValeurJour(valeur) {
+    if (valeur === null || valeur === undefined) return 0;
+    if (typeof valeur === 'number') return valeur;
+    if (typeof valeur === 'string') return parseFloat(valeur) || 0;
+    if (typeof valeur === 'object') {
+        return Number(valeur.points || valeur.tasks || valeur.taches || valeur.count || valeur.val || 0);
+    }
+    return 0;
+}
 
 async function ObtenirVraieDateServeur() {
     try {
@@ -821,27 +830,30 @@ function lancerAnimationFleursConfettis(modalOverlay) {
     }
 }
 
-function afficherModalFelicitationsRang1(currentUserId) {
-    let modal = document.getElementById('rank-unlocked-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'rank-unlocked-modal';
-        modal.className = 'rank-modal-overlay';
-        modal.innerHTML = `
-            <div class="rank-modal-card">
-                <div class="rank-modal-icon">🌸🎉🏆</div>
-                <div class="rank-modal-title">FÉLICITATIONS !</div>
-                <div class="rank-modal-text">
-                    Vous avez complété vos <strong>7 jours d'activité verts</strong> !<br><br>
-                    Cliquez sur le bouton ci-dessous pour débloquer votre <strong>RANG 1</strong> et commencer à accumuler vos points.
-                </div>
-                <button id="btn-obtenir-rang" class="rank-modal-btn" onclick="reclamerMonRang('${currentUserId}')">OBTENIR MON RANG</button>
+function afficherModalFelicitationsRang1(currentUserId, rangAObtenir = 1) {
+    // Si la modal existe déjà, on la supprime pour repartir à propre
+    let ancienneModal = document.getElementById('rank-unlocked-modal');
+    if (ancienneModal) ancienneModal.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'rank-unlocked-modal';
+    modal.className = 'rank-modal-overlay';
+    modal.innerHTML = `
+        <div class="rank-modal-card">
+            <div class="rank-modal-icon">🌸🎉🏆</div>
+            <div class="rank-modal-title">FÉLICITATIONS !</div>
+            <div class="rank-modal-text">
+                Vous avez complété vos <strong>7 jours d'activité verts</strong> !<br><br>
+                Cliquez sur le bouton ci-dessous pour débloquer votre <strong>RANG ${rangAObtenir}</strong> et commencer à accumuler vos points.
             </div>
-        `;
-        document.body.appendChild(modal);
-        lancerAnimationFleursConfettis(modal);
-    }
-    setTimeout(() => modal.classList.add('active'), 100);
+            <button id="btn-obtenir-rang" class="rank-modal-btn" onclick="reclamerMonRang('${currentUserId}')">OBTENIR MON RANG</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    lancerAnimationFleursConfettis(modal);
+    
+    // Forcer le déclenchement de l'animation CSS
+    setTimeout(() => modal.classList.add('active'), 50);
 }
 
 // =========================================================================
@@ -859,7 +871,6 @@ window.reclamerMonRang = async function(currentUserId) {
 
         const userRef = db.collection("users").doc(currentUserId);
         
-        // Utilisation de FieldValue.increment si disponible, sinon calcul explicite
         let incrementValue = 1;
         if (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) {
             incrementValue = firebase.firestore.FieldValue.increment(1);
@@ -873,7 +884,7 @@ window.reclamerMonRang = async function(currentUserId) {
             rank1Notified: true
         }, { merge: true });
 
-        console.log("✅ ÉCRITURE FIREBASE RÉUSSIE : Champ rank incrémenté de +1 !");
+        console.log("✅ ÉCRITURE FIREBASE RÉUSSIE : Champ rank incrémenté !");
 
         // Mise à jour de l'état local
         g_userRank = (g_userRank < 1) ? 1 : g_userRank + 1;
@@ -910,7 +921,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
     const dateAujourdhuiISO = FormaterDateISO(dateAujourdhuiObj);
     
     // Date d'inscription
-    const datesHistoriqueActives = Object.keys(userHistoryData).filter(d => Number(userHistoryData[d]) > 0).sort();
+    const datesHistoriqueActives = Object.keys(userHistoryData).filter(d => extraireValeurJour(userHistoryData[d]) > 0).sort();
     let dateInscriptionISO = userStartDateISO || dateAujourdhuiISO;
     if (datesHistoriqueActives.length > 0 && datesHistoriqueActives[0] < dateInscriptionISO) {
         dateInscriptionISO = datesHistoriqueActives[0];
@@ -982,7 +993,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
             dateCaseObj.setDate(premierLundi.getDate() + joursAAjouter);
 
             const dateCaseISO = FormaterDateISO(dateCaseObj);
-            const val = Number(userHistoryData[dateCaseISO] || 0);
+            const val = extraireValeurJour(userHistoryData[dateCaseISO]);
 
             const estDansLeMoisActif = (dateCaseObj.getMonth() === targetMonthObj.getMonth());
 
@@ -1041,7 +1052,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 }
 
 // =========================================================================
-// 7. SYNCHRONISATION FIRESTORE (LECTURE UNIQUE + DÉTECTION >= 7)
+// 7. SYNCHRONISATION FIRESTORE ET DÉTECTION DES 7 JOURS VERTS
 // =========================================================================
 let isSyncingProfilDate = false;
 
@@ -1066,16 +1077,19 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             historyData = rewardsData.history || {};
             
             if (rewardsData.lastActiveDate === dateAujourdhuiISO && rewardsData.pointsDuJour !== undefined) {
-                const ptJ = Number(rewardsData.pointsDuJour);
-                if (!historyData[dateAujourdhuiISO] || ptJ > Number(historyData[dateAujourdhuiISO])) {
+                const ptJ = extraireValeurJour(rewardsData.pointsDuJour);
+                if (!historyData[dateAujourdhuiISO] || ptJ > extraireValeurJour(historyData[dateAujourdhuiISO])) {
                     historyData[dateAujourdhuiISO] = ptJ;
                 }
             }
         }
 
-        // 2. Comptage des jours verts (points >= 15)
-        const joursVertsTotal = Object.keys(historyData).filter(isoDate => Number(historyData[isoDate]) >= 15).length;
-        console.log(`📊 Jours verts détectés : ${joursVertsTotal} / 7`);
+        // 2. Comptage EXACT des jours verts (valeur >= 15)
+        const datesVertes = Object.keys(historyData).filter(isoDate => extraireValeurJour(historyData[isoDate]) >= 15);
+        const joursVertsTotal = datesVertes.length;
+        
+        console.log(`📊 Jours verts détectés dans Firebase : ${joursVertsTotal} / 7`);
+        console.log(`📅 Dates des jours verts :`, datesVertes);
 
         // 3. Lecture du profil utilisateur dans "users"
         const userRef = db.collection("users").doc(currentUserId);
@@ -1083,27 +1097,32 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         
         let userRank = 0;
         let userStartDateISO = null;
-        let rank1Notified = false;
 
         if (userSnap.exists) {
             const uData = userSnap.data() || {};
             userRank = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
             userStartDateISO = uData.startDate || null;
-            rank1Notified = uData.rank1Notified === true;
         }
 
         if (!userStartDateISO) {
-            const datesActives = Object.keys(historyData).filter(d => Number(historyData[d]) > 0).sort();
+            const datesActives = Object.keys(historyData).filter(d => extraireValeurJour(historyData[d]) > 0).sort();
             userStartDateISO = datesActives.length > 0 ? datesActives[0] : dateAujourdhuiISO;
             await userRef.set({ startDate: userStartDateISO }, { merge: true });
         }
 
-        // 4. DÉTECTION DES 7 JOURS VERTS (SANS ÉCRITURE AUTOMATIQUE)
+        // 4. DÉTECTION DES 7 JOURS VERTS ET DÉCLENCHEMENT DU MESSAGE
+        // Calcul du rang que l'utilisateur doit débloquer
+        const targetRank = Math.floor(joursVertsTotal / 7);
+
+        console.log(`ℹ️ Rang actuel en BDD: ${userRank} | Rang calculé via jours verts: ${targetRank}`);
+
+        // Déclenchement de la Pop-up si au moins 7 jours verts accomplis et rang non encore réclamé
         if (joursVertsTotal >= 7) {
-            if (userRank < 1 || !rank1Notified) {
-                console.log("🎯 Condition >= 7 jours remplie ! Affichage de la pop-up sans écriture automatique...");
-                // On affiche simplement la pop-up. L'écriture se fera lors du clic sur le bouton "OBTENIR MON RANG".
-                afficherModalFelicitationsRang1(currentUserId);
+            if (userRank < 1 || userRank < targetRank) {
+                console.log("🎯 Condition >= 7 jours remplie ! Affichage immédiat du message de félicitations...");
+                afficherModalFelicitationsRang1(currentUserId, userRank + 1);
+            } else {
+                console.log("ℹ️ Le rang correspondant aux jours verts a déjà été débloqué.");
             }
         }
 
@@ -1123,8 +1142,10 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
 }
 
 // =========================================================================
-// 8. ÉCOUTEUR AUTOMATIQUE À LA CONNEXION
+// 8. ÉCOUTEURS AUTOMATIQUES ET EXPORT GLOBAL
 // =========================================================================
+window.chargerEtSynchroniserHistoriqueProfil = chargerEtSynchroniserHistoriqueProfil;
+
 if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged((user) => {
         if (user) {
