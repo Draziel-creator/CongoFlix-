@@ -504,7 +504,7 @@
     checkReferral();
 
 // =========================================================================
-// 1. STYLES CSS INJECTÉS AUTOMATIQUEMENT (GLASSMORPHISM, DESIGN & MODAL)
+// 1. STYLES CSS INJECTÉS AUTOMATIQUEMENT (GLASSMORPHISM, DESIGN, MODAL & CONFETTI)
 // =========================================================================
 (function injecterStylesHistorique() {
     if (document.getElementById('history-modern-styles')) return;
@@ -682,42 +682,75 @@
             to { box-shadow: 0 0 22px rgba(0, 229, 255, 0.45); }
         }
 
-        /* MODAL RANG 1 */
+        /* MODAL RANG 1 ET EFFETS DE FLEURS/CONFETTIS */
         .rank-modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(12px);
+            background: rgba(5, 8, 15, 0.92);
+            backdrop-filter: blur(14px);
             display: flex; align-items: center; justify-content: center;
             z-index: 99999; opacity: 0; pointer-events: none;
             transition: opacity 0.4s ease;
+            overflow: hidden;
         }
         .rank-modal-overlay.active {
             opacity: 1; pointer-events: auto;
         }
         .rank-modal-card {
-            background: rgba(18, 24, 38, 0.95);
+            background: rgba(18, 24, 38, 0.98);
             border: 2px solid #00ff88;
-            box-shadow: 0 0 40px rgba(0, 255, 136, 0.3);
-            border-radius: 24px;
-            padding: 30px 24px;
-            max-width: 420px;
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.4);
+            border-radius: 28px;
+            padding: 35px 28px;
+            max-width: 440px;
             width: 90%;
             text-align: center;
+            position: relative;
+            z-index: 10;
             transform: scale(0.8);
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .rank-modal-overlay.active .rank-modal-card {
             transform: scale(1);
         }
-        .rank-modal-icon { font-size: 3.5rem; margin-bottom: 10px; }
-        .rank-modal-title { color: #00ff88; font-size: 1.4rem; font-weight: 800; margin-bottom: 12px; }
-        .rank-modal-text { color: #c9d1d9; font-size: 0.95rem; line-height: 1.5; margin-bottom: 24px; }
+        .rank-modal-icon { font-size: 3.8rem; margin-bottom: 12px; animation: bounce 1.5s infinite alternate; }
+        .rank-modal-title { color: #00ff88; font-size: 1.6rem; font-weight: 900; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .rank-modal-text { color: #c9d1d9; font-size: 0.98rem; line-height: 1.6; margin-bottom: 26px; }
         .rank-modal-btn {
             background: linear-gradient(135deg, #00ff88 0%, #00e5ff 100%);
-            color: #0d1117; font-weight: 800; border: none;
-            padding: 12px 28px; border-radius: 30px; font-size: 1rem;
-            cursor: pointer; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+            color: #0d1117; font-weight: 900; border: none;
+            padding: 14px 32px; border-radius: 35px; font-size: 1.05rem;
+            cursor: pointer; box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+            transition: all 0.25s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .rank-modal-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(0, 255, 136, 0.6);
+        }
+        .rank-modal-btn:disabled {
+            opacity: 0.6; cursor: not-allowed; transform: none;
+        }
+
+        /* Animation de chute de fleurs/confettis en HTML/CSS */
+        .confetti-particle {
+            position: absolute;
+            top: -50px;
+            font-size: 1.5rem;
+            user-select: none;
+            pointer-events: none;
+            animation: fallAnimation linear infinite;
+        }
+
+        @keyframes fallAnimation {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(105vh) rotate(360deg); opacity: 0.2; }
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
         }
     `;
     document.head.appendChild(style);
@@ -772,9 +805,23 @@ window.changerMoisAffiche = function(delta) {
 };
 
 // =========================================================================
-// 4. MODAL POPUP RANG 1
+// 4. ANIMATION DE FLEURS ET MODAL DE FÉLICITATIONS
 // =========================================================================
-function afficherModalFelicitationsRang1() {
+function lancerAnimationFleursConfettis(modalOverlay) {
+    const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟", "🍃"];
+    for (let i = 0; i < 35; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti-particle';
+        p.innerText = symboles[Math.floor(Math.random() * symboles.length)];
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.animationDuration = (Math.random() * 3 + 2.5) + 's';
+        p.style.animationDelay = (Math.random() * 2) + 's';
+        p.style.fontSize = (Math.random() * 1.2 + 1) + 'rem';
+        modalOverlay.appendChild(p);
+    }
+}
+
+function afficherModalFelicitationsRang1(currentUserId) {
     let modal = document.getElementById('rank-unlocked-modal');
     if (!modal) {
         modal = document.createElement('div');
@@ -782,27 +829,77 @@ function afficherModalFelicitationsRang1() {
         modal.className = 'rank-modal-overlay';
         modal.innerHTML = `
             <div class="rank-modal-card">
-                <div class="rank-modal-icon">🎉🏆</div>
+                <div class="rank-modal-icon">🌸🎉🏆</div>
                 <div class="rank-modal-title">FÉLICITATIONS !</div>
                 <div class="rank-modal-text">
-                    Vous avez complété vos <strong>7 jours d'activité</strong> !<br><br>
-                    Vous avez débloqué le <strong>RANG 1</strong> et vous pouvez maintenant commencer à accumuler vos points !
+                    Vous avez complété vos <strong>7 jours d'activité verts</strong> !<br><br>
+                    Cliquez sur le bouton ci-dessous pour débloquer votre <strong>RANG 1</strong> et commencer à accumuler vos points.
                 </div>
-                <button class="rank-modal-btn" onclick="fermerModalRang1()">C'EST PARTI !</button>
+                <button id="btn-obtenir-rang" class="rank-modal-btn" onclick="reclamerMonRang('${currentUserId}')">OBTENIR MON RANG</button>
             </div>
         `;
         document.body.appendChild(modal);
+        lancerAnimationFleursConfettis(modal);
     }
     setTimeout(() => modal.classList.add('active'), 100);
 }
 
-window.fermerModalRang1 = function() {
-    const modal = document.getElementById('rank-unlocked-modal');
-    if (modal) modal.classList.remove('active');
+// =========================================================================
+// 5. ACTION DU CLIC SUR "OBTENIR MON RANG" (Mise à jour Firebase +1)
+// =========================================================================
+window.reclamerMonRang = async function(currentUserId) {
+    const btn = document.getElementById('btn-obtenir-rang');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "VALIDATION EN COURS...";
+    }
+
+    try {
+        if (!db || !currentUserId) throw new Error("Firebase non initialisé ou utilisateur manquant");
+
+        const userRef = db.collection("users").doc(currentUserId);
+        
+        // Utilisation de FieldValue.increment si disponible, sinon calcul explicite
+        let incrementValue = 1;
+        if (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) {
+            incrementValue = firebase.firestore.FieldValue.increment(1);
+        } else {
+            incrementValue = (g_userRank || 0) + 1;
+        }
+
+        // ÉCRITURE DANS FIREBASE
+        await userRef.set({
+            rank: incrementValue,
+            rank1Notified: true
+        }, { merge: true });
+
+        console.log("✅ ÉCRITURE FIREBASE RÉUSSIE : Champ rank incrémenté de +1 !");
+
+        // Mise à jour de l'état local
+        g_userRank = (g_userRank < 1) ? 1 : g_userRank + 1;
+
+        // Fermeture du modal
+        const modal = document.getElementById('rank-unlocked-modal');
+        if (modal) {
+            modal.classList.remove('active');
+            setTimeout(() => modal.remove(), 400);
+        }
+
+        // Rafraîchissement de l'affichage
+        generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+
+    } catch (error) {
+        console.error("❌ Erreur lors de la validation du rang :", error);
+        alert("Une erreur est survenue lors de la mise à jour de votre rang. Veuillez réessayer.");
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "OBTENIR MON RANG";
+        }
+    }
 };
 
 // =========================================================================
-// 5. GÉNÉRATION DE L'INTERFACE UTILISATEUR
+// 6. GÉNÉRATION DE L'INTERFACE UTILISATEUR
 // =========================================================================
 function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO = null, dateAujourdhuiObj = new Date(), targetMonthObj = new Date()) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -944,7 +1041,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 }
 
 // =========================================================================
-// 6. SYNCHRONISATION FIRESTORE ET PASSAGE RANG 1
+// 7. SYNCHRONISATION FIRESTORE (LECTURE UNIQUE + DÉTECTION >= 7)
 // =========================================================================
 let isSyncingProfilDate = false;
 
@@ -980,7 +1077,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         const joursVertsTotal = Object.keys(historyData).filter(isoDate => Number(historyData[isoDate]) >= 15).length;
         console.log(`📊 Jours verts détectés : ${joursVertsTotal} / 7`);
 
-        // 3. Lecture et mise à jour du profil utilisateur dans "users"
+        // 3. Lecture du profil utilisateur dans "users"
         const userRef = db.collection("users").doc(currentUserId);
         const userSnap = await userRef.get();
         
@@ -1001,22 +1098,12 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             await userRef.set({ startDate: userStartDateISO }, { merge: true });
         }
 
-        // 4. DÉTECTION 7 JOURS ET INC RANG 1 DANS FIREBASE
+        // 4. DÉTECTION DES 7 JOURS VERTS (SANS ÉCRITURE AUTOMATIQUE)
         if (joursVertsTotal >= 7) {
-            console.log("🎯 Condition >= 7 jours remplie ! Passage au Rang 1 en cours...");
-
             if (userRank < 1 || !rank1Notified) {
-                // Écriture forcée dans la collection 'users'
-                await userRef.set({
-                    rank: 1,
-                    rank1Notified: true
-                }, { merge: true });
-
-                userRank = 1;
-                console.log("✅ Collection 'users' mise à jour avec succès (rank: 1) !");
-                
-                // Affichage du modal de félicitations
-                afficherModalFelicitationsRang1();
+                console.log("🎯 Condition >= 7 jours remplie ! Affichage de la pop-up sans écriture automatique...");
+                // On affiche simplement la pop-up. L'écriture se fera lors du clic sur le bouton "OBTENIR MON RANG".
+                afficherModalFelicitationsRang1(currentUserId);
             }
         }
 
@@ -1036,7 +1123,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
 }
 
 // =========================================================================
-// 7. ÉCOUTEUR AUTOMATIQUE À LA CONNEXION (SÉCURISÉ)
+// 8. ÉCOUTEUR AUTOMATIQUE À LA CONNEXION
 // =========================================================================
 if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged((user) => {
