@@ -808,7 +808,32 @@
 })();
 
 // =========================================================================
-// 2. FONCTIONS UTILITAIRES & SYNTHÈSE VOCALE
+// 2. GESTION DU LOCALSTORAGE (VERROUILLAGE PERMANENT DES COULEURS)
+// =========================================================================
+const LOCAL_STORAGE_GREEN_KEY = 'app_green_days_cache';
+
+function getGreenDaysCache() {
+    try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_GREEN_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        console.warn("Impossible de lire le LocalStorage :", e);
+        return {};
+    }
+}
+
+function saveGreenDayCache(dateISO, count = 15) {
+    try {
+        const cache = getGreenDaysCache();
+        cache[dateISO] = Math.max(Number(cache[dateISO] || 0), Number(count));
+        localStorage.setItem(LOCAL_STORAGE_GREEN_KEY, JSON.stringify(cache));
+    } catch (e) {
+        console.warn("Impossible de sauvegarder dans le LocalStorage :", e);
+    }
+}
+
+// =========================================================================
+// 3. FONCTIONS UTILITAIRES & SYNTHÈSE VOCALE
 // =========================================================================
 function extraireValeurJour(valeur) {
     if (valeur === null || valeur === undefined) return 0;
@@ -835,16 +860,15 @@ function ObtenirLundiDeLaSemaine(d) {
     return date;
 }
 
-// 🔊 Synthèse vocale : Uniquement un cri de joie spontané (ne lit plus le texte de la modale)
 function jouerVoixFelicitations() {
     if ('speechSynthesis' in window) {
         try {
-            window.speechSynthesis.cancel(); // Interrompt toute voix précédente
+            window.speechSynthesis.cancel();
             const texte = "Wouhou ! Youpi ! Félicitations ! Bravo !";
             const utterance = new SpeechSynthesisUtterance(texte);
             utterance.lang = 'fr-FR';
             utterance.rate = 1.1;
-            utterance.pitch = 1.3; // Tonalité joyeuse
+            utterance.pitch = 1.3;
             window.speechSynthesis.speak(utterance);
         } catch (e) {
             console.warn("🔊 Synthèse vocale non disponible :", e);
@@ -860,21 +884,17 @@ let g_dateAujourdhuiObj = new Date();
 let g_currentUserId = null;
 const moisNomsCourts = ["Janv.", "Févr.", "Mars", "Avril", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
 
-// CHANGEMENT DE MOIS : Création propre d'un nouvel objet Date pour éviter de briser la connexion aux données
 window.changerMoisAffiche = function(delta) {
     const anneeCourante = g_moisAfficheDate.getFullYear();
     const moisCourant = g_moisAfficheDate.getMonth();
-    
-    // Instanciation nette sans mutation directe
     g_moisAfficheDate = new Date(anneeCourante, moisCourant + delta, 1, 12, 0, 0);
     generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 };
 
 // =========================================================================
-// 3. BOÎTE MODALE DE FÉLICITATIONS
+// 4. BOÎTE MODALE DE FÉLICITATIONS
 // =========================================================================
 function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
-    // 🔊 Joue le cri de joie immédiatement
     jouerVoixFelicitations();
 
     let ancienneModal = document.getElementById('rank-unlocked-modal');
@@ -898,7 +918,6 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     `;
     document.body.appendChild(modal);
 
-    // Animation confettis & fleurs
     const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟"];
     for (let i = 0; i < 30; i++) {
         const p = document.createElement('div');
@@ -910,7 +929,6 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
         modal.appendChild(p);
     }
 
-    // Événement Clic sur le bouton de réclamation
     const btnObtenir = modal.querySelector('#btn-obtenir-rang');
     if (btnObtenir) {
         btnObtenir.onclick = function(e) {
@@ -925,7 +943,6 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
 
 window.afficherModalFelicitations = afficherModalFelicitationsRang1;
 
-// INCÉRMENTATION DE +1 DU RANG DANS FIRESTORE
 window.reclamerMonRang = async function(currentUserId) {
     const btn = document.getElementById('btn-obtenir-rang');
     if (btn) {
@@ -935,13 +952,11 @@ window.reclamerMonRang = async function(currentUserId) {
     }
 
     try {
-        // 1. Récupération robuste de l'ID utilisateur sans erreur bloquante inutile
         let uid = currentUserId || g_currentUserId;
         if (!uid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
             uid = firebase.auth().currentUser.uid;
         }
 
-        // 2. Détection intelligente de Firestore (variable 'db' ou 'firebase.firestore()')
         let firestoreDb = null;
         if (typeof db !== 'undefined' && db) {
             firestoreDb = db;
@@ -961,7 +976,6 @@ window.reclamerMonRang = async function(currentUserId) {
             return;
         }
 
-        // 3. Mise à jour dans Firestore
         const userRef = firestoreDb.collection("users").doc(uid);
         
         let incrementVal = 1;
@@ -979,22 +993,18 @@ window.reclamerMonRang = async function(currentUserId) {
             rankNotified: true
         }, { merge: true });
 
-        // Mettre à jour l'état mémoire
         g_userRank = nouveauRangCalcule;
 
-        // Stopper la voix
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
         }
 
-        // Fermer la modale
         const modal = document.getElementById('rank-unlocked-modal');
         if (modal) {
             modal.classList.remove('active');
             setTimeout(() => modal.remove(), 400);
         }
 
-        // Actualiser l'affichage
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
@@ -1009,22 +1019,36 @@ window.reclamerMonRang = async function(currentUserId) {
 };
 
 // =========================================================================
-// 4. COMPTAGE UNIVERSEL DES JOURS VERTS (ACCOMPLIS >= 15 TÂCHES)
+// 5. COMPTAGE UNIVERSEL DES JOURS VERTS (COMBINÉ LOCALSTORAGE + FIREBASE)
 // =========================================================================
 function compterTousLesJoursVerts(historyData) {
-    if (!historyData) return 0;
-    let count = 0;
-    Object.keys(historyData).forEach(dateISO => {
-        const val = extraireValeurJour(historyData[dateISO]);
-        if (val >= 15) {
-            count++;
+    const datesSet = new Set();
+    const localCache = getGreenDaysCache();
+
+    // 1. Ajouter depuis LocalStorage
+    Object.keys(localCache).forEach(dateISO => {
+        if (Number(localCache[dateISO]) >= 15) {
+            datesSet.add(dateISO);
         }
     });
-    return count;
+
+    // 2. Ajouter depuis Firebase
+    if (historyData) {
+        Object.keys(historyData).forEach(dateISO => {
+            const val = extraireValeurJour(historyData[dateISO]);
+            if (val >= 15) {
+                datesSet.add(dateISO);
+                // Sauvegarder immédiatement en local pour bloquer la couleur
+                saveGreenDayCache(dateISO, val);
+            }
+        });
+    }
+
+    return datesSet.size;
 }
 
 // =========================================================================
-// 5. GÉNÉRATION DE L'INTERFACE UTILISATEUR ( TABLEAU HISTORIQUE + BARRE )
+// 6. GENERATION DE L'INTERFACE UTILISATEUR (TABLEAU + RENDER AVEC MEMOIRE)
 // =========================================================================
 function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO = null, dateAujourdhuiObj = new Date(), targetMonthObj = new Date()) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -1033,6 +1057,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
     container.innerHTML = "";
 
     const dateAujourdhuiISO = FormaterDateISO(dateAujourdhuiObj);
+    const localCache = getGreenDaysCache();
 
     const premierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth(), 1, 12, 0, 0);
     const dernierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth() + 1, 0, 12, 0, 0);
@@ -1046,7 +1071,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
     const tableWrapper = container.closest('.history-table-wrapper');
     if (tableWrapper) {
-        // --- 1. COMPTEUR & BOUTON AVANT LE TABLEAU ---
+        // BARRE DU COMPTEUR
         let counterBar = document.getElementById('history-counter-bar');
         if (!counterBar) {
             counterBar = document.createElement('div');
@@ -1077,7 +1102,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
             };
         }
 
-        // --- 2. NAVIGATION DU MOIS ---
+        // EN-TÊTE DU MOIS
         let monthHeader = document.getElementById('history-month-header');
         if (!monthHeader) {
             monthHeader = document.createElement('div');
@@ -1110,7 +1135,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
         tableHead.innerHTML = headHTML;
     }
 
-    // Remplissage des cellules
+    // REMPLISSAGE DES CELLULES
     days.forEach((dayName, dayIndex) => {
         const tr = document.createElement('tr');
         
@@ -1129,12 +1154,17 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
             const dateCaseISO = FormaterDateISO(dateCaseObj);
             
-            const aDesDonneesDansFirebase = Object.prototype.hasOwnProperty.call(userHistoryData, dateCaseISO) && 
-                                           userHistoryData[dateCaseISO] !== null && 
-                                           userHistoryData[dateCaseISO] !== undefined;
+            // FUSION DES DONNÉES : Firebase vs LocalStorage
+            const valFirebase = extraireValeurJour(userHistoryData[dateCaseISO]);
+            const valLocal = Number(localCache[dateCaseISO] || 0);
+            const val = Math.max(valFirebase, valLocal);
 
-            const val = extraireValeurJour(userHistoryData[dateCaseISO]);
+            // Verrouillage dans LocalStorage si val >= 15
+            if (val >= 15) {
+                saveGreenDayCache(dateCaseISO, val);
+            }
 
+            const aDesDonnees = (val > 0) || Object.prototype.hasOwnProperty.call(userHistoryData, dateCaseISO);
             const estDansLeMoisActif = (dateCaseObj.getMonth() === targetMonthObj.getMonth());
 
             let jourMoisTexte = "";
@@ -1148,21 +1178,19 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
             if (dateCaseISO < dateAujourdhuiISO) {
                 // Jours passés
-                if (aDesDonneesDansFirebase) {
-                    if (val >= 15) {
-                        tdWeek.className += " state-completed";
-                        tdWeek.innerHTML = `
-                            <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
-                            <span class="status-badge">✔ Complété</span>
-                        `;
-                    } else {
-                        tdWeek.className += " state-incomplete";
-                        tdWeek.innerHTML = `
-                            <span class="cell-date" style="color:rgba(255,85,85,0.9);">${jourMoisTexte}</span>
-                            <span class="status-badge">Non accompli</span>
-                            <div style="font-size:0.65rem; margin-top:2px; opacity:0.8;">(${val}/15)</div>
-                        `;
-                    }
+                if (val >= 15) {
+                    tdWeek.className += " state-completed";
+                    tdWeek.innerHTML = `
+                        <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
+                        <span class="status-badge">✔ Complété</span>
+                    `;
+                } else if (aDesDonnees) {
+                    tdWeek.className += " state-incomplete";
+                    tdWeek.innerHTML = `
+                        <span class="cell-date" style="color:rgba(255,85,85,0.9);">${jourMoisTexte}</span>
+                        <span class="status-badge">Non accompli</span>
+                        <div style="font-size:0.65rem; margin-top:2px; opacity:0.8;">(${val}/15)</div>
+                    `;
                 } else {
                     tdWeek.className += " state-unregistered";
                     tdWeek.innerHTML = `
@@ -1198,7 +1226,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 }
 
 // =========================================================================
-// 6. SYNCHRONISATION FIRESTORE
+// 7. SYNCHRONISATION FIRESTORE & COMPLEMENTATION LOCALSTORAGE
 // =========================================================================
 let isSyncingProfilDate = false;
 
@@ -1244,7 +1272,15 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             }
         }
 
-        // 2. Lecture rang utilisateur dans "users"
+        // 2. Fusionner avec le LocalStorage pour restaurer tous les jours verts connus localement
+        const localCache = getGreenDaysCache();
+        Object.keys(localCache).forEach(dateISO => {
+            if (Number(localCache[dateISO]) >= 15) {
+                historyData[dateISO] = Math.max(extraireValeurJour(historyData[dateISO]), Number(localCache[dateISO]));
+            }
+        });
+
+        // 3. Lecture rang utilisateur dans "users"
         const userRef = firestoreDb.collection("users").doc(uid);
         const userSnap = await userRef.get();
         
@@ -1272,7 +1308,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
 }
 
 // =========================================================================
-// 7. ÉCOUTEURS ET EXPORT GLOBAL
+// 8. ÉCOUTEURS ET EXPORT GLOBAL
 // =========================================================================
 window.generateHistoryUI = generateHistoryUI;
 window.chargerEtSynchroniserHistoriqueProfil = chargerEtSynchroniserHistoriqueProfil;
