@@ -835,16 +835,16 @@ function ObtenirLundiDeLaSemaine(d) {
     return date;
 }
 
-// Fonction pour jouer la voix de félicitations IMMÉDIATEMENT
-function jouerVoixFelicitations(nouveauRang) {
+// 🔊 Synthèse vocale : Uniquement un cri de joie spontané (ne lit plus le texte de la modale)
+function jouerVoixFelicitations() {
     if ('speechSynthesis' in window) {
         try {
-            window.speechSynthesis.cancel(); // Annule immédiatement toute voix en cours
-            const texte = `Félicitations ! Vous avez accompli sept jours verts ! Cliquez sur le bouton ci-dessous pour débloquer votre rang supérieur !`;
+            window.speechSynthesis.cancel(); // Interrompt toute voix précédente
+            const texte = "Wouhou ! Youpi ! Félicitations ! Bravo !";
             const utterance = new SpeechSynthesisUtterance(texte);
             utterance.lang = 'fr-FR';
-            utterance.rate = 1.0;
-            utterance.pitch = 1.1;
+            utterance.rate = 1.1;
+            utterance.pitch = 1.3; // Tonalité joyeuse
             window.speechSynthesis.speak(utterance);
         } catch (e) {
             console.warn("🔊 Synthèse vocale non disponible :", e);
@@ -860,9 +860,13 @@ let g_dateAujourdhuiObj = new Date();
 let g_currentUserId = null;
 const moisNomsCourts = ["Janv.", "Févr.", "Mars", "Avril", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
 
+// CHANGEMENT DE MOIS : Création propre d'un nouvel objet Date pour éviter de briser la connexion aux données
 window.changerMoisAffiche = function(delta) {
-    g_moisAfficheDate.setDate(1);
-    g_moisAfficheDate.setMonth(g_moisAfficheDate.getMonth() + delta);
+    const anneeCourante = g_moisAfficheDate.getFullYear();
+    const moisCourant = g_moisAfficheDate.getMonth();
+    
+    // Instanciation nette sans mutation directe
+    g_moisAfficheDate = new Date(anneeCourante, moisCourant + delta, 1, 12, 0, 0);
     generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 };
 
@@ -870,12 +874,13 @@ window.changerMoisAffiche = function(delta) {
 // 3. BOÎTE MODALE DE FÉLICITATIONS
 // =========================================================================
 function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
-    // 🔊 Lancer la voix en PREMIER sans attendre la création des éléments
-    const nouveauRangFutur = (g_userRank || 0) + 1;
-    jouerVoixFelicitations(nouveauRangFutur);
+    // 🔊 Joue le cri de joie immédiatement
+    jouerVoixFelicitations();
 
     let ancienneModal = document.getElementById('rank-unlocked-modal');
     if (ancienneModal) ancienneModal.remove();
+
+    const nouveauRangFutur = (g_userRank || 0) + 1;
 
     const modal = document.createElement('div');
     modal.id = 'rank-unlocked-modal';
@@ -893,7 +898,7 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     `;
     document.body.appendChild(modal);
 
-    // Effet d'animation des confettis/fleurs
+    // Animation confettis & fleurs
     const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟"];
     for (let i = 0; i < 30; i++) {
         const p = document.createElement('div');
@@ -905,7 +910,7 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
         modal.appendChild(p);
     }
 
-    // Attacher l'événement Clic au bouton
+    // Événement Clic sur le bouton de réclamation
     const btnObtenir = modal.querySelector('#btn-obtenir-rang');
     if (btnObtenir) {
         btnObtenir.onclick = function(e) {
@@ -920,7 +925,7 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
 
 window.afficherModalFelicitations = afficherModalFelicitationsRang1;
 
-// FONCTION POUR INCÉRMENTER DE +1 LE RANG DANS FIRESTORE
+// INCÉRMENTATION DE +1 DU RANG DANS FIRESTORE
 window.reclamerMonRang = async function(currentUserId) {
     const btn = document.getElementById('btn-obtenir-rang');
     if (btn) {
@@ -930,29 +935,40 @@ window.reclamerMonRang = async function(currentUserId) {
     }
 
     try {
-        // Fallback automatique pour récupérer l'ID utilisateur si non passé
+        // 1. Récupération robuste de l'ID utilisateur sans erreur bloquante inutile
         let uid = currentUserId || g_currentUserId;
         if (!uid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
             uid = firebase.auth().currentUser.uid;
         }
 
-        if (typeof db === 'undefined' || !db || !uid) {
-            alert("Erreur: Connexion introuvable. Veuillez vérifier votre réseau.");
-            if (btn) {
-                btn.disabled = false;
-                btn.style.opacity = "1";
-                btn.innerText = "OBTENIR MON RANG (+1)";
-            }
+        // 2. Détection intelligente de Firestore (variable 'db' ou 'firebase.firestore()')
+        let firestoreDb = null;
+        if (typeof db !== 'undefined' && db) {
+            firestoreDb = db;
+        } else if (typeof firebase !== 'undefined' && firebase.firestore) {
+            firestoreDb = firebase.firestore();
+        }
+
+        if (!uid) {
+            alert("Veuillez vous réauthentifier pour valider votre rang.");
+            if (btn) { btn.disabled = false; btn.style.opacity = "1"; btn.innerText = "OBTENIR MON RANG (+1)"; }
             return;
         }
 
-        // Références Firestore
-        const userRef = db.collection("users").doc(uid);
+        if (!firestoreDb) {
+            alert("Erreur d'accès à la base de données Firestore.");
+            if (btn) { btn.disabled = false; btn.style.opacity = "1"; btn.innerText = "OBTENIR MON RANG (+1)"; }
+            return;
+        }
+
+        // 3. Mise à jour dans Firestore
+        const userRef = firestoreDb.collection("users").doc(uid);
         
-        // Incrémentation de +1 atomique dans Firestore
         let incrementVal = 1;
         if (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) {
             incrementVal = firebase.firestore.FieldValue.increment(1);
+        } else {
+            incrementVal = (g_userRank || 0) + 1;
         }
 
         const nouveauRangCalcule = (g_userRank || 0) + 1;
@@ -963,10 +979,10 @@ window.reclamerMonRang = async function(currentUserId) {
             rankNotified: true
         }, { merge: true });
 
-        // Mettre à jour la mémoire locale
+        // Mettre à jour l'état mémoire
         g_userRank = nouveauRangCalcule;
 
-        // Arrêter la voix si elle parle encore
+        // Stopper la voix
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
         }
@@ -978,12 +994,12 @@ window.reclamerMonRang = async function(currentUserId) {
             setTimeout(() => modal.remove(), 400);
         }
 
-        // Re-générer l'interface
+        // Actualiser l'affichage
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
         console.error("❌ Erreur enregistrement rang :", error);
-        alert("Une erreur est survenue lors de l'enregistrement du rang.");
+        alert("Une erreur est survenue lors de l'enregistrement : " + error.message);
         if (btn) {
             btn.disabled = false;
             btn.style.opacity = "1";
@@ -1113,7 +1129,6 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
             const dateCaseISO = FormaterDateISO(dateCaseObj);
             
-            // Vérification si la date a une entrée réelle enregistrée dans Firebase
             const aDesDonneesDansFirebase = Object.prototype.hasOwnProperty.call(userHistoryData, dateCaseISO) && 
                                            userHistoryData[dateCaseISO] !== null && 
                                            userHistoryData[dateCaseISO] !== undefined;
@@ -1132,16 +1147,16 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
             }
 
             if (dateCaseISO < dateAujourdhuiISO) {
-                // Jours passés dans le calendrier
+                // Jours passés
                 if (aDesDonneesDansFirebase) {
                     if (val >= 15) {
-                        tdWeek.className += " state-completed"; // Jour Vert accompli (>= 15)
+                        tdWeek.className += " state-completed";
                         tdWeek.innerHTML = `
                             <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
                             <span class="status-badge">✔ Complété</span>
                         `;
                     } else {
-                        tdWeek.className += " state-incomplete"; // Jour enregistré mais non accompli (< 15)
+                        tdWeek.className += " state-incomplete";
                         tdWeek.innerHTML = `
                             <span class="cell-date" style="color:rgba(255,85,85,0.9);">${jourMoisTexte}</span>
                             <span class="status-badge">Non accompli</span>
@@ -1149,7 +1164,6 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
                         `;
                     }
                 } else {
-                    // Aucune donnée trouvée dans Firebase pour cette date
                     tdWeek.className += " state-unregistered";
                     tdWeek.innerHTML = `
                         <span class="cell-date">${jourMoisTexte}</span>
@@ -1190,12 +1204,19 @@ let isSyncingProfilDate = false;
 
 async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
     if (isSyncingProfilDate) return;
-    if (typeof db === 'undefined' || !db) return;
+
+    let firestoreDb = null;
+    if (typeof db !== 'undefined' && db) {
+        firestoreDb = db;
+    } else if (typeof firebase !== 'undefined' && firebase.firestore) {
+        firestoreDb = firebase.firestore();
+    }
+
+    if (!firestoreDb) return;
 
     try {
         isSyncingProfilDate = true;
 
-        // Récupération automatique de l'ID si non fourni
         let uid = currentUserId || g_currentUserId;
         if (!uid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
             uid = firebase.auth().currentUser.uid;
@@ -1203,19 +1224,17 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         if (!uid) return;
 
         g_currentUserId = uid;
-
         g_dateAujourdhuiObj = new Date();
         const dateAujourdhuiISO = FormaterDateISO(g_dateAujourdhuiObj);
 
-        // 1. Lecture du document rewards_users
-        const rewardsSnap = await db.collection("rewards_users").doc(uid).get();
+        // 1. Lecture rewards_users
+        const rewardsSnap = await firestoreDb.collection("rewards_users").doc(uid).get();
         let historyData = {};
 
         if (rewardsSnap.exists) {
             const rewardsData = rewardsSnap.data() || {};
             historyData = rewardsData.history || {};
             
-            // Intégrer les tâches réalisées aujourd'hui
             const ptToday = rewardsData.pointsDuJour !== undefined ? rewardsData.pointsDuJour : rewardsData.tasksToday;
             if (rewardsData.lastActiveDate === dateAujourdhuiISO && ptToday !== undefined) {
                 const ptJ = extraireValeurJour(ptToday);
@@ -1225,8 +1244,8 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             }
         }
 
-        // 2. Lecture du rang utilisateur dans "users"
-        const userRef = db.collection("users").doc(uid);
+        // 2. Lecture rang utilisateur dans "users"
+        const userRef = firestoreDb.collection("users").doc(uid);
         const userSnap = await userRef.get();
         
         let userRank = 0;
@@ -1238,12 +1257,11 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             userStartDateISO = uData.startDate || null;
         }
 
-        // Sauvegarde de l'état global
         g_userHistoryData = historyData;
         g_userRank = userRank;
         g_userStartDateISO = userStartDateISO;
 
-        // 3. Rendu du tableau
+        // Render UI
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
