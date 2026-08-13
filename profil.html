@@ -935,7 +935,7 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
         btnObtenir.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
-            window.reclamerMonRang(currentUserId);
+            window.reclamerMonRang();
         };
     }
     
@@ -944,73 +944,85 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
 
 window.afficherModalFelicitations = afficherModalFelicitationsRang1;
 
-window.reclamerMonRang = async function(currentUserId) {
-    // 1. Stoppe immédiatement la lecture vocale si elle parle encore
+window.reclamerMonRang = async function() {
+    // 1. Arrete la lecture vocale si active
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
     }
 
-    const btn = document.getElementById('btn-obtenir-rang');
-    if (btn) {
-        btn.disabled = true;
-        btn.style.opacity = "0.6";
-        btn.innerText = "VALIDATION EN COURS...";
+    // 2. Identification exacte de l'utilisateur (identique a reclamerPointsBouton1)
+    const currentUserId = (typeof userId !== "undefined" && userId) 
+        ? userId 
+        : (typeof recupererIdentifiantUtilisateur === "function" 
+            ? recupererIdentifiantUtilisateur() 
+            : (typeof firebase !== "undefined" && firebase.auth() && firebase.auth().currentUser 
+                ? firebase.auth().currentUser.uid 
+                : g_currentUserId));
+
+    if (!currentUserId) {
+        const msg = "Veuillez vous connecter pour réclamer votre rang.";
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee(msg, "Connexion Requise");
+        } else {
+            alert(msg);
+        }
+        return;
+    }
+
+    const btnObtenir = document.getElementById('btn-obtenir-rang');
+    if (btnObtenir) {
+        btnObtenir.disabled = true;
+        btnObtenir.style.opacity = "0.6";
+        btnObtenir.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> VALIDATION EN COURS...`;
     }
 
     try {
-        // 2. Détermination directe de l'UID (sans prompt ni alertes Auth bloquantes)
-        let uid = currentUserId || g_currentUserId;
-        if (!uid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
-            uid = firebase.auth().currentUser.uid;
-        }
-
-        let firestoreDb = null;
-        if (typeof db !== 'undefined' && db) {
-            firestoreDb = db;
-        } else if (typeof firebase !== 'undefined' && firebase.firestore) {
-            firestoreDb = firebase.firestore();
-        }
-
+        // 3. Inscription directe dans Firebase en utilisant l'objet global 'db'
         const nouveauRangCalcule = (g_userRank || 0) + 1;
 
-        // 3. Incrémentation directe de la collection users dans Firestore
-        if (uid && firestoreDb) {
-            const userRef = firestoreDb.collection("users").doc(uid);
-            
-            let incrementVal = 1;
-            if (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) {
-                incrementVal = firebase.firestore.FieldValue.increment(1);
-            } else {
-                incrementVal = nouveauRangCalcule;
-            }
+        await db.collection("users").doc(currentUserId).set({
+            rank: firebase.firestore.FieldValue.increment(1),
+            rang: firebase.firestore.FieldValue.increment(1),
+            rankNotified: true
+        }, { merge: true });
 
-            await userRef.set({
-                rank: incrementVal,
-                rang: incrementVal,
-                rankNotified: true
-            }, { merge: true });
-        }
-
-        // 4. Mettre à jour la variable globale locale
+        // 4. Mise a jour globale du rang local
         g_userRank = nouveauRangCalcule;
 
-        // 5. Fermer la modale
+        // 5. Fermeture de la modale
         const modal = document.getElementById('rank-unlocked-modal');
         if (modal) {
             modal.classList.remove('active');
             setTimeout(() => modal.remove(), 400);
         }
 
-        // 6. Rafraîchir l'interface
-        generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+        // 6. Rafraichissement du tableau d'historique
+        if (typeof generateHistoryUI === "function") {
+            generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+        }
+
+        // 7. Message de confirmation
+        const msgSucces = `Félicitations ! Vous êtes désormais au RANG ${g_userRank} !`;
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee(msgSucces, "Rang Débloqué !", "Super");
+        } else {
+            alert(msgSucces);
+        }
 
     } catch (error) {
-        console.error("❌ Erreur enregistrement rang :", error);
-        // Ferme la modale proprement sans bloquer l'interface de l'utilisateur
-        const modal = document.getElementById('rank-unlocked-modal');
-        if (modal) {
-            modal.classList.remove('active');
-            setTimeout(() => modal.remove(), 400);
+        console.error("❌ Erreur lors de l'enregistrement du rang dans Firebase :", error);
+        
+        if (btnObtenir) {
+            btnObtenir.disabled = false;
+            btnObtenir.style.opacity = "1";
+            btnObtenir.innerHTML = `<i class="fa-solid fa-rotate-right"></i> RÉESSAYER`;
+        }
+
+        const msgErreur = "Erreur lors de la mise à jour dans Firebase. Veuillez réessayer.";
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee(msgErreur, "Erreur Réseau");
+        } else {
+            alert(msgErreur);
         }
     }
 };
