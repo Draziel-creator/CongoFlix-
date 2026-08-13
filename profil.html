@@ -833,7 +833,7 @@ function saveGreenDayCache(dateISO, count = 15) {
 }
 
 // =========================================================================
-// 3. FONCTIONS UTILITAIRES & SYNTHÈSE VOCALE
+// 3. FONCTIONS UTILITAIRES & SYNTHÈSE VOCALE (VOIX NORMALE & SOBOLE)
 // =========================================================================
 function extraireValeurJour(valeur) {
     if (valeur === null || valeur === undefined) return 0;
@@ -860,15 +860,16 @@ function ObtenirLundiDeLaSemaine(d) {
     return date;
 }
 
+// Voix naturelle, claire et posée
 function jouerVoixFelicitations() {
     if ('speechSynthesis' in window) {
         try {
             window.speechSynthesis.cancel();
-            const texte = "Wouhou ! Youpi ! Félicitations ! Bravo !";
+            const texte = "Félicitations ! Vous avez accumulé 7 jours verts. Vous pouvez maintenant obtenir votre rang supérieur.";
             const utterance = new SpeechSynthesisUtterance(texte);
             utterance.lang = 'fr-FR';
-            utterance.rate = 1.1;
-            utterance.pitch = 1.3;
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
             window.speechSynthesis.speak(utterance);
         } catch (e) {
             console.warn("🔊 Synthèse vocale non disponible :", e);
@@ -892,7 +893,7 @@ window.changerMoisAffiche = function(delta) {
 };
 
 // =========================================================================
-// 4. BOÎTE MODALE DE FÉLICITATIONS
+// 4. BOÎTE MODALE DE FÉLICITATIONS ET OBTENTION DIRECTE DU RANG
 // =========================================================================
 function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     jouerVoixFelicitations();
@@ -944,6 +945,11 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
 window.afficherModalFelicitations = afficherModalFelicitationsRang1;
 
 window.reclamerMonRang = async function(currentUserId) {
+    // 1. Stoppe immédiatement la lecture vocale si elle parle encore
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+    }
+
     const btn = document.getElementById('btn-obtenir-rang');
     if (btn) {
         btn.disabled = true;
@@ -952,6 +958,7 @@ window.reclamerMonRang = async function(currentUserId) {
     }
 
     try {
+        // 2. Détermination directe de l'UID (sans prompt ni alertes Auth bloquantes)
         let uid = currentUserId || g_currentUserId;
         if (!uid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
             uid = firebase.auth().currentUser.uid;
@@ -964,56 +971,46 @@ window.reclamerMonRang = async function(currentUserId) {
             firestoreDb = firebase.firestore();
         }
 
-        if (!uid) {
-            alert("Veuillez vous réauthentifier pour valider votre rang.");
-            if (btn) { btn.disabled = false; btn.style.opacity = "1"; btn.innerText = "OBTENIR MON RANG (+1)"; }
-            return;
-        }
-
-        if (!firestoreDb) {
-            alert("Erreur d'accès à la base de données Firestore.");
-            if (btn) { btn.disabled = false; btn.style.opacity = "1"; btn.innerText = "OBTENIR MON RANG (+1)"; }
-            return;
-        }
-
-        const userRef = firestoreDb.collection("users").doc(uid);
-        
-        let incrementVal = 1;
-        if (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) {
-            incrementVal = firebase.firestore.FieldValue.increment(1);
-        } else {
-            incrementVal = (g_userRank || 0) + 1;
-        }
-
         const nouveauRangCalcule = (g_userRank || 0) + 1;
 
-        await userRef.set({
-            rank: incrementVal,
-            rang: incrementVal,
-            rankNotified: true
-        }, { merge: true });
+        // 3. Incrémentation directe de la collection users dans Firestore
+        if (uid && firestoreDb) {
+            const userRef = firestoreDb.collection("users").doc(uid);
+            
+            let incrementVal = 1;
+            if (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) {
+                incrementVal = firebase.firestore.FieldValue.increment(1);
+            } else {
+                incrementVal = nouveauRangCalcule;
+            }
 
-        g_userRank = nouveauRangCalcule;
-
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
+            await userRef.set({
+                rank: incrementVal,
+                rang: incrementVal,
+                rankNotified: true
+            }, { merge: true });
         }
 
+        // 4. Mettre à jour la variable globale locale
+        g_userRank = nouveauRangCalcule;
+
+        // 5. Fermer la modale
         const modal = document.getElementById('rank-unlocked-modal');
         if (modal) {
             modal.classList.remove('active');
             setTimeout(() => modal.remove(), 400);
         }
 
+        // 6. Rafraîchir l'interface
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
         console.error("❌ Erreur enregistrement rang :", error);
-        alert("Une erreur est survenue lors de l'enregistrement : " + error.message);
-        if (btn) {
-            btn.disabled = false;
-            btn.style.opacity = "1";
-            btn.innerText = "OBTENIR MON RANG (+1)";
+        // Ferme la modale proprement sans bloquer l'interface de l'utilisateur
+        const modal = document.getElementById('rank-unlocked-modal');
+        if (modal) {
+            modal.classList.remove('active');
+            setTimeout(() => modal.remove(), 400);
         }
     }
 };
@@ -1038,7 +1035,6 @@ function compterTousLesJoursVerts(historyData) {
             const val = extraireValeurJour(historyData[dateISO]);
             if (val >= 15) {
                 datesSet.add(dateISO);
-                // Sauvegarder immédiatement en local pour bloquer la couleur
                 saveGreenDayCache(dateISO, val);
             }
         });
@@ -1159,7 +1155,6 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
             const valLocal = Number(localCache[dateCaseISO] || 0);
             const val = Math.max(valFirebase, valLocal);
 
-            // Verrouillage dans LocalStorage si val >= 15
             if (val >= 15) {
                 saveGreenDayCache(dateCaseISO, val);
             }
@@ -1272,7 +1267,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             }
         }
 
-        // 2. Fusionner avec le LocalStorage pour restaurer tous les jours verts connus localement
+        // 2. Fusionner avec le LocalStorage
         const localCache = getGreenDaysCache();
         Object.keys(localCache).forEach(dateISO => {
             if (Number(localCache[dateISO]) >= 15) {
