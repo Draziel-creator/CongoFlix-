@@ -511,6 +511,83 @@
     const style = document.createElement('style');
     style.id = 'history-modern-styles';
     style.innerHTML = `
+        /* BARRE DE COMPTEUR ET BOUTON DÉCLENCHEUR */
+        .history-counter-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(13, 17, 23, 0.95);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 14px;
+            padding: 12px 18px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            flex-wrap: wrap;
+            gap: 12px;
+            user-select: none;
+        }
+
+        .green-days-counter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 800;
+            font-size: 0.92rem;
+            color: #ffffff;
+        }
+
+        .green-days-badge {
+            background: rgba(0, 255, 136, 0.15);
+            border: 1.5px solid #00ff88;
+            color: #00ff88;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 900;
+            box-shadow: 0 0 12px rgba(0, 255, 136, 0.25);
+        }
+
+        .btn-trigger-modal {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #8b949e;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 800;
+            font-size: 0.88rem;
+            cursor: not-allowed;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            transition: all 0.3s ease;
+        }
+
+        /* EFFET DE PULSATION TRÈS FORT QUAND LES 7 JOURS VERTS SONT ATTEINTS */
+        .btn-trigger-modal.pulsing-active {
+            background: linear-gradient(135deg, #00ff88 0%, #00e5ff 100%);
+            color: #0d1117;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.9);
+            animation: strongPulseAnimation 1.1s infinite ease-in-out;
+        }
+
+        @keyframes strongPulseAnimation {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.9), 0 0 15px rgba(0, 255, 136, 0.6);
+            }
+            50% {
+                transform: scale(1.07);
+                box-shadow: 0 0 25px 12px rgba(0, 255, 136, 0.5), 0 0 35px rgba(0, 229, 255, 0.8);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0), 0 0 15px rgba(0, 255, 136, 0.6);
+            }
+        }
+
         .history-table-wrapper {
             background: rgba(13, 17, 23, 0.85);
             backdrop-filter: blur(16px);
@@ -520,7 +597,7 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
             padding: 16px;
             overflow-x: auto;
-            margin-top: 15px;
+            margin-top: 10px;
             user-select: none;
         }
 
@@ -628,10 +705,10 @@
 
         /* JOUR VERT (ACCOMPLI) */
         .state-completed {
-            background: rgba(0, 255, 136, 0.12);
-            border: 1px solid rgba(0, 255, 136, 0.4);
-            color: #00ff88;
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.12);
+            background: rgba(0, 255, 136, 0.12) !important;
+            border: 1px solid rgba(0, 255, 136, 0.4) !important;
+            color: #00ff88 !important;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.12) !important;
         }
 
         .state-incomplete {
@@ -645,6 +722,14 @@
             border: 1.5px solid #00e5ff;
             color: #00e5ff;
             box-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
+        }
+
+        /* QUAND AUJOURD'HUI EST AUSSI UN JOUR VERT */
+        .state-today.state-completed {
+            background: rgba(0, 255, 136, 0.25) !important;
+            border: 2px solid #00ff88 !important;
+            color: #00ff88 !important;
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.4) !important;
         }
 
         .state-future {
@@ -745,6 +830,7 @@ let g_userHistoryData = {};
 let g_userRank = 0;
 let g_userStartDateISO = null;
 let g_dateAujourdhuiObj = new Date();
+let g_currentUserId = null;
 const moisNomsCourts = ["Janv.", "Févr.", "Mars", "Avril", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
 
 window.changerMoisAffiche = function(delta) {
@@ -754,7 +840,7 @@ window.changerMoisAffiche = function(delta) {
 };
 
 // =========================================================================
-// 3. BOÎTE MODALE DE FÉLICITATIONS (NOM HARMONISÉ)
+// 3. BOÎTE MODALE DE FÉLICITATIONS
 // =========================================================================
 function afficherModalFelicitationsRang1(currentUserId, nouveauRang = 1) {
     let ancienneModal = document.getElementById('rank-unlocked-modal');
@@ -776,7 +862,6 @@ function afficherModalFelicitationsRang1(currentUserId, nouveauRang = 1) {
     `;
     document.body.appendChild(modal);
 
-    // Animation de confettis/fleurs
     const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟"];
     for (let i = 0; i < 30; i++) {
         const p = document.createElement('div');
@@ -791,10 +876,8 @@ function afficherModalFelicitationsRang1(currentUserId, nouveauRang = 1) {
     setTimeout(() => modal.classList.add('active'), 50);
 }
 
-// Alias pour éviter toute erreur si appelé avec l'ancien nom
 window.afficherModalFelicitations = afficherModalFelicitationsRang1;
 
-// Clic sur le bouton de réclamation
 window.reclamerMonRang = async function(currentUserId, nouveauRang = 1) {
     const btn = document.getElementById('btn-obtenir-rang');
     if (btn) {
@@ -805,7 +888,6 @@ window.reclamerMonRang = async function(currentUserId, nouveauRang = 1) {
     try {
         if (!db || !currentUserId) return;
 
-        // Mise à jour de la BDD
         await db.collection("users").doc(currentUserId).set({
             rank: nouveauRang,
             rang: nouveauRang,
@@ -820,7 +902,6 @@ window.reclamerMonRang = async function(currentUserId, nouveauRang = 1) {
             setTimeout(() => modal.remove(), 400);
         }
 
-        // Rafraîchir l'affichage
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
@@ -833,7 +914,22 @@ window.reclamerMonRang = async function(currentUserId, nouveauRang = 1) {
 };
 
 // =========================================================================
-// 4. GÉNÉRATION DE L'INTERFACE UTILISATEUR (TABLEAU HISTORIQUE)
+// 4. COMPTAGE UNIVERSEL DES JOURS VERTS (ACCOMPLIS >= 15 TÂCHES)
+// =========================================================================
+function compterTousLesJoursVerts(historyData) {
+    if (!historyData) return 0;
+    let count = 0;
+    Object.keys(historyData).forEach(dateISO => {
+        const val = extraireValeurJour(historyData[dateISO]);
+        if (val >= 15) {
+            count++;
+        }
+    });
+    return count;
+}
+
+// =========================================================================
+// 5. GÉNÉRATION DE L'INTERFACE UTILISATEUR ( TABLEAU HISTORIQUE + BARRE )
 // =========================================================================
 function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO = null, dateAujourdhuiObj = new Date(), targetMonthObj = new Date()) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -843,14 +939,12 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
     const dateAujourdhuiISO = FormaterDateISO(dateAujourdhuiObj);
     
-    // Déterminer la date d'inscription la plus ancienne
     const datesHistoriqueActives = Object.keys(userHistoryData).filter(d => extraireValeurJour(userHistoryData[d]) > 0).sort();
     let dateInscriptionISO = userStartDateISO || dateAujourdhuiISO;
     if (datesHistoriqueActives.length > 0 && datesHistoriqueActives[0] < dateInscriptionISO) {
         dateInscriptionISO = datesHistoriqueActives[0];
     }
 
-    // Calculs de calendrier
     const premierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth(), 1, 12, 0, 0);
     const dernierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth() + 1, 0, 12, 0, 0);
     const premierLundi = ObtenirLundiDeLaSemaine(premierJourDuMois);
@@ -863,6 +957,39 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
     const tableWrapper = container.closest('.history-table-wrapper');
     if (tableWrapper) {
+        // --- 1. AJOUT/MISE À JOUR DU COMPTEUR + BOUTON AVANT LE TABLEAU ---
+        let counterBar = document.getElementById('history-counter-bar');
+        if (!counterBar) {
+            counterBar = document.createElement('div');
+            counterBar.id = 'history-counter-bar';
+            tableWrapper.parentNode.insertBefore(counterBar, tableWrapper);
+        }
+
+        const totalJoursVerts = compterTousLesJoursVerts(userHistoryData);
+        const estPretPourModal = totalJoursVerts >= 7;
+        const rangCible = Math.floor(totalJoursVerts / 7) || 1;
+
+        counterBar.className = "history-counter-bar";
+        counterBar.innerHTML = `
+            <div class="green-days-counter">
+                <span>🟢 Jours verts accomplis :</span>
+                <span class="green-days-badge">${totalJoursVerts} / 7</span>
+            </div>
+            <button id="btn-declencher-modal" 
+                    class="btn-trigger-modal ${estPretPourModal ? 'pulsing-active' : ''}"
+                    ${estPretPourModal ? '' : 'disabled'}>
+                ${estPretPourModal ? '🔥 CLIQUER POUR DÉBLOQUER ! 🔥' : '🔒 7 JOURS VERTS REQUIS'}
+            </button>
+        `;
+
+        const btnDeclencher = document.getElementById('btn-declencher-modal');
+        if (btnDeclencher && estPretPourModal) {
+            btnDeclencher.onclick = function() {
+                afficherModalFelicitationsRang1(g_currentUserId, rangCible);
+            };
+        }
+
+        // --- 2. BARRE DE NAVIGATION DU MOIS ---
         let monthHeader = document.getElementById('history-month-header');
         if (!monthHeader) {
             monthHeader = document.createElement('div');
@@ -936,7 +1063,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
                 `;
             } else if (dateCaseISO < dateAujourdhuiISO) {
                 if (val >= 15) {
-                    tdWeek.className += " state-completed";
+                    tdWeek.className += " state-completed"; // Tag Jour Vert
                     tdWeek.innerHTML = `
                         <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
                         <span class="status-badge">✔ Complété</span>
@@ -952,6 +1079,9 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
             } else if (dateCaseISO === dateAujourdhuiISO) {
                 tdWeek.className += " state-today";
                 const isDoneToday = val >= 15;
+                if (isDoneToday) {
+                    tdWeek.className += " state-completed"; // Tag Jour Vert pour Aujourd'hui
+                }
                 tdWeek.innerHTML = `
                     <span class="cell-date" style="color:#00e5ff;">AUJ. (${jourMoisTexte})</span>
                     <span class="status-badge">${isDoneToday ? '✔ Complété' : val + ' / 15'}</span>
@@ -972,7 +1102,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 }
 
 // =========================================================================
-// 5. SYNCHRONISATION FIRESTORE + DÉTECTION DES 7 JOURS VERTS
+// 6. SYNCHRONISATION FIRESTORE
 // =========================================================================
 let isSyncingProfilDate = false;
 
@@ -982,6 +1112,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
 
     try {
         isSyncingProfilDate = true;
+        g_currentUserId = currentUserId;
         console.log("🔄 Synchronisation démarrée pour UID :", currentUserId);
 
         g_dateAujourdhuiObj = new Date();
@@ -996,23 +1127,17 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             const rewardsData = rewardsSnap.data() || {};
             historyData = rewardsData.history || {};
             
-            // Intégrer la valeur d'aujourd'hui si présente dans pointsDuJour
-            if (rewardsData.lastActiveDate === dateAujourdhuiISO && rewardsData.pointsDuJour !== undefined) {
-                const ptJ = extraireValeurJour(rewardsData.pointsDuJour);
+            // Intégrer les points/tâches d'aujourd'hui
+            const ptToday = rewardsData.pointsDuJour !== undefined ? rewardsData.pointsDuJour : rewardsData.tasksToday;
+            if (rewardsData.lastActiveDate === dateAujourdhuiISO && ptToday !== undefined) {
+                const ptJ = extraireValeurJour(ptToday);
                 if (!historyData[dateAujourdhuiISO] || ptJ > extraireValeurJour(historyData[dateAujourdhuiISO])) {
                     historyData[dateAujourdhuiISO] = ptJ;
                 }
             }
         }
 
-        // 2. COMPTAGE DES JOURS VERTS (valeur >= 15)
-        const datesVertes = Object.keys(historyData).filter(isoDate => extraireValeurJour(historyData[isoDate]) >= 15);
-        const joursVertsTotal = datesVertes.length;
-        
-        console.log(`📊 Jours verts détectés : ${joursVertsTotal} / 7`);
-        console.log(`📅 Liste des jours verts :`, datesVertes);
-
-        // 3. Lecture du rang de l'utilisateur
+        // 2. Lecture du rang utilisateur dans "users"
         const userRef = db.collection("users").doc(currentUserId);
         const userSnap = await userRef.get();
         
@@ -1031,24 +1156,12 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             await userRef.set({ startDate: userStartDateISO }, { merge: true });
         }
 
-        // Save local state
+        // Sauvegarde de l'état global
         g_userHistoryData = historyData;
         g_userRank = userRank;
         g_userStartDateISO = userStartDateISO;
 
-        // 4. DÉCLENCHEMENT DE LA MODALE
-        const targetRank = Math.max(1, Math.floor(joursVertsTotal / 7));
-
-        if (joursVertsTotal >= 7 && userRank < targetRank) {
-            console.log("🎯 Condition >= 7 jours remplie ! Affichage de la boîte modale...");
-            try {
-                afficherModalFelicitationsRang1(currentUserId, targetRank);
-            } catch (errModal) {
-                console.error("Erreur affichage modal :", errModal);
-            }
-        }
-
-        // 5. RENDU DU TABLEAU (Garantie d'exécution)
+        // 3. Rendu du tableau et de la barre d'action
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
@@ -1059,7 +1172,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
 }
 
 // =========================================================================
-// 6. ÉCOUTEUR ET EXPORT GLOBAL
+// 7. ÉCOUTEURS ET EXPORT GLOBAL
 // =========================================================================
 window.generateHistoryUI = generateHistoryUI;
 window.chargerEtSynchroniserHistoriqueProfil = chargerEtSynchroniserHistoriqueProfil;
