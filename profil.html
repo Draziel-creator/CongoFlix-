@@ -550,6 +550,9 @@
             border-radius: 10px;
             padding: 8px 12px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.2s ease;
         }
 
@@ -710,7 +713,7 @@
 })();
 
 // =========================================================================
-// 2. FONCTION UNIQUE POUR EXTRAIRE LA VALEUR D'UN JOUR DANS HISTORY
+// 2. FONCTIONS UTILITAIRES
 // =========================================================================
 function extraireValeurJour(valeur) {
     if (valeur === null || valeur === undefined) return 0;
@@ -751,9 +754,9 @@ window.changerMoisAffiche = function(delta) {
 };
 
 // =========================================================================
-// 3. BOÎTE MODALE DE FÉLICITATIONS
+// 3. BOÎTE MODALE DE FÉLICITATIONS (NOM HARMONISÉ)
 // =========================================================================
-function afficherModalFelicitations(currentUserId) {
+function afficherModalFelicitationsRang1(currentUserId, nouveauRang = 1) {
     let ancienneModal = document.getElementById('rank-unlocked-modal');
     if (ancienneModal) ancienneModal.remove();
 
@@ -766,14 +769,14 @@ function afficherModalFelicitations(currentUserId) {
             <div class="rank-modal-title">FÉLICITATIONS !</div>
             <div class="rank-modal-text">
                 Vous avez accumulé <strong>7 jours verts (15 tâches/jour accomplies)</strong> !<br><br>
-                Cliquez ci-dessous pour valider et débloquer votre <strong>RANG 1</strong>.
+                Cliquez ci-dessous pour valider et débloquer votre <strong>RANG ${nouveauRang}</strong>.
             </div>
-            <button id="btn-obtenir-rang" class="rank-modal-btn" onclick="reclamerMonRang('${currentUserId}')">OBTENIR MON RANG</button>
+            <button id="btn-obtenir-rang" class="rank-modal-btn" onclick="reclamerMonRang('${currentUserId}', ${nouveauRang})">OBTENIR MON RANG</button>
         </div>
     `;
     document.body.appendChild(modal);
 
-    // Animation fleurs/confettis
+    // Animation de confettis/fleurs
     const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟"];
     for (let i = 0; i < 30; i++) {
         const p = document.createElement('div');
@@ -788,8 +791,11 @@ function afficherModalFelicitations(currentUserId) {
     setTimeout(() => modal.classList.add('active'), 50);
 }
 
-// Clic sur le bouton de la boîte modale
-window.reclamerMonRang = async function(currentUserId) {
+// Alias pour éviter toute erreur si appelé avec l'ancien nom
+window.afficherModalFelicitations = afficherModalFelicitationsRang1;
+
+// Clic sur le bouton de réclamation
+window.reclamerMonRang = async function(currentUserId, nouveauRang = 1) {
     const btn = document.getElementById('btn-obtenir-rang');
     if (btn) {
         btn.disabled = true;
@@ -799,13 +805,14 @@ window.reclamerMonRang = async function(currentUserId) {
     try {
         if (!db || !currentUserId) return;
 
-        // Mise à jour simple dans Firebase
+        // Mise à jour de la BDD
         await db.collection("users").doc(currentUserId).set({
-            rank: 1,
-            rank1Notified: true
+            rank: nouveauRang,
+            rang: nouveauRang,
+            rankNotified: true
         }, { merge: true });
 
-        g_userRank = 1;
+        g_userRank = nouveauRang;
 
         const modal = document.getElementById('rank-unlocked-modal');
         if (modal) {
@@ -817,7 +824,7 @@ window.reclamerMonRang = async function(currentUserId) {
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
-        console.error("Erreur enregistrement rang :", error);
+        console.error("❌ Erreur enregistrement rang :", error);
         if (btn) {
             btn.disabled = false;
             btn.innerText = "OBTENIR MON RANG";
@@ -826,80 +833,24 @@ window.reclamerMonRang = async function(currentUserId) {
 };
 
 // =========================================================================
-// 4. LECTURE DE "HISTORY" + COMPTEUR DE JOURS VERTS + AFFICHAGE TABLEAU
+// 4. GÉNÉRATION DE L'INTERFACE UTILISATEUR (TABLEAU HISTORIQUE)
 // =========================================================================
-async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
-    if (!currentUserId || typeof db === 'undefined' || !db) return;
-
-    try {
-        g_dateAujourdhuiObj = new Date();
-        g_moisAfficheDate = new Date(g_dateAujourdhuiObj.getTime());
-
-        // 1. Charger "rewards_users" pour lire "history"
-        const rewardsSnap = await db.collection("rewards_users").doc(currentUserId).get();
-        let historyData = {};
-
-        if (rewardsSnap.exists) {
-            const data = rewardsSnap.data() || {};
-            historyData = data.history || {};
-        }
-
-        // 2. Charger "users" pour connaître le rang actuel
-        const userSnap = await db.collection("users").doc(currentUserId).get();
-        let rankActuel = 0;
-        let startDate = null;
-
-        if (userSnap.exists) {
-            const uData = userSnap.data() || {};
-            rankActuel = Number(uData.rank || 0);
-            startDate = uData.startDate || null;
-        }
-
-        // =====================================================================
-        // COMPTEUR SIMPLE : ON COMPTE TOUTES LES DATES QUI ONT ENREGISTRÉ >= 15
-        // =====================================================================
-        let nombreDeJoursVerts = 0;
-
-        for (let dateKey in historyData) {
-            let valeurDuJour = extraireValeurJour(historyData[dateKey]);
-            if (valeurDuJour >= 15) {
-                nombreDeJoursVerts++; // C'est un jour vert !
-            }
-        }
-
-        console.log("----------------------------------------");
-        console.log("🟢 TOTAL DES JOURS VERTS TROUVÉS DANS HISTORY :", nombreDeJoursVerts);
-        console.log("----------------------------------------");
-
-        // SI AU MOINS 7 JOURS VERTS ET QUE L'UTILISATEUR N'A PAS ENCORE RÉCLAMÉ LE RANG 1
-        if (nombreDeJoursVerts >= 7 && rankActuel < 1) {
-            console.log("🎉 7 jours verts détectés ! Déclenchement du message...");
-            afficherModalFelicitations(currentUserId);
-        }
-
-        // Sauvegarde locale
-        g_userHistoryData = historyData;
-        g_userRank = rankActuel;
-        g_userStartDateISO = startDate || FormaterDateISO(g_dateAujourdhuiObj);
-
-        // Dessiner le tableau
-        generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
-
-    } catch (error) {
-        console.error("Erreur chargement historique :", error);
-    }
-}
-
-// =========================================================================
-// 5. CONSTRUCTION DU TABLEAU (GRILLE)
-// =========================================================================
-function generateHistoryUI(userHistoryData, userRank, userStartDateISO, dateAujourdhuiObj, targetMonthObj) {
+function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO = null, dateAujourdhuiObj = new Date(), targetMonthObj = new Date()) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
     const container = document.getElementById('history-rows-container');
     if (!container) return;
     container.innerHTML = "";
 
     const dateAujourdhuiISO = FormaterDateISO(dateAujourdhuiObj);
+    
+    // Déterminer la date d'inscription la plus ancienne
+    const datesHistoriqueActives = Object.keys(userHistoryData).filter(d => extraireValeurJour(userHistoryData[d]) > 0).sort();
+    let dateInscriptionISO = userStartDateISO || dateAujourdhuiISO;
+    if (datesHistoriqueActives.length > 0 && datesHistoriqueActives[0] < dateInscriptionISO) {
+        dateInscriptionISO = datesHistoriqueActives[0];
+    }
+
+    // Calculs de calendrier
     const premierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth(), 1, 12, 0, 0);
     const dernierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth() + 1, 0, 12, 0, 0);
     const premierLundi = ObtenirLundiDeLaSemaine(premierJourDuMois);
@@ -918,11 +869,16 @@ function generateHistoryUI(userHistoryData, userRank, userStartDateISO, dateAujo
             monthHeader.id = 'history-month-header';
             tableWrapper.parentNode.insertBefore(monthHeader, tableWrapper);
         }
+        
         monthHeader.className = "history-nav-container";
         monthHeader.innerHTML = `
-            <button class="history-nav-btn" onclick="window.changerMoisAffiche(-1)">◀</button>
+            <button class="history-nav-btn" onclick="window.changerMoisAffiche(-1)" title="Mois précédent">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
             <div class="history-nav-title">⚡ <span style="color:#ffffff">${moisCourantTexte}</span></div>
-            <button class="history-nav-btn" onclick="window.changerMoisAffiche(1)">▶</button>
+            <button class="history-nav-btn" onclick="window.changerMoisAffiche(1)" title="Mois suivant">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
         `;
     }
 
@@ -932,13 +888,17 @@ function generateHistoryUI(userHistoryData, userRank, userStartDateISO, dateAujo
     let tableHead = tableElement ? tableElement.querySelector('thead') : null;
     if (tableHead) {
         let headHTML = `<tr><th>Jour</th>`;
-        for (let w = 1; w <= totalSemaines; w++) headHTML += `<th>S${w}</th>`;
+        for (let w = 1; w <= totalSemaines; w++) {
+            headHTML += `<th>S${w}</th>`;
+        }
         headHTML += `</tr>`;
         tableHead.innerHTML = headHTML;
     }
 
+    // Remplissage des cellules
     days.forEach((dayName, dayIndex) => {
         const tr = document.createElement('tr');
+        
         const tdDay = document.createElement('td');
         tdDay.className = "day-label";
         tdDay.innerText = dayName;
@@ -954,43 +914,154 @@ function generateHistoryUI(userHistoryData, userRank, userStartDateISO, dateAujo
 
             const dateCaseISO = FormaterDateISO(dateCaseObj);
             const val = extraireValeurJour(userHistoryData[dateCaseISO]);
+
             const estDansLeMoisActif = (dateCaseObj.getMonth() === targetMonthObj.getMonth());
 
-            let jourMoisTexte = estDansLeMoisActif 
-                ? `${String(dateCaseObj.getDate()).padStart(2, '0')}/${String(dateCaseObj.getMonth() + 1).padStart(2, '0')}`
-                : `${String(dateCaseObj.getDate()).padStart(2, '0')} ${moisNomsCourts[dateCaseObj.getMonth()]}`;
+            let jourMoisTexte = "";
+            if (!estDansLeMoisActif) {
+                const nomMoisCourts = moisNomsCourts[dateCaseObj.getMonth()];
+                jourMoisTexte = `${String(dateCaseObj.getDate()).padStart(2, '0')} ${nomMoisCourts}`;
+                tdWeek.classList.add('state-out-of-month');
+            } else {
+                jourMoisTexte = `${String(dateCaseObj.getDate()).padStart(2, '0')}/${String(dateCaseObj.getMonth() + 1).padStart(2, '0')}`;
+            }
 
-            if (!estDansLeMoisActif) tdWeek.classList.add('state-out-of-month');
-
-            const estInscritCeJour = (dateCaseISO >= userStartDateISO) || (val > 0);
+            const estInscritCeJour = (dateCaseISO >= dateInscriptionISO) || (val > 0);
 
             if (!estInscritCeJour) {
                 tdWeek.className += " state-unregistered";
-                tdWeek.innerHTML = `<span class="cell-date">${jourMoisTexte}</span><span class="status-badge">Aucune activité</span>`;
+                tdWeek.innerHTML = `
+                    <span class="cell-date">${jourMoisTexte}</span>
+                    <span class="status-badge">Aucune activité</span>
+                `;
             } else if (dateCaseISO < dateAujourdhuiISO) {
                 if (val >= 15) {
                     tdWeek.className += " state-completed";
-                    tdWeek.innerHTML = `<span class="cell-date" style="color:#00ff88;">${jourMoisTexte}</span><span class="status-badge">✔ Complété</span>`;
+                    tdWeek.innerHTML = `
+                        <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
+                        <span class="status-badge">✔ Complété</span>
+                    `;
                 } else {
                     tdWeek.className += " state-incomplete";
-                    tdWeek.innerHTML = `<span class="cell-date" style="color:#ff5555;">${jourMoisTexte}</span><span class="status-badge">Non accompli</span><div style="font-size:0.65rem;">(${val}/15)</div>`;
+                    tdWeek.innerHTML = `
+                        <span class="cell-date" style="color:rgba(255,85,85,0.9);">${jourMoisTexte}</span>
+                        <span class="status-badge">Non accompli</span>
+                        <div style="font-size:0.65rem; margin-top:2px; opacity:0.8;">(${val}/15)</div>
+                    `;
                 }
             } else if (dateCaseISO === dateAujourdhuiISO) {
                 tdWeek.className += " state-today";
                 const isDoneToday = val >= 15;
-                tdWeek.innerHTML = `<span class="cell-date" style="color:#00e5ff;">AUJ. (${jourMoisTexte})</span><span class="status-badge">${isDoneToday ? '✔ Complété' : val + ' / 15'}</span>`;
+                tdWeek.innerHTML = `
+                    <span class="cell-date" style="color:#00e5ff;">AUJ. (${jourMoisTexte})</span>
+                    <span class="status-badge">${isDoneToday ? '✔ Complété' : val + ' / 15'}</span>
+                `;
             } else {
                 tdWeek.className += " state-future";
-                tdWeek.innerHTML = `<span class="cell-date">${jourMoisTexte}</span><span style="font-size: 0.8rem; opacity: 0.3;">🔒</span>`;
+                tdWeek.innerHTML = `
+                    <span class="cell-date">${jourMoisTexte}</span>
+                    <span style="font-size: 0.8rem; opacity: 0.3;">🔒</span>
+                `;
             }
 
             tr.appendChild(tdWeek);
         }
+
         container.appendChild(tr);
     });
 }
 
-// Écouteur d'authentification
+// =========================================================================
+// 5. SYNCHRONISATION FIRESTORE + DÉTECTION DES 7 JOURS VERTS
+// =========================================================================
+let isSyncingProfilDate = false;
+
+async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
+    if (!currentUserId || isSyncingProfilDate) return;
+    if (typeof db === 'undefined' || !db) return;
+
+    try {
+        isSyncingProfilDate = true;
+        console.log("🔄 Synchronisation démarrée pour UID :", currentUserId);
+
+        g_dateAujourdhuiObj = new Date();
+        g_moisAfficheDate = new Date(g_dateAujourdhuiObj.getTime());
+        const dateAujourdhuiISO = FormaterDateISO(g_dateAujourdhuiObj);
+
+        // 1. Lecture du document rewards_users
+        const rewardsSnap = await db.collection("rewards_users").doc(currentUserId).get();
+        let historyData = {};
+
+        if (rewardsSnap.exists) {
+            const rewardsData = rewardsSnap.data() || {};
+            historyData = rewardsData.history || {};
+            
+            // Intégrer la valeur d'aujourd'hui si présente dans pointsDuJour
+            if (rewardsData.lastActiveDate === dateAujourdhuiISO && rewardsData.pointsDuJour !== undefined) {
+                const ptJ = extraireValeurJour(rewardsData.pointsDuJour);
+                if (!historyData[dateAujourdhuiISO] || ptJ > extraireValeurJour(historyData[dateAujourdhuiISO])) {
+                    historyData[dateAujourdhuiISO] = ptJ;
+                }
+            }
+        }
+
+        // 2. COMPTAGE DES JOURS VERTS (valeur >= 15)
+        const datesVertes = Object.keys(historyData).filter(isoDate => extraireValeurJour(historyData[isoDate]) >= 15);
+        const joursVertsTotal = datesVertes.length;
+        
+        console.log(`📊 Jours verts détectés : ${joursVertsTotal} / 7`);
+        console.log(`📅 Liste des jours verts :`, datesVertes);
+
+        // 3. Lecture du rang de l'utilisateur
+        const userRef = db.collection("users").doc(currentUserId);
+        const userSnap = await userRef.get();
+        
+        let userRank = 0;
+        let userStartDateISO = null;
+
+        if (userSnap.exists) {
+            const uData = userSnap.data() || {};
+            userRank = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
+            userStartDateISO = uData.startDate || null;
+        }
+
+        if (!userStartDateISO) {
+            const datesActives = Object.keys(historyData).filter(d => extraireValeurJour(historyData[d]) > 0).sort();
+            userStartDateISO = datesActives.length > 0 ? datesActives[0] : dateAujourdhuiISO;
+            await userRef.set({ startDate: userStartDateISO }, { merge: true });
+        }
+
+        // Save local state
+        g_userHistoryData = historyData;
+        g_userRank = userRank;
+        g_userStartDateISO = userStartDateISO;
+
+        // 4. DÉCLENCHEMENT DE LA MODALE
+        const targetRank = Math.max(1, Math.floor(joursVertsTotal / 7));
+
+        if (joursVertsTotal >= 7 && userRank < targetRank) {
+            console.log("🎯 Condition >= 7 jours remplie ! Affichage de la boîte modale...");
+            try {
+                afficherModalFelicitationsRang1(currentUserId, targetRank);
+            } catch (errModal) {
+                console.error("Erreur affichage modal :", errModal);
+            }
+        }
+
+        // 5. RENDU DU TABLEAU (Garantie d'exécution)
+        generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+
+    } catch (error) {
+        console.error("❌ Erreur lors de la synchronisation :", error);
+    } finally {
+        isSyncingProfilDate = false;
+    }
+}
+
+// =========================================================================
+// 6. ÉCOUTEUR ET EXPORT GLOBAL
+// =========================================================================
+window.generateHistoryUI = generateHistoryUI;
 window.chargerEtSynchroniserHistoriqueProfil = chargerEtSynchroniserHistoriqueProfil;
 
 if (typeof firebase !== 'undefined' && firebase.auth) {
