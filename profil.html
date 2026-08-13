@@ -901,7 +901,7 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     let ancienneModal = document.getElementById('rank-unlocked-modal');
     if (ancienneModal) ancienneModal.remove();
 
-    const nouveauRangFutur = (g_userRank || 0) + 1;
+    const nouveauRangFutur = (g_userRank || rangActuel || 0) + 1;
 
     const modal = document.createElement('div');
     modal.id = 'rank-unlocked-modal';
@@ -935,7 +935,8 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
         btnObtenir.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
-            window.reclamerMonRang();
+            // TRANSMISSION DIRECTE DE L'ID DE LA MODALE
+            window.reclamerMonRang(currentUserId);
         };
     }
     
@@ -944,20 +945,19 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
 
 window.afficherModalFelicitations = afficherModalFelicitationsRang1;
 
-window.reclamerMonRang = async function() {
-    // 1. Arrêt de la synthèse vocale
+window.reclamerMonRang = async function(passedUserId) {
+    // 1. Arrêt de la synthèse vocale si active
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
     }
 
-    // 2. Identification exacte (copiée sur reclamerPointsBouton1)
-    const currentUserId = (typeof userId !== "undefined" && userId) 
-        ? userId 
-        : (typeof recupererIdentifiantUtilisateur === "function" 
-            ? recupererIdentifiantUtilisateur() 
-            : (typeof firebase !== "undefined" && firebase.auth && firebase.auth().currentUser 
-                ? firebase.auth().currentUser.uid 
-                : (typeof g_currentUserId !== "undefined" ? g_currentUserId : null)));
+    // 2. RECUPERATION BLINDÉE DE L'ID (Passe en revue TOUTES vos sources possibles)
+    const currentUserId = passedUserId 
+        || (typeof userId !== "undefined" && userId ? userId : null)
+        || (typeof window.userId !== "undefined" && window.userId ? window.userId : null)
+        || (typeof recupererIdentifiantUtilisateur === "function" ? recupererIdentifiantUtilisateur() : null)
+        || (typeof g_currentUserId !== "undefined" && g_currentUserId ? g_currentUserId : null)
+        || (typeof firebase !== "undefined" && firebase.auth() && firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
 
     if (!currentUserId) {
         const msg = "Veuillez vous connecter pour réclamer votre rang.";
@@ -977,10 +977,10 @@ window.reclamerMonRang = async function() {
     }
 
     try {
-        // 3. Lecture directe du document 'users' (comme dans le code de référence)
+        // 3. Lecture directe du Rang dans Firestore (Exactement comme dans reclamerPointsBanniereSeule)
         const snap = await db.collection("users").doc(currentUserId).get();
         let rangUtilisateur = 0;
-        
+
         if (snap.exists) {
             const data = snap.data();
             rangUtilisateur = Number(data.rank || data.rang || 0);
@@ -990,7 +990,7 @@ window.reclamerMonRang = async function() {
 
         const nouveauRangCalculer = rangUtilisateur + 1;
 
-        // 4. Écriture directe du nombre calculé dans la collection 'users'
+        // 4. Écriture directe dans la collection "users"
         await db.collection("users").doc(currentUserId).set({
             rank: nouveauRangCalculer,
             rang: nouveauRangCalculer,
@@ -998,7 +998,9 @@ window.reclamerMonRang = async function() {
         }, { merge: true });
 
         // 5. Mise à jour de la variable globale locale
-        g_userRank = nouveauRangCalculer;
+        if (typeof g_userRank !== "undefined") {
+            window.g_userRank = nouveauRangCalculer;
+        }
 
         // 6. Fermeture de la modale
         const modal = document.getElementById('rank-unlocked-modal');
@@ -1007,9 +1009,9 @@ window.reclamerMonRang = async function() {
             setTimeout(() => modal.remove(), 400);
         }
 
-        // 7. Rafraîchissement de l'interface
+        // 7. Rafraîchissement de l'affichage
         if (typeof generateHistoryUI === "function") {
-            generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+            generateHistoryUI(g_userHistoryData, nouveauRangCalculer, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
         }
 
         // 8. Notification de succès
@@ -1024,7 +1026,7 @@ window.reclamerMonRang = async function() {
         }
 
     } catch (error) {
-        console.error("❌ Erreur lors de l'enregistrement du rang :", error);
+        console.error("❌ Erreur lors de la mise à jour du rang :", error);
         
         if (btnObtenir) {
             btnObtenir.disabled = false;
@@ -1032,7 +1034,7 @@ window.reclamerMonRang = async function() {
             btnObtenir.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer`;
         }
 
-        const msgErreur = "Erreur lors de la mise à jour : " + error.message;
+        const msgErreur = "Une erreur est survenue lors de la mise à jour du rang. Veuillez réessayer.";
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee(msgErreur, "Erreur Firebase");
         } else {
@@ -1040,7 +1042,6 @@ window.reclamerMonRang = async function() {
         }
     }
 };
-
 // =========================================================================
 // 5. COMPTAGE UNIVERSEL DES JOURS VERTS (COMBINÉ LOCALSTORAGE + FIREBASE)
 // =========================================================================
