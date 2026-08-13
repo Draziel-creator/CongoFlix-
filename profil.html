@@ -901,7 +901,7 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     let ancienneModal = document.getElementById('rank-unlocked-modal');
     if (ancienneModal) ancienneModal.remove();
 
-    const nouveauRangFutur = (g_userRank || rangActuel || 0) + 1;
+    const nouveauRangFutur = (window.g_userRank || rangActuel || 0) + 1;
 
     const modal = document.createElement('div');
     modal.id = 'rank-unlocked-modal';
@@ -935,7 +935,6 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
         btnObtenir.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
-            // TRANSMISSION DIRECTE DE L'ID DE LA MODALE
             window.reclamerMonRang(currentUserId);
         };
     }
@@ -946,28 +945,16 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
 window.afficherModalFelicitations = afficherModalFelicitationsRang1;
 
 window.reclamerMonRang = async function(passedUserId) {
-    // 1. Arrêt de la synthèse vocale si active
+    // 1. Arrêt de la voix
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
     }
 
-    // 2. RECUPERATION BLINDÉE DE L'ID (Passe en revue TOUTES vos sources possibles)
-    const currentUserId = passedUserId 
-        || (typeof userId !== "undefined" && userId ? userId : null)
-        || (typeof window.userId !== "undefined" && window.userId ? window.userId : null)
-        || (typeof recupererIdentifiantUtilisateur === "function" ? recupererIdentifiantUtilisateur() : null)
-        || (typeof g_currentUserId !== "undefined" && g_currentUserId ? g_currentUserId : null)
-        || (typeof firebase !== "undefined" && firebase.auth() && firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
-
-    if (!currentUserId) {
-        const msg = "Veuillez vous connecter pour réclamer votre rang.";
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(msg, "Connexion Requise");
-        } else {
-            alert(msg);
-        }
-        return;
-    }
+    // 2. Récupération directe de l'UID (Firebase Direct > Paramètre > Variables)
+    const uid = passedUserId 
+        || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null)
+        || (typeof userId !== "undefined" ? userId : null)
+        || (typeof g_currentUserId !== "undefined" ? g_currentUserId : null);
 
     const btnObtenir = document.getElementById('btn-obtenir-rang');
     if (btnObtenir) {
@@ -977,30 +964,19 @@ window.reclamerMonRang = async function(passedUserId) {
     }
 
     try {
-        // 3. Lecture directe du Rang dans Firestore (Exactement comme dans reclamerPointsBanniereSeule)
-        const snap = await db.collection("users").doc(currentUserId).get();
-        let rangUtilisateur = 0;
+        // 3. Calcul du nouveau rang
+        const rangActuel = Number(window.g_userRank || 0);
+        const nouveauRang = rangActuel + 1;
 
-        if (snap.exists) {
-            const data = snap.data();
-            rangUtilisateur = Number(data.rank || data.rang || 0);
-        } else if (typeof g_userRank !== "undefined") {
-            rangUtilisateur = Number(g_userRank || 0);
-        }
-
-        const nouveauRangCalculer = rangUtilisateur + 1;
-
-        // 4. Écriture directe dans la collection "users"
-        await db.collection("users").doc(currentUserId).set({
-            rank: nouveauRangCalculer,
-            rang: nouveauRangCalculer,
+        // 4. ÉCRITURE DIRECTE EN BASE DE DONNÉES FIRESTORE
+        await db.collection("users").doc(uid).set({
+            rank: nouveauRang,
+            rang: nouveauRang,
             rankNotified: true
         }, { merge: true });
 
-        // 5. Mise à jour de la variable globale locale
-        if (typeof g_userRank !== "undefined") {
-            window.g_userRank = nouveauRangCalculer;
-        }
+        // 5. Mise à jour de la variable globale localement
+        window.g_userRank = nouveauRang;
 
         // 6. Fermeture de la modale
         const modal = document.getElementById('rank-unlocked-modal');
@@ -1009,13 +985,13 @@ window.reclamerMonRang = async function(passedUserId) {
             setTimeout(() => modal.remove(), 400);
         }
 
-        // 7. Rafraîchissement de l'affichage
+        // 7. Rafraîchissement de l'interface
         if (typeof generateHistoryUI === "function") {
-            generateHistoryUI(g_userHistoryData, nouveauRangCalculer, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+            generateHistoryUI(g_userHistoryData, nouveauRang, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
         }
 
-        // 8. Notification de succès
-        const msgSucces = `Félicitations ! Votre compte est désormais au RANG ${nouveauRangCalculer} !`;
+        // 8. Message de confirmation
+        const msgSucces = `Félicitations ! Votre compte est désormais au RANG ${nouveauRang} !`;
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee(msgSucces, "Rang Débloqué !", "Super", function() {
                 if (typeof fermerModaleActive === "function") fermerModaleActive();
@@ -1026,7 +1002,7 @@ window.reclamerMonRang = async function(passedUserId) {
         }
 
     } catch (error) {
-        console.error("❌ Erreur lors de la mise à jour du rang :", error);
+        console.error("❌ Erreur Firebase lors de l'écriture :", error);
         
         if (btnObtenir) {
             btnObtenir.disabled = false;
@@ -1034,12 +1010,7 @@ window.reclamerMonRang = async function(passedUserId) {
             btnObtenir.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer`;
         }
 
-        const msgErreur = "Une erreur est survenue lors de la mise à jour du rang. Veuillez réessayer.";
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(msgErreur, "Erreur Firebase");
-        } else {
-            alert(msgErreur);
-        }
+        alert("Erreur d'écriture Firebase : " + error.message);
     }
 };
 // =========================================================================
