@@ -462,6 +462,12 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    // Synchronisation automatique de la session active v10
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        g_currentUserId = user.uid;
+    }
+});
 
     let isLoginMode = true;
     let globalConditionsMet = false;
@@ -901,7 +907,7 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     let ancienneModal = document.getElementById('rank-unlocked-modal');
     if (ancienneModal) ancienneModal.remove();
 
-    const nouveauRangFutur = (window.g_userRank || rangActuel || 0) + 1;
+    const nouveauRangFutur = Number(window.g_userRank || rangActuel || 0) + 1;
 
     const modal = document.createElement('div');
     modal.id = 'rank-unlocked-modal';
@@ -945,16 +951,16 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
 window.afficherModalFelicitations = afficherModalFelicitationsRang1;
 
 window.reclamerMonRang = async function(passedUserId) {
-    // 1. Arrêt de la voix
+    // 1. Arrêt de la voix si elle parle
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
     }
 
-    // 2. Récupération directe de l'UID (Firebase Direct > Paramètre > Variables)
+    // 2. Récupération directe de l'UID via la v10 (auth.currentUser) ou variables globales
     const uid = passedUserId 
-        || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null)
-        || (typeof userId !== "undefined" ? userId : null)
-        || (typeof g_currentUserId !== "undefined" ? g_currentUserId : null);
+        || (auth && auth.currentUser ? auth.currentUser.uid : null)
+        || g_currentUserId 
+        || (typeof userId !== "undefined" ? userId : null);
 
     const btnObtenir = document.getElementById('btn-obtenir-rang');
     if (btnObtenir) {
@@ -963,19 +969,32 @@ window.reclamerMonRang = async function(passedUserId) {
         btnObtenir.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Traitement...`;
     }
 
+    // Protection au cas ultra-rare où la session n'est pas encore chargée
+    if (!uid) {
+        console.error("❌ Session utilisateur introuvable.");
+        if (btnObtenir) {
+            btnObtenir.disabled = false;
+            btnObtenir.style.opacity = "1";
+            btnObtenir.innerHTML = `OBTENIR MON RANG (+1)`;
+        }
+        alert("Session non détectée. Veuillez rafraîchir la page.");
+        return;
+    }
+
     try {
         // 3. Calcul du nouveau rang
         const rangActuel = Number(window.g_userRank || 0);
         const nouveauRang = rangActuel + 1;
 
-        // 4. ÉCRITURE DIRECTE EN BASE DE DONNÉES FIRESTORE
-        await db.collection("users").doc(uid).set({
+        // 4. ÉCRITURE DIRECTE FIRESTORE (Syntaxe v10 Modulaire)
+        const userDocRef = doc(db, "users", uid);
+        await setDoc(userDocRef, {
             rank: nouveauRang,
             rang: nouveauRang,
             rankNotified: true
         }, { merge: true });
 
-        // 5. Mise à jour de la variable globale localement
+        // 5. Mise à jour locale
         window.g_userRank = nouveauRang;
 
         // 6. Fermeture de la modale
@@ -1002,7 +1021,7 @@ window.reclamerMonRang = async function(passedUserId) {
         }
 
     } catch (error) {
-        console.error("❌ Erreur Firebase lors de l'écriture :", error);
+        console.error("❌ Erreur Firestore lors de l'écriture :", error);
         
         if (btnObtenir) {
             btnObtenir.disabled = false;
@@ -1010,9 +1029,8 @@ window.reclamerMonRang = async function(passedUserId) {
             btnObtenir.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer`;
         }
 
-        alert("Erreur d'écriture Firebase : " + error.message);
+        alert("Erreur de sauvegarde : " + error.message);
     }
-};
 };
 // =========================================================================
 // 5. COMPTAGE UNIVERSEL DES JOURS VERTS (COMBINÉ LOCALSTORAGE + FIREBASE)
