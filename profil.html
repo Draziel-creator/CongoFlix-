@@ -563,7 +563,7 @@
             transition: all 0.3s ease;
         }
 
-        /* EFFET DE PULSATION TRÈS FORT QUAND LES 7 JOURS VERTS SONT ATTEINTS */
+        /* EFFET DE PULSATION QUAND LES 7 JOURS VERTS SONT ATTEINTS */
         .btn-trigger-modal.pulsing-active {
             background: linear-gradient(135deg, #00ff88 0%, #00e5ff 100%);
             color: #0d1117;
@@ -712,9 +712,9 @@
         }
 
         .state-incomplete {
-            background: rgba(255, 77, 77, 0.1);
-            border: 1px solid rgba(255, 77, 77, 0.3);
-            color: #ff5555;
+            background: rgba(255, 77, 77, 0.1) !important;
+            border: 1px solid rgba(255, 77, 77, 0.3) !important;
+            color: #ff5555 !important;
         }
 
         .state-today {
@@ -724,7 +724,6 @@
             box-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
         }
 
-        /* QUAND AUJOURD'HUI EST AUSSI UN JOUR VERT */
         .state-today.state-completed {
             background: rgba(0, 255, 136, 0.25) !important;
             border: 2px solid #00ff88 !important;
@@ -765,6 +764,7 @@
             z-index: 10;
             transform: scale(0.8);
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: auto;
         }
         .rank-modal-overlay.active .rank-modal-card {
             transform: scale(1);
@@ -772,13 +772,23 @@
         .rank-modal-icon { font-size: 3.8rem; margin-bottom: 12px; }
         .rank-modal-title { color: #00ff88; font-size: 1.6rem; font-weight: 900; margin-bottom: 12px; text-transform: uppercase; }
         .rank-modal-text { color: #c9d1d9; font-size: 0.98rem; line-height: 1.6; margin-bottom: 26px; }
+        
         .rank-modal-btn {
             background: linear-gradient(135deg, #00ff88 0%, #00e5ff 100%);
             color: #0d1117; font-weight: 900; border: none;
             padding: 14px 32px; border-radius: 35px; font-size: 1.05rem;
-            cursor: pointer; box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+            cursor: pointer !important; 
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
             width: 100%;
             text-transform: uppercase;
+            position: relative;
+            z-index: 20;
+            pointer-events: auto !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .rank-modal-btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.6);
         }
 
         .confetti-particle {
@@ -798,7 +808,7 @@
 })();
 
 // =========================================================================
-// 2. FONCTIONS UTILITAIRES
+// 2. FONCTIONS UTILITAIRES & SYNTHÈSE VOCALE
 // =========================================================================
 function extraireValeurJour(valeur) {
     if (valeur === null || valeur === undefined) return 0;
@@ -825,6 +835,23 @@ function ObtenirLundiDeLaSemaine(d) {
     return date;
 }
 
+// Fonction pour jouer la voix de félicitations
+function jouerVoixFelicitations(nouveauRang) {
+    if ('speechSynthesis' in window) {
+        try {
+            window.speechSynthesis.cancel(); // Annule toute voix en cours
+            const texte = `Félicitations ! Vous avez accompli sept jours verts ! Cliquez sur le bouton ci-dessous pour débloquer votre rang supérieur !`;
+            const utterance = new SpeechSynthesisUtterance(texte);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.1;
+            window.speechSynthesis.speak(utterance);
+        } catch (e) {
+            console.warn("🔊 Synthèse vocale non disponible :", e);
+        }
+    }
+}
+
 let g_moisAfficheDate = new Date();
 let g_userHistoryData = {};
 let g_userRank = 0;
@@ -842,9 +869,11 @@ window.changerMoisAffiche = function(delta) {
 // =========================================================================
 // 3. BOÎTE MODALE DE FÉLICITATIONS
 // =========================================================================
-function afficherModalFelicitationsRang1(currentUserId, nouveauRang = 1) {
+function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     let ancienneModal = document.getElementById('rank-unlocked-modal');
     if (ancienneModal) ancienneModal.remove();
+
+    const nouveauRangFutur = (g_userRank || 0) + 1;
 
     const modal = document.createElement('div');
     modal.id = 'rank-unlocked-modal';
@@ -854,14 +883,15 @@ function afficherModalFelicitationsRang1(currentUserId, nouveauRang = 1) {
             <div class="rank-modal-icon">🌸🎉🏆</div>
             <div class="rank-modal-title">FÉLICITATIONS !</div>
             <div class="rank-modal-text">
-                Vous avez accumulé <strong>7 jours verts (15 tâches/jour accomplies)</strong> !<br><br>
-                Cliquez ci-dessous pour valider et débloquer votre <strong>RANG ${nouveauRang}</strong>.
+                Vous avez accumulé <strong>7 jours verts (15 tâches/jour)</strong> !<br><br>
+                Cliquez ci-dessous pour valider et passer au <strong>RANG ${nouveauRangFutur}</strong> !
             </div>
-            <button id="btn-obtenir-rang" class="rank-modal-btn" onclick="reclamerMonRang('${currentUserId}', ${nouveauRang})">OBTENIR MON RANG</button>
+            <button id="btn-obtenir-rang" class="rank-modal-btn">OBTENIR MON RANG (+1)</button>
         </div>
     `;
     document.body.appendChild(modal);
 
+    // Effet d'animation des confettis/fleurs
     const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟"];
     for (let i = 0; i < 30; i++) {
         const p = document.createElement('div');
@@ -872,43 +902,82 @@ function afficherModalFelicitationsRang1(currentUserId, nouveauRang = 1) {
         p.style.animationDelay = (Math.random() * 2) + 's';
         modal.appendChild(p);
     }
+
+    // Attacher proprement l'événement Clic au bouton
+    const btnObtenir = modal.querySelector('#btn-obtenir-rang');
+    if (btnObtenir) {
+        btnObtenir.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.reclamerMonRang(currentUserId);
+        };
+    }
     
     setTimeout(() => modal.classList.add('active'), 50);
+
+    // Déclencher la Voix
+    jouerVoixFelicitations(nouveauRangFutur);
 }
 
 window.afficherModalFelicitations = afficherModalFelicitationsRang1;
 
-window.reclamerMonRang = async function(currentUserId, nouveauRang = 1) {
+// FONCTION POUR INCÉRMENTER DE +1 LE RANG DANS FIRESTORE
+window.reclamerMonRang = async function(currentUserId) {
     const btn = document.getElementById('btn-obtenir-rang');
     if (btn) {
         btn.disabled = true;
-        btn.innerText = "VALIDATION...";
+        btn.style.opacity = "0.6";
+        btn.innerText = "VALIDATION EN COURS...";
     }
 
     try {
-        if (!db || !currentUserId) return;
+        if (typeof db === 'undefined' || !db || !currentUserId) {
+            alert("Erreur: Utilisateur ou base de données non connectée.");
+            return;
+        }
 
-        await db.collection("users").doc(currentUserId).set({
-            rank: nouveauRang,
-            rang: nouveauRang,
+        // Références Firestore
+        const userRef = db.collection("users").doc(currentUserId);
+        
+        // Incrémentation de +1 atomique dans Firestore
+        let incrementVal = 1;
+        if (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) {
+            incrementVal = firebase.firestore.FieldValue.increment(1);
+        }
+
+        const nouveauRangCalcule = (g_userRank || 0) + 1;
+
+        await userRef.set({
+            rank: incrementVal,
+            rang: incrementVal,
             rankNotified: true
         }, { merge: true });
 
-        g_userRank = nouveauRang;
+        // Mettre à jour la mémoire locale du rang
+        g_userRank = nouveauRangCalcule;
 
+        // Arrêter la voix si elle parle encore
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+
+        // Fermer la modale
         const modal = document.getElementById('rank-unlocked-modal');
         if (modal) {
             modal.classList.remove('active');
             setTimeout(() => modal.remove(), 400);
         }
 
+        // Re-générer l'interface avec la nouvelle valeur
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
         console.error("❌ Erreur enregistrement rang :", error);
+        alert("Une erreur est survenue lors de l'enregistrement du rang.");
         if (btn) {
             btn.disabled = false;
-            btn.innerText = "OBTENIR MON RANG";
+            btn.style.opacity = "1";
+            btn.innerText = "OBTENIR MON RANG (+1)";
         }
     }
 };
@@ -939,10 +1008,11 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
     const dateAujourdhuiISO = FormaterDateISO(dateAujourdhuiObj);
     
-    const datesHistoriqueActives = Object.keys(userHistoryData).filter(d => extraireValeurJour(userHistoryData[d]) > 0).sort();
-    let dateInscriptionISO = userStartDateISO || dateAujourdhuiISO;
-    if (datesHistoriqueActives.length > 0 && datesHistoriqueActives[0] < dateInscriptionISO) {
-        dateInscriptionISO = datesHistoriqueActives[0];
+    // Trouver la plus ancienne date d'activité ou de démarrage
+    const datesHistoriqueActives = Object.keys(userHistoryData).sort();
+    let dateInscriptionISO = userStartDateISO;
+    if (!dateInscriptionISO) {
+        dateInscriptionISO = datesHistoriqueActives.length > 0 ? datesHistoriqueActives[0] : "2025-01-01";
     }
 
     const premierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth(), 1, 12, 0, 0);
@@ -957,7 +1027,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
     const tableWrapper = container.closest('.history-table-wrapper');
     if (tableWrapper) {
-        // --- 1. AJOUT/MISE À JOUR DU COMPTEUR + BOUTON AVANT LE TABLEAU ---
+        // --- 1. COMPTEUR & BOUTON AVANT LE TABLEAU ---
         let counterBar = document.getElementById('history-counter-bar');
         if (!counterBar) {
             counterBar = document.createElement('div');
@@ -967,7 +1037,6 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
         const totalJoursVerts = compterTousLesJoursVerts(userHistoryData);
         const estPretPourModal = totalJoursVerts >= 7;
-        const rangCible = Math.floor(totalJoursVerts / 7) || 1;
 
         counterBar.className = "history-counter-bar";
         counterBar.innerHTML = `
@@ -985,11 +1054,11 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
         const btnDeclencher = document.getElementById('btn-declencher-modal');
         if (btnDeclencher && estPretPourModal) {
             btnDeclencher.onclick = function() {
-                afficherModalFelicitationsRang1(g_currentUserId, rangCible);
+                afficherModalFelicitationsRang1(g_currentUserId, userRank);
             };
         }
 
-        // --- 2. BARRE DE NAVIGATION DU MOIS ---
+        // --- 2. NAVIGATION DU MOIS ---
         let monthHeader = document.getElementById('history-month-header');
         if (!monthHeader) {
             monthHeader = document.createElement('div');
@@ -1053,7 +1122,8 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
                 jourMoisTexte = `${String(dateCaseObj.getDate()).padStart(2, '0')}/${String(dateCaseObj.getMonth() + 1).padStart(2, '0')}`;
             }
 
-            const estInscritCeJour = (dateCaseISO >= dateInscriptionISO) || (val > 0);
+            // Vérifier si le jour est avant la date de début réelle du compte
+            const estInscritCeJour = (dateCaseISO >= dateInscriptionISO) || (val > 0) || (dateCaseISO <= dateAujourdhuiISO);
 
             if (!estInscritCeJour) {
                 tdWeek.className += " state-unregistered";
@@ -1062,14 +1132,15 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
                     <span class="status-badge">Aucune activité</span>
                 `;
             } else if (dateCaseISO < dateAujourdhuiISO) {
+                // Jours passés dans le calendrier
                 if (val >= 15) {
-                    tdWeek.className += " state-completed"; // Tag Jour Vert
+                    tdWeek.className += " state-completed"; // Jour Vert accompli
                     tdWeek.innerHTML = `
                         <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
                         <span class="status-badge">✔ Complété</span>
                     `;
                 } else {
-                    tdWeek.className += " state-incomplete";
+                    tdWeek.className += " state-incomplete"; // Jour Échoué / Non accompli
                     tdWeek.innerHTML = `
                         <span class="cell-date" style="color:rgba(255,85,85,0.9);">${jourMoisTexte}</span>
                         <span class="status-badge">Non accompli</span>
@@ -1077,16 +1148,18 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
                     `;
                 }
             } else if (dateCaseISO === dateAujourdhuiISO) {
+                // Aujourd'hui
                 tdWeek.className += " state-today";
                 const isDoneToday = val >= 15;
                 if (isDoneToday) {
-                    tdWeek.className += " state-completed"; // Tag Jour Vert pour Aujourd'hui
+                    tdWeek.className += " state-completed";
                 }
                 tdWeek.innerHTML = `
                     <span class="cell-date" style="color:#00e5ff;">AUJ. (${jourMoisTexte})</span>
                     <span class="status-badge">${isDoneToday ? '✔ Complété' : val + ' / 15'}</span>
                 `;
             } else {
+                // Jours futurs
                 tdWeek.className += " state-future";
                 tdWeek.innerHTML = `
                     <span class="cell-date">${jourMoisTexte}</span>
@@ -1113,10 +1186,8 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
     try {
         isSyncingProfilDate = true;
         g_currentUserId = currentUserId;
-        console.log("🔄 Synchronisation démarrée pour UID :", currentUserId);
 
         g_dateAujourdhuiObj = new Date();
-        g_moisAfficheDate = new Date(g_dateAujourdhuiObj.getTime());
         const dateAujourdhuiISO = FormaterDateISO(g_dateAujourdhuiObj);
 
         // 1. Lecture du document rewards_users
@@ -1127,7 +1198,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             const rewardsData = rewardsSnap.data() || {};
             historyData = rewardsData.history || {};
             
-            // Intégrer les points/tâches d'aujourd'hui
+            // Intégrer les tâches réalisées aujourd'hui
             const ptToday = rewardsData.pointsDuJour !== undefined ? rewardsData.pointsDuJour : rewardsData.tasksToday;
             if (rewardsData.lastActiveDate === dateAujourdhuiISO && ptToday !== undefined) {
                 const ptJ = extraireValeurJour(ptToday);
@@ -1152,7 +1223,8 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
 
         if (!userStartDateISO) {
             const datesActives = Object.keys(historyData).filter(d => extraireValeurJour(historyData[d]) > 0).sort();
-            userStartDateISO = datesActives.length > 0 ? datesActives[0] : dateAujourdhuiISO;
+            const premierDuMois = `${g_dateAujourdhuiObj.getFullYear()}-${String(g_dateAujourdhuiObj.getMonth() + 1).padStart(2, '0')}-01`;
+            userStartDateISO = (datesActives.length > 0 && datesActives[0] < premierDuMois) ? datesActives[0] : premierDuMois;
             await userRef.set({ startDate: userStartDateISO }, { merge: true });
         }
 
@@ -1161,7 +1233,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         g_userRank = userRank;
         g_userStartDateISO = userStartDateISO;
 
-        // 3. Rendu du tableau et de la barre d'action
+        // 3. Rendu du tableau
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
