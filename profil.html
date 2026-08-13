@@ -835,11 +835,11 @@ function ObtenirLundiDeLaSemaine(d) {
     return date;
 }
 
-// Fonction pour jouer la voix de félicitations
+// Fonction pour jouer la voix de félicitations IMMÉDIATEMENT
 function jouerVoixFelicitations(nouveauRang) {
     if ('speechSynthesis' in window) {
         try {
-            window.speechSynthesis.cancel(); // Annule toute voix en cours
+            window.speechSynthesis.cancel(); // Annule immédiatement toute voix en cours
             const texte = `Félicitations ! Vous avez accompli sept jours verts ! Cliquez sur le bouton ci-dessous pour débloquer votre rang supérieur !`;
             const utterance = new SpeechSynthesisUtterance(texte);
             utterance.lang = 'fr-FR';
@@ -870,10 +870,12 @@ window.changerMoisAffiche = function(delta) {
 // 3. BOÎTE MODALE DE FÉLICITATIONS
 // =========================================================================
 function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
+    // 🔊 Lancer la voix en PREMIER sans attendre la création des éléments
+    const nouveauRangFutur = (g_userRank || 0) + 1;
+    jouerVoixFelicitations(nouveauRangFutur);
+
     let ancienneModal = document.getElementById('rank-unlocked-modal');
     if (ancienneModal) ancienneModal.remove();
-
-    const nouveauRangFutur = (g_userRank || 0) + 1;
 
     const modal = document.createElement('div');
     modal.id = 'rank-unlocked-modal';
@@ -903,7 +905,7 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
         modal.appendChild(p);
     }
 
-    // Attacher proprement l'événement Clic au bouton
+    // Attacher l'événement Clic au bouton
     const btnObtenir = modal.querySelector('#btn-obtenir-rang');
     if (btnObtenir) {
         btnObtenir.onclick = function(e) {
@@ -914,9 +916,6 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     }
     
     setTimeout(() => modal.classList.add('active'), 50);
-
-    // Déclencher la Voix
-    jouerVoixFelicitations(nouveauRangFutur);
 }
 
 window.afficherModalFelicitations = afficherModalFelicitationsRang1;
@@ -931,13 +930,24 @@ window.reclamerMonRang = async function(currentUserId) {
     }
 
     try {
-        if (typeof db === 'undefined' || !db || !currentUserId) {
-            alert("Erreur: Utilisateur ou base de données non connectée.");
+        // Fallback automatique pour récupérer l'ID utilisateur si non passé
+        let uid = currentUserId || g_currentUserId;
+        if (!uid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+            uid = firebase.auth().currentUser.uid;
+        }
+
+        if (typeof db === 'undefined' || !db || !uid) {
+            alert("Erreur: Connexion introuvable. Veuillez vérifier votre réseau.");
+            if (btn) {
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                btn.innerText = "OBTENIR MON RANG (+1)";
+            }
             return;
         }
 
         // Références Firestore
-        const userRef = db.collection("users").doc(currentUserId);
+        const userRef = db.collection("users").doc(uid);
         
         // Incrémentation de +1 atomique dans Firestore
         let incrementVal = 1;
@@ -953,7 +963,7 @@ window.reclamerMonRang = async function(currentUserId) {
             rankNotified: true
         }, { merge: true });
 
-        // Mettre à jour la mémoire locale du rang
+        // Mettre à jour la mémoire locale
         g_userRank = nouveauRangCalcule;
 
         // Arrêter la voix si elle parle encore
@@ -968,7 +978,7 @@ window.reclamerMonRang = async function(currentUserId) {
             setTimeout(() => modal.remove(), 400);
         }
 
-        // Re-générer l'interface avec la nouvelle valeur
+        // Re-générer l'interface
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
     } catch (error) {
@@ -1007,13 +1017,6 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
     container.innerHTML = "";
 
     const dateAujourdhuiISO = FormaterDateISO(dateAujourdhuiObj);
-    
-    // Trouver la plus ancienne date d'activité ou de démarrage
-    const datesHistoriqueActives = Object.keys(userHistoryData).sort();
-    let dateInscriptionISO = userStartDateISO;
-    if (!dateInscriptionISO) {
-        dateInscriptionISO = datesHistoriqueActives.length > 0 ? datesHistoriqueActives[0] : "2025-01-01";
-    }
 
     const premierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth(), 1, 12, 0, 0);
     const dernierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth() + 1, 0, 12, 0, 0);
@@ -1109,6 +1112,12 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
             dateCaseObj.setDate(premierLundi.getDate() + joursAAjouter);
 
             const dateCaseISO = FormaterDateISO(dateCaseObj);
+            
+            // Vérification si la date a une entrée réelle enregistrée dans Firebase
+            const aDesDonneesDansFirebase = Object.prototype.hasOwnProperty.call(userHistoryData, dateCaseISO) && 
+                                           userHistoryData[dateCaseISO] !== null && 
+                                           userHistoryData[dateCaseISO] !== undefined;
+
             const val = extraireValeurJour(userHistoryData[dateCaseISO]);
 
             const estDansLeMoisActif = (dateCaseObj.getMonth() === targetMonthObj.getMonth());
@@ -1122,29 +1131,29 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
                 jourMoisTexte = `${String(dateCaseObj.getDate()).padStart(2, '0')}/${String(dateCaseObj.getMonth() + 1).padStart(2, '0')}`;
             }
 
-            // Vérifier si le jour est avant la date de début réelle du compte
-            const estInscritCeJour = (dateCaseISO >= dateInscriptionISO) || (val > 0) || (dateCaseISO <= dateAujourdhuiISO);
-
-            if (!estInscritCeJour) {
-                tdWeek.className += " state-unregistered";
-                tdWeek.innerHTML = `
-                    <span class="cell-date">${jourMoisTexte}</span>
-                    <span class="status-badge">Aucune activité</span>
-                `;
-            } else if (dateCaseISO < dateAujourdhuiISO) {
+            if (dateCaseISO < dateAujourdhuiISO) {
                 // Jours passés dans le calendrier
-                if (val >= 15) {
-                    tdWeek.className += " state-completed"; // Jour Vert accompli
-                    tdWeek.innerHTML = `
-                        <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
-                        <span class="status-badge">✔ Complété</span>
-                    `;
+                if (aDesDonneesDansFirebase) {
+                    if (val >= 15) {
+                        tdWeek.className += " state-completed"; // Jour Vert accompli (>= 15)
+                        tdWeek.innerHTML = `
+                            <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
+                            <span class="status-badge">✔ Complété</span>
+                        `;
+                    } else {
+                        tdWeek.className += " state-incomplete"; // Jour enregistré mais non accompli (< 15)
+                        tdWeek.innerHTML = `
+                            <span class="cell-date" style="color:rgba(255,85,85,0.9);">${jourMoisTexte}</span>
+                            <span class="status-badge">Non accompli</span>
+                            <div style="font-size:0.65rem; margin-top:2px; opacity:0.8;">(${val}/15)</div>
+                        `;
+                    }
                 } else {
-                    tdWeek.className += " state-incomplete"; // Jour Échoué / Non accompli
+                    // Aucune donnée trouvée dans Firebase pour cette date
+                    tdWeek.className += " state-unregistered";
                     tdWeek.innerHTML = `
-                        <span class="cell-date" style="color:rgba(255,85,85,0.9);">${jourMoisTexte}</span>
-                        <span class="status-badge">Non accompli</span>
-                        <div style="font-size:0.65rem; margin-top:2px; opacity:0.8;">(${val}/15)</div>
+                        <span class="cell-date">${jourMoisTexte}</span>
+                        <span class="status-badge">Aucune activité</span>
                     `;
                 }
             } else if (dateCaseISO === dateAujourdhuiISO) {
@@ -1180,18 +1189,26 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 let isSyncingProfilDate = false;
 
 async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
-    if (!currentUserId || isSyncingProfilDate) return;
+    if (isSyncingProfilDate) return;
     if (typeof db === 'undefined' || !db) return;
 
     try {
         isSyncingProfilDate = true;
-        g_currentUserId = currentUserId;
+
+        // Récupération automatique de l'ID si non fourni
+        let uid = currentUserId || g_currentUserId;
+        if (!uid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+            uid = firebase.auth().currentUser.uid;
+        }
+        if (!uid) return;
+
+        g_currentUserId = uid;
 
         g_dateAujourdhuiObj = new Date();
         const dateAujourdhuiISO = FormaterDateISO(g_dateAujourdhuiObj);
 
         // 1. Lecture du document rewards_users
-        const rewardsSnap = await db.collection("rewards_users").doc(currentUserId).get();
+        const rewardsSnap = await db.collection("rewards_users").doc(uid).get();
         let historyData = {};
 
         if (rewardsSnap.exists) {
@@ -1209,7 +1226,7 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         }
 
         // 2. Lecture du rang utilisateur dans "users"
-        const userRef = db.collection("users").doc(currentUserId);
+        const userRef = db.collection("users").doc(uid);
         const userSnap = await userRef.get();
         
         let userRank = 0;
@@ -1219,13 +1236,6 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             const uData = userSnap.data() || {};
             userRank = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
             userStartDateISO = uData.startDate || null;
-        }
-
-        if (!userStartDateISO) {
-            const datesActives = Object.keys(historyData).filter(d => extraireValeurJour(historyData[d]) > 0).sort();
-            const premierDuMois = `${g_dateAujourdhuiObj.getFullYear()}-${String(g_dateAujourdhuiObj.getMonth() + 1).padStart(2, '0')}-01`;
-            userStartDateISO = (datesActives.length > 0 && datesActives[0] < premierDuMois) ? datesActives[0] : premierDuMois;
-            await userRef.set({ startDate: userStartDateISO }, { merge: true });
         }
 
         // Sauvegarde de l'état global
