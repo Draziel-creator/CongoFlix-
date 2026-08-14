@@ -1177,11 +1177,14 @@ const rangActuel = Number(
         const totalJoursActivite = compterTousLesJoursVerts(userHistoryData);
         counterBar.className = "history-counter-bar";
 
-        // SI LE RANG EST > 0 (DÉBLOCKED) : ON AFFICHE LE COMPTEUR SIMPLE + LA BARRE XP
-        if (rangActuel > 0) {
-            // Calcul d'une progression douce et interminable
-            // Chaque +1 dans l'XP fait avancer la ligne régulièrement
-            const progressionPourcentage = Math.min(100, Math.max(4, (xpActuel % 1000) / 10));
+        // SI LE RANG EST > 0 (DÉBLOQUÉ) : ON AFFICHE LE COMPTEUR SIMPLE + LA BARRE XP
+        if (rangActuel > 1) {
+            // 🎯 Récupération stricte du 'xp' en minuscule depuis la mémoire globale
+            const xpActuel = Number(window.g_userXP || g_userXP || 0);
+
+            // 📊 Calcul du pourcentage (Exemple: pour 1000 XP max -> 200 XP donnera 20%)
+            const xpMax = 1000;
+            const progressionPourcentage = Math.min(100, Math.max(5, (xpActuel % xpMax) / (xpMax / 100)));
 
             counterBar.innerHTML = `
                 <div class="green-days-counter">
@@ -1197,6 +1200,7 @@ const rangActuel = Number(
                 </div>
             `;
         } else {
+            
             // RANG 0 : COMPTEUR AVEC OBJECTIF 7 JOURS + BOUTON
             const estPretPourModal = totalJoursActivite >= 7;
 
@@ -1393,29 +1397,32 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         });
 
         // 3. Lecture rang utilisateur dans "users"
-const userRef = firestoreDb.collection("users").doc(uid);
-const userSnap = await userRef.get();
+        const userRef = firestoreDb.collection("users").doc(uid);
+        const userSnap = await userRef.get();
 
-let userRank = 0;
-let userXP = 0;
-let userStartDateISO = null;
+        let userRank = 0;
+        let userXP = 0;
+        let userStartDateISO = null;
 
-if (userSnap.exists) {
-    const uData = userSnap.data() || {};
-    userRank = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
-    
-    // 🎯 ON LIT PRIORITAIREMENT LE 'xp' EN MINUSCULE (qui vaut 200 chez toi)
-    userXP = Number(uData.xp !== undefined ? uData.xp : (uData.XP || 0));
-    userStartDateISO = uData.startDate || null;
-}
+        if (userSnap.exists) {
+            const uData = userSnap.data() || {};
+            userRank = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
+            
+            // 🎯 LECTURE DU 'xp' EN MINUSCULE (Récupère ton 200 dans Firestore)
+            userXP = Number(uData.xp !== undefined ? uData.xp : (uData.XP || 0));
+            userStartDateISO = uData.startDate || null;
+        }
 
-g_userHistoryData = historyData;
-g_userRank = userRank;
-g_userXP = userXP;
-window.g_userXP = userXP; // 👈 N'OUBLIE PAS CETTE LIGNE pour rendre l'XP accessible partout
-g_userStartDateISO = userStartDateISO;
+        g_userHistoryData = historyData;
+        g_userRank = userRank;
+        g_userXP = userXP;
+        
+        // 🔒 INJECTION GLOBALE POUR L'AFFICHAGE ET LOCK DU BOUTON
+        window.g_userRank = userRank;
+        window.g_userXP = userXP;
+        g_userStartDateISO = userStartDateISO;
 
-localStorage.setItem('app_user_rank_cache', userRank);
+        localStorage.setItem('app_user_rank_cache', userRank);
         
         // Render UI
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
