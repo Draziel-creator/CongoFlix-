@@ -102,30 +102,181 @@
             0% { opacity: 0.6; transform: scale(0.95); }
             100% { opacity: 1; transform: scale(1.05); }
         }
-/* Positionnement du composant Lottie sur la tête de la barre */
-.luminous-horse-container {
-    position: absolute;
-    right: -35px;
-    top: -55px; /* Aligne parfaitement le cheval au-dessus de la ligne */
-    width: 80px;
-    height: 80px;
-    pointer-events: none;
-    filter: drop-shadow(0 0 10px rgba(0, 255, 204, 0.9)); /* Effet néon lumineux autour du cheval */
+/* --- FIX DU CONTENEUR PARENT (Évite l'écrasement à droite) --- */
+#counterBar, .counter-bar-container {
+    display: flex !important;
+    flex-direction: column !important; /* Force l'affichage l'un sous l'autre */
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
-/* Sillage de lumière vive */
+/* --- CARTE XP MODERNE LARGE (FULL-WIDTH) --- */
+.xp-modern-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+    border: 1px solid rgba(0, 255, 204, 0.3);
+    border-radius: 16px;
+    padding: 18px;
+    margin-top: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.xp-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.xp-title-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #fff;
+}
+
+.xp-bolt {
+    font-size: 20px;
+    color: #ffd700;
+    filter: drop-shadow(0 0 6px #ffd700);
+}
+
+.xp-value {
+    font-size: 16px;
+    color: #94a3b8;
+}
+
+.xp-value strong {
+    font-size: 20px;
+    color: #00ffcc;
+}
+
+.rank-pill-badge {
+    background: rgba(0, 255, 204, 0.12);
+    border: 1px solid #00ffcc;
+    color: #00ffcc;
+    font-weight: bold;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+}
+
+.rank-pill-badge.vip-gold {
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    color: #000;
+    border: none;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+}
+
+/* --- TRACK DE PROGRESSION --- */
+.xp-track-wrapper {
+    position: relative;
+    padding-top: 35px; /* Espace pour le cheval en haut */
+    width: 100%;
+}
+
+.xp-track-bg {
+    width: 100%;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.xp-track-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0072ff, #00ffcc, #ffffff);
+    border-radius: 10px;
+    position: relative;
+    transition: width 0.6s ease-in-out;
+    box-shadow: 0 0 12px rgba(0, 255, 204, 0.8);
+}
+
 .light-laser-trail {
     position: absolute;
     right: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 204, 0.6) 70%, rgba(255, 255, 255, 0.9) 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.9) 100%);
     border-radius: 10px;
 }
-        /* Rend n'importe quel cheval sombre totalement Blanc Lumineux + Halo Néon Cyan */
-.luminous-horse-container dotlottie-player {
-    filter: brightness(0) invert(1) drop-shadow(0 0 8px #00ffcc) drop-shadow(0 0 15px #ffffff);
+
+/* --- CHEVAL EN GALOP HD (100% GRATUIT, EFFET LUMINEUX BLANC/NEON) --- */
+.luminous-horse-container {
+    position: absolute;
+    right: -25px;
+    top: -42px;
+    width: 55px;
+    height: 45px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.luminous-horse-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* Transformation en néon blanc lumineux avec halo cyan */
+    filter: brightness(0) invert(1) drop-shadow(0 0 6px #00ffcc) drop-shadow(0 0 12px #ffffff);
+}
+
+/* --- JALONS DES RANGS --- */
+.ranks-milestones-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 4px;
+}
+
+.milestone-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    opacity: 0.35;
+    transition: all 0.3s ease;
+}
+
+.milestone-item.active {
+    opacity: 1;
+}
+
+.m-dot {
+    width: 8px;
+    height: 8px;
+    background: #334155;
+    border-radius: 50%;
+}
+
+.milestone-item.active .m-dot {
+    background: #00ffcc;
+    box-shadow: 0 0 8px #00ffcc;
+}
+
+.milestone-item.vip.active .m-dot {
+    background: #ffd700;
+    box-shadow: 0 0 10px #ffd700;
+}
+
+.m-label {
+    font-size: 11px;
+    font-weight: bold;
+    color: #94a3b8;
+}
+
+.milestone-item.active .m-label {
+    color: #fff;
+}
+
+.milestone-item.vip.active .m-label {
+    color: #ffd700;
 }
         /* --- PARRAINAGE --- */
         .share-box-wrapper { background: rgba(155, 81, 224, 0.05); border: 1px solid rgba(155, 81, 224, 0.2); padding: 16px; border-radius: 16px; margin: 20px; }
@@ -1247,7 +1398,7 @@ if (rangActuel > 0) {
     const progressionPourcentage = Math.min(100, Math.max(4, (xpActuel / xpMaxTotal) * 100));
     const rangXP = Math.min(5, Math.floor(xpActuel / 300) + 1);
 
-    // Célébration unique
+    // Célébration unique à 300 XP par palier
     const dernierRangCelebre = Number(localStorage.getItem('app_last_celebrated_rank') || 1);
     if (rangXP > dernierRangCelebre && xpActuel >= (dernierRangCelebre * 300)) {
         localStorage.setItem('app_last_celebrated_rank', rangXP);
@@ -1261,40 +1412,36 @@ if (rangActuel > 0) {
         </div>
 
         <div class="xp-modern-card">
+            <!-- ENTÊTE -->
             <div class="xp-card-header">
                 <div class="xp-title-group">
                     <span class="xp-bolt">⚡</span>
-                    <span class="xp-value"><strong>${xpActuel}</strong> <small>/ ${xpMaxTotal} XP</small></span>
+                    <span class="xp-value"><strong>${xpActuel}</strong> / ${xpMaxTotal} XP</span>
                 </div>
                 <span class="rank-pill-badge ${rangXP === 5 ? 'vip-gold' : ''}">
                     ${rangXP === 5 ? '👑 RANG 5 VIP' : 'RANG ' + rangXP}
                 </span>
             </div>
 
-            <!-- BARRE DE PROGRESSION AVEC CHEVAL LOTTIE / WEBP PRO -->
+            <!-- BARRE DE PROGRESSION & CHEVAL LUMINEUX -->
             <div class="xp-track-wrapper">
                 <div class="xp-track-bg">
                     <div class="xp-track-fill" style="width: ${progressionPourcentage}%;">
                         
-                        <!-- Traînée de lumière laser néon -->
                         <div class="light-laser-trail"></div>
 
-                        <!-- CHEVAL EN GALOP ULTRA-RÉALISTE (Lottie Player 60 FPS) -->
+                        <!-- CHEVAL EN GALOP HD TRANSPARENT (100% GRATUIT VIA CDN) -->
                         <div class="luminous-horse-container">
-                            <dotlottie-player 
-                                src="https://assets2.lottiefiles.com/packages/lf20_j1adxtyb.json" 
-                                background="transparent" 
-                                speed="1.2" 
-                                style="width: 80px; height: 80px;" 
-                                loop 
-                                autoplay>
-                            </dotlottie-player>
+                            <img class="luminous-horse-img" 
+                                 src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Horse.png" 
+                                 alt="Cheval Lumineux" />
                         </div>
 
                     </div>
                 </div>
             </div>
 
+            <!-- JALONS DE RANG (R1 À R5 VIP) -->
             <div class="ranks-milestones-row">
                 <div class="milestone-item ${xpActuel >= 0 ? 'active' : ''}">
                     <span class="m-dot"></span>
