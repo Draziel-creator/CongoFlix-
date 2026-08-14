@@ -510,14 +510,14 @@ onAuthStateChanged(auth, (user) => {
     checkReferral();
 
 // =========================================================================
-// 1. STYLES CSS INJECTÉS (BOÎTE MODALE, DESIGN XP, FLEURS & ANIMATIONS)
+// 1. STYLES CSS INJECTÉS (MODALES, BARRE XP, BOUTONS ET ANIMATIONS)
 // =========================================================================
 (function injecterStylesHistorique() {
     if (document.getElementById('history-modern-styles')) return;
     const style = document.createElement('style');
     style.id = 'history-modern-styles';
     style.innerHTML = `
-        /* BARRE DE COMPTEUR ET BOUTON DÉCLENCHEUR (AVANT DEBLOQUAGE) */
+        /* BARRE DE COMPTEUR ET BOUTON DÉCLENCHEUR */
         .history-counter-bar {
             display: flex;
             align-items: center;
@@ -594,65 +594,53 @@ onAuthStateChanged(auth, (user) => {
             }
         }
 
-        /* NEW: BARRE DE PROGRESSION XP (RANG DEBLOQUÉ >= 1) */
-        .xp-progress-container {
-            width: 100%;
-            background: rgba(13, 17, 23, 0.95);
-            border: 1px solid rgba(0, 229, 255, 0.25);
-            border-radius: 16px;
-            padding: 16px 22px;
-            margin-top: 15px;
-            margin-bottom: 10px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+        /* BARRE DE PROGRESSION XP LUMINEUSE */
+        .xp-progress-wrapper {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            box-sizing: border-box;
-            user-select: none;
+            gap: 6px;
+            flex: 1;
+            min-width: 220px;
         }
 
-        .xp-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-family: 'Inter', system-ui, sans-serif;
-            font-size: 0.95rem;
-            font-weight: 800;
-        }
-
-        .xp-title-label {
-            color: #00e5ff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            letter-spacing: 0.5px;
-        }
-
-        .xp-threshold-label {
-            color: #8b949e;
-            font-size: 0.88rem;
-            font-weight: 700;
-        }
-
-        .xp-track-bar {
-            width: 100%;
-            height: 12px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            overflow: hidden;
+        .xp-bar-outer {
             position: relative;
-            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
-        }
-
-        .xp-fill-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #a855f7 0%, #3b82f6 50%, #00ff88 100%);
+            width: 100%;
+            height: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1.5px solid rgba(0, 229, 255, 0.4);
             border-radius: 20px;
-            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.6);
+            overflow: visible;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
         }
 
-        /* TABLEAU HISTORIQUE */
+        .xp-bar-inner {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88 0%, #00e5ff 100%);
+            border-radius: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.8);
+            transition: width 0.5s ease-out;
+            position: relative;
+        }
+
+        .xp-tip-badge {
+            position: absolute;
+            right: -14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #00e5ff;
+            color: #0d1117;
+            font-weight: 900;
+            font-size: 0.68rem;
+            padding: 2px 7px;
+            border-radius: 12px;
+            box-shadow: 0 0 12px #00e5ff;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* TABLEAU & DESIGN GENERAL */
         .history-table-wrapper {
             background: rgba(13, 17, 23, 0.85);
             backdrop-filter: blur(16px);
@@ -801,7 +789,7 @@ onAuthStateChanged(auth, (user) => {
             color: #484f58;
         }
 
-        /* MODALE RANG ET FLEURS */
+        /* MODALES PERSONNALISÉES */
         .rank-modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -836,7 +824,7 @@ onAuthStateChanged(auth, (user) => {
         .rank-modal-icon { font-size: 3.8rem; margin-bottom: 12px; }
         .rank-modal-title { color: #00ff88; font-size: 1.6rem; font-weight: 900; margin-bottom: 12px; text-transform: uppercase; }
         .rank-modal-text { color: #c9d1d9; font-size: 0.98rem; line-height: 1.6; margin-bottom: 26px; }
-        
+
         .rank-modal-btn {
             background: linear-gradient(135deg, #00ff88 0%, #00e5ff 100%);
             color: #0d1117; font-weight: 900; border: none;
@@ -867,90 +855,42 @@ onAuthStateChanged(auth, (user) => {
             0% { transform: translateY(0) rotate(0deg); opacity: 1; }
             100% { transform: translateY(105vh) rotate(360deg); opacity: 0.2; }
         }
-
-        /* NEW: MODALE D'ALERTE PERSONNALISÉE (REMPLACE LES ALERTS NAVIGATEUR) */
-        .custom-alert-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(5, 8, 15, 0.88);
-            backdrop-filter: blur(12px);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 100000; opacity: 0; pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        .custom-alert-overlay.active {
-            opacity: 1; pointer-events: auto;
-        }
-        .custom-alert-card {
-            background: rgba(18, 24, 38, 0.98);
-            border: 1.5px solid #00e5ff;
-            box-shadow: 0 0 40px rgba(0, 229, 255, 0.3);
-            border-radius: 24px;
-            padding: 30px 25px;
-            max-width: 400px;
-            width: 88%;
-            text-align: center;
-            transform: scale(0.85);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .custom-alert-overlay.active .custom-alert-card {
-            transform: scale(1);
-        }
-        .custom-alert-icon { font-size: 2.8rem; margin-bottom: 8px; }
-        .custom-alert-title { color: #00e5ff; font-size: 1.35rem; font-weight: 900; margin-bottom: 10px; text-transform: uppercase; }
-        .custom-alert-text { color: #c9d1d9; font-size: 0.95rem; line-height: 1.5; margin-bottom: 22px; }
-        .custom-alert-btn {
-            background: linear-gradient(135deg, #00e5ff 0%, #3b82f6 100%);
-            color: #0d1117; font-weight: 900; border: none;
-            padding: 12px 30px; border-radius: 25px; font-size: 0.95rem;
-            cursor: pointer; text-transform: uppercase;
-            box-shadow: 0 4px 15px rgba(0, 229, 255, 0.4);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .custom-alert-btn:hover {
-            transform: scale(1.04);
-            box-shadow: 0 6px 20px rgba(0, 229, 255, 0.6);
-        }
     `;
     document.head.appendChild(style);
 })();
 
 // =========================================================================
-// 2. MODALE D'ALERTE STYLISÉE (REMPLACE ALERT NAVIGATEUR)
+// 2. MODALE D'ALERTE PERSONNALISÉE (REMPLACE TOTALEMENT ALERT())
 // =========================================================================
-function afficherAlerteStylisee(message, titre = "NOTIFICATION", icone = "✨", callback = null) {
+function afficherAlertePersonnalisee(message, titre = "Notification", boutonTexte = "Compris", callback = null) {
     let ancienneModal = document.getElementById('custom-alert-modal');
     if (ancienneModal) ancienneModal.remove();
 
-    const overlay = document.createElement('div');
-    overlay.id = 'custom-alert-modal';
-    overlay.className = 'custom-alert-overlay';
-    overlay.innerHTML = `
-        <div class="custom-alert-card">
-            <div class="custom-alert-icon">${icone}</div>
-            <div class="custom-alert-title">${titre}</div>
-            <div class="custom-alert-text">${message}</div>
-            <button class="custom-alert-btn" id="btn-custom-alert-close">CONTINUER</button>
+    const alertModal = document.createElement('div');
+    alertModal.id = 'custom-alert-modal';
+    alertModal.className = 'rank-modal-overlay active';
+    alertModal.innerHTML = `
+        <div class="rank-modal-card" style="border-color: #00e5ff; box-shadow: 0 0 40px rgba(0, 229, 255, 0.4);">
+            <div class="rank-modal-icon">✨</div>
+            <div class="rank-modal-title" style="color: #00e5ff;">${titre}</div>
+            <div class="rank-modal-text">${message}</div>
+            <button id="btn-custom-alert-close" class="rank-modal-btn" style="background: linear-gradient(135deg, #00e5ff 0%, #00ff88 100%);">${boutonTexte}</button>
         </div>
     `;
-    document.body.appendChild(overlay);
+    document.body.appendChild(alertModal);
 
-    const btnClose = overlay.querySelector('#btn-custom-alert-close');
+    const btnClose = alertModal.querySelector('#btn-custom-alert-close');
     btnClose.onclick = function() {
-        overlay.classList.remove('active');
+        alertModal.classList.remove('active');
         setTimeout(() => {
-            overlay.remove();
-            if (typeof callback === 'function') callback();
+            alertModal.remove();
+            if (typeof callback === "function") callback();
         }, 300);
     };
-
-    setTimeout(() => overlay.classList.add('active'), 50);
 }
 
-window.afficherAlertePersonnalisee = afficherAlerteStylisee;
-
 // =========================================================================
-// 3. GESTION DU LOCALSTORAGE (VERROUILLAGE PERMANENT DES COULEURS)
+// 3. GESTION DU LOCALSTORAGE & CACHE
 // =========================================================================
 const LOCAL_STORAGE_GREEN_KEY = 'app_green_days_cache';
 
@@ -1021,7 +961,7 @@ function jouerVoixFelicitations() {
 let g_moisAfficheDate = new Date();
 let g_userHistoryData = {};
 let g_userRank = 0;
-let g_userXP = 0; // Champ XP utilisateur provenant de Firestore
+let g_userXP = 0;
 let g_userStartDateISO = null;
 let g_dateAujourdhuiObj = new Date();
 let g_currentUserId = null;
@@ -1035,7 +975,7 @@ window.changerMoisAffiche = function(delta) {
 };
 
 // =========================================================================
-// 5. BOÎTE MODALE DE FÉLICITATIONS ET OBTENTION DIRECTE DU RANG
+// 5. BOÎTE MODALE DE RANG ET RECLAMATION
 // =========================================================================
 function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     jouerVoixFelicitations();
@@ -1053,7 +993,7 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
             <div class="rank-modal-icon">🌸🎉🏆</div>
             <div class="rank-modal-title">FÉLICITATIONS !</div>
             <div class="rank-modal-text">
-                Vous avez accumulé <strong>7 jours verts (15 tâches/jour)</strong> !<br><br>
+                Vous avez accumulé <strong>7 jours verts</strong> !<br><br>
                 Cliquez ci-dessous pour valider et passer au <strong>RANG ${nouveauRangFutur}</strong> !
             </div>
             <button id="btn-obtenir-rang" class="rank-modal-btn">OBTENIR MON RANG (+1)</button>
@@ -1080,7 +1020,7 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
             window.reclamerMonRang(currentUserId);
         };
     }
-    
+
     setTimeout(() => modal.classList.add('active'), 50);
 }
 
@@ -1092,7 +1032,7 @@ window.reclamerMonRang = async function(passedUserId) {
     }
 
     const uid = passedUserId 
-        || (typeof auth !== "undefined" && auth && auth.currentUser ? auth.currentUser.uid : null)
+        || (typeof auth !== "undefined" && auth.currentUser ? auth.currentUser.uid : null)
         || g_currentUserId 
         || (typeof userId !== "undefined" ? userId : null);
 
@@ -1100,7 +1040,7 @@ window.reclamerMonRang = async function(passedUserId) {
     if (btnObtenir) {
         btnObtenir.disabled = true;
         btnObtenir.style.opacity = "0.6";
-        btnObtenir.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Traitement...`;
+        btnObtenir.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Validation...`;
     }
 
     if (!uid) {
@@ -1110,7 +1050,7 @@ window.reclamerMonRang = async function(passedUserId) {
             btnObtenir.style.opacity = "1";
             btnObtenir.innerHTML = `OBTENIR MON RANG (+1)`;
         }
-        afficherAlerteStylisee("Session non détectée. Veuillez rafraîchir la page.", "ERREUR DE SESSION", "⚠️");
+        afficherAlertePersonnalisee("Session non détectée. Veuillez rafraîchir la page.", "Erreur de Session", "Fermer");
         return;
     }
 
@@ -1118,48 +1058,51 @@ window.reclamerMonRang = async function(passedUserId) {
         const rangActuel = Number(window.g_userRank || 0);
         const nouveauRang = rangActuel + 1;
 
-        // ÉCRITURE FIRESTORE (Syntaxe Modulaire v10)
-        const userDocRef = doc(db, "users", uid);
-        await setDoc(userDocRef, {
-            rank: nouveauRang,
-            rang: nouveauRang,
-            rankNotified: true
-        }, { merge: true });
+        // Modulaire Firestore v10
+        if (typeof doc === "function" && typeof setDoc === "function" && typeof db !== "undefined") {
+            const userDocRef = doc(db, "users", uid);
+            await setDoc(userDocRef, {
+                rank: nouveauRang,
+                rang: nouveauRang,
+                rankNotified: true
+            }, { merge: true });
+        }
 
-        // Mise à jour de la variable globale locale
+        // Mise à jour globale
         window.g_userRank = nouveauRang;
 
-        // Fermeture douce de la modale du rang
+        // Fermeture de la modale de félicitations
         const modal = document.getElementById('rank-unlocked-modal');
         if (modal) {
             modal.classList.remove('active');
             setTimeout(() => modal.remove(), 400);
         }
 
-        // Rafraîchissement direct de l'interface (transforme le bouton en barre XP et simplifie la vue)
+        // Rafraîchissement de l'UI (La barre XP remplacera automatiquement le bouton !)
         if (typeof generateHistoryUI === "function") {
             generateHistoryUI(g_userHistoryData, nouveauRang, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
         }
 
-        // Modale d'alerte magnifique à la place de l'alert() du navigateur
-        const msgSucces = `Félicitations ! Votre compte est désormais au RANG ${nouveauRang} !`;
-        afficherAlerteStylisee(msgSucces, "RANG DÉBLOQUÉ !", "🏆");
+        // Modale personnalisée sans alert() natif
+        afficherAlertePersonnalisee(
+            `Félicitations ! Votre compte est désormais au <strong>RANG ${nouveauRang}</strong> !`,
+            "Rang Débloqué !",
+            "Super !"
+        );
 
     } catch (error) {
         console.error("❌ Erreur Firestore lors de l'écriture :", error);
-        
         if (btnObtenir) {
             btnObtenir.disabled = false;
             btnObtenir.style.opacity = "1";
-            btnObtenir.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Réessayer`;
+            btnObtenir.innerHTML = `Réessayer`;
         }
-
-        afficherAlerteStylisee("Erreur de sauvegarde : " + error.message, "ERREUR FIRESTORE", "❌");
+        afficherAlertePersonnalisee("Erreur de sauvegarde : " + error.message, "Oups", "Fermer");
     }
 };
 
 // =========================================================================
-// 6. COMPTAGE UNIVERSEL DES JOURS VERTS (COMBINÉ LOCALSTORAGE + FIREBASE)
+// 6. COMPTAGE DES JOURS D'ACTIVITÉ
 // =========================================================================
 function compterTousLesJoursVerts(historyData) {
     const datesSet = new Set();
@@ -1185,7 +1128,7 @@ function compterTousLesJoursVerts(historyData) {
 }
 
 // =========================================================================
-// 7. GENERATION DE L'INTERFACE UTILISATEUR (TABLEAU + BARRE XP DYNAMIQUE)
+// 7. GENERATION DE L'INTERFACE UTILISATEUR (RELIÉE AU CHAMP XP ET RANG)
 // =========================================================================
 function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO = null, dateAujourdhuiObj = new Date(), targetMonthObj = new Date()) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -1195,9 +1138,6 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
     const dateAujourdhuiISO = FormaterDateISO(dateAujourdhuiObj);
     const localCache = getGreenDaysCache();
-
-    // Mettre à jour les références globales
-    window.g_userRank = userRank;
 
     const premierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth(), 1, 12, 0, 0);
     const dernierJourDuMois = new Date(targetMonthObj.getFullYear(), targetMonthObj.getMonth() + 1, 0, 12, 0, 0);
@@ -1209,6 +1149,10 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
     const moisNomsComplets = ["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"];
     const moisCourantTexte = `${moisNomsComplets[targetMonthObj.getMonth()]} ${targetMonthObj.getFullYear()}`;
 
+    // Récupération de l'XP actuelle
+    const xpActuel = Number(window.g_userXP || userHistoryData.xp || 0);
+    const rangActuel = Number(window.g_userRank || userRank || 0);
+
     const tableWrapper = container.closest('.history-table-wrapper');
     if (tableWrapper) {
         let counterBar = document.getElementById('history-counter-bar');
@@ -1218,44 +1162,36 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
             tableWrapper.parentNode.insertBefore(counterBar, tableWrapper);
         }
 
-        // =========================================================================
-        // TRANSFORMATION : SI RANG >= 1 -> AFFICHAGE BARRE DE PROGRESSION XP
-        // =========================================================================
-        if (userRank >= 1) {
-            const currentXP = Number(window.g_userXP || 0);
-            
-            // Élices/Étages de progression pour Rangs 1 à 5 VIP
-            const plafondsXP = { 1: 100, 2: 300, 3: 600, 4: 1000, 5: 2000 };
-            const rangIndex = Math.min(Math.max(userRank, 1), 5);
-            const cibleXP = plafondsXP[rangIndex] || 2000;
-            const pourcentageXP = Math.min(100, Math.round((currentXP / cibleXP) * 100));
+        const totalJoursActivite = compterTousLesJoursVerts(userHistoryData);
+        counterBar.className = "history-counter-bar";
 
-            const intituleRang = userRank >= 5 ? `Rang 5 (VIP)` : `Rang ${userRank}`;
+        // SI LE RANG EST > 0 (DÉBLOCKED) : ON AFFICHE LE COMPTEUR SIMPLE + LA BARRE XP
+        if (rangActuel > 0) {
+            // Calcul d'une progression douce et interminable
+            // Chaque +1 dans l'XP fait avancer la ligne régulièrement
+            const progressionPourcentage = Math.min(100, Math.max(4, (xpActuel % 1000) / 10));
 
-            counterBar.className = "xp-progress-container";
             counterBar.innerHTML = `
-                <div class="xp-header">
-                    <div class="xp-title-label">
-                        <span>XP (${intituleRang})</span>
-                    </div>
-                    <div class="xp-threshold-label">
-                        <span>Seuil de rang : ${pourcentageXP}%</span>
-                    </div>
+                <div class="green-days-counter">
+                    <span>📅 Jours enregistrés :</span>
+                    <span class="green-days-badge">${totalJoursActivite}</span>
                 </div>
-                <div class="xp-track-bar">
-                    <div class="xp-fill-bar" style="width: ${pourcentageXP}%;"></div>
+                <div class="xp-progress-wrapper">
+                    <div class="xp-bar-outer">
+                        <div class="xp-bar-inner" style="width: ${progressionPourcentage}%;">
+                            <span class="xp-tip-badge">XP ${xpActuel}</span>
+                        </div>
+                    </div>
                 </div>
             `;
         } else {
-            // MODE DEPART (RANG 0 - ATTENTE DE COMPLETER LES 7 JOURS VERTS)
-            const totalJoursVerts = compterTousLesJoursVerts(userHistoryData);
-            const estPretPourModal = totalJoursVerts >= 7;
+            // RANG 0 : COMPTEUR AVEC OBJECTIF 7 JOURS + BOUTON
+            const estPretPourModal = totalJoursActivite >= 7;
 
-            counterBar.className = "history-counter-bar";
             counterBar.innerHTML = `
                 <div class="green-days-counter">
                     <span>🟢 Jours verts accomplis :</span>
-                    <span class="green-days-badge">${totalJoursVerts} / 7</span>
+                    <span class="green-days-badge">${totalJoursActivite} / 7</span>
                 </div>
                 <button id="btn-declencher-modal" 
                         class="btn-trigger-modal ${estPretPourModal ? 'pulsing-active' : ''}"
@@ -1267,7 +1203,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
             const btnDeclencher = document.getElementById('btn-declencher-modal');
             if (btnDeclencher && estPretPourModal) {
                 btnDeclencher.onclick = function() {
-                    afficherModalFelicitationsRang1(g_currentUserId, userRank);
+                    afficherModalFelicitationsRang1(g_currentUserId, rangActuel);
                 };
             }
         }
@@ -1279,7 +1215,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
             monthHeader.id = 'history-month-header';
             tableWrapper.parentNode.insertBefore(monthHeader, tableWrapper);
         }
-        
+
         monthHeader.className = "history-nav-container";
         monthHeader.innerHTML = `
             <button class="history-nav-btn" onclick="window.changerMoisAffiche(-1)" title="Mois précédent">
@@ -1294,7 +1230,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
     const tableElement = container.closest('table');
     if (tableElement) tableElement.classList.add('history-table');
-    
+
     let tableHead = tableElement ? tableElement.querySelector('thead') : null;
     if (tableHead) {
         let headHTML = `<tr><th>Jour</th>`;
@@ -1305,10 +1241,10 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
         tableHead.innerHTML = headHTML;
     }
 
-    // REMPLISSAGE DES CELLULES (MODIFIÉ SELON SI LE RANG EST RÉCUPÉRÉ)
+    // REMPLISSAGE DU TABLEAU
     days.forEach((dayName, dayIndex) => {
         const tr = document.createElement('tr');
-        
+
         const tdDay = document.createElement('td');
         tdDay.className = "day-label";
         tdDay.innerText = dayName;
@@ -1323,7 +1259,7 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
             dateCaseObj.setDate(premierLundi.getDate() + joursAAjouter);
 
             const dateCaseISO = FormaterDateISO(dateCaseObj);
-            
+
             const valFirebase = extraireValeurJour(userHistoryData[dateCaseISO]);
             const valLocal = Number(localCache[dateCaseISO] || 0);
             const val = Math.max(valFirebase, valLocal);
@@ -1344,73 +1280,43 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
                 jourMoisTexte = `${String(dateCaseObj.getDate()).padStart(2, '0')}/${String(dateCaseObj.getMonth() + 1).padStart(2, '0')}`;
             }
 
-            // =========================================================================
-            // AFFICHAGE DU TABLEAU : SIMPLIFIÉ APRÈS DÉBLOQUAGE DU RANG
-            // =========================================================================
-            if (userRank >= 1) {
-                // MODE SIMPLIFIÉ POST-RANG : Plus de "15/15" ou "Non accompli" rouge, comptage fluide
-                if (dateCaseISO <= dateAujourdhuiISO) {
-                    if (val > 0) {
-                        tdWeek.className += " state-completed";
-                        tdWeek.innerHTML = `
-                            <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
-                            <span class="status-badge">+${val} XP</span>
-                        `;
-                    } else {
-                        tdWeek.className += " state-unregistered";
-                        tdWeek.innerHTML = `
-                            <span class="cell-date">${jourMoisTexte}</span>
-                            <span class="status-badge" style="opacity:0.5;">0 XP</span>
-                        `;
-                    }
+            if (dateCaseISO < dateAujourdhuiISO) {
+                if (val >= 15) {
+                    tdWeek.className += " state-completed";
+                    tdWeek.innerHTML = `
+                        <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
+                        <span class="status-badge">✔ Complété</span>
+                    `;
+                } else if (aDesDonnees) {
+                    tdWeek.className += " state-incomplete";
+                    tdWeek.innerHTML = `
+                        <span class="cell-date" style="color:rgba(255,85,85,0.9);">${jourMoisTexte}</span>
+                        <span class="status-badge">Non accompli</span>
+                        <div style="font-size:0.65rem; margin-top:2px; opacity:0.8;">(${val}/15)</div>
+                    `;
                 } else {
-                    // Jours futurs
-                    tdWeek.className += " state-future";
+                    tdWeek.className += " state-unregistered";
                     tdWeek.innerHTML = `
                         <span class="cell-date">${jourMoisTexte}</span>
-                        <span style="font-size: 0.8rem; opacity: 0.3;">🔒</span>
+                        <span class="status-badge">Aucune activité</span>
                     `;
                 }
+            } else if (dateCaseISO === dateAujourdhuiISO) {
+                tdWeek.className += " state-today";
+                const isDoneToday = val >= 15;
+                if (isDoneToday) {
+                    tdWeek.className += " state-completed";
+                }
+                tdWeek.innerHTML = `
+                    <span class="cell-date" style="color:#00e5ff;">AUJ. (${jourMoisTexte})</span>
+                    <span class="status-badge">${isDoneToday ? '✔ Complété' : val + ' / 15'}</span>
+                `;
             } else {
-                // MODE INITIAL RANG 0 : Exigence stricte des 15/15
-                if (dateCaseISO < dateAujourdhuiISO) {
-                    if (val >= 15) {
-                        tdWeek.className += " state-completed";
-                        tdWeek.innerHTML = `
-                            <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
-                            <span class="status-badge">✔ Complété</span>
-                        `;
-                    } else if (aDesDonnees) {
-                        tdWeek.className += " state-incomplete";
-                        tdWeek.innerHTML = `
-                            <span class="cell-date" style="color:rgba(255,85,85,0.9);">${jourMoisTexte}</span>
-                            <span class="status-badge">Non accompli</span>
-                            <div style="font-size:0.65rem; margin-top:2px; opacity:0.8;">(${val}/15)</div>
-                        `;
-                    } else {
-                        tdWeek.className += " state-unregistered";
-                        tdWeek.innerHTML = `
-                            <span class="cell-date">${jourMoisTexte}</span>
-                            <span class="status-badge">Aucune activité</span>
-                        `;
-                    }
-                } else if (dateCaseISO === dateAujourdhuiISO) {
-                    tdWeek.className += " state-today";
-                    const isDoneToday = val >= 15;
-                    if (isDoneToday) {
-                        tdWeek.className += " state-completed";
-                    }
-                    tdWeek.innerHTML = `
-                        <span class="cell-date" style="color:#00e5ff;">AUJ. (${jourMoisTexte})</span>
-                        <span class="status-badge">${isDoneToday ? '✔ Complété' : val + ' / 15'}</span>
-                    `;
-                } else {
-                    tdWeek.className += " state-future";
-                    tdWeek.innerHTML = `
-                        <span class="cell-date">${jourMoisTexte}</span>
-                        <span style="font-size: 0.8rem; opacity: 0.3;">🔒</span>
-                    `;
-                }
+                tdWeek.className += " state-future";
+                tdWeek.innerHTML = `
+                    <span class="cell-date">${jourMoisTexte}</span>
+                    <span style="font-size: 0.8rem; opacity: 0.3;">🔒</span>
+                `;
             }
 
             tr.appendChild(tdWeek);
