@@ -1068,8 +1068,9 @@ window.reclamerMonRang = async function(passedUserId) {
             }, { merge: true });
         }
 
-        // Mise à jour globale
-        window.g_userRank = nouveauRang;
+        // 5. Mise à jour locale
+window.g_userRank = nouveauRang;
+localStorage.setItem('app_user_rank_cache', nouveauRang); // Mémorise le rang pour éviter que le bouton ne réapparaisse au F5
 
         // Fermeture de la modale de félicitations
         const modal = document.getElementById('rank-unlocked-modal');
@@ -1151,8 +1152,14 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
 
     // Récupération de l'XP actuelle
     const xpActuel = Number(window.g_userXP || userHistoryData.xp || 0);
-    const rangActuel = Number(window.g_userRank || userRank || 0);
-
+    // On vérifie le rang dans la mémoire globale, le paramètre, l'objet Firestore ET le cache local d'urgence
+const rangActuel = Number(
+    window.g_userRank || 
+    userRank || 
+    (userHistoryData && (userHistoryData.rank || userHistoryData.rang)) || 
+    localStorage.getItem('app_user_rank_cache') || 
+    0
+);
     const tableWrapper = container.closest('.history-table-wrapper');
     if (tableWrapper) {
         let counterBar = document.getElementById('history-counter-bar');
@@ -1385,18 +1392,24 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         const userSnap = await userRef.get();
         
         let userRank = 0;
+        let userXP = 0;
         let userStartDateISO = null;
 
         if (userSnap.exists) {
             const uData = userSnap.data() || {};
             userRank = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
+            userXP = Number(uData.xp || 0);
             userStartDateISO = uData.startDate || null;
         }
 
         g_userHistoryData = historyData;
         g_userRank = userRank;
+        g_userXP = userXP;
         g_userStartDateISO = userStartDateISO;
 
+        // 🔒 C'EST ICI QUE C'EST BLOQUÉ : On sauvegarde le vrai rang Firestore dans le cache
+        localStorage.setItem('app_user_rank_cache', userRank);
+        
         // Render UI
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
