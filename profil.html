@@ -446,6 +446,42 @@
     </div>
 
 <script type="module">
+    import { onAuthStateChanged } from "firebase/auth";
+import { doc, onSnapshot } from "firebase/firestore";
+
+// 🎯 LECTURE EN DIRECT SANS ACTION : Firebase déclenche ce code dès que le réseau/auth est prêt
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        const uid = user.uid;
+        const userDocRef = doc(db, "users", uid);
+
+        // 'onSnapshot' écoute Firestore en direct : la moindre modification ou la lecture initiale met à jour l'UI
+        onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const uData = docSnap.data();
+
+                // 1. Extraction stricte du 'xp' en minuscule
+                const xpLien = Number(uData.xp !== undefined ? uData.xp : 0);
+                const rangLien = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
+
+                // 2. Mise à jour des variables globales et du cache local
+                window.g_userXP = xpLien;
+                window.g_userRank = rangLien;
+                localStorage.setItem('app_user_xp_cache', xpLien);
+                localStorage.setItem('app_user_rank_cache', rangLien);
+
+                console.log(`🔥 Synchronisation Firebase réussie ! Rang: ${rangLien}, XP: ${xpLien}`);
+
+                // 3. Redessine la barre d'XP AUTOMATIQUEMENT à l'écran
+                if (typeof generateHistoryUI === "function" && typeof g_userHistoryData !== "undefined") {
+                    generateHistoryUI(g_userHistoryData, rangLien, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+                }
+            }
+        }, (error) => {
+            console.error("❌ Erreur de lecture en direct Firestore :", error);
+        });
+    }
+});
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
