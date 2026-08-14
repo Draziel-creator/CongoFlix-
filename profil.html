@@ -446,46 +446,12 @@
     </div>
 
 <script type="module">
-    import { onAuthStateChanged } from "firebase/auth";
-import { doc, onSnapshot } from "firebase/firestore";
-
-// 🎯 LECTURE EN DIRECT SANS ACTION : Firebase déclenche ce code dès que le réseau/auth est prêt
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        const uid = user.uid;
-        const userDocRef = doc(db, "users", uid);
-
-        // 'onSnapshot' écoute Firestore en direct : la moindre modification ou la lecture initiale met à jour l'UI
-        onSnapshot(userDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const uData = docSnap.data();
-
-                // 1. Extraction stricte du 'xp' en minuscule
-                const xpLien = Number(uData.xp !== undefined ? uData.xp : 0);
-                const rangLien = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
-
-                // 2. Mise à jour des variables globales et du cache local
-                window.g_userXP = xpLien;
-                window.g_userRank = rangLien;
-                localStorage.setItem('app_user_xp_cache', xpLien);
-                localStorage.setItem('app_user_rank_cache', rangLien);
-
-                console.log(`🔥 Synchronisation Firebase réussie ! Rang: ${rangLien}, XP: ${xpLien}`);
-
-                // 3. Redessine la barre d'XP AUTOMATIQUEMENT à l'écran
-                if (typeof generateHistoryUI === "function" && typeof g_userHistoryData !== "undefined") {
-                    generateHistoryUI(g_userHistoryData, rangLien, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
-                }
-            }
-        }, (error) => {
-            console.error("❌ Erreur de lecture en direct Firestore :", error);
-        });
-    }
-});
+    // 1. IMPORTS TOUT EN HAUT (J'ai ajouté 'onSnapshot' dans les imports Firestore)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+    // 2. CONFIGURATION & INITIALISATION FIREBASE
     const firebaseConfig = { 
         apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
         authDomain: "publicite-6445c.firebaseapp.com",
@@ -498,13 +464,42 @@ onAuthStateChanged(auth, (user) => {
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    // Synchronisation automatique de la session active v10
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        g_currentUserId = user.uid;
-    }
-});
 
+    // 3. SYNCHRONISATION EN DIRECT (PLACÉ APRÈS L'INITIALISATION DE AUTH ET DB)
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            g_currentUserId = user.uid;
+
+            // Référence vers le document utilisateur connecté
+            const userRef = doc(db, "users", user.uid);
+
+            // Écouteur temps réel (Met à jour l'XP et le Rang automatiquement)
+            onSnapshot(userRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const userData = docSnap.data() || {};
+
+                    // Lecture stricte de 'xp' en minuscule et du rang
+                    const xpLien = Number(userData.xp !== undefined ? userData.xp : 0);
+                    const rangLien = Number(userData.rank !== undefined ? userData.rank : (userData.rang || 0));
+
+                    // Cache global & local
+                    window.g_userXP = xpLien;
+                    window.g_userRank = rangLien;
+                    localStorage.setItem('app_user_xp_cache', xpLien);
+                    localStorage.setItem('app_user_rank_cache', rangLien);
+
+                    // Rafraîchissement de la barre d'XP à l'écran
+                    if (typeof generateHistoryUI === "function" && typeof g_userHistoryData !== "undefined") {
+                        generateHistoryUI(g_userHistoryData, rangLien, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+                    }
+                }
+            }, (error) => {
+                console.error("Erreur de synchronisation XP/Rang :", error);
+            });
+        }
+    });
+
+    // 4. LE RESTE DE TES VARIABLES GLOBALES ET FONCTIONS
     let isLoginMode = true;
     let globalConditionsMet = false;
     let globalUserRank = 0;
