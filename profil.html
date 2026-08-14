@@ -1150,8 +1150,13 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
     const moisNomsComplets = ["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"];
     const moisCourantTexte = `${moisNomsComplets[targetMonthObj.getMonth()]} ${targetMonthObj.getFullYear()}`;
 
-    // Récupération de l'XP actuelle
-    const xpActuel = Number(window.g_userXP || userHistoryData.xp || 0);
+    // 1. Récupération stricte du 'xp' en minuscule (depuis la mémoire globale ou les données)
+const xpActuel = Number(window.g_userXP || (userHistoryData && userHistoryData.xp) || 0);
+
+// 2. Calcul du pourcentage de la barre de progression (ex: palier de 1000 XP)
+const xpMax = 1000; 
+const progressionPourcentage = Math.min(100, Math.max(5, (xpActuel % xpMax) / (xpMax / 100)));
+    
     // On vérifie le rang dans la mémoire globale, le paramètre, l'objet Firestore ET le cache local d'urgence
 const rangActuel = Number(
     window.g_userRank || 
@@ -1388,27 +1393,29 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         });
 
         // 3. Lecture rang utilisateur dans "users"
-        const userRef = firestoreDb.collection("users").doc(uid);
-        const userSnap = await userRef.get();
-        
-        let userRank = 0;
-        let userXP = 0;
-        let userStartDateISO = null;
+const userRef = firestoreDb.collection("users").doc(uid);
+const userSnap = await userRef.get();
 
-        if (userSnap.exists) {
-            const uData = userSnap.data() || {};
-            userRank = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
-            userXP = Number(uData.xp || 0);
-            userStartDateISO = uData.startDate || null;
-        }
+let userRank = 0;
+let userXP = 0;
+let userStartDateISO = null;
 
-        g_userHistoryData = historyData;
-        g_userRank = userRank;
-        g_userXP = userXP;
-        g_userStartDateISO = userStartDateISO;
+if (userSnap.exists) {
+    const uData = userSnap.data() || {};
+    userRank = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
+    
+    // 🎯 ON LIT PRIORITAIREMENT LE 'xp' EN MINUSCULE (qui vaut 200 chez toi)
+    userXP = Number(uData.xp !== undefined ? uData.xp : (uData.XP || 0));
+    userStartDateISO = uData.startDate || null;
+}
 
-        // 🔒 C'EST ICI QUE C'EST BLOQUÉ : On sauvegarde le vrai rang Firestore dans le cache
-        localStorage.setItem('app_user_rank_cache', userRank);
+g_userHistoryData = historyData;
+g_userRank = userRank;
+g_userXP = userXP;
+window.g_userXP = userXP; // 👈 N'OUBLIE PAS CETTE LIGNE pour rendre l'XP accessible partout
+g_userStartDateISO = userStartDateISO;
+
+localStorage.setItem('app_user_rank_cache', userRank);
         
         // Render UI
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
