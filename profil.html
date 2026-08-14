@@ -100,141 +100,244 @@
             0% { opacity: 0.6; transform: scale(0.95); }
             100% { opacity: 1; transform: scale(1.05); }
         }
-        /* Conteneur Moderne XP */
-.xp-modern-container {
-    background: rgba(15, 23, 42, 0.9);
-    border: 1px solid rgba(255, 215, 0, 0.3);
-    border-radius: 14px;
-    padding: 15px;
-    margin-top: 12px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-    color: #fff;
+        /* --- COMPOSANT XP MODERNE LARGE (FULL-WIDTH) --- */
+.xp-modern-card {
+    width: 100%;
+    box-sizing: border-box;
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.8));
+    border: 1px solid rgba(0, 255, 204, 0.25);
+    border-radius: 18px;
+    padding: 20px;
+    margin-top: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
-.xp-header-info {
+.xp-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
+}
+
+.xp-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    color: #fff;
+}
+
+.xp-bolt {
+    font-size: 22px;
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+}
+
+.xp-value strong {
+    font-size: 20px;
+    color: #00ffcc;
+}
+
+.xp-value small {
+    color: #94a3b8;
     font-size: 14px;
 }
 
-.rank-vip-badge {
-    background: #1e293b;
+.rank-pill-badge {
+    background: rgba(0, 255, 204, 0.1);
     border: 1px solid #00ffcc;
     color: #00ffcc;
     font-weight: bold;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 12px rgba(0, 255, 204, 0.3);
 }
 
-.rank-vip-badge.vip-gold {
+.rank-pill-badge.vip-gold {
     background: linear-gradient(135deg, #ffd700, #ff8c00);
     color: #000;
     border: none;
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
 }
 
-/* Track de la barre */
-.xp-bar-track {
+/* --- BARRE DE PROGRESSION & CHEVAL --- */
+.xp-track-wrapper {
     position: relative;
-    height: 16px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    margin-bottom: 5px;
+    padding-top: 35px; /* Laisse de la place au cheval en haut */
 }
 
-/* Lumière en mouvement sur la ligne */
-.xp-bar-fill {
+.xp-track-bg {
+    width: 100%;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.xp-track-fill {
     height: 100%;
-    background: linear-gradient(90deg, #00c6ff, #0072ff, #00ffcc, #ffd700, #00c6ff);
-    background-size: 200% 100%;
-    animation: moveGlowingLight 2s linear infinite;
+    background: linear-gradient(90deg, #0072ff, #00ffcc, #ffffff);
     border-radius: 10px;
     position: relative;
-    transition: width 0.6s ease-in-out;
-    box-shadow: 0 0 12px rgba(0, 255, 204, 0.8);
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.8);
 }
 
-@keyframes moveGlowingLight {
-    0% { background-position: 0% 0%; }
-    100% { background-position: 200% 0%; }
-}
-
-/* Léopard qui court à la pointe de la barre */
-.running-leopard {
+/* Sillage de lumière vive qui suit le cheval */
+.light-laser-trail {
     position: absolute;
-    right: -14px;
-    top: -22px;
-    font-size: 22px;
-    animation: leopardBounce 0.35s infinite alternate;
+    right: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.8) 100%);
+    border-radius: 10px;
+    animation: laserPulse 1.2s infinite alternate;
 }
 
-@keyframes leopardBounce {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(-5px); }
+@keyframes laserPulse {
+    0% { opacity: 0.5; }
+    100% { opacity: 1; }
 }
 
-/* Jalons Rang 1 à Rang 5 VIP */
-.rank-steps {
+/* Position du cheval blanc à la pointe de la barre */
+.luminous-horse-container {
+    position: absolute;
+    right: -28px;
+    top: -48px;
+    width: 65px;
+    height: 55px;
+    animation: horseGallopBody 0.6s infinite ease-in-out alternate;
+}
+
+.running-horse-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
+}
+
+/* --- ANIMATION RÉALISTE DU CORPS ET DES PATTES DU CHEVAL --- */
+@keyframes horseGallopBody {
+    0% { transform: translateY(0) rotate(-2deg); }
+    100% { transform: translateY(-6px) rotate(3deg); }
+}
+
+/* Animation des Crinières & Queue */
+.horse-mane-anim {
+    animation: maneWiggle 0.3s infinite alternate;
+    transform-origin: top right;
+}
+@keyframes maneWiggle {
+    0% { transform: scaleY(1) skewX(0deg); }
+    100% { transform: scaleY(1.2) skewX(-10deg); }
+}
+
+.horse-tail-anim {
+    animation: tailWiggle 0.4s infinite alternate;
+    transform-origin: right center;
+}
+@keyframes tailWiggle {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(-15deg); }
+}
+
+/* Animation du Galop des 4 pattes */
+.horse-leg.front-left {
+    animation: galopLegFrontA 0.5s infinite linear;
+    transform-origin: 78px 30px;
+}
+.horse-leg.front-right {
+    animation: galopLegFrontB 0.5s infinite linear;
+    transform-origin: 74px 31px;
+}
+.horse-leg.back-left {
+    animation: galopLegBackA 0.5s infinite linear;
+    transform-origin: 34px 37px;
+}
+.horse-leg.back-right {
+    animation: galopLegBackB 0.5s infinite linear;
+    transform-origin: 38px 38px;
+}
+
+@keyframes galopLegFrontA {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(-45deg); }
+    100% { transform: rotate(20deg); }
+}
+@keyframes galopLegFrontB {
+    0% { transform: rotate(20deg); }
+    50% { transform: rotate(0deg); }
+    100% { transform: rotate(-40deg); }
+}
+@keyframes galopLegBackA {
+    0% { transform: rotate(-30deg); }
+    50% { transform: rotate(30deg); }
+    100% { transform: rotate(-10deg); }
+}
+@keyframes galopLegBackB {
+    0% { transform: rotate(15deg); }
+    50% { transform: rotate(-25deg); }
+    100% { transform: rotate(30deg); }
+}
+
+/* --- ÉTAPES & JALONS DES RANGS (EN DESSOUS) --- */
+.ranks-milestones-row {
     display: flex;
     justify-content: space-between;
-    position: absolute;
-    top: -22px;
-    width: 100%;
-    padding: 0 2px;
-    box-sizing: border-box;
+    align-items: center;
+    margin-top: 5px;
+    padding: 0 5px;
 }
 
-.step {
-    font-size: 10px;
+.milestone-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.4;
+    transition: all 0.4s ease;
+}
+
+.milestone-item.active {
+    opacity: 1;
+}
+
+.m-dot {
+    width: 10px;
+    height: 10px;
+    background: #334155;
+    border-radius: 50%;
+    border: 2px solid #0f172a;
+}
+
+.milestone-item.active .m-dot {
+    background: #00ffcc;
+    box-shadow: 0 0 10px #00ffcc;
+}
+
+.milestone-item.vip.active .m-dot {
+    background: #ffd700;
+    box-shadow: 0 0 10px #ffd700;
+}
+
+.m-label {
+    font-size: 11px;
     font-weight: bold;
-    color: #64748b;
-    background: #0f172a;
-    padding: 1px 5px;
-    border-radius: 4px;
-    border: 1px solid #334155;
+    color: #94a3b8;
 }
 
-.step.active {
+.milestone-item.active .m-label {
+    color: #fff;
+}
+
+.milestone-item.vip.active .m-label {
     color: #ffd700;
-    border-color: #ffd700;
-    box-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
 }
-
-/* Modale de Félicitations aux Fleurs (5 Secondes) */
-.fleurs-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 99999;
-}
-
-.fleurs-card {
-    background: linear-gradient(135deg, #1e1b4b, #0f172a);
-    border: 2px solid #ffd700;
-    border-radius: 20px;
-    padding: 25px;
-    text-align: center;
-    color: white;
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-    animation: popIn 0.5s ease;
-}
-
-.fleurs-rain { font-size: 24px; margin: 10px 0; }
-.badge-debloque {
-    font-size: 18px; font-weight: bold; color: #ffd700;
-    margin: 15px 0; background: rgba(255, 215, 0, 0.1);
-    padding: 10px; border-radius: 10px;
-}
-
-@keyframes popIn {
-    0% { transform: scale(0.5); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
         /* --- PARRAINAGE --- */
         .share-box-wrapper { background: rgba(155, 81, 224, 0.05); border: 1px solid rgba(155, 81, 224, 0.2); padding: 16px; border-radius: 16px; margin: 20px; }
         .share-box-title { font-size: 13px; font-weight: 600; color: #b370f7; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
@@ -1342,64 +1445,117 @@ const rangActuel = Number(
         const totalJoursActivite = compterTousLesJoursVerts(userHistoryData);
         counterBar.className = "history-counter-bar";
 
-        // 🔒 Verrouillage du rang (Mémoire + Cache)
-        const rangActuel = Math.max(
-            Number(window.g_userRank || 0),
-            Number(userRank || 0),
-            Number(localStorage.getItem('app_user_rank_cache') || 0)
-        );
+        // 🔒 Verrouillage du rang
+const rangActuel = Math.max(
+    Number(window.g_userRank || 0),
+    Number(userRank || 0),
+    Number(localStorage.getItem('app_user_rank_cache') || 0)
+);
 
-        // SI LE RANG EST > 0 : ON AFFICHE LE COMPTEUR + LA BARRE XP AVANCÉE
-        if (rangActuel > 0) {
-            const xpActuel = Number(window.g_userXP || localStorage.getItem('app_user_xp_cache') || 0);
+// SI RANG > 0 : CARTE MODERNE FULL-WIDTH AVEC CHEVAL LUMINEUX
+if (rangActuel > 0) {
+    const xpActuel = Number(window.g_userXP || localStorage.getItem('app_user_xp_cache') || 0);
+    const xpMaxTotal = 1500;
+    
+    // Calcul précis du pourcentage de progression
+    const progressionPourcentage = Math.min(100, Math.max(4, (xpActuel / xpMaxTotal) * 100));
+    const rangXP = Math.min(5, Math.floor(xpActuel / 300) + 1);
 
-            // 🎯 PALIER : 300 XP par Rang | TOTAL MAX : 1500 XP (Rang 5 VIP)
-            const xpMaxTotal = 1500;
-            const progressionPourcentage = Math.min(100, Math.max(3, (xpActuel / xpMaxTotal) * 100));
+    // Célébration unique à 300 XP par palier (5 secondes)
+    const dernierRangCelebre = Number(localStorage.getItem('app_last_celebrated_rank') || 1);
+    if (rangXP > dernierRangCelebre && xpActuel >= (dernierRangCelebre * 300)) {
+        localStorage.setItem('app_last_celebrated_rank', rangXP);
+        lancerCelebrationFleurs(rangXP);
+    }
 
-            // Calcul dynamique du rang selon l'XP (1 à 5 VIP)
-            const rangXP = Math.min(5, Math.floor(xpActuel / 300) + 1);
+    counterBar.innerHTML = `
+        <div class="green-days-counter">
+            <span>📅 Jours enregistrés :</span>
+            <span class="green-days-badge">${totalJoursActivite}</span>
+        </div>
 
-            // 🌸 DÉCLENCHEMENT UNIQUE DE LA MODALE DE FÉLICITATIONS (5 SECONDES)
-            const dernierRangCelebre = Number(localStorage.getItem('app_last_celebrated_rank') || 1);
-            if (rangXP > dernierRangCelebre && xpActuel >= ((dernierRangCelebre) * 300)) {
-                localStorage.setItem('app_last_celebrated_rank', rangXP);
-                lancerCelebrationFleurs(rangXP);
-            }
-
-            counterBar.innerHTML = `
-                <div class="green-days-counter">
-                    <span>📅 Jours enregistrés :</span>
-                    <span class="green-days-badge">${totalJoursActivite}</span>
+        <div class="xp-modern-card">
+            <!-- ENTÊTE DE LA CARTE : XP À GAUCHE, RANG À DROITE -->
+            <div class="xp-card-header">
+                <div class="xp-title-group">
+                    <span class="xp-bolt">⚡</span>
+                    <span class="xp-value"><strong>${xpActuel}</strong> <small>/ ${xpMaxTotal} XP</small></span>
                 </div>
+                <span class="rank-pill-badge ${rangXP === 5 ? 'vip-gold' : ''}">
+                    ${rangXP === 5 ? '👑 RANG 5 VIP' : 'RANG ' + rangXP}
+                </span>
+            </div>
 
-                <div class="xp-modern-container">
-                    <div class="xp-header-info">
-                        <span class="xp-title">⚡ <strong>${xpActuel}</strong> / ${xpMaxTotal} XP</span>
-                        <span class="rank-vip-badge ${rangXP === 5 ? 'vip-gold' : ''}">
-                            ${rangXP === 5 ? '👑 RANG 5 VIP' : 'RANG ' + rangXP}
-                        </span>
-                    </div>
+            <!-- PISTE DE PROGRESSION LUMINEUSE ET CHEVAL EN COURSE -->
+            <div class="xp-track-wrapper">
+                <div class="xp-track-bg">
+                    <div class="xp-track-fill" style="width: ${progressionPourcentage}%;">
+                        
+                        <!-- TRAÎNÉE DE LUMIÈRE LASER DERRIÈRE LE CHEVAL -->
+                        <div class="light-laser-trail"></div>
 
-                    <div class="xp-bar-track">
-                        <!-- Jalons des 5 Rangs au-dessus de la barre -->
-                        <div class="rank-steps">
-                            <span class="step ${xpActuel >= 0 ? 'active' : ''}">R1</span>
-                            <span class="step ${xpActuel >= 300 ? 'active' : ''}">R2</span>
-                            <span class="step ${xpActuel >= 600 ? 'active' : ''}">R3</span>
-                            <span class="step ${xpActuel >= 900 ? 'active' : ''}">R4</span>
-                            <span class="step ${xpActuel >= 1200 ? 'active' : ''}">R5 VIP</span>
+                        <!-- CHEVAL LUMINEUX EN GALOP ANIME -->
+                        <div class="luminous-horse-container">
+                            <svg class="running-horse-svg" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+                                <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+                                    <feGaussianBlur stdDeviation="3" result="blur" />
+                                    <feMerge>
+                                        <feMergeNode in="blur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+
+                                <g filter="url(#neonGlow)" stroke="#ffffff" fill="none" stroke-linecap="round">
+                                    <!-- Corps & Tête Lumineux -->
+                                    <path class="horse-body-path" fill="#ffffff" d="M30,30 Q42,24 58,26 Q70,27 82,20 Q86,16 92,10 Q95,13 92,18 Q86,25 80,30 Q70,38 52,39 Q38,40 26,35 Z" />
+                                    
+                                    <!-- Crinière néon cyan qui flotte au vent -->
+                                    <path class="horse-mane-anim" fill="#00ffff" d="M85,14 Q78,5 68,8 Q76,16 82,18 Z" />
+                                    
+                                    <!-- Queue de lumière blanche -->
+                                    <path class="horse-tail-anim" fill="#ffffff" d="M26,33 Q14,30 4,40 Q16,38 24,36 Z" />
+                                    
+                                    <!-- Pattes Avant Animées en Galop -->
+                                    <path class="horse-leg front-left" d="M78,30 L88,48 L96,46" stroke="#ffffff" stroke-width="3" />
+                                    <path class="horse-leg front-right" d="M74,31 L68,46 L78,52" stroke="#00ffff" stroke-width="2.5" />
+                                    
+                                    <!-- Pattes Arrière Animées -->
+                                    <path class="horse-leg back-left" d="M34,37 L24,53 L14,50" stroke="#ffffff" stroke-width="3" />
+                                    <path class="horse-leg back-right" d="M38,38 L44,52 L52,51" stroke="#00ffff" stroke-width="2.5" />
+                                </g>
+                            </svg>
                         </div>
 
-                        <!-- Barre de progression lumineuse -->
-                        <div class="xp-bar-fill" style="width: ${progressionPourcentage}%;">
-                            <!-- Léopard en train de courir à la pointe de la barre -->
-                            <div class="running-leopard">🐆</div>
-                        </div>
                     </div>
                 </div>
-            `;
-        } else {
+            </div>
+
+            <!-- JALONS ET RANGS ESPACÉS EN DESSOUS DE LA BARRE -->
+            <div class="ranks-milestones-row">
+                <div class="milestone-item ${xpActuel >= 0 ? 'active' : ''}">
+                    <span class="m-dot"></span>
+                    <span class="m-label">R1 (0)</span>
+                </div>
+                <div class="milestone-item ${xpActuel >= 300 ? 'active' : ''}">
+                    <span class="m-dot"></span>
+                    <span class="m-label">R2 (300)</span>
+                </div>
+                <div class="milestone-item ${xpActuel >= 600 ? 'active' : ''}">
+                    <span class="m-dot"></span>
+                    <span class="m-label">R3 (600)</span>
+                </div>
+                <div class="milestone-item ${xpActuel >= 900 ? 'active' : ''}">
+                    <span class="m-dot"></span>
+                    <span class="m-label">R4 (900)</span>
+                </div>
+                <div class="milestone-item vip ${xpActuel >= 1200 ? 'active' : ''}">
+                    <span class="m-dot"></span>
+                    <span class="m-label">👑 R5 VIP</span>
+                </div>
+            </div>
+        </div>
+    `;
+} else {
             
             // RANG 0 : COMPTEUR AVEC OBJECTIF 7 JOURS + BOUTON
             const estPretPourModal = totalJoursActivite >= 7;
