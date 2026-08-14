@@ -100,6 +100,140 @@
             0% { opacity: 0.6; transform: scale(0.95); }
             100% { opacity: 1; transform: scale(1.05); }
         }
+        /* Conteneur Moderne XP */
+.xp-modern-container {
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 14px;
+    padding: 15px;
+    margin-top: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    color: #fff;
+}
+
+.xp-header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    font-size: 14px;
+}
+
+.rank-vip-badge {
+    background: #1e293b;
+    border: 1px solid #00ffcc;
+    color: #00ffcc;
+    font-weight: bold;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.rank-vip-badge.vip-gold {
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    color: #000;
+    border: none;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+}
+
+/* Track de la barre */
+.xp-bar-track {
+    position: relative;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    margin-bottom: 5px;
+}
+
+/* Lumière en mouvement sur la ligne */
+.xp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00c6ff, #0072ff, #00ffcc, #ffd700, #00c6ff);
+    background-size: 200% 100%;
+    animation: moveGlowingLight 2s linear infinite;
+    border-radius: 10px;
+    position: relative;
+    transition: width 0.6s ease-in-out;
+    box-shadow: 0 0 12px rgba(0, 255, 204, 0.8);
+}
+
+@keyframes moveGlowingLight {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 200% 0%; }
+}
+
+/* Léopard qui court à la pointe de la barre */
+.running-leopard {
+    position: absolute;
+    right: -14px;
+    top: -22px;
+    font-size: 22px;
+    animation: leopardBounce 0.35s infinite alternate;
+}
+
+@keyframes leopardBounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-5px); }
+}
+
+/* Jalons Rang 1 à Rang 5 VIP */
+.rank-steps {
+    display: flex;
+    justify-content: space-between;
+    position: absolute;
+    top: -22px;
+    width: 100%;
+    padding: 0 2px;
+    box-sizing: border-box;
+}
+
+.step {
+    font-size: 10px;
+    font-weight: bold;
+    color: #64748b;
+    background: #0f172a;
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1px solid #334155;
+}
+
+.step.active {
+    color: #ffd700;
+    border-color: #ffd700;
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+}
+
+/* Modale de Félicitations aux Fleurs (5 Secondes) */
+.fleurs-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 99999;
+}
+
+.fleurs-card {
+    background: linear-gradient(135deg, #1e1b4b, #0f172a);
+    border: 2px solid #ffd700;
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    animation: popIn 0.5s ease;
+}
+
+.fleurs-rain { font-size: 24px; margin: 10px 0; }
+.badge-debloque {
+    font-size: 18px; font-weight: bold; color: #ffd700;
+    margin: 15px 0; background: rgba(255, 215, 0, 0.1);
+    padding: 10px; border-radius: 10px;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
 
         /* --- PARRAINAGE --- */
         .share-box-wrapper { background: rgba(155, 81, 224, 0.05); border: 1px solid rgba(155, 81, 224, 0.2); padding: 16px; border-radius: 16px; margin: 20px; }
@@ -1208,31 +1342,59 @@ const rangActuel = Number(
         const totalJoursActivite = compterTousLesJoursVerts(userHistoryData);
         counterBar.className = "history-counter-bar";
 
-        // 🔒 Verrouillage en béton armé du rang (Lit la mémoire ET le cache local)
+        // 🔒 Verrouillage du rang (Mémoire + Cache)
         const rangActuel = Math.max(
             Number(window.g_userRank || 0),
             Number(userRank || 0),
             Number(localStorage.getItem('app_user_rank_cache') || 0)
         );
 
-        // SI LE RANG EST > 0 (DÉBLOQUÉ) : ON AFFICHE LE COMPTEUR SIMPLE + LA BARRE XP
+        // SI LE RANG EST > 0 : ON AFFICHE LE COMPTEUR + LA BARRE XP AVANCÉE
         if (rangActuel > 0) {
-            // 🎯 Récupération stricte de l'XP (depuis window OU le cache local)
             const xpActuel = Number(window.g_userXP || localStorage.getItem('app_user_xp_cache') || 0);
 
-            // 📊 Calcul de progression (200 XP sur 1000 = 20%)
-            const xpMax = 1000;
-            const progressionPourcentage = Math.min(100, Math.max(5, (xpActuel % xpMax) / (xpMax / 100)));
+            // 🎯 PALIER : 300 XP par Rang | TOTAL MAX : 1500 XP (Rang 5 VIP)
+            const xpMaxTotal = 1500;
+            const progressionPourcentage = Math.min(100, Math.max(3, (xpActuel / xpMaxTotal) * 100));
+
+            // Calcul dynamique du rang selon l'XP (1 à 5 VIP)
+            const rangXP = Math.min(5, Math.floor(xpActuel / 300) + 1);
+
+            // 🌸 DÉCLENCHEMENT UNIQUE DE LA MODALE DE FÉLICITATIONS (5 SECONDES)
+            const dernierRangCelebre = Number(localStorage.getItem('app_last_celebrated_rank') || 1);
+            if (rangXP > dernierRangCelebre && xpActuel >= ((dernierRangCelebre) * 300)) {
+                localStorage.setItem('app_last_celebrated_rank', rangXP);
+                lancerCelebrationFleurs(rangXP);
+            }
 
             counterBar.innerHTML = `
                 <div class="green-days-counter">
                     <span>📅 Jours enregistrés :</span>
                     <span class="green-days-badge">${totalJoursActivite}</span>
                 </div>
-                <div class="xp-progress-wrapper">
-                    <div class="xp-bar-outer">
-                        <div class="xp-bar-inner" style="width: ${progressionPourcentage}%;">
-                            <span class="xp-tip-badge">XP ${xpActuel}</span>
+
+                <div class="xp-modern-container">
+                    <div class="xp-header-info">
+                        <span class="xp-title">⚡ <strong>${xpActuel}</strong> / ${xpMaxTotal} XP</span>
+                        <span class="rank-vip-badge ${rangXP === 5 ? 'vip-gold' : ''}">
+                            ${rangXP === 5 ? '👑 RANG 5 VIP' : 'RANG ' + rangXP}
+                        </span>
+                    </div>
+
+                    <div class="xp-bar-track">
+                        <!-- Jalons des 5 Rangs au-dessus de la barre -->
+                        <div class="rank-steps">
+                            <span class="step ${xpActuel >= 0 ? 'active' : ''}">R1</span>
+                            <span class="step ${xpActuel >= 300 ? 'active' : ''}">R2</span>
+                            <span class="step ${xpActuel >= 600 ? 'active' : ''}">R3</span>
+                            <span class="step ${xpActuel >= 900 ? 'active' : ''}">R4</span>
+                            <span class="step ${xpActuel >= 1200 ? 'active' : ''}">R5 VIP</span>
+                        </div>
+
+                        <!-- Barre de progression lumineuse -->
+                        <div class="xp-bar-fill" style="width: ${progressionPourcentage}%;">
+                            <!-- Léopard en train de courir à la pointe de la barre -->
+                            <div class="running-leopard">🐆</div>
                         </div>
                     </div>
                 </div>
@@ -1849,6 +2011,33 @@ onAuthStateChanged(auth, async (user) => {
     window.logout = () => {
         signOut(auth);
     };
+    function lancerCelebrationFleurs(rangAtteint) {
+    const isVIP = rangAtteint === 5;
+    const modalHtml = `
+        <div id="celebration-fleurs-modal" class="fleurs-overlay">
+            <div class="fleurs-card">
+                <div class="fleurs-rain">🌸 🌺 🌼 🌻 🌸 🌺 💐</div>
+                <h2>🎉 FÉLICITATIONS ! 🎉</h2>
+                <p>Vous avez franchi un nouveau palier !</p>
+                <div class="badge-debloque">
+                    ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + rangAtteint + ' DÉBLOQUÉ ! ⭐'}
+                </div>
+                <div class="fleurs-rain">💐 🐆 💫 🌸 🌺</div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Disparaît automatiquement après 5 secondes d'affichage
+    setTimeout(() => {
+        const modal = document.getElementById('celebration-fleurs-modal');
+        if (modal) {
+            modal.style.opacity = '0';
+            modal.style.transition = 'opacity 0.8s ease';
+            setTimeout(() => modal.remove(), 800);
+        }
+    }, 5000);
+}
 </script>
 </body>
 </html>
