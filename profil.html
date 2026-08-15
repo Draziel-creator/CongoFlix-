@@ -102,15 +102,14 @@
             0% { opacity: 0.6; transform: scale(0.95); }
             100% { opacity: 1; transform: scale(1.05); }
         }
-/* --- FIX DU CONTENEUR PARENT (Évite l'écrasement à droite) --- */
+/* --- FIX CONTENEUR ET CARTE --- */
 #counterBar, .counter-bar-container {
     display: flex !important;
-    flex-direction: column !important; /* Force l'affichage l'un sous l'autre */
+    flex-direction: column !important;
     width: 100% !important;
     box-sizing: border-box !important;
 }
 
-/* --- CARTE XP MODERNE LARGE (FULL-WIDTH) --- */
 .xp-modern-card {
     width: 100% !important;
     box-sizing: border-box !important;
@@ -122,7 +121,7 @@
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
 }
 
 .xp-card-header {
@@ -175,7 +174,7 @@
 /* --- TRACK DE PROGRESSION --- */
 .xp-track-wrapper {
     position: relative;
-    padding-top: 35px; /* Espace pour le cheval en haut */
+    padding-top: 40px;
     width: 100%;
 }
 
@@ -207,13 +206,13 @@
     border-radius: 10px;
 }
 
-/* --- CHEVAL EN GALOP HD (100% GRATUIT, EFFET LUMINEUX BLANC/NEON) --- */
+/* --- CHEVAL : DIRECTION DROITE & GALOP HD --- */
 .luminous-horse-container {
     position: absolute;
     right: -25px;
-    top: -42px;
-    width: 55px;
-    height: 45px;
+    top: -48px;
+    width: 60px;
+    height: 50px;
     pointer-events: none;
     z-index: 10;
 }
@@ -222,27 +221,36 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
-    /* Transformation en néon blanc lumineux avec halo cyan */
-    filter: brightness(0) invert(1) drop-shadow(0 0 6px #00ffcc) drop-shadow(0 0 12px #ffffff);
+    /* Reverse horizontal pour qu'il coure vers la DROITE + Effet Néon Blanc/Cyan */
+    transform: scaleX(-1);
+    filter: brightness(0) invert(1) drop-shadow(0 0 6px #00ffcc) drop-shadow(0 0 10px #ffffff);
 }
 
-/* --- JALONS DES RANGS --- */
+/* --- SYNCHRONISATION EXACTE DES JALONS SUR LA BARRE --- */
 .ranks-milestones-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    position: relative;
     width: 100%;
-    margin-top: 4px;
+    height: 32px;
+    margin-top: 6px;
 }
 
 .milestone-item {
+    position: absolute;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 3px;
     opacity: 0.35;
+    transform: translateX(-50%);
     transition: all 0.3s ease;
 }
+
+/* Positionnement exact selon le calcul (XP / 1500) */
+.milestone-item.m-r1 { left: 0%; transform: translateX(0%); }
+.milestone-item.m-r2 { left: 20%; }
+.milestone-item.m-r3 { left: 40%; }
+.milestone-item.m-r4 { left: 60%; }
+.milestone-item.m-r5 { left: 80%; }
 
 .milestone-item.active {
     opacity: 1;
@@ -269,6 +277,7 @@
     font-size: 11px;
     font-weight: bold;
     color: #94a3b8;
+    white-space: nowrap;
 }
 
 .milestone-item.active .m-label {
@@ -1395,10 +1404,11 @@ const rangActuel = Math.max(
 if (rangActuel > 0) {
     const xpActuel = Number(window.g_userXP || localStorage.getItem('app_user_xp_cache') || 0);
     const xpMaxTotal = 1500;
-    const progressionPourcentage = Math.min(100, Math.max(4, (xpActuel / xpMaxTotal) * 100));
+    
+    // Calcul exact du pourcentage
+    const progressionPourcentage = Math.min(100, Math.max(2, (xpActuel / xpMaxTotal) * 100));
     const rangXP = Math.min(5, Math.floor(xpActuel / 300) + 1);
 
-    // Célébration unique à 300 XP par palier
     const dernierRangCelebre = Number(localStorage.getItem('app_last_celebrated_rank') || 1);
     if (rangXP > dernierRangCelebre && xpActuel >= (dernierRangCelebre * 300)) {
         localStorage.setItem('app_last_celebrated_rank', rangXP);
@@ -1412,7 +1422,6 @@ if (rangActuel > 0) {
         </div>
 
         <div class="xp-modern-card">
-            <!-- ENTÊTE -->
             <div class="xp-card-header">
                 <div class="xp-title-group">
                     <span class="xp-bolt">⚡</span>
@@ -1423,43 +1432,40 @@ if (rangActuel > 0) {
                 </span>
             </div>
 
-            <!-- BARRE DE PROGRESSION & CHEVAL LUMINEUX -->
             <div class="xp-track-wrapper">
                 <div class="xp-track-bg">
                     <div class="xp-track-fill" style="width: ${progressionPourcentage}%;">
-                        
                         <div class="light-laser-trail"></div>
 
-                        <!-- CHEVAL EN GALOP HD TRANSPARENT (100% GRATUIT VIA CDN) -->
+                        <!-- VRAI GALOP ANIMÉ ORIENTÉ À DROITE -->
                         <div class="luminous-horse-container">
                             <img class="luminous-horse-img" 
-                                 src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Horse.png" 
-                                 alt="Cheval Lumineux" />
+                                 src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Yyb2s2ZjhzaGk0bnllbnpva3I0ZXptNDJ5eWdqNGN4dWc0dW1tciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/L1A71120wL4jQ9C168/giphy.gif" 
+                                 alt="Cheval en galop" />
                         </div>
-
                     </div>
                 </div>
             </div>
 
-            <!-- JALONS DE RANG (R1 À R5 VIP) -->
+            <!-- JALONS ALIGNÉS R1 (0%), R2 (20%), R3 (40%), R4 (60%), R5 (80%) -->
             <div class="ranks-milestones-row">
-                <div class="milestone-item ${xpActuel >= 0 ? 'active' : ''}">
+                <div class="milestone-item m-r1 ${xpActuel >= 0 ? 'active' : ''}">
                     <span class="m-dot"></span>
                     <span class="m-label">R1 (0)</span>
                 </div>
-                <div class="milestone-item ${xpActuel >= 300 ? 'active' : ''}">
+                <div class="milestone-item m-r2 ${xpActuel >= 300 ? 'active' : ''}">
                     <span class="m-dot"></span>
                     <span class="m-label">R2 (300)</span>
                 </div>
-                <div class="milestone-item ${xpActuel >= 600 ? 'active' : ''}">
+                <div class="milestone-item m-r3 ${xpActuel >= 600 ? 'active' : ''}">
                     <span class="m-dot"></span>
                     <span class="m-label">R3 (600)</span>
                 </div>
-                <div class="milestone-item ${xpActuel >= 900 ? 'active' : ''}">
+                <div class="milestone-item m-r4 ${xpActuel >= 900 ? 'active' : ''}">
                     <span class="m-dot"></span>
                     <span class="m-label">R4 (900)</span>
                 </div>
-                <div class="milestone-item vip ${xpActuel >= 1200 ? 'active' : ''}">
+                <div class="milestone-item m-r5 vip ${xpActuel >= 1200 ? 'active' : ''}">
                     <span class="m-dot"></span>
                     <span class="m-label">👑 R5 VIP</span>
                 </div>
