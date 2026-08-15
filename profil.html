@@ -1520,7 +1520,39 @@ const rangActuel = Number(
         const totalJoursActivite = compterTousLesJoursVerts(userHistoryData);
         counterBar.className = "history-counter-bar";
 
-// 🔒 Verrouillage du rang
+// 🌸 1. DÉCLARATION GLOBALE DE LA MODALE (Accessible partout)
+window.lancerCelebrationFleurs = function(rangAtteint) {
+    // Si la modale existe déjà à l'écran, on évite de la réinsérer
+    if (document.getElementById('celebration-fleurs-modal')) return;
+
+    const isVIP = rangAtteint === 5;
+    const modalHtml = `
+        <div id="celebration-fleurs-modal" class="fleurs-overlay">
+            <div class="fleurs-card">
+                <div class="fleurs-rain">🌸 🌺 🌼 🌻 🌸 🌺 💐</div>
+                <h2>🎉 FÉLICITATIONS ! 🎉</h2>
+                <p>Vous avez franchi un nouveau palier !</p>
+                <div class="badge-debloque ${isVIP ? 'vip' : ''}">
+                    ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + rangAtteint + ' DÉBLOQUÉ ! ⭐'}
+                </div>
+                <div class="fleurs-rain">💐 🐆 💫 🌸 🌺</div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Disparition automatique après 5 secondes
+    setTimeout(() => {
+        const modal = document.getElementById('celebration-fleurs-modal');
+        if (modal) {
+            modal.style.opacity = '0';
+            modal.style.transition = 'opacity 0.8s ease';
+            setTimeout(() => modal.remove(), 800);
+        }
+    }, 5000);
+};
+
+// 🔒 2. LOGIQUE DU CALCUL DU RANG ET DU CHEVAL
 const rangActuel = Math.max(
     Number(window.g_userRank || 0),
     Number(userRank || 0),
@@ -1531,15 +1563,27 @@ if (rangActuel > 0) {
     const xpActuel = Number(window.g_userXP || localStorage.getItem('app_user_xp_cache') || 0);
     const xpMaxTotal = 1500;
     
-    // Calcul exact de la progression sur la barre
     const progressionPourcentage = Math.min(100, Math.max(2, (xpActuel / xpMaxTotal) * 100));
     const rangXP = Math.min(5, Math.floor(xpActuel / 300) + 1);
 
-    // 🔗 URLs des animations Lottie
+    // 🏆 VÉRIFICATION DE LA MONTÉE DE RANG
+    const dernierRangCelebre = Number(localStorage.getItem('app_last_celebrated_rank') || 0);
+
+    if (rangXP > dernierRangCelebre && xpActuel > 0) {
+        // Sauvegarde du rang fêté pour ne pas ré-afficher la modale à chaque rafraîchissement
+        localStorage.setItem('app_last_celebrated_rank', rangXP);
+        
+        setTimeout(() => {
+            if (typeof window.lancerCelebrationFleurs === 'function') {
+                window.lancerCelebrationFleurs(rangXP);
+            }
+        }, 500);
+    }
+
+    // 🔗 URLs Lottie
     const urlCheval1Marche = "https://lottie.host/c3ddde88-585e-4b6b-a6e9-2c31d7f32e64/JBtsMUhNZy.json";
     const urlCheval2Course = "https://lottie.host/0de37597-dffe-4971-a7f4-5d1dba50714d/t37vcDyeQY.json";
 
-    // ⚙️ Logique de bascule entre Marche et Galop
     let urlChevalActuel = urlCheval1Marche;
     let classeInversion = "";
     let vitesseCheval = 1.0;
@@ -1551,20 +1595,6 @@ if (rangActuel > 0) {
         vitesseCheval = tableVitesses[rangXP] || 1.2;
     }
 
-    // 🏆 VÉRIFICATION DE LA MONTÉE DE RANG
-    const dernierRangCelebre = Number(localStorage.getItem('app_last_celebrated_rank') || 1);
-
-    if (rangXP > dernierRangCelebre) {
-        // Un nouveau rang a été atteint : on enregistre le nouveau palier
-        localStorage.setItem('app_last_celebrated_rank', rangXP);
-        
-        // Petite temporisation pour laisser le DOM charger avant de lancer la modale
-        setTimeout(() => {
-            lancerCelebrationFleurs(rangXP);
-        }, 300);
-    }
-
-    // Génération de l'interface XP
     counterBar.innerHTML = `
         <div class="green-days-counter">
             <span>📅 Jours enregistrés :</span>
@@ -1586,7 +1616,6 @@ if (rangActuel > 0) {
                 <div class="xp-track-bg">
                     <div class="xp-track-fill" style="width: ${progressionPourcentage}%;">
                         <div class="light-laser-trail"></div>
-
                         <div class="luminous-horse-container">
                             <lottie-player 
                                 src="${urlChevalActuel}" 
@@ -1627,35 +1656,6 @@ if (rangActuel > 0) {
     `;
 } else {
 
-// 🌸 Fonction de génération du Modal Plein Écran
-function lancerCelebrationFleurs(rangAtteint) {
-    const isVIP = rangAtteint === 5;
-    const modalHtml = `
-        <div id="celebration-fleurs-modal" class="fleurs-overlay">
-            <div class="fleurs-card">
-                <div class="fleurs-rain">🌸 🌺 🌼 🌻 🌸 🌺 💐</div>
-                <h2>🎉 FÉLICITATIONS ! 🎉</h2>
-                <p>Vous avez franchi un nouveau palier !</p>
-                <div class="badge-debloque ${isVIP ? 'vip' : ''}">
-                    ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + rangAtteint + ' DÉBLOQUÉ ! ⭐'}
-                </div>
-                <div class="fleurs-rain">💐 🐆 💫 🌸 🌺</div>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-    // Disparaît automatiquement après 5 secondes
-    setTimeout(() => {
-        const modal = document.getElementById('celebration-fleurs-modal');
-        if (modal) {
-            modal.style.opacity = '0';
-            modal.style.transition = 'opacity 0.8s ease';
-            setTimeout(() => modal.remove(), 800);
-        }
-    }, 5000);
-}
-            
             // RANG 0 : COMPTEUR AVEC OBJECTIF 7 JOURS + BOUTON
             const estPretPourModal = totalJoursActivite >= 7;
 
