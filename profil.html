@@ -2055,31 +2055,38 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
 }
     
    function applyRankDesign(rankLevel) {
-    globalUserRank = parseInt(rankLevel) || 0;
+    // Conversion stricte du rang
+    globalUserRank = parseInt(rankLevel, 10) || 0;
     const currentRank = RANKS_METADATA[globalUserRank] || RANKS_METADATA[0];
     
+    // Application de la couleur
     document.documentElement.style.setProperty('--rank-color', currentRank.color);
     
+    // Badge du profil
     const badgeElement = document.getElementById('profile-rank-badge');
     if (badgeElement) {
         badgeElement.style.border = `1px solid ${currentRank.color}`;
         badgeElement.innerHTML = `<i class="${currentRank.medal}" style="color:${currentRank.color}"></i> Rang ${globalUserRank} : ${currentRank.name}`;
     }
     
+    // GESTION DU MASQUE DE GEL
     const lockOverlay = document.getElementById('lock-overlay');
     if (lockOverlay) {
-        // Si Rang 0 = Gelé, Si Rang > 0 = Dégelé (Masqué)
-        if (globalUserRank === 0) {
-            lockOverlay.classList.remove('hidden');
-            lockOverlay.style.display = 'flex'; // Affiche le masque
-        } else {
+        if (globalUserRank > 0) {
+            // RANG 1 OU PLUS : ON CACHE LE GEL
             lockOverlay.classList.add('hidden');
-            lockOverlay.style.display = 'none'; // Dégèle et cache le masque
+            lockOverlay.style.setProperty('display', 'none', 'important');
+        } else {
+            // RANG 0 : ON AFFICHE LE GEL
+            lockOverlay.classList.remove('hidden');
+            lockOverlay.style.setProperty('display', 'flex', 'important');
         }
     }
-    evalWithdrawGateStatus();
-}
 
+    if (typeof evalWithdrawGateStatus === "function") {
+        evalWithdrawGateStatus();
+    }
+}
 function evalWithdrawGateStatus() {
     const btn = document.getElementById('withdraw-gate-button');
     if (btn) btn.disabled = false;
