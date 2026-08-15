@@ -194,11 +194,11 @@
 }
 
 /* ============================================================
-   3. BARRE DE PROGRESSION & LOTTIE VECTORIEL
+   3. BARRE DE PROGRESSION & CHEVAL ANGÉLIQUE
    ============================================================ */
 .xp-track-wrapper {
     position: relative !important;
-    padding-top: 45px !important; /* Espace dégagé pour le Lottie en haut */
+    padding-top: 45px !important;
     width: 100% !important;
     box-sizing: border-box !important;
 }
@@ -221,17 +221,19 @@
     box-shadow: 0 0 12px rgba(0, 255, 204, 0.8) !important;
 }
 
+/* Traînée de lumière laser néon sous la barre */
 .light-laser-trail {
     position: absolute !important;
     right: 0 !important;
     top: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.9) 100%) !important;
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 204, 0.5) 70%, rgba(255, 255, 255, 0.95) 100%) !important;
     border-radius: 10px !important;
+    box-shadow: 0 0 15px #00ffcc, 0 0 25px rgba(255, 255, 255, 0.9) !important;
 }
 
-/* Ajustement du composant Lottie */
+/* Container du cheval + Traînée d'énergie divine derrière lui */
 .luminous-horse-container {
     position: absolute !important;
     right: -30px !important;
@@ -242,10 +244,30 @@
     z-index: 10 !important;
 }
 
+/* Halo de lumière angélique projeté derrière le cheval qui court */
+.luminous-horse-container::before {
+    content: '' !important;
+    position: absolute !important;
+    width: 60px !important;
+    height: 25px !important;
+    bottom: 12px !important;
+    left: -30px !important;
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.9) 0%, rgba(0, 255, 204, 0.6) 50%, transparent 80%) !important;
+    filter: blur(4px) !important;
+    z-index: -1 !important;
+}
+
+/* Effet Cheval Angélique : Blanc pur, net avec aura cyan/or */
 .lottie-horse-element {
     width: 100% !important;
     height: 100% !important;
-    filter: brightness(0) invert(1) drop-shadow(0 0 6px #00ffcc) drop-shadow(0 0 12px #ffffff) !important;
+    /* Transformation en blanc angélique + contour néon fin ultra propre */
+    filter: brightness(0) invert(1) drop-shadow(0 0 2px #00ffcc) drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 12px #00e5ff) !important;
+}
+
+/* Inversion horizontale uniquement pour le Cheval 2 (Course) */
+.lottie-horse-element.flip-horse {
+    transform: scaleX(-1) !important;
 }
 
 /* ============================================================
@@ -1435,6 +1457,25 @@ if (rangActuel > 0) {
     const progressionPourcentage = Math.min(100, Math.max(2, (xpActuel / xpMaxTotal) * 100));
     const rangXP = Math.min(5, Math.floor(xpActuel / 300) + 1);
 
+    // 🔗 Tes liens de fichiers Lottie JSON directs
+    const urlCheval1Marche = "https://lottie.host/c3ddde88-585e-4b6b-a6e9-2c31d7f32e64/JBtsMUhNZy.json";
+    const urlCheval2Course = "https://lottie.host/0de37597-dffe-4971-a7f4-5d1dba50714d/t37vcDyeQY.json";
+
+    // ⚙️ Logique de bascule entre Cheval 1 (Marche) et Cheval 2 (Galop)
+    let urlChevalActuel = urlCheval1Marche;
+    let classeInversion = ""; // Pas d'inversion pour la marche
+    let vitesseCheval = 1.0;
+
+    if (rangXP >= 2) {
+        // Rang 2 et + : On active le cheval de course inversé
+        urlChevalActuel = urlCheval2Course;
+        classeInversion = "flip-horse"; // Inversion horizontale CSS
+
+        // Accélération de la vitesse à chaque nouveau Rang
+        const tableVitesses = { 2: 1.2, 3: 1.6, 4: 2.0, 5: 2.5 };
+        vitesseCheval = tableVitesses[rangXP] || 1.2;
+    }
+
     counterBar.innerHTML = `
         <div class="green-days-counter">
             <span>📅 Jours enregistrés :</span>
@@ -1457,13 +1498,13 @@ if (rangActuel > 0) {
                     <div class="xp-track-fill" style="width: ${progressionPourcentage}%;">
                         <div class="light-laser-trail"></div>
 
-                        <!-- CHEVAL LOTTIE VECTORIEL 60 FPS (100% GRATUIT) -->
+                        <!-- CHEVAL ANGÉLIQUE AVEC TRAÎNÉE DE LUMIÈRE -->
                         <div class="luminous-horse-container">
                             <lottie-player 
-                                src="https://assets2.lottiefiles.com/packages/lf20_j1adxtyb.json" 
+                                src="${urlChevalActuel}" 
                                 background="transparent" 
-                                speed="1.2" 
-                                class="lottie-horse-element"
+                                speed="${vitesseCheval}" 
+                                class="lottie-horse-element ${classeInversion}"
                                 loop 
                                 autoplay>
                             </lottie-player>
@@ -1497,7 +1538,7 @@ if (rangActuel > 0) {
             </div>
         </div>
     `;
-} else {
+}
             
             // RANG 0 : COMPTEUR AVEC OBJECTIF 7 JOURS + BOUTON
             const estPretPourModal = totalJoursActivite >= 7;
