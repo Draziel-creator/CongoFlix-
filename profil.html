@@ -1566,13 +1566,42 @@ const rangActuel = Number(
 
 // 🌸 1. DÉCLARATION GLOBALE DE LA MODALE (Accessible partout)
         window.lancerCelebrationFleurs = function(rangAtteint) {
-    if (document.getElementById('celebration-fleurs-modal')) return;
+    // 1. Suppression d'une ancienne modale si elle existe
+    const ancienneModal = document.getElementById('celebration-fleurs-modal');
+    if (ancienneModal) ancienneModal.remove();
 
     if (typeof jouerVoixFelicitations === "function") {
         jouerVoixFelicitations();
     }
 
-    const isVIP = rangAtteint === 5;
+    // Calcul du nouveau rang (+1 basé sur le rang actuel)
+    const rangActuel = Number(window.g_userRank || localStorage.getItem('app_user_rank_cache') || 0);
+    const nouveauRang = Math.max(rangAtteint, rangActuel + 1);
+    const isVIP = nouveauRang === 5;
+
+    // 2. Injection automatique du CSS d'animation des fleurs/confettis
+    if (!document.getElementById('fleurs-animation-style')) {
+        const style = document.createElement('style');
+        style.id = 'fleurs-animation-style';
+        style.innerHTML = `
+            .confetti-particle {
+                position: fixed !important;
+                top: -50px !important;
+                font-size: 28px !important;
+                user-select: none !important;
+                pointer-events: none !important;
+                z-index: 1000000 !important;
+                animation: fallParticle linear infinite !important;
+            }
+            @keyframes fallParticle {
+                0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+                100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // 3. Création du DOM de la modale
     const modal = document.createElement('div');
     modal.id = 'celebration-fleurs-modal';
     modal.className = 'fleurs-overlay';
@@ -1583,31 +1612,31 @@ const rangActuel = Number(
             <h2>🎉 FÉLICITATIONS ! 🎉</h2>
             <p>Vous avez franchi un nouveau palier !</p>
             <div class="badge-debloque ${isVIP ? 'vip' : ''}">
-                ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + rangAtteint + ' DÉBLOQUÉ ! ⭐'}
+                ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + nouveauRang + ' DÉBLOQUÉ ! ⭐'}
             </div>
             <div class="fleurs-rain">💐 🐆 💫 🌸 🌺</div>
             
             <button id="btn-valider-rang" class="btn-fleurs-ok">
-                C'EST PARTI ! 🚀
+                OBTENIR MON RANG (+1) 🚀
             </button>
         </div>
     `;
 
     document.body.appendChild(modal);
 
-    // 🌸 Pluie de fleurs & confettis animés sur toute l'ouverture
+    // 4. Génération de la pluie de fleurs (30 particules)
     const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟", "💐"];
-    for (let i = 0; i < 35; i++) {
+    for (let i = 0; i < 30; i++) {
         const p = document.createElement('div');
         p.className = 'confetti-particle';
         p.innerText = symboles[Math.floor(Math.random() * symboles.length)];
         p.style.left = Math.random() * 100 + 'vw';
         p.style.animationDuration = (Math.random() * 3 + 2.5) + 's';
-        p.style.animationDelay = (Math.random() * 1.5) + 's';
+        p.style.animationDelay = (Math.random() * 2) + 's';
         modal.appendChild(p);
     }
 
-    // 🔗 Écouteur de clic avec écriture Firestore v10
+    // 5. Clic sur le bouton : Écriture Firestore + Fermeture immédiate
     const btnValider = modal.querySelector('#btn-valider-rang');
     btnValider.onclick = async function(e) {
         e.preventDefault();
@@ -1617,69 +1646,52 @@ const rangActuel = Number(
             window.speechSynthesis.cancel();
         }
 
-        btnValider.disabled = true;
-        btnValider.style.opacity = "0.7";
-        btnValider.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Validation...`;
-
-        // Récupération dynamique de l'UID
-        const uid = (typeof auth !== "undefined" && auth.currentUser ? auth.currentUser.uid : null)
+        // Récupération de l'UID (compatible toutes configurations Firebase)
+        const uid = (typeof auth !== "undefined" && auth?.currentUser ? auth.currentUser.uid : null)
+            || (typeof firebase !== "undefined" && firebase.auth()?.currentUser ? firebase.auth().currentUser.uid : null)
             || window.g_currentUserId 
             || (typeof userId !== "undefined" ? userId : null);
 
         if (!uid) {
-            console.error("❌ Session utilisateur introuvable.");
-            btnValider.disabled = false;
-            btnValider.style.opacity = "1";
-            btnValider.innerHTML = `Réessayer 🚀`;
-            if (typeof afficherAlertePersonnalisee === "function") {
-                afficherAlertePersonnalisee("Session non détectée. Veuillez rafraîchir la page.", "Erreur de Session", "Fermer");
-            }
+            console.error("❌ Impossible de trouver l'UID utilisateur.");
+            alert("Erreur de session. Veuillez rafraîchir la page.");
             return;
         }
 
         try {
-            // ÉCRITURE DANS FIRESTORE (v10)
+            // Écriture Firestore v10 / v8
             if (typeof doc === "function" && typeof setDoc === "function" && typeof db !== "undefined") {
-                const userDocRef = doc(db, "users", uid);
-                await setDoc(userDocRef, {
-                    rank: rangAtteint,
-                    rang: rangAtteint,
+                await setDoc(doc(db, "users", uid), {
+                    rank: nouveauRang,
+                    rang: nouveauRang,
                     rankNotified: true
                 }, { merge: true });
-                console.log("✅ Champ 'rank' mis à jour dans Firestore v10 :", rangAtteint);
+            } else if (typeof firebase !== "undefined" && firebase.firestore) {
+                await firebase.firestore().collection('users').doc(uid).set({
+                    rank: nouveauRang,
+                    rang: nouveauRang,
+                    rankNotified: true
+                }, { merge: true });
             }
 
-            // Mises à jour locales
-            window.g_userRank = rangAtteint;
-            localStorage.setItem('app_user_rank_cache', rangAtteint);
-            localStorage.setItem('app_last_celebrated_rank', rangAtteint);
+            console.log("✅ Firestore mis à jour avec le rang :", nouveauRang);
 
-            // Fermeture douce de la modale
-            modal.style.opacity = '0';
-            modal.style.transition = 'opacity 0.5s ease';
-            setTimeout(() => modal.remove(), 500);
+            // Mise à jour du cache local
+            window.g_userRank = nouveauRang;
+            localStorage.setItem('app_user_rank_cache', nouveauRang);
+            localStorage.setItem('app_last_celebrated_rank', nouveauRang);
 
-            // Actualisation de l'affichage UI si la fonction existe
+            // Fermeture immédiate et suppression de la modale
+            modal.remove();
+
+            // Rafraîchissement UI si disponible
             if (typeof generateHistoryUI === "function" && typeof g_userHistoryData !== "undefined") {
-                generateHistoryUI(g_userHistoryData, rangAtteint, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
-            }
-
-            if (typeof afficherAlertePersonnalisee === "function") {
-                afficherAlertePersonnalisee(
-                    `Félicitations ! Vous êtes désormais officiellement au <strong>RANG ${rangAtteint}</strong> !`,
-                    "Rang Débloqué !",
-                    "Super !"
-                );
+                generateHistoryUI(g_userHistoryData, nouveauRang, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
             }
 
         } catch (error) {
-            console.error("❌ Erreur Firestore lors de la validation :", error);
-            btnValider.disabled = false;
-            btnValider.style.opacity = "1";
-            btnValider.innerHTML = `Réessayer`;
-            if (typeof afficherAlertePersonnalisee === "function") {
-                afficherAlertePersonnalisee("Erreur de sauvegarde : " + error.message, "Oups", "Fermer");
-            }
+            console.error("❌ Erreur d'écriture Firestore :", error);
+            alert("Erreur lors de la mise à jour : " + error.message);
         }
     };
 };
