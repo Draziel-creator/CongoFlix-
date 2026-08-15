@@ -822,19 +822,21 @@
     const db = getFirestore(app);
 
     // 3. SYNCHRONISATION EN DIRECT (PLACÉ APRÈS L'INITIALISATION DE AUTH ET DB)
+    var g_currentUserId = null; // 🟢 Déclaré ici en "var" pour éviter tout blocage d'initialisation
+
     onAuthStateChanged(auth, (user) => {
         if (user) {
             g_currentUserId = user.uid;
 
-            // Référence vers le document utilisateur connecté
+            // Référence vers le document utilisateur connecté dans 'users'
             const userRef = doc(db, "users", user.uid);
 
-            // Écouteur temps réel (Met à jour l'XP et le Rang automatiquement)
+            // Écouteur temps réel (Met à jour l'XP, le Rang et DÉGÈLE l'affichage automatiquement)
             onSnapshot(userRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const userData = docSnap.data() || {};
 
-                    // Lecture stricte de 'xp' en minuscule et du rang
+                    // Lecture stricte de 'xp' et du rang ('rank' ou 'rang')
                     const xpLien = Number(userData.xp !== undefined ? userData.xp : 0);
                     const rangLien = Number(userData.rank !== undefined ? userData.rank : (userData.rang || 0));
 
@@ -844,7 +846,12 @@
                     localStorage.setItem('app_user_xp_cache', xpLien);
                     localStorage.setItem('app_user_rank_cache', rangLien);
 
-                    // Rafraîchissement de la barre d'XP à l'écran
+                    // 🟢 APPLIQUE LE DESIGN ET DÉGÈLE/MASQUE LE LOCK-OVERLAY SI RANG > 0
+                    if (typeof applyRankDesign === "function") {
+                        applyRankDesign(rangLien);
+                    }
+
+                    // Rafraîchissement de la barre d'historique/dates si la fonction existe
                     if (typeof generateHistoryUI === "function" && typeof g_userHistoryData !== "undefined") {
                         generateHistoryUI(g_userHistoryData, rangLien, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
                     }
@@ -854,31 +861,7 @@
             });
         }
     });
-    // 🟢 LECTURE EN DIRECT DU RANG DANS LA COLLECTION 'users'
-if (typeof onSnapshot === "function") {
-    onSnapshot(doc(db, "users", user.uid), (userDocSnap) => {
-        if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            // Récupère 'rank' ou 'rang'
-            const liveRank = Number(userData.rank ?? userData.rang ?? 0);
-            
-            // Met à jour la variable globale et applique le design (dégèle si > 0)
-            window.g_userRank = liveRank;
-            localStorage.setItem('app_user_rank_cache', liveRank);
-            applyRankDesign(liveRank);
-        }
-    });
-} else {
-    // Recours si onSnapshot n'est pas importé (lecture getDoc)
-    const userDocSnap = await getDoc(doc(db, "users", user.uid));
-    if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
-        const liveRank = Number(userData.rank ?? userData.rang ?? 0);
-        window.g_userRank = liveRank;
-        applyRankDesign(liveRank);
-    }
-}
-
+    
     // 4. LE RESTE DE TES VARIABLES GLOBALES ET FONCTIONS
     let isLoginMode = true;
     let globalConditionsMet = false;
@@ -1375,7 +1358,7 @@ let g_userRank = 0;
 let g_userXP = 0;
 let g_userStartDateISO = null;
 let g_dateAujourdhuiObj = new Date();
-let g_currentUserId = null;
+var g_currentUserId = null;
 const moisNomsCourts = ["Janv.", "Févr.", "Mars", "Avril", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
 
 window.changerMoisAffiche = function(delta) {
