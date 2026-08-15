@@ -412,6 +412,28 @@
     from { transform: scale(0.7); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
+        .btn-fleurs-ok {
+    margin-top: 20px !important;
+    background: linear-gradient(135deg, #00ffcc, #00b386) !important;
+    color: #0f172a !important;
+    border: none !important;
+    padding: 12px 30px !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    border-radius: 25px !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.4) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.btn-fleurs-ok:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 25px rgba(0, 255, 204, 0.7) !important;
+}
+
+.btn-fleurs-ok:active {
+    transform: scale(0.95) !important;
+}
         
         /* --- PARRAINAGE --- */
         .share-box-wrapper { background: rgba(155, 81, 224, 0.05); border: 1px solid rgba(155, 81, 224, 0.2); padding: 16px; border-radius: 16px; margin: 20px; }
@@ -1520,9 +1542,7 @@ const rangActuel = Number(
         const totalJoursActivite = compterTousLesJoursVerts(userHistoryData);
         counterBar.className = "history-counter-bar";
 
-// 🌸 1. DÉCLARATION GLOBALE DE LA MODALE (Accessible partout)
 window.lancerCelebrationFleurs = function(rangAtteint) {
-    // Si la modale existe déjà à l'écran, on évite de la réinsérer
     if (document.getElementById('celebration-fleurs-modal')) return;
 
     const isVIP = rangAtteint === 5;
@@ -1536,22 +1556,45 @@ window.lancerCelebrationFleurs = function(rangAtteint) {
                     ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + rangAtteint + ' DÉBLOQUÉ ! ⭐'}
                 </div>
                 <div class="fleurs-rain">💐 🐆 💫 🌸 🌺</div>
+                
+                <!-- BOUTON DE VALIDATION ET MISE À JOUR FIREBASE -->
+                <button id="btn-valider-rang" class="btn-fleurs-ok">
+                    C'EST PARTI ! 🚀
+                </button>
             </div>
         </div>
     `;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // Disparition automatique après 5 secondes
-    setTimeout(() => {
+    // Écouteur de clic sur le bouton OK
+    document.getElementById('btn-valider-rang').addEventListener('click', async () => {
         const modal = document.getElementById('celebration-fleurs-modal');
+        const btn = document.getElementById('btn-valider-rang');
+        
+        btn.innerText = "Mise à jour...";
+        btn.disabled = true;
+
+        try {
+            // 1. ÉCRITURE DANS FIREBASE (Remplace 'db' et 'user' par tes variables Firebase)
+            const user = firebase.auth().currentUser;
+            if (user) {
+                await firebase.firestore().collection('users').doc(user.uid).update({
+                    rank: rangAtteint
+                });
+                console.log("✅ Champ 'rank' mis à jour dans Firebase :", rangAtteint);
+            }
+        } catch (error) {
+            console.error("❌ Erreur mise à jour Firebase rank :", error);
+        }
+
+        // 2. FERMETURE AVEC ANIMATION
         if (modal) {
             modal.style.opacity = '0';
-            modal.style.transition = 'opacity 0.8s ease';
-            setTimeout(() => modal.remove(), 800);
+            modal.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => modal.remove(), 500);
         }
-    }, 5000);
+    });
 };
-
 // 🔒 2. LOGIQUE DU CALCUL DU RANG ET DU CHEVAL
 const rangActuel = Math.max(
     Number(window.g_userRank || 0),
