@@ -434,6 +434,28 @@
 .btn-fleurs-ok:active {
     transform: scale(0.95) !important;
 }
+
+        /* Animation des particules de fleurs */
+.confetti-particle {
+    position: fixed !important;
+    top: -50px !important;
+    font-size: 24px !important;
+    user-select: none !important;
+    pointer-events: none !important;
+    z-index: 999998 !important;
+    animation: fallParticle linear infinite !important;
+}
+
+@keyframes fallParticle {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(105vh) rotate(360deg);
+        opacity: 0;
+    }
+}
         
         /* --- PARRAINAGE --- */
         .share-box-wrapper { background: rgba(155, 81, 224, 0.05); border: 1px solid rgba(155, 81, 224, 0.2); padding: 16px; border-radius: 16px; margin: 20px; }
@@ -1546,55 +1568,120 @@ const rangActuel = Number(
         window.lancerCelebrationFleurs = function(rangAtteint) {
     if (document.getElementById('celebration-fleurs-modal')) return;
 
+    if (typeof jouerVoixFelicitations === "function") {
+        jouerVoixFelicitations();
+    }
+
     const isVIP = rangAtteint === 5;
-    const modalHtml = `
-        <div id="celebration-fleurs-modal" class="fleurs-overlay">
-            <div class="fleurs-card">
-                <div class="fleurs-rain">🌸 🌺 🌼 🌻 🌸 🌺 💐</div>
-                <h2>🎉 FÉLICITATIONS ! 🎉</h2>
-                <p>Vous avez franchi un nouveau palier !</p>
-                <div class="badge-debloque ${isVIP ? 'vip' : ''}">
-                    ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + rangAtteint + ' DÉBLOQUÉ ! ⭐'}
-                </div>
-                <div class="fleurs-rain">💐 🐆 💫 🌸 🌺</div>
-                
-                <!-- BOUTON DE VALIDATION ET MISE À JOUR FIREBASE -->
-                <button id="btn-valider-rang" class="btn-fleurs-ok">
-                    C'EST PARTI ! 🚀
-                </button>
+    const modal = document.createElement('div');
+    modal.id = 'celebration-fleurs-modal';
+    modal.className = 'fleurs-overlay';
+
+    modal.innerHTML = `
+        <div class="fleurs-card">
+            <div class="fleurs-rain">🌸 🌺 🌼 🌻 🌸 🌺 💐</div>
+            <h2>🎉 FÉLICITATIONS ! 🎉</h2>
+            <p>Vous avez franchi un nouveau palier !</p>
+            <div class="badge-debloque ${isVIP ? 'vip' : ''}">
+                ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + rangAtteint + ' DÉBLOQUÉ ! ⭐'}
             </div>
+            <div class="fleurs-rain">💐 🐆 💫 🌸 🌺</div>
+            
+            <button id="btn-valider-rang" class="btn-fleurs-ok">
+                C'EST PARTI ! 🚀
+            </button>
         </div>
     `;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // Écouteur de clic sur le bouton OK
-    document.getElementById('btn-valider-rang').addEventListener('click', async () => {
-        const modal = document.getElementById('celebration-fleurs-modal');
-        const btn = document.getElementById('btn-valider-rang');
-        
-        btn.innerText = "Mise à jour...";
-        btn.disabled = true;
+    document.body.appendChild(modal);
 
-        try {
-            // 1. ÉCRITURE DANS FIREBASE (Remplace 'db' et 'user' par tes variables Firebase)
-            const user = firebase.auth().currentUser;
-            if (user) {
-                await firebase.firestore().collection('users').doc(user.uid).update({
-                    rank: rangAtteint
-                });
-                console.log("✅ Champ 'rank' mis à jour dans Firebase :", rangAtteint);
-            }
-        } catch (error) {
-            console.error("❌ Erreur mise à jour Firebase rank :", error);
+    // 🌸 Pluie de fleurs & confettis animés sur toute l'ouverture
+    const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟", "💐"];
+    for (let i = 0; i < 35; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti-particle';
+        p.innerText = symboles[Math.floor(Math.random() * symboles.length)];
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.animationDuration = (Math.random() * 3 + 2.5) + 's';
+        p.style.animationDelay = (Math.random() * 1.5) + 's';
+        modal.appendChild(p);
+    }
+
+    // 🔗 Écouteur de clic avec écriture Firestore v10
+    const btnValider = modal.querySelector('#btn-valider-rang');
+    btnValider.onclick = async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
         }
 
-        // 2. FERMETURE AVEC ANIMATION
-        if (modal) {
+        btnValider.disabled = true;
+        btnValider.style.opacity = "0.7";
+        btnValider.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Validation...`;
+
+        // Récupération dynamique de l'UID
+        const uid = (typeof auth !== "undefined" && auth.currentUser ? auth.currentUser.uid : null)
+            || window.g_currentUserId 
+            || (typeof userId !== "undefined" ? userId : null);
+
+        if (!uid) {
+            console.error("❌ Session utilisateur introuvable.");
+            btnValider.disabled = false;
+            btnValider.style.opacity = "1";
+            btnValider.innerHTML = `Réessayer 🚀`;
+            if (typeof afficherAlertePersonnalisee === "function") {
+                afficherAlertePersonnalisee("Session non détectée. Veuillez rafraîchir la page.", "Erreur de Session", "Fermer");
+            }
+            return;
+        }
+
+        try {
+            // ÉCRITURE DANS FIRESTORE (v10)
+            if (typeof doc === "function" && typeof setDoc === "function" && typeof db !== "undefined") {
+                const userDocRef = doc(db, "users", uid);
+                await setDoc(userDocRef, {
+                    rank: rangAtteint,
+                    rang: rangAtteint,
+                    rankNotified: true
+                }, { merge: true });
+                console.log("✅ Champ 'rank' mis à jour dans Firestore v10 :", rangAtteint);
+            }
+
+            // Mises à jour locales
+            window.g_userRank = rangAtteint;
+            localStorage.setItem('app_user_rank_cache', rangAtteint);
+            localStorage.setItem('app_last_celebrated_rank', rangAtteint);
+
+            // Fermeture douce de la modale
             modal.style.opacity = '0';
             modal.style.transition = 'opacity 0.5s ease';
             setTimeout(() => modal.remove(), 500);
+
+            // Actualisation de l'affichage UI si la fonction existe
+            if (typeof generateHistoryUI === "function" && typeof g_userHistoryData !== "undefined") {
+                generateHistoryUI(g_userHistoryData, rangAtteint, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+            }
+
+            if (typeof afficherAlertePersonnalisee === "function") {
+                afficherAlertePersonnalisee(
+                    `Félicitations ! Vous êtes désormais officiellement au <strong>RANG ${rangAtteint}</strong> !`,
+                    "Rang Débloqué !",
+                    "Super !"
+                );
+            }
+
+        } catch (error) {
+            console.error("❌ Erreur Firestore lors de la validation :", error);
+            btnValider.disabled = false;
+            btnValider.style.opacity = "1";
+            btnValider.innerHTML = `Réessayer`;
+            if (typeof afficherAlertePersonnalisee === "function") {
+                afficherAlertePersonnalisee("Erreur de sauvegarde : " + error.message, "Oups", "Fermer");
+            }
         }
-    });
+    };
 };
 // 🔒 2. LOGIQUE DU CALCUL DU RANG ET DU CHEVAL
 const rangActuel = Math.max(
