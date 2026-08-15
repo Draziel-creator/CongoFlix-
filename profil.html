@@ -854,6 +854,30 @@
             });
         }
     });
+    // 🟢 LECTURE EN DIRECT DU RANG DANS LA COLLECTION 'users'
+if (typeof onSnapshot === "function") {
+    onSnapshot(doc(db, "users", user.uid), (userDocSnap) => {
+        if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            // Récupère 'rank' ou 'rang'
+            const liveRank = Number(userData.rank ?? userData.rang ?? 0);
+            
+            // Met à jour la variable globale et applique le design (dégèle si > 0)
+            window.g_userRank = liveRank;
+            localStorage.setItem('app_user_rank_cache', liveRank);
+            applyRankDesign(liveRank);
+        }
+    });
+} else {
+    // Recours si onSnapshot n'est pas importé (lecture getDoc)
+    const userDocSnap = await getDoc(doc(db, "users", user.uid));
+    if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        const liveRank = Number(userData.rank ?? userData.rang ?? 0);
+        window.g_userRank = liveRank;
+        applyRankDesign(liveRank);
+    }
+}
 
     // 4. LE RESTE DE TES VARIABLES GLOBALES ET FONCTIONS
     let isLoginMode = true;
@@ -2047,30 +2071,36 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
     });
 }
     
-    function applyRankDesign(rankLevel) {
-        globalUserRank = parseInt(rankLevel) || 0;
-        const currentRank = RANKS_METADATA[globalUserRank] || RANKS_METADATA[0];
-        
-        document.documentElement.style.setProperty('--rank-color', currentRank.color);
-        
-        const badgeElement = document.getElementById('profile-rank-badge');
+   function applyRankDesign(rankLevel) {
+    globalUserRank = parseInt(rankLevel) || 0;
+    const currentRank = RANKS_METADATA[globalUserRank] || RANKS_METADATA[0];
+    
+    document.documentElement.style.setProperty('--rank-color', currentRank.color);
+    
+    const badgeElement = document.getElementById('profile-rank-badge');
+    if (badgeElement) {
         badgeElement.style.border = `1px solid ${currentRank.color}`;
         badgeElement.innerHTML = `<i class="${currentRank.medal}" style="color:${currentRank.color}"></i> Rang ${globalUserRank} : ${currentRank.name}`;
-        
-        const lockOverlay = document.getElementById('lock-overlay');
-        if(globalUserRank === 0) {
+    }
+    
+    const lockOverlay = document.getElementById('lock-overlay');
+    if (lockOverlay) {
+        // Si Rang 0 = Gelé, Si Rang > 0 = Dégelé (Masqué)
+        if (globalUserRank === 0) {
             lockOverlay.classList.remove('hidden');
+            lockOverlay.style.display = 'flex'; // Affiche le masque
         } else {
             lockOverlay.classList.add('hidden');
+            lockOverlay.style.display = 'none'; // Dégèle et cache le masque
         }
-        evalWithdrawGateStatus();
     }
+    evalWithdrawGateStatus();
+}
 
-    function evalWithdrawGateStatus() {
-        const btn = document.getElementById('withdraw-gate-button');
-        btn.disabled = false;
-    }
-
+function evalWithdrawGateStatus() {
+    const btn = document.getElementById('withdraw-gate-button');
+    if (btn) btn.disabled = false;
+}
     function checkLocalStorageDeviceLock() {
         const err = document.getElementById('error-msg');
         if(!isLoginMode && localStorage.getItem('account_created_on_device') === 'true') {
