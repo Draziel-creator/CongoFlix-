@@ -334,6 +334,84 @@
 .milestone-item.vip.active .m-label {
     color: #ffd700 !important;
 }
+
+        /* Overlay Plein Écran */
+.fleurs-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(8px) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    z-index: 999999 !important;
+    animation: fadeIn 0.4s ease-out !important;
+}
+
+/* Carte centrale de célébration */
+.fleurs-card {
+    background: linear-gradient(145deg, #0f172a, #1e293b) !important;
+    border: 2px solid #00ffcc !important;
+    border-radius: 20px !important;
+    padding: 30px !important;
+    text-align: center !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 30px rgba(0, 255, 204, 0.5), 0 0 15px rgba(255, 255, 255, 0.2) !important;
+    max-width: 90% !important;
+    width: 380px !important;
+    animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+.fleurs-rain {
+    font-size: 22px !important;
+    margin: 10px 0 !important;
+}
+
+.fleurs-card h2 {
+    color: #00ffcc !important;
+    font-size: 22px !important;
+    margin-bottom: 8px !important;
+    text-shadow: 0 0 10px rgba(0, 255, 204, 0.6) !important;
+}
+
+.fleurs-card p {
+    color: #94a3b8 !important;
+    font-size: 14px !important;
+    margin-bottom: 15px !important;
+}
+
+.badge-debloque {
+    display: inline-block !important;
+    background: rgba(0, 255, 204, 0.15) !important;
+    border: 1px solid #00ffcc !important;
+    color: #00ffcc !important;
+    font-weight: bold !important;
+    padding: 10px 18px !important;
+    border-radius: 12px !important;
+    font-size: 15px !important;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.4) !important;
+}
+
+.badge-debloque.vip {
+    background: linear-gradient(135deg, #ffd700, #ff8c00) !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8) !important;
+}
+
+/* Animations d'apparition */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes popUp {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
         
         /* --- PARRAINAGE --- */
         .share-box-wrapper { background: rgba(155, 81, 224, 0.05); border: 1px solid rgba(155, 81, 224, 0.2); padding: 16px; border-radius: 16px; margin: 20px; }
@@ -1457,25 +1535,36 @@ if (rangActuel > 0) {
     const progressionPourcentage = Math.min(100, Math.max(2, (xpActuel / xpMaxTotal) * 100));
     const rangXP = Math.min(5, Math.floor(xpActuel / 300) + 1);
 
-    // 🔗 Tes liens de fichiers Lottie JSON directs
+    // 🔗 URLs des animations Lottie
     const urlCheval1Marche = "https://lottie.host/c3ddde88-585e-4b6b-a6e9-2c31d7f32e64/JBtsMUhNZy.json";
     const urlCheval2Course = "https://lottie.host/0de37597-dffe-4971-a7f4-5d1dba50714d/t37vcDyeQY.json";
 
-    // ⚙️ Logique de bascule entre Cheval 1 (Marche) et Cheval 2 (Galop)
+    // ⚙️ Logique de bascule entre Marche et Galop
     let urlChevalActuel = urlCheval1Marche;
-    let classeInversion = ""; // Pas d'inversion pour la marche
+    let classeInversion = "";
     let vitesseCheval = 1.0;
 
     if (rangXP >= 2) {
-        // Rang 2 et + : On active le cheval de course inversé
         urlChevalActuel = urlCheval2Course;
-        classeInversion = "flip-horse"; // Inversion horizontale CSS
-
-        // Accélération de la vitesse à chaque nouveau Rang
+        classeInversion = "flip-horse";
         const tableVitesses = { 2: 1.2, 3: 1.6, 4: 2.0, 5: 2.5 };
         vitesseCheval = tableVitesses[rangXP] || 1.2;
     }
 
+    // 🏆 VÉRIFICATION DE LA MONTÉE DE RANG
+    const dernierRangCelebre = Number(localStorage.getItem('app_last_celebrated_rank') || 1);
+
+    if (rangXP > dernierRangCelebre) {
+        // Un nouveau rang a été atteint : on enregistre le nouveau palier
+        localStorage.setItem('app_last_celebrated_rank', rangXP);
+        
+        // Petite temporisation pour laisser le DOM charger avant de lancer la modale
+        setTimeout(() => {
+            lancerCelebrationFleurs(rangXP);
+        }, 300);
+    }
+
+    // Génération de l'interface XP
     counterBar.innerHTML = `
         <div class="green-days-counter">
             <span>📅 Jours enregistrés :</span>
@@ -1498,7 +1587,6 @@ if (rangActuel > 0) {
                     <div class="xp-track-fill" style="width: ${progressionPourcentage}%;">
                         <div class="light-laser-trail"></div>
 
-                        <!-- CHEVAL ANGÉLIQUE AVEC TRAÎNÉE DE LUMIÈRE -->
                         <div class="luminous-horse-container">
                             <lottie-player 
                                 src="${urlChevalActuel}" 
@@ -1513,7 +1601,6 @@ if (rangActuel > 0) {
                 </div>
             </div>
 
-            <!-- JALONS ALIGNÉS EXACTEMENT SUR LA BARRE -->
             <div class="ranks-milestones-row">
                 <div class="milestone-item m-r1 ${xpActuel >= 0 ? 'active' : ''}">
                     <span class="m-dot"></span>
@@ -1539,6 +1626,35 @@ if (rangActuel > 0) {
         </div>
     `;
 } else {
+
+// 🌸 Fonction de génération du Modal Plein Écran
+function lancerCelebrationFleurs(rangAtteint) {
+    const isVIP = rangAtteint === 5;
+    const modalHtml = `
+        <div id="celebration-fleurs-modal" class="fleurs-overlay">
+            <div class="fleurs-card">
+                <div class="fleurs-rain">🌸 🌺 🌼 🌻 🌸 🌺 💐</div>
+                <h2>🎉 FÉLICITATIONS ! 🎉</h2>
+                <p>Vous avez franchi un nouveau palier !</p>
+                <div class="badge-debloque ${isVIP ? 'vip' : ''}">
+                    ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + rangAtteint + ' DÉBLOQUÉ ! ⭐'}
+                </div>
+                <div class="fleurs-rain">💐 🐆 💫 🌸 🌺</div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Disparaît automatiquement après 5 secondes
+    setTimeout(() => {
+        const modal = document.getElementById('celebration-fleurs-modal');
+        if (modal) {
+            modal.style.opacity = '0';
+            modal.style.transition = 'opacity 0.8s ease';
+            setTimeout(() => modal.remove(), 800);
+        }
+    }, 5000);
+}
             
             // RANG 0 : COMPTEUR AVEC OBJECTIF 7 JOURS + BOUTON
             const estPretPourModal = totalJoursActivite >= 7;
@@ -2150,33 +2266,6 @@ onAuthStateChanged(auth, async (user) => {
     window.logout = () => {
         signOut(auth);
     };
-    function lancerCelebrationFleurs(rangAtteint) {
-    const isVIP = rangAtteint === 5;
-    const modalHtml = `
-        <div id="celebration-fleurs-modal" class="fleurs-overlay">
-            <div class="fleurs-card">
-                <div class="fleurs-rain">🌸 🌺 🌼 🌻 🌸 🌺 💐</div>
-                <h2>🎉 FÉLICITATIONS ! 🎉</h2>
-                <p>Vous avez franchi un nouveau palier !</p>
-                <div class="badge-debloque">
-                    ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + rangAtteint + ' DÉBLOQUÉ ! ⭐'}
-                </div>
-                <div class="fleurs-rain">💐 🐆 💫 🌸 🌺</div>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-    // Disparaît automatiquement après 5 secondes d'affichage
-    setTimeout(() => {
-        const modal = document.getElementById('celebration-fleurs-modal');
-        if (modal) {
-            modal.style.opacity = '0';
-            modal.style.transition = 'opacity 0.8s ease';
-            setTimeout(() => modal.remove(), 800);
-        }
-    }, 5000);
-}
 </script>
 </body>
 </html>
