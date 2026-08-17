@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
     <!-- Lecteur officiel Open-Source Lottie Web -->
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-    <style>
+<style>
         :root { 
             --purple: #9b51e0; 
             --neon: #00ffcc; 
@@ -60,31 +60,184 @@
         .toggle-pass { position: absolute; right: 18px; top: 18px; color: #41435c; cursor: pointer; }
         #error-msg { color: var(--error); font-size: 13px; margin-bottom: 15px; display: none; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.2); text-align: left; line-height: 1.4; }
         
-        /* --- PROFIL AVEC EFFETS DE RANGS --- */
-        .profile-banner-wrapper { position: relative; width: 100%; height: 140px; background: #121324; overflow: hidden; cursor: pointer; }
-        #user-banner { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
-        .edit-banner-badge { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 12px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(5px); }
-        
-        .avatar-container { position: relative; margin-top: -55px; text-align: center; margin-bottom: 15px; }
-        .avatar-wrapper { position: relative; display: inline-block; cursor: pointer; border-radius: 50%; transition: 0.3s; }
-        
-        #user-photo { width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--rank-color); object-fit: cover; background: #1a1b2f; box-shadow: 0 0 20px var(--rank-color); }
-        .edit-avatar-badge { position: absolute; bottom: 3px; right: 3px; background: var(--purple); color: #fff; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--bg); font-size: 11px; }
+        /* --- PROFIL EN-TÊTE EXACTEMENT COMME L'IMAGE --- */
+        .profile-banner-wrapper { 
+            position: relative; 
+            width: 100%; 
+            min-height: 240px; 
+            background: #0d0f1e; 
+            overflow: hidden; 
+            box-sizing: border-box;
+            padding: 20px 15px 15px 15px;
+        }
 
-        .user-name-box { font-size: 20px; color: #fff; font-weight: 700; border: 1px solid transparent; background: transparent; text-align: center; width: 80%; display: block; margin: 0 auto; outline: none; transition: 0.3s; border-radius: 8px; }
-        .user-name-box:focus { background: rgba(255,255,255,0.03); border-color: var(--border); }
+        /* Diaporama avec transition fondu très lente */
+        .banner-slide { 
+            position: absolute; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            object-fit: cover; 
+            opacity: 0; 
+            transition: opacity 2s ease-in-out; /* Transition douce et lente */
+            z-index: 1;
+        }
+        .banner-slide.active { opacity: 0.75; }
 
-        .rank-status-container { display: flex; flex-direction: column; align-items: center; margin-top: 8px; }
-        .rank-badge-pill { padding: 6px 16px; border-radius: 30px; font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.05); border: 1px solid var(--rank-color); color: #fff; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        /* Superposition héroïque (Contenu par-dessus la bannière) */
+        .profile-hero-content {
+            position: relative;
+            z-index: 5;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+        }
 
-        /* --- SYSTEME DE SOLDE --- */
-        .balance-card { background: linear-gradient(135deg, rgba(155, 81, 224, 0.15) 0%, rgba(0, 255, 204, 0.05) 100%); border: 1px solid var(--border); margin: 20px; padding: 20px; border-radius: 20px; text-align: center; position: relative; overflow: hidden; }
-        .balance-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #8e92bc; margin-bottom: 5px; }
-        .balance-amount { font-size: 34px; font-weight: 800; color: var(--neon); display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 2px; }
-        .balance-amount i { color: #ffcc00; font-size: 26px; }
-        .balance-value-converted { font-size: 13px; color: #8e92bc; font-weight: 500; margin-bottom: 4px; }
+        /* Colonne Gauche : Avatar + Infos Joueur */
+        .hero-left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-width: 62%;
+        }
+
+        .avatar-container { position: relative; display: inline-block; width: 85px; height: 85px; margin-bottom: 4px; }
+        .avatar-wrapper { position: relative; width: 100%; height: 100%; border-radius: 50%; cursor: pointer; }
+        #user-photo { 
+            width: 100%; height: 100%; 
+            border-radius: 50%; 
+            border: 3px solid #ffffff; 
+            object-fit: cover; 
+            background: #1a1b2f; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+            display: block;
+        }
+        .edit-avatar-badge { 
+            position: absolute; bottom: 0px; right: 0px; 
+            background: #8e2de2; color: #fff; 
+            border-radius: 50%; width: 28px; height: 28px; 
+            display: flex; align-items: center; justify-content: center; 
+            border: 2px solid #ffffff; font-size: 11px; z-index: 6;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+
+        /* Nom d'utilisateur + Badge Vérifié */
+        .user-name-row { display: flex; align-items: center; gap: 6px; }
+        .user-name-box { 
+            font-size: 20px; color: #fff; font-weight: 800; 
+            border: none; background: transparent; 
+            outline: none; text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+            margin: 0; padding: 0; max-width: 130px;
+        }
+        .verified-badge { color: #9b51e0; font-size: 15px; }
+
+        /* Badge du Rang */
+        .rank-badge-pill { 
+            padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; 
+            background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255,255,255,0.2); 
+            color: #d1d5db; display: inline-flex; align-items: center; gap: 5px; 
+            backdrop-filter: blur(4px); margin-top: 2px; align-self: flex-start;
+        }
+
+        /* Étoiles d'avis */
+        .star-rating-row { display: flex; align-items: center; gap: 4px; margin-top: 2px; font-size: 11px; color: #ffd700; }
+        .star-rating-row span.rating-text { color: #9ca3af; font-size: 10px; margin-left: 3px; }
+
+        /* Sous-titre / Tags */
+        .user-bio-tags { font-size: 10px; color: #e5e7eb; opacity: 0.9; margin-top: 2px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+
+        /* Boutons Modifier le profil / Paramètres */
+        .hero-btn-row { display: flex; gap: 8px; margin-top: 8px; }
+        .btn-hero-action { 
+            background: rgba(30, 32, 58, 0.7); 
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            color: #fff; font-size: 10px; font-weight: 600; 
+            padding: 6px 12px; border-radius: 8px; cursor: pointer; 
+            backdrop-filter: blur(6px); display: flex; align-items: center; gap: 5px; transition: 0.2s;
+        }
+        .btn-hero-action:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
+
+        /* Colonne Droite : Badges flottants empilés */
+        .hero-right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 35%;
+        }
+
+        .floating-stat-card {
+            background: rgba(20, 24, 45, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .floating-stat-icon {
+            width: 28px; height: 28px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; flex-shrink: 0;
+        }
+        .floating-stat-icon.blue { background: rgba(0, 119, 255, 0.25); color: #38bdf8; }
+        .floating-stat-icon.purple { background: rgba(155, 81, 224, 0.25); color: #c084fc; }
+        .floating-stat-icon.yellow { background: rgba(255, 204, 0, 0.25); color: #facc15; }
+
+        .floating-stat-text { display: flex; flex-direction: column; }
+        .floating-stat-text .lbl { font-size: 8px; color: #9ca3af; text-transform: uppercase; font-weight: 600; letter-spacing: 0.3px; }
+        .floating-stat-text .val { font-size: 11px; color: #ffffff; font-weight: 700; margin-top: 1px; }
+
+        /* --- CARTE DE SOLDE EXACTE À L'IMAGE --- */
+        .balance-card-dashboard {
+            background: #0b0d1b;
+            border: 1px solid var(--border);
+            margin: 12px 15px;
+            padding: 14px 12px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+
+        .bal-metric-group { display: flex; align-items: center; gap: 12px; flex: 1; }
+
+        .bal-col { display: flex; flex-direction: column; }
+        .bal-col .b-label { font-size: 8px; color: #6b7280; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
         
-        .balance-locked-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(6, 7, 19, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        .bal-col.main-solde .b-value { font-size: 22px; font-weight: 900; color: #00ffcc; display: flex; align-items: center; gap: 4px; line-height: 1; }
+        .bal-col.main-solde .b-value i { color: #eab308; font-size: 16px; }
+        .bal-col.main-solde .b-sub { font-size: 9px; color: #6b7280; font-weight: 500; margin-top: 2px; }
+
+        .bal-col.sec .b-value { font-size: 12px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 3px; }
+        .bal-col.sec .b-value i { color: #eab308; font-size: 10px; }
+        .bal-col.sec .b-sub { font-size: 9px; color: #6b7280; font-weight: 500; }
+
+        /* Bouton Retirer mes gains (Couleur Dégradé Violet/Cyan) */
+        .btn-retirer-gains {
+            background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
+            color: #ffffff;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+            white-space: nowrap;
+            transition: transform 0.2s;
+        }
+        .btn-retirer-gains:active { transform: scale(0.96); }
+
+        /* Système de verrouillage du solde si inactif */
+        .balance-locked-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(6, 7, 19, 0.92); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 16px; z-index: 10; }
         .lock-text-row { display: flex; align-items: center; gap: 14px; position: relative; }
         .balance-locked-overlay i.fa-lock { font-size: 22px; color: var(--error); }
         .balance-locked-overlay span { font-size: 13px; color: #cdcee0; font-weight: 600; letter-spacing: 0.3px; }
@@ -104,358 +257,359 @@
             0% { opacity: 0.6; transform: scale(0.95); }
             100% { opacity: 1; transform: scale(1.05); }
         }
-/* ============================================================
-   1. FORCE LE PARENT À SE DÉPLIER EN COLONNE (ANTI-ÉCRASEMENT)
-   ============================================================ */
-#counterBar, 
-.counter-bar-container {
-    display: flex !important;
-    flex-direction: column !important; /* Force l'un sous l'autre */
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    align-items: stretch !important;
-}
 
-/* Le compteur de jours prend toute la largeur */
-.green-days-counter {
-    width: 100% !important;
-    flex-shrink: 0 !important;
-    box-sizing: border-box !important;
-}
+        /* ============================================================
+           1. FORCE LE PARENT À SE DÉPLIER EN COLONNE (ANTI-ÉCRASEMENT)
+           ============================================================ */
+        #counterBar, 
+        .counter-bar-container {
+            display: flex !important;
+            flex-direction: column !important; /* Force l'un sous l'autre */
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            align-items: stretch !important;
+        }
 
-/* ============================================================
-   2. CARTE XP MODERNE EN PLEINE LARGEUR
-   ============================================================ */
-.xp-modern-card {
-    width: 100% !important;
-    flex-shrink: 0 !important; /* Empêche la carte de se compresser */
-    box-sizing: border-box !important;
-    background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)) !important;
-    border: 1px solid rgba(0, 255, 204, 0.3) !important;
-    border-radius: 16px !important;
-    padding: 18px !important;
-    margin-top: 12px !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 16px !important;
-}
+        /* Le compteur de jours prend toute la largeur */
+        .green-days-counter {
+            width: 100% !important;
+            flex-shrink: 0 !important;
+            box-sizing: border-box !important;
+        }
 
-/* En-tête : 300/1500 XP à gauche, RANG à droite sur la même ligne */
-.xp-card-header {
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    width: 100% !important;
-}
+        /* ============================================================
+           2. CARTE XP MODERNE EN PLEINE LARGEUR
+           ============================================================ */
+        .xp-modern-card {
+            width: 100% !important;
+            flex-shrink: 0 !important; /* Empêche la carte de se compresser */
+            box-sizing: border-box !important;
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)) !important;
+            border: 1px solid rgba(0, 255, 204, 0.3) !important;
+            border-radius: 16px !important;
+            padding: 18px !important;
+            margin-top: 12px !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 16px !important;
+        }
 
-.xp-title-group {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 6px !important;
-    color: #fff !important;
-}
+        /* En-tête : 300/1500 XP à gauche, RANG à droite sur la même ligne */
+        .xp-card-header {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+        }
 
-.xp-bolt {
-    font-size: 20px !important;
-    color: #ffd700 !important;
-    filter: drop-shadow(0 0 6px #ffd700) !important;
-}
+        .xp-title-group {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 6px !important;
+            color: #fff !important;
+        }
 
-.xp-value {
-    font-size: 16px !important;
-    color: #94a3b8 !important;
-}
+        .xp-bolt {
+            font-size: 20px !important;
+            color: #ffd700 !important;
+            filter: drop-shadow(0 0 6px #ffd700) !important;
+        }
 
-.xp-value strong {
-    font-size: 20px !important;
-    color: #00ffcc !important;
-}
+        .xp-value {
+            font-size: 16px !important;
+            color: #94a3b8 !important;
+        }
 
-.rank-pill-badge {
-    background: rgba(0, 255, 204, 0.12) !important;
-    border: 1px solid #00ffcc !important;
-    color: #00ffcc !important;
-    font-weight: bold !important;
-    padding: 5px 12px !important;
-    border-radius: 20px !important;
-    font-size: 12px !important;
-    box-shadow: 0 0 10px rgba(0, 255, 204, 0.3) !important;
-}
+        .xp-value strong {
+            font-size: 20px !important;
+            color: #00ffcc !important;
+        }
 
-.rank-pill-badge.vip-gold {
-    background: linear-gradient(135deg, #ffd700, #ff8c00) !important;
-    color: #000 !important;
-    border: none !important;
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.8) !important;
-}
+        .rank-pill-badge {
+            background: rgba(0, 255, 204, 0.12) !important;
+            border: 1px solid #00ffcc !important;
+            color: #00ffcc !important;
+            font-weight: bold !important;
+            padding: 5px 12px !important;
+            border-radius: 20px !important;
+            font-size: 12px !important;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.3) !important;
+        }
 
-/* ============================================================
-   3. BARRE DE PROGRESSION & CHEVAL ANGÉLIQUE
-   ============================================================ */
-.xp-track-wrapper {
-    position: relative !important;
-    padding-top: 45px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-}
+        .rank-pill-badge.vip-gold {
+            background: linear-gradient(135deg, #ffd700, #ff8c00) !important;
+            color: #000 !important;
+            border: none !important;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8) !important;
+        }
 
-.xp-track-bg {
-    width: 100% !important;
-    height: 14px !important;
-    background: rgba(255, 255, 255, 0.08) !important;
-    border-radius: 10px !important;
-    position: relative !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-}
+        /* ============================================================
+           3. BARRE DE PROGRESSION & CHEVAL ANGÉLIQUE
+           ============================================================ */
+        .xp-track-wrapper {
+            position: relative !important;
+            padding-top: 45px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
 
-.xp-track-fill {
-    height: 100% !important;
-    background: linear-gradient(90deg, #0072ff, #00ffcc, #ffffff) !important;
-    border-radius: 10px !important;
-    position: relative !important;
-    transition: width 0.6s ease-in-out !important;
-    box-shadow: 0 0 12px rgba(0, 255, 204, 0.8) !important;
-}
+        .xp-track-bg {
+            width: 100% !important;
+            height: 14px !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-radius: 10px !important;
+            position: relative !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
 
-/* Traînée de lumière laser néon sous la barre */
-.light-laser-trail {
-    position: absolute !important;
-    right: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 204, 0.5) 70%, rgba(255, 255, 255, 0.95) 100%) !important;
-    border-radius: 10px !important;
-    box-shadow: 0 0 15px #00ffcc, 0 0 25px rgba(255, 255, 255, 0.9) !important;
-}
+        .xp-track-fill {
+            height: 100% !important;
+            background: linear-gradient(90deg, #0072ff, #00ffcc, #ffffff) !important;
+            border-radius: 10px !important;
+            position: relative !important;
+            transition: width 0.6s ease-in-out !important;
+            box-shadow: 0 0 12px rgba(0, 255, 204, 0.8) !important;
+        }
 
-/* Container du cheval + Traînée d'énergie divine derrière lui */
-.luminous-horse-container {
-    position: absolute !important;
-    right: -30px !important;
-    top: -55px !important;
-    width: 70px !important;
-    height: 70px !important;
-    pointer-events: none !important;
-    z-index: 10 !important;
-}
+        /* Traînée de lumière laser néon sous la barre */
+        .light-laser-trail {
+            position: absolute !important;
+            right: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 204, 0.5) 70%, rgba(255, 255, 255, 0.95) 100%) !important;
+            border-radius: 10px !important;
+            box-shadow: 0 0 15px #00ffcc, 0 0 25px rgba(255, 255, 255, 0.9) !important;
+        }
 
-/* Halo de lumière angélique projeté derrière le cheval qui court */
-.luminous-horse-container::before {
-    content: '' !important;
-    position: absolute !important;
-    width: 60px !important;
-    height: 25px !important;
-    bottom: 12px !important;
-    left: -30px !important;
-    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.9) 0%, rgba(0, 255, 204, 0.6) 50%, transparent 80%) !important;
-    filter: blur(4px) !important;
-    z-index: -1 !important;
-}
+        /* Container du cheval + Traînée d'énergie divine derrière lui */
+        .luminous-horse-container {
+            position: absolute !important;
+            right: -30px !important;
+            top: -55px !important;
+            width: 70px !important;
+            height: 70px !important;
+            pointer-events: none !important;
+            z-index: 10 !important;
+        }
 
-/* Effet Cheval Angélique : Blanc pur, net avec aura cyan/or */
-.lottie-horse-element {
-    width: 100% !important;
-    height: 100% !important;
-    /* Transformation en blanc angélique + contour néon fin ultra propre */
-    filter: brightness(0) invert(1) drop-shadow(0 0 2px #00ffcc) drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 12px #00e5ff) !important;
-}
+        /* Halo de lumière angélique projeté derrière le cheval qui court */
+        .luminous-horse-container::before {
+            content: '' !important;
+            position: absolute !important;
+            width: 60px !important;
+            height: 25px !important;
+            bottom: 12px !important;
+            left: -30px !important;
+            background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.9) 0%, rgba(0, 255, 204, 0.6) 50%, transparent 80%) !important;
+            filter: blur(4px) !important;
+            z-index: -1 !important;
+        }
 
-/* Inversion horizontale uniquement pour le Cheval 2 (Course) */
-.lottie-horse-element.flip-horse {
-    transform: scaleX(-1) !important;
-}
+        /* Effet Cheval Angélique : Blanc pur, net avec aura cyan/or */
+        .lottie-horse-element {
+            width: 100% !important;
+            height: 100% !important;
+            filter: brightness(0) invert(1) drop-shadow(0 0 2px #00ffcc) drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 12px #00e5ff) !important;
+        }
 
-/* ============================================================
-   4. JALONS DE RANGS ALIGNÉS HORIZONTALEMENT
-   ============================================================ */
-.ranks-milestones-row {
-    position: relative !important;
-    width: 100% !important;
-    height: 32px !important;
-    margin-top: 6px !important;
-    display: block !important;
-}
+        /* Inversion horizontale uniquement pour le Cheval 2 (Course) */
+        .lottie-horse-element.flip-horse {
+            transform: scaleX(-1) !important;
+        }
 
-.milestone-item {
-    position: absolute !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 3px !important;
-    opacity: 0.35 !important;
-    transform: translateX(-50%) !important;
-    transition: all 0.3s ease !important;
-}
+        /* ============================================================
+           4. JALONS DE RANGS ALIGNÉS HORIZONTALEMENT
+           ============================================================ */
+        .ranks-milestones-row {
+            position: relative !important;
+            width: 100% !important;
+            height: 32px !important;
+            margin-top: 6px !important;
+            display: block !important;
+        }
 
-/* Alignement exact sous la barre selon les pourcentages d'XP */
-.milestone-item.m-r1 { left: 0% !important; transform: translateX(0%) !important; }
-.milestone-item.m-r2 { left: 20% !important; }
-.milestone-item.m-r3 { left: 40% !important; }
-.milestone-item.m-r4 { left: 60% !important; }
-.milestone-item.m-r5 { left: 80% !important; }
+        .milestone-item {
+            position: absolute !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 3px !important;
+            opacity: 0.35 !important;
+            transform: translateX(-50%) !important;
+            transition: all 0.3s ease !important;
+        }
 
-.milestone-item.active {
-    opacity: 1 !important;
-}
+        /* Alignement exact sous la barre selon les pourcentages d'XP */
+        .milestone-item.m-r1 { left: 0% !important; transform: translateX(0%) !important; }
+        .milestone-item.m-r2 { left: 20% !important; }
+        .milestone-item.m-r3 { left: 40% !important; }
+        .milestone-item.m-r4 { left: 60% !important; }
+        .milestone-item.m-r5 { left: 80% !important; }
 
-.m-dot {
-    width: 8px !important;
-    height: 8px !important;
-    background: #334155 !important;
-    border-radius: 50% !important;
-}
+        .milestone-item.active {
+            opacity: 1 !important;
+        }
 
-.milestone-item.active .m-dot {
-    background: #00ffcc !important;
-    box-shadow: 0 0 8px #00ffcc !important;
-}
+        .m-dot {
+            width: 8px !important;
+            height: 8px !important;
+            background: #334155 !important;
+            border-radius: 50% !important;
+        }
 
-.milestone-item.vip.active .m-dot {
-    background: #ffd700 !important;
-    box-shadow: 0 0 10px #ffd700 !important;
-}
+        .milestone-item.active .m-dot {
+            background: #00ffcc !important;
+            box-shadow: 0 0 8px #00ffcc !important;
+        }
 
-.m-label {
-    font-size: 11px !important;
-    font-weight: bold !important;
-    color: #94a3b8 !important;
-    white-space: nowrap !important;
-}
+        .milestone-item.vip.active .m-dot {
+            background: #ffd700 !important;
+            box-shadow: 0 0 10px #ffd700 !important;
+        }
 
-.milestone-item.active .m-label {
-    color: #fff !important;
-}
+        .m-label {
+            font-size: 11px !important;
+            font-weight: bold !important;
+            color: #94a3b8 !important;
+            white-space: nowrap !important;
+        }
 
-.milestone-item.vip.active .m-label {
-    color: #ffd700 !important;
-}
+        .milestone-item.active .m-label {
+            color: #fff !important;
+        }
+
+        .milestone-item.vip.active .m-label {
+            color: #ffd700 !important;
+        }
 
         /* Overlay Plein Écran */
-.fleurs-overlay {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    background: rgba(15, 23, 42, 0.85) !important;
-    backdrop-filter: blur(8px) !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    z-index: 999999 !important;
-    animation: fadeIn 0.4s ease-out !important;
-}
+        .fleurs-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: rgba(15, 23, 42, 0.85) !important;
+            backdrop-filter: blur(8px) !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            z-index: 999999 !important;
+            animation: fadeIn 0.4s ease-out !important;
+        }
 
-/* Carte centrale de célébration */
-.fleurs-card {
-    background: linear-gradient(145deg, #0f172a, #1e293b) !important;
-    border: 2px solid #00ffcc !important;
-    border-radius: 20px !important;
-    padding: 30px !important;
-    text-align: center !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 30px rgba(0, 255, 204, 0.5), 0 0 15px rgba(255, 255, 255, 0.2) !important;
-    max-width: 90% !important;
-    width: 380px !important;
-    animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-}
+        /* Carte centrale de célébration */
+        .fleurs-card {
+            background: linear-gradient(145deg, #0f172a, #1e293b) !important;
+            border: 2px solid #00ffcc !important;
+            border-radius: 20px !important;
+            padding: 30px !important;
+            text-align: center !important;
+            color: #ffffff !important;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.5), 0 0 15px rgba(255, 255, 255, 0.2) !important;
+            max-width: 90% !important;
+            width: 380px !important;
+            animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        }
 
-.fleurs-rain {
-    font-size: 22px !important;
-    margin: 10px 0 !important;
-}
+        .fleurs-rain {
+            font-size: 22px !important;
+            margin: 10px 0 !important;
+        }
 
-.fleurs-card h2 {
-    color: #00ffcc !important;
-    font-size: 22px !important;
-    margin-bottom: 8px !important;
-    text-shadow: 0 0 10px rgba(0, 255, 204, 0.6) !important;
-}
+        .fleurs-card h2 {
+            color: #00ffcc !important;
+            font-size: 22px !important;
+            margin-bottom: 8px !important;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.6) !important;
+        }
 
-.fleurs-card p {
-    color: #94a3b8 !important;
-    font-size: 14px !important;
-    margin-bottom: 15px !important;
-}
+        .fleurs-card p {
+            color: #94a3b8 !important;
+            font-size: 14px !important;
+            margin-bottom: 15px !important;
+        }
 
-.badge-debloque {
-    display: inline-block !important;
-    background: rgba(0, 255, 204, 0.15) !important;
-    border: 1px solid #00ffcc !important;
-    color: #00ffcc !important;
-    font-weight: bold !important;
-    padding: 10px 18px !important;
-    border-radius: 12px !important;
-    font-size: 15px !important;
-    box-shadow: 0 0 15px rgba(0, 255, 204, 0.4) !important;
-}
+        .badge-debloque {
+            display: inline-block !important;
+            background: rgba(0, 255, 204, 0.15) !important;
+            border: 1px solid #00ffcc !important;
+            color: #00ffcc !important;
+            font-weight: bold !important;
+            padding: 10px 18px !important;
+            border-radius: 12px !important;
+            font-size: 15px !important;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4) !important;
+        }
 
-.badge-debloque.vip {
-    background: linear-gradient(135deg, #ffd700, #ff8c00) !important;
-    color: #000000 !important;
-    border: none !important;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8) !important;
-}
+        .badge-debloque.vip {
+            background: linear-gradient(135deg, #ffd700, #ff8c00) !important;
+            color: #000000 !important;
+            border: none !important;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8) !important;
+        }
 
-/* Animations d'apparition */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
+        /* Animations d'apparition */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
 
-@keyframes popUp {
-    from { transform: scale(0.7); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
+        @keyframes popUp {
+            from { transform: scale(0.7); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
         .btn-fleurs-ok {
-    margin-top: 20px !important;
-    background: linear-gradient(135deg, #00ffcc, #00b386) !important;
-    color: #0f172a !important;
-    border: none !important;
-    padding: 12px 30px !important;
-    font-size: 16px !important;
-    font-weight: bold !important;
-    border-radius: 25px !important;
-    cursor: pointer !important;
-    box-shadow: 0 0 15px rgba(0, 255, 204, 0.4) !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-}
+            margin-top: 20px !important;
+            background: linear-gradient(135deg, #00ffcc, #00b386) !important;
+            color: #0f172a !important;
+            border: none !important;
+            padding: 12px 30px !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            border-radius: 25px !important;
+            cursor: pointer !important;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
 
-.btn-fleurs-ok:hover {
-    transform: scale(1.05) !important;
-    box-shadow: 0 0 25px rgba(0, 255, 204, 0.7) !important;
-}
+        .btn-fleurs-ok:hover {
+            transform: scale(1.05) !important;
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.7) !important;
+        }
 
-.btn-fleurs-ok:active {
-    transform: scale(0.95) !important;
-}
+        .btn-fleurs-ok:active {
+            transform: scale(0.95) !important;
+        }
 
         /* Animation des particules de fleurs */
-.confetti-particle {
-    position: fixed !important;
-    top: -50px !important;
-    font-size: 24px !important;
-    user-select: none !important;
-    pointer-events: none !important;
-    z-index: 999998 !important;
-    animation: fallParticle linear infinite !important;
-}
+        .confetti-particle {
+            position: fixed !important;
+            top: -50px !important;
+            font-size: 24px !important;
+            user-select: none !important;
+            pointer-events: none !important;
+            z-index: 999998 !important;
+            animation: fallParticle linear infinite !important;
+        }
 
-@keyframes fallParticle {
-    0% {
-        transform: translateY(0) rotate(0deg);
-        opacity: 1;
-    }
-    100% {
-        transform: translateY(105vh) rotate(360deg);
-        opacity: 0;
-    }
-}
+        @keyframes fallParticle {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(105vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
         
         /* --- PARRAINAGE --- */
         .share-box-wrapper { background: rgba(155, 81, 224, 0.05); border: 1px solid rgba(155, 81, 224, 0.2); padding: 16px; border-radius: 16px; margin: 20px; }
@@ -504,7 +658,7 @@
         .btn-logout { background: none; border: none; color: #41435c; width: 100%; font-weight: 600; font-size: 13px; margin: 15px 0 30px 0; cursor: pointer; transition: color 0.2s; }
         .btn-logout:hover { color: var(--error); }
 
-        .nav-bar { background: #03040b; border-top: 1px solid var(--border); padding: 14px 20px 22px 20px; display: flex; justify-content: space-around; align-items: center; }
+        .nav-bar { background: #03040b; border-top: 1px solid var(--border); padding: 14px 20px 22px 20px; display: flex; justify-space-around: space-around; align-items: center; }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 6px; color: #555875; text-decoration: none; font-size: 11px; font-weight: 500; cursor: pointer; }
         .nav-item.active { color: var(--neon); }
         .nav-icon { font-size: 20px; }
@@ -514,7 +668,7 @@
         .premium-toast i { color: var(--neon); font-size: 16px; }
         .premium-toast span { color: #ffffff; font-size: 13px; font-weight: 600; white-space: nowrap; letter-spacing: 0.2px; }
 
-        /* --- MODELE DE RETRAIT ET DE RANGS AMÉLIORÉ --- */
+        /* --- MODÈLE DE RETRAIT ET DE RANGS AMÉLIORÉ --- */
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(6px); z-index:200; display:flex; justify-content:center; align-items:center; opacity:0; pointer-events:none; transition: opacity 0.3s ease; }
         .modal-overlay.active { opacity:1; pointer-events:auto; }
         .modal-card { width: 92%; max-height: 85%; background: #0c0d21; border: 1px solid var(--border); border-radius: 20px; padding: 22px; display: flex; flex-direction: column; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -2054,30 +2208,24 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
     });
 }
     
-   function applyRankDesign(rankLevel) {
-    // Conversion stricte du rang
+ function applyRankDesign(rankLevel) {
     globalUserRank = parseInt(rankLevel, 10) || 0;
     const currentRank = RANKS_METADATA[globalUserRank] || RANKS_METADATA[0];
     
-    // Application de la couleur
     document.documentElement.style.setProperty('--rank-color', currentRank.color);
     
-    // Badge du profil
     const badgeElement = document.getElementById('profile-rank-badge');
     if (badgeElement) {
         badgeElement.style.border = `1px solid ${currentRank.color}`;
         badgeElement.innerHTML = `<i class="${currentRank.medal}" style="color:${currentRank.color}"></i> Rang ${globalUserRank} : ${currentRank.name}`;
     }
     
-    // GESTION DU MASQUE DE GEL
     const lockOverlay = document.getElementById('lock-overlay');
     if (lockOverlay) {
         if (globalUserRank > 0) {
-            // RANG 1 OU PLUS : ON CACHE LE GEL
             lockOverlay.classList.add('hidden');
             lockOverlay.style.setProperty('display', 'none', 'important');
         } else {
-            // RANG 0 : ON AFFICHE LE GEL
             lockOverlay.classList.remove('hidden');
             lockOverlay.style.setProperty('display', 'flex', 'important');
         }
@@ -2087,233 +2235,234 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
         evalWithdrawGateStatus();
     }
 }
+
 function evalWithdrawGateStatus() {
     const btn = document.getElementById('withdraw-gate-button');
     if (btn) btn.disabled = false;
 }
-    function checkLocalStorageDeviceLock() {
-        const err = document.getElementById('error-msg');
-        if(!isLoginMode && localStorage.getItem('account_created_on_device') === 'true') {
-            document.getElementById('authBtn').disabled = true;
-            err.style.display = 'block';
-            err.innerText = "Action refusée : Un compte a déjà été configuré depuis ce téléphone.";
-            return true;
-        }
-        document.getElementById('authBtn').disabled = false;
-        return false;
+
+function checkLocalStorageDeviceLock() {
+    const err = document.getElementById('error-msg');
+    if(!isLoginMode && localStorage.getItem('account_created_on_device') === 'true') {
+        document.getElementById('authBtn').disabled = true;
+        err.style.display = 'block';
+        err.innerText = "Action refusée : Un compte a déjà été configuré depuis ce téléphone.";
+        return true;
+    }
+    document.getElementById('authBtn').disabled = false;
+    return false;
+}
+
+window.openRankModal = () => {
+    document.getElementById('rank-info-modal').classList.add('active');
+};
+
+window.closeRankModal = () => {
+    document.getElementById('rank-info-modal').classList.remove('active');
+};
+
+window.setPaymentAmount = (amount, label) => {
+    selectedAmountUSD = amount;
+    document.getElementById('target-amount-display').value = `Requis: ${amount}$ (${label})`;
+    showPremiumToast(`Option choisie : ${label} (${amount}$)`);
+};
+
+window.startFlutterwavePaymentFlow = () => {
+    const phoneNumber = document.getElementById('payment-phone-number').value.trim();
+    const networkSelection = document.getElementById('user-country-network').value;
+    
+    if(!phoneNumber) {
+        alert("Veuillez saisir votre numéro de téléphone mobile pour la requête de débit direct Mobile Money.");
+        return;
     }
 
-    window.openRankModal = () => {
-        document.getElementById('rank-info-modal').classList.add('active');
-    };
-    window.closeRankModal = () => {
-        document.getElementById('rank-info-modal').classList.remove('active');
-    };
+    if(selectedAmountUSD === 0) {
+        alert("Le Rang 0 est gratuit. Sélectionnez un autre rang payant.");
+        return;
+    }
 
-    window.setPaymentAmount = (amount, label) => {
-        selectedAmountUSD = amount;
-        document.getElementById('target-amount-display').value = `Requis: ${amount}$ (${label})`;
-        showPremiumToast(`Option choisie : ${label} (${amount}$)`);
-    };
+    let currencyCode = "USD";
+    let finalAmount = selectedAmountUSD;
 
-    window.startFlutterwavePaymentFlow = () => {
-        const phoneNumber = document.getElementById('payment-phone-number').value.trim();
-        const networkSelection = document.getElementById('user-country-network').value;
-        
-        if(!phoneNumber) {
-            alert("Veuillez saisir votre numéro de téléphone mobile pour la requête de débit direct Mobile Money.");
-            return;
-        }
+    if(networkSelection.startsWith("CAM") || networkSelection.startsWith("GAB")) {
+        currencyCode = "XAF";
+        finalAmount = selectedAmountUSD * 615;
+    } else if(networkSelection.startsWith("CI") || networkSelection.startsWith("SEN")) {
+        currencyCode = "XOF";
+        finalAmount = selectedAmountUSD * 615;
+    }
 
-        if(selectedAmountUSD === 0) {
-            alert("Le Rang 0 est gratuit. Sélectionnez un autre rang payant.");
-            return;
-        }
-
-        let currencyCode = "USD";
-        let finalAmount = selectedAmountUSD;
-
-        if(networkSelection.startsWith("CAM") || networkSelection.startsWith("GAB")) {
-            currencyCode = "XAF";
-            finalAmount = selectedAmountUSD * 615;
-        } else if(networkSelection.startsWith("CI") || networkSelection.startsWith("SEN")) {
-            currencyCode = "XOF";
-            finalAmount = selectedAmountUSD * 615;
-        }
-
-        FlutterwaveCheckout({
-            public_key: "FLWPUBK_TEST-a386ef8bf2cb859bcf72c36a4ba2cc05-X",
-            tx_ref: "CFX-REV-" + Date.now(),
-            amount: finalAmount,
-            currency: currencyCode,
-            payment_options: "mobilemoneyafrica, card",
-            customer: {
-                email: auth.currentUser ? auth.currentUser.email : "client@congoflix.com",
-                phone_number: phoneNumber,
-                name: auth.currentUser ? document.getElementById('user-name').value : "Utilisateur Congoflix",
-            },
-            customizations: {
-                title: "CONGOFLIX REWARDS",
-                description: `Paiement Mobile Money pour l'activation du Rang d'accès`,
-                logo: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-            },
-            callback: async function (data) {
-                if (data.status === "successful" || data.status === "completed") {
-                    showPremiumToast("Paiement validé avec succès par Flutterwave !");
-                    closeRankModal();
-                    try {
-                        let newRankCalculated = selectedAmountUSD === 1 ? 1 : (selectedAmountUSD === 3 ? 2 : 3);
-                        if(selectedAmountUSD === 10) newRankCalculated = 10;
-                        await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { rank: newRankCalculated });
-                        applyRankDesign(newRankCalculated);
-                    } catch(err) { console.error(err); }
-                } else {
-                    alert("Le paiement n'a pas pu aboutir. Veuillez réessayer.");
-                }
-            },
-            onclose: function() {
-                showPremiumToast("Fermeture du module de paiement.");
-            }
-        });
-    };
-
-    window.copyLinkOnly = () => {
-        const txt = document.getElementById('share-link-text').innerText;
-        navigator.clipboard.writeText(txt).then(() => {
-            showPremiumToast("Lien copié dans le presse-papier !");
-        }).catch(() => {
-            showPremiumToast("Échec de la copie automatique.");
-        });
-    };
-
-    window.sharePlatformNative = async () => {
-        const linkText = document.getElementById('share-link-text').innerText;
-        if (navigator.share) {
-            try {
-                await navigator.share({ url: linkText });
-            } catch(e) {}
-        } else {
-            navigator.clipboard.writeText(linkText);
-            showPremiumToast("Lien copié !");
-        }
-    };
-
-    window.triggerFileInput = (inputId) => {
-        document.getElementById(inputId).click();
-    };
-
-    window.updateProfileName = async (newName) => {
-        if(!newName || newName === "...") return;
-        try {
-            await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { name: newName });
-        } catch (e) { console.error(e); }
-    };
-
-    window.toggleAuthMode = () => {
-        isLoginMode = !isLoginMode;
-        const birthdateBlock = document.getElementById('birthdate-block');
-        const err = document.getElementById('error-msg');
-        
-        document.getElementById('authBtn').innerText = isLoginMode ? "SE CONNECTER" : "CRÉER MON COMPTE";
-        err.style.display = 'none';
-        
-        if (isLoginMode) {
-            birthdateBlock.classList.add('hidden');
-            document.getElementById('authBtn').disabled = false;
-        } else {
-            birthdateBlock.classList.remove('hidden');
-            checkLocalStorageDeviceLock();
-        }
-
-        document.getElementById('switchBox').innerHTML = isLoginMode ? 
-            'Nouveau sur la plateforme ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>' :
-            'Déjà inscrit ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Se connecter</span>';
-    };
-
-    window.togglePasswordVisibility = () => {
-        const p = document.getElementById('password');
-        p.type = p.type === "password" ? "text" : "password";
-    };
-
-    window.handleAuth = async () => {
-        const email = document.getElementById('email').value.trim();
-        const pass = document.getElementById('password').value;
-        const birthdateValue = document.getElementById('birthdate').value;
-        const err = document.getElementById('error-msg');
-        
-        if(!email || !pass) return;
-        err.style.display = 'none';
-
-        if (!isLoginMode && checkLocalStorageDeviceLock()) return;
-
-        try {
-            if(isLoginMode) {
-                await signInWithEmailAndPassword(auth, email, pass);
+    FlutterwaveCheckout({
+        public_key: "FLWPUBK_TEST-a386ef8bf2cb859bcf72c36a4ba2cc05-X",
+        tx_ref: "CFX-REV-" + Date.now(),
+        amount: finalAmount,
+        currency: currencyCode,
+        payment_options: "mobilemoneyafrica, card",
+        customer: {
+            email: auth.currentUser ? auth.currentUser.email : "client@congoflix.com",
+            phone_number: phoneNumber,
+            name: auth.currentUser ? document.getElementById('user-name').value : "Utilisateur Congoflix",
+        },
+        customizations: {
+            title: "CONGOFLIX REWARDS",
+            description: `Paiement Mobile Money pour l'activation du Rang d'accès`,
+            logo: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+        },
+        callback: async function (data) {
+            if (data.status === "successful" || data.status === "completed") {
+                showPremiumToast("Paiement validé avec succès par Flutterwave !");
+                closeRankModal();
+                try {
+                    let newRankCalculated = selectedAmountUSD === 1 ? 1 : (selectedAmountUSD === 3 ? 2 : 3);
+                    if(selectedAmountUSD === 10) newRankCalculated = 10;
+                    await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { rank: newRankCalculated });
+                    applyRankDesign(newRankCalculated);
+                } catch(err) { console.error(err); }
             } else {
-                if (!birthdateValue) {
-                    err.style.display = 'block';
-                    err.innerText = "Date de naissance obligatoire.";
-                    return;
-                }
-
-                const birthDate = new Date(birthdateValue);
-                const today = new Date();
-                let age = today.getFullYear() - birthDate.getFullYear();
-                const monthDiff = today.getMonth() - birthDate.getMonth();
-                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) { age--; }
-
-                if (age < 18) {
-                    err.style.display = 'block';
-                    err.innerText = "Désolé, l'accès à la plateforme nécessite un âge de 18 ans.";
-                    return;
-                }
-
-                const phoneFingerprint = generateDeviceFingerprint();
-                const usersRef = collection(db, "rewards_users");
-                const fingerprintQuery = query(usersRef, where("deviceFingerprint", "==", phoneFingerprint));
-                const querySnapshot = await getDocs(fingerprintQuery);
-
-                if (!querySnapshot.empty) {
-                    err.style.display = 'block';
-                    err.innerText = "Création refusée : Téléphone déjà associé à un compte.";
-                    localStorage.setItem('account_created_on_device', 'true');
-                    document.getElementById('authBtn').disabled = true;
-                    return;
-                }
-
-                const referrerId = localStorage.getItem('pending_referrer') || "";
-                const cred = await createUserWithEmailAndPassword(auth, email, pass);
-                
-                await setDoc(doc(db, "rewards_users", cred.user.uid), { 
-                    name: email.split('@')[0], 
-                    coins: 0, 
-                    birthdate: birthdateValue,
-                    age: age,
-                    rank: 0,
-                    invitedCount: 0,
-                    tasksCompleted: 0,
-                    daysActive: 1,
-                    pointsDuJour: 0,
-                    parrainePar: referrerId,
-                    statutParrainage: referrerId ? "en_attente" : "aucun",
-                    photoURL: "", 
-                    bannerURL: "",
-                    deviceFingerprint: phoneFingerprint,
-                    history: { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 }
-                });
-
-                localStorage.setItem('account_created_on_device', 'true');
-                localStorage.removeItem('pending_referrer');
+                alert("Le paiement n'a pas pu aboutir. Veuillez réessayer.");
             }
-        } catch (e) { 
-            err.style.display = 'block'; 
-            err.innerText = "Erreur d'authentification."; 
+        },
+        onclose: function() {
+            showPremiumToast("Fermeture du module de paiement.");
         }
-    };
+    });
+};
 
-// =========================================================================
-// 2. LECTURE & SYNCHRONISATION AUTOMATIQUE SUR pointsDuJour
-// =========================================================================
+window.copyLinkOnly = () => {
+    const txt = document.getElementById('share-link-text').innerText;
+    navigator.clipboard.writeText(txt).then(() => {
+        showPremiumToast("Lien copié dans le presse-papier !");
+    }).catch(() => {
+        showPremiumToast("Échec de la copie automatique.");
+    });
+};
+
+window.sharePlatformNative = async () => {
+    const linkText = document.getElementById('share-link-text').innerText;
+    if (navigator.share) {
+        try {
+            await navigator.share({ url: linkText });
+        } catch(e) {}
+    } else {
+        navigator.clipboard.writeText(linkText);
+        showPremiumToast("Lien copié !");
+    }
+};
+
+window.triggerFileInput = (inputId) => {
+    document.getElementById(inputId).click();
+};
+
+window.updateProfileName = async (newName) => {
+    if(!newName || newName === "...") return;
+    try {
+        await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { name: newName });
+    } catch (e) { console.error(e); }
+};
+
+window.toggleAuthMode = () => {
+    isLoginMode = !isLoginMode;
+    const birthdateBlock = document.getElementById('birthdate-block');
+    const err = document.getElementById('error-msg');
+    
+    document.getElementById('authBtn').innerText = isLoginMode ? "SE CONNECTER" : "CRÉER MON COMPTE";
+    err.style.display = 'none';
+    
+    if (isLoginMode) {
+        birthdateBlock.classList.add('hidden');
+        document.getElementById('authBtn').disabled = false;
+    } else {
+        birthdateBlock.classList.remove('hidden');
+        checkLocalStorageDeviceLock();
+    }
+
+    document.getElementById('switchBox').innerHTML = isLoginMode ? 
+        'Nouveau sur la plateforme ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>' :
+        'Déjà inscrit ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Se connecter</span>';
+};
+
+window.togglePasswordVisibility = () => {
+    const p = document.getElementById('password');
+    p.type = p.type === "password" ? "text" : "password";
+};
+
+window.handleAuth = async () => {
+    const email = document.getElementById('email').value.trim();
+    const pass = document.getElementById('password').value;
+    const birthdateValue = document.getElementById('birthdate').value;
+    const err = document.getElementById('error-msg');
+    
+    if(!email || !pass) return;
+    err.style.display = 'none';
+
+    if (!isLoginMode && checkLocalStorageDeviceLock()) return;
+
+    try {
+        if(isLoginMode) {
+            await signInWithEmailAndPassword(auth, email, pass);
+        } else {
+            if (!birthdateValue) {
+                err.style.display = 'block';
+                err.innerText = "Date de naissance obligatoire.";
+                return;
+            }
+
+            const birthDate = new Date(birthdateValue);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) { age--; }
+
+            if (age < 18) {
+                err.style.display = 'block';
+                err.innerText = "Désolé, l'accès à la plateforme nécessite un âge de 18 ans.";
+                return;
+            }
+
+            const phoneFingerprint = generateDeviceFingerprint();
+            const usersRef = collection(db, "rewards_users");
+            const fingerprintQuery = query(usersRef, where("deviceFingerprint", "==", phoneFingerprint));
+            const querySnapshot = await getDocs(fingerprintQuery);
+
+            if (!querySnapshot.empty) {
+                err.style.display = 'block';
+                err.innerText = "Création refusée : Téléphone déjà associé à un compte.";
+                localStorage.setItem('account_created_on_device', 'true');
+                document.getElementById('authBtn').disabled = true;
+                return;
+            }
+
+            const referrerId = localStorage.getItem('pending_referrer') || "";
+            const cred = await createUserWithEmailAndPassword(auth, email, pass);
+            
+            await setDoc(doc(db, "rewards_users", cred.user.uid), { 
+                name: email.split('@')[0], 
+                coins: 0, 
+                birthdate: birthdateValue,
+                age: age,
+                rank: 0,
+                invitedCount: 0,
+                tasksCompleted: 0,
+                daysActive: 1,
+                pointsDuJour: 0,
+                parrainePar: referrerId,
+                statutParrainage: referrerId ? "en_attente" : "aucun",
+                photoURL: "", 
+                bannerURL: "",
+                deviceFingerprint: phoneFingerprint,
+                history: { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 }
+            });
+
+            localStorage.setItem('account_created_on_device', 'true');
+            localStorage.removeItem('pending_referrer');
+        }
+    } catch (e) { 
+        err.style.display = 'block'; 
+        err.innerText = "Erreur d'authentification."; 
+    }
+};
+
+// Synchronisation Firebase Auth & Base de données
 onAuthStateChanged(auth, async (user) => {
     if(user) {
         document.getElementById('auth-screen').classList.add('hidden');
@@ -2344,10 +2493,9 @@ onAuthStateChanged(auth, async (user) => {
             const currentActiveDay = d.daysActive || 1;
             const currentDayKey = `w1_d${currentActiveDay}`;
 
-            // A) Réinitialisation si la journée précédente est incomplète (< 15/15) lors du changement de jour
             if (lastActiveDate !== todayISO) {
                 if ((currentHistory[currentDayKey] || 0) < 15) {
-                    currentHistory[currentDayKey] = 0; // Réinitialisation de la journée incomplète
+                    currentHistory[currentDayKey] = 0;
                 }
                 await updateDoc(doc(db, "rewards_users", user.uid), {
                     pointsDuJour: 0,
@@ -2356,7 +2504,6 @@ onAuthStateChanged(auth, async (user) => {
                 });
             }
 
-            // B) Synchronisation directe de pointsDuJour dans l'historique
             const pointsDuJourActuel = d.pointsDuJour || 0;
             if (pointsDuJourActuel !== currentHistory[currentDayKey]) {
                 currentHistory[currentDayKey] = pointsDuJourActuel;
@@ -2366,7 +2513,6 @@ onAuthStateChanged(auth, async (user) => {
                 });
             }
 
-            // C) Validation du Rang 1 si les 7 jours ont atteint 15/15
             let joursAuVert = 0;
             for (let day = 1; day <= 7; day++) {
                 if ((currentHistory[`w1_d${day}`] || 0) >= 15) {
@@ -2380,11 +2526,11 @@ onAuthStateChanged(auth, async (user) => {
                 showPremiumToast("🎉 Félicitations ! Semaine 1 validée : Rang 1 débloqué !");
             }
 
-            // D) Application du Design et rendu du Tableau de l'Historique
             applyRankDesign(userRank);
-            generateHistoryUI(currentHistory, userRank);
+            if (typeof generateHistoryUI === "function") {
+                generateHistoryUI(currentHistory, userRank);
+            }
 
-            // E) Conditions secondaires
             let condInv = (d.invitedCount || 0) >= 10;
             let condTsk = (d.tasksCompleted || 0) >= 50;
             let condDay = (d.daysActive || 0) >= 14;
@@ -2408,27 +2554,27 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-    window.uploadImage = (e, type) => {
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-            if(type === 'avatar') {
-                document.getElementById('user-photo').src = reader.result;
-                await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { photoURL: reader.result });
-                showPremiumToast("Photo de profil mise à jour !");
-            } else if(type === 'banner') {
-                document.getElementById('user-banner').src = reader.result;
-                await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { bannerURL: reader.result });
-                showPremiumToast("Image de couverture mise à jour !");
-            }
-        };
-        reader.readAsDataURL(file);
+window.uploadImage = (e, type) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+        if(type === 'avatar') {
+            document.getElementById('user-photo').src = reader.result;
+            await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { photoURL: reader.result });
+            showPremiumToast("Photo de profil mise à jour !");
+        } else if(type === 'banner') {
+            document.getElementById('user-banner').src = reader.result;
+            await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { bannerURL: reader.result });
+            showPremiumToast("Image de couverture mise à jour !");
+        }
     };
+    reader.readAsDataURL(file);
+};
 
-    window.logout = () => {
-        signOut(auth);
-    };
+window.logout = () => {
+    signOut(auth);
+};
 </script>
 </body>
 </html>
