@@ -27,7 +27,7 @@
         }
         .hidden { display: none !important; }
 
-        /* Suppression définitive du bouton Modifier la couverture */
+        /* Suppression définitive du bouton Modifier la couvertur */
         .btn-edit-cover, .edit-cover-btn, [class*="cover"] button { 
             display: none !important; 
         }
@@ -730,37 +730,48 @@
         <!-- PRINCIPALE APPLICATION -->
         <div id="main-app" class="scrollable-content hidden">
             
-            <div class="profile-banner-wrapper" onclick="triggerFileInput('bannerInput')">
-                <img id="user-banner" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
-                <div class="edit-banner-badge"><i class="fa-solid fa-pen"></i> Modifier la couverture</div>
-            </div>
-            <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
+            <!-- BLOC BANNÈRE ET SUPERPOSITION -->
+            <div class="profile-banner-wrapper">
+                <img id="user-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
+                <div class="banner-overlay"></div>
 
-            <div class="avatar-container">
-                <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
-                    <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
-                    <div class="edit-avatar-badge"><i class="fa-solid fa-camera"></i></div>
-                </div>
-                <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
-                <input type="text" class="user-name-box" id="user-name" value="..." onchange="updateProfileName(this.value)">
-                
-                <div class="rank-status-container">
-                    <div class="rank-badge-pill" id="profile-rank-badge">
-                        <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
+                <!-- ÉLÉMENTS DU PROFIL SUPERPOSÉS SUR L'IMAGE -->
+                <div class="profile-hero-content">
+                    <div class="hero-left-col">
+                        <div class="avatar-container">
+                            <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
+                                <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+                                <div class="edit-avatar-badge"><i class="fa-solid fa-camera"></i></div>
+                            </div>
+                        </div>
+                        
+                        <div class="user-info-group">
+                            <input type="text" class="user-name-box" id="user-name" value="..." onchange="updateProfileName(this.value)">
+                            
+                            <div class="rank-status-container">
+                                <div class="rank-badge-pill" id="profile-rank-badge">
+                                    <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- INPUTS MASQUÉS POUR LE TÉLÉCHARGEMENT D'IMAGES -->
+            <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
+            <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
+
             <div class="balance-card">
-    <div class="balance-label">Votre solde actuel</div>
-    <div class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="user-coins">0</span></div>
-    <div class="balance-value-converted">Valeur estimée : <span id="user-cash-value">$0.00</span></div>
-    
-            <div class="help-trigger-wrapper">
-                <div class="help-incitation-tag">Info</div>
-                <button class="btn-pulse-help" onclick="openRankModal()">?</button>
-    </div>
-</div>
+                <div class="balance-label">Votre solde actuel</div>
+                <div class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="user-coins">0</span></div>
+                <div class="balance-value-converted">Valeur estimée : <span id="user-cash-value">$0.00</span></div>
+                
+                <div class="help-trigger-wrapper">
+                    <div class="help-incitation-tag">Info</div>
+                    <button class="btn-pulse-help" onclick="openRankModal()">?</button>
+                </div>
+            </div>
 
             <div class="share-box-wrapper">
                 <div class="share-box-title"><i class="fa-solid fa-share-nodes"></i> Votre lien de parrainage unique</div>
@@ -830,8 +841,6 @@
                     </tbody>
                 </table>
             </div>
-
-            <!-- BOUTON D'AUGMENTATION SUPPRIMÉ ICI -->
 
             <div class="withdraw-action-container">
                 <button id="withdraw-gate-button" class="btn-withdraw-gate" disabled onclick="openRankModal()">
@@ -935,7 +944,6 @@
             </div>
         </div>
     </div>
-
 <script type="module">
     // 1. IMPORTS TOUT EN HAUT (J'ai ajouté 'onSnapshot' dans les imports Firestore)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
