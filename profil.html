@@ -27,7 +27,7 @@
         }
         .hidden { display: none !important; }
 
-        /* Suppression définitive du bouton Modifier la couvertur */
+        /* Suppression définitive du bouton Modifier la couverture */
         .btn-edit-cover, .edit-cover-btn, [class*="cover"] button { 
             display: none !important; 
         }
@@ -65,11 +65,11 @@
         .toggle-pass { position: absolute; right: 18px; top: 18px; color: #41435c; cursor: pointer; }
         #error-msg { color: var(--error); font-size: 13px; margin-bottom: 15px; display: none; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.2); text-align: left; line-height: 1.4; }
         
-        /* --- PROFIL EN-TÊTE CORRIGÉ (RATIO IMAGE RESPECTÉ) --- */
+        /* --- PROFIL EN-TÊTE OPTIMISÉ --- */
         .profile-banner-wrapper { 
             position: relative; 
             width: 100%; 
-            aspect-ratio: 16 / 9; /* Verrouille la hauteur exactement au ratio de l'image */
+            aspect-ratio: 16 / 9;
             background: #060713; 
             overflow: hidden; 
             box-sizing: border-box;
@@ -78,15 +78,23 @@
             align-items: flex-end;
         }
 
-        /* Ombre/Voile sombre sur l'image de couverture */
+        /* FONDU PROGRESSIF HAUT & BAS SANS NOIRCIR LE CENTRE */
         .profile-banner-wrapper::before {
             content: '';
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(180deg, rgba(6, 7, 19, 0.1) 0%, rgba(6, 7, 19, 0.85) 100%);
+            background: linear-gradient(
+                180deg, 
+                rgba(6, 7, 19, 0.6) 0%, 
+                rgba(6, 7, 19, 0) 25%, 
+                rgba(6, 7, 19, 0) 70%, 
+                rgba(6, 7, 19, 1) 100%
+            );
             z-index: 2;
+            pointer-events: none;
         }
 
+        /* IMAGE NETTE, LUMINEUSE ET TRANSITION RALENTIE */
         .banner-slide { 
             position: absolute; 
             top: 0; left: 0; 
@@ -95,6 +103,8 @@
             object-fit: cover !important; 
             opacity: 1 !important; 
             z-index: 1;
+            filter: brightness(1.15) contrast(1.05); /* Boost de luminosité */
+            transition: opacity 1.8s ease-in-out, transform 2s ease-in-out; /* Transition douce en ralenti */
         }
 
         .profile-hero-content {
@@ -2211,41 +2221,41 @@ const BANNER_CAROUSEL_IMAGES = [
 let carouselTimer = null;
 let currentCarouselIndex = 0;
 
-// Function de rotation toutes les 5 secondes (communication JS -> CSS/DOM)
 function startBannerCarousel() {
-    // Filtre uniquement les liens renseignés
     const activeImages = BANNER_CAROUSEL_IMAGES.filter(url => url && url.trim() !== "");
     if (activeImages.length === 0) return;
 
     if (carouselTimer) clearInterval(carouselTimer);
 
     const bannerImg = document.getElementById('user-banner');
-    const bannerWrapper = document.querySelector('.profile-banner-wrapper');
 
     const rotate = () => {
         const nextUrl = activeImages[currentCarouselIndex];
 
-        // 1. Mise à jour de la balise <img> si elle existe
         if (bannerImg) {
-            bannerImg.style.transition = "opacity 0.8s ease-in-out";
-            bannerImg.src = nextUrl;
-        }
+            // 1. Fondu de sortie (l'image actuelle disparaît doucement)
+            bannerImg.style.transition = "opacity 1.2s ease-in-out";
+            bannerImg.style.opacity = "0";
 
-        // 2. Communication directe avec le CSS (fond de bannière)
-        if (bannerWrapper) {
-            bannerWrapper.style.transition = "background-image 0.8s ease-in-out";
-            bannerWrapper.style.backgroundImage = `linear-gradient(rgba(13, 15, 30, 0.75), rgba(6, 7, 19, 0.95)), url('${nextUrl}')`;
-            bannerWrapper.style.backgroundSize = "cover";
-            bannerWrapper.style.backgroundPosition = "center";
+            // 2. Une fois l'image masquée, on change la source et on la réaffiche
+            setTimeout(() => {
+                const tempImg = new Image();
+                tempImg.src = nextUrl;
+
+                // On attend le chargement complet pour éviter tout saut/clignotement
+                tempImg.onload = () => {
+                    bannerImg.src = nextUrl;
+                    bannerImg.style.opacity = "1"; // Fondu d'entrée
+                };
+            }, 1000); // Temps d'attente correspondant au fondu de sortie
         }
 
         currentCarouselIndex = (currentCarouselIndex + 1) % activeImages.length;
     };
 
     rotate();
-    carouselTimer = setInterval(rotate, 5000); // Transition toutes les 5 secondes
+    carouselTimer = setInterval(rotate, 15000); // 15 secondes pour laisser le temps au fondu
 }
-
 // ==========================================
 // 2. FONCTIONS LOGIQUES ET FIREBASE EXISTANTES
 // ==========================================
