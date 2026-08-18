@@ -85,21 +85,45 @@ body, html {
 #error-msg { color: var(--error); font-size: 13px; margin-bottom: 15px; display: none; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.2); text-align: left; line-height: 1.4; }
 
 /* ============================================================
-   3. BANNIÈRE ET EN-TÊTE DU PROFIL (CORRIGÉ & EFFET NUAGE)
+   1. BOUTON RETOUR (SANS CERCLE, PLUS HAUT)
+   ============================================================ */
+.floating-back-btn {
+    position: absolute; 
+    top: 10px !important; /* Rehaussé au maximum */
+    left: 12px !important; 
+    z-index: 100;
+    background: transparent !important; /* Cercle noir enlevé */
+    border: none !important; /* Bordure enlevée */
+    color: #ffffff !important; 
+    width: auto !important; 
+    height: auto !important; 
+    font-size: 22px !important; /* Flèche nette et lisible */
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    cursor: pointer;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 4px;
+}
+.floating-back-btn:active { transform: scale(0.9); }
+
+/* ============================================================
+   3. BANNIÈRE ET EN-TÊTE DU PROFIL (OPTIMISÉ MOBILE & PC)
    ============================================================ */
 .profile-banner-wrapper { 
     position: relative; 
     width: 100%; 
-    min-height: 230px;
+    min-height: 235px;
     background: #060713; 
     overflow: hidden; 
     box-sizing: border-box;
-    padding: 16px 12px 14px 12px;
+    padding: 38px 10px 12px 10px !important; /* Dégage le bouton retour en haut */
     display: flex;
     align-items: flex-end;
 }
 
-/* Nuage noir fondu en bas de bannière pour faire disparaître la ligne de démarcation */
 .profile-banner-wrapper::after {
     content: '';
     position: absolute;
@@ -110,10 +134,9 @@ body, html {
     background: linear-gradient(to top, #060713 20%, rgba(6, 7, 19, 0.8) 60%, transparent 100%);
     z-index: 3;
     pointer-events: none;
-    backdrop-filter: blur(3px); /* Effet flou/fumé */
+    backdrop-filter: blur(3px);
 }
 
-/* Image de bannière */
 .banner-slide { 
     position: absolute; 
     top: 0; 
@@ -138,35 +161,41 @@ body, html {
     pointer-events: none;
 }
 
-/* Conteneur principal superposé */
+/* Alignement global */
 .profile-hero-content {
     position: relative;
     z-index: 5;
     display: flex !important;
     flex-direction: row !important;
-    align-items: flex-start !important; /* Alignement en haut avec la photo */
+    align-items: flex-end !important;
     justify-content: space-between !important;
     width: 100% !important;
-    gap: 10px !important;
+    gap: 8px !important;
 }
 
-/* Alignement Avatar + Infos */
+/* Conteneur gauche */
 .hero-left-col {
     display: flex !important;
-    flex-direction: row !important;
-    align-items: flex-start !important; /* Aligne le haut de la photo avec le nom */
-    flex-wrap: wrap !important; /* Permet à la description longue de glisser sous la photo */
-    gap: 10px !important;
+    flex-direction: column !important;
+    gap: 4px !important;
     flex: 1 !important;
-    min-width: 0;
+    min-width: 0 !important;
+}
+
+/* LIGNE DU HAUT : Photo + Nom/Rang côte à côte */
+.avatar-header-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
 }
 
 .avatar-container { 
     position: relative; 
     flex-shrink: 0 !important; 
-    width: 76px !important; 
-    height: 76px !important; 
-    transform: none !important; /* Alignement propre sur la même hauteur */
+    width: 68px !important; 
+    height: 68px !important; 
 }
 
 .avatar-wrapper { 
@@ -190,107 +219,108 @@ body, html {
 
 .edit-avatar-badge { 
     position: absolute; 
-    bottom: 2px; 
-    right: 2px; 
+    bottom: 0px; 
+    right: 0px; 
     background: #8e2de2; 
     color: #fff; 
     border-radius: 50%; 
-    width: 22px; 
-    height: 22px; 
+    width: 20px; 
+    height: 20px; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
     border: 1.5px solid #ffffff; 
-    font-size: 10px; 
+    font-size: 9px; 
     z-index: 6;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
 
-.user-info-group {
+.user-title-block {
     display: flex !important;
     flex-direction: column !important;
-    gap: 3px !important;
-    min-width: 0;
-    flex: 1 1 140px !important;
+    gap: 2px !important;
+    min-width: 0 !important;
 }
 
 .user-title-row { 
     display: flex !important; 
     align-items: center !important; 
-    gap: 6px !important; 
+    gap: 5px !important; 
 }
 
 .user-name-display { 
-    font-size: 19px !important; /* Augmenté */
+    font-size: 18px !important; 
     color: #fff !important; 
     font-weight: 800 !important; 
     line-height: 1.1 !important;
     text-shadow: 0 2px 6px rgba(0,0,0,0.9);
 }
 
-.verified-badge { color: #a855f7 !important; font-size: 16px !important; }
+.verified-badge { color: #a855f7 !important; font-size: 15px !important; }
 
 .rank-status-container { display: flex !important; }
 
 .rank-badge-pill { 
-    padding: 3px 10px !important; 
-    border-radius: 12px !important; 
-    font-size: 12px !important; /* Augmenté */
+    padding: 2px 8px !important; 
+    border-radius: 10px !important; 
+    font-size: 11px !important; 
     font-weight: 700 !important; 
     background: rgba(0, 0, 0, 0.6) !important; 
     border: 1px solid rgba(255,255,255,0.2) !important; 
     color: #f97316 !important; 
     display: inline-flex !important; 
     align-items: center !important; 
-    gap: 5px !important; 
+    gap: 4px !important; 
     backdrop-filter: blur(6px);
+}
+
+/* LIGNE DU BAS : Réputation, Bio & Boutons */
+.user-details-block {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    width: 100% !important;
 }
 
 .reputation-stars-container { 
     display: flex !important; 
     align-items: center !important; 
     gap: 4px !important; 
-    font-size: 12px !important; /* Augmenté */
 }
 
-.stars-list { display: flex !important; gap: 3px !important; }
-.star-gold { color: #facc15 !important; font-size: 12px !important; }
-.rating-text { color: #d1d5db !important; font-size: 12px !important; font-weight: 600 !important; }
-.reviews-count { color: #9ca3af !important; font-size: 11px !important; }
+.stars-list { display: flex !important; gap: 2px !important; }
+.star-gold { color: #facc15 !important; font-size: 11px !important; }
+.rating-text { color: #d1d5db !important; font-size: 11px !important; font-weight: 600 !important; }
+.reviews-count { color: #9ca3af !important; font-size: 10px !important; }
 
 .btn-info-reputation {
     background: transparent !important; 
     border: none !important;
     color: #a855f7 !important; 
     cursor: pointer !important;
-    font-size: 12px !important; 
-    padding: 0 !important; 
-    margin-left: 2px !important;
+    font-size: 11px !important; 
+    padding: 0 !important;
 }
 
-/* Style Facebook : s'étend sur toute la largeur disponible sous la photo si la description est longue */
 .user-description-text { 
-    font-size: 13px !important; /* Augmenté */
+    font-size: 12px !important; 
     color: #e5e7eb !important; 
     opacity: 0.95; 
-    margin: 4px 0 !important;
+    margin: 2px 0 !important;
     text-shadow: 0 1px 4px rgba(0,0,0,0.9);
     width: 100% !important; 
-    max-width: 100% !important; 
-    line-height: 1.35 !important;
-    word-wrap: break-word !important;
+    line-height: 1.3 !important;
     word-break: break-word !important;
 }
 
-.hero-action-buttons { display: flex !important; gap: 6px !important; margin-top: 4px !important; }
+.hero-action-buttons { display: flex !important; gap: 6px !important; margin-top: 2px !important; }
 
 .btn-edit-profile-trigger, .btn-settings-trigger { 
     background: rgba(255, 255, 255, 0.18) !important; 
     border: 1px solid rgba(255, 255, 255, 0.3) !important; 
     color: #fff !important; 
-    font-size: 11px !important; 
+    font-size: 10.5px !important; 
     font-weight: 600 !important; 
-    padding: 4px 8px !important; 
+    padding: 3px 7px !important; 
     border-radius: 6px !important; 
     cursor: pointer !important; 
     backdrop-filter: blur(8px); 
@@ -300,34 +330,34 @@ body, html {
     white-space: nowrap;
 }
 
-/* Métriques à droite (Conservées telles quelles) */
+/* MÉTROLOGIES À DROITE */
 .hero-right-metrics {
     display: flex !important;
     flex-direction: column !important;
     gap: 5px !important;
-    width: 115px !important;
+    width: 110px !important;
     flex-shrink: 0 !important;
 }
 
 .metric-badge-item {
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 5px !important;
     background: rgba(15, 18, 35, 0.65) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    padding: 5px 8px !important;
-    border-radius: 10px !important;
+    padding: 4px 6px !important;
+    border-radius: 8px !important;
     backdrop-filter: blur(8px);
 }
 
 .metric-icon-box {
-    width: 22px !important; 
-    height: 22px !important; 
-    border-radius: 6px !important;
+    width: 20px !important; 
+    height: 20px !important; 
+    border-radius: 5px !important;
     display: flex !important; 
     align-items: center !important; 
     justify-content: center !important;
-    font-size: 10px !important; 
+    font-size: 9.5px !important; 
     flex-shrink: 0 !important;
 }
 .icon-blue { background: rgba(56, 189, 248, 0.25); color: #38bdf8; }
@@ -335,8 +365,8 @@ body, html {
 .icon-yellow { background: rgba(250, 204, 21, 0.25); color: #facc15; }
 
 .metric-data { display: flex !important; flex-direction: column !important; }
-.metric-label { font-size: 7.5px !important; color: #9ca3af !important; text-transform: uppercase; line-height: 1; }
-.metric-value { font-size: 10px !important; font-weight: 700 !important; color: #ffffff !important; line-height: 1.1; }
+.metric-label { font-size: 7px !important; color: #9ca3af !important; text-transform: uppercase; line-height: 1; }
+.metric-value { font-size: 9.5px !important; font-weight: 700 !important; color: #ffffff !important; line-height: 1.1; }
 
 /* ============================================================
    4. CARTE DE SOLDE ET TABLEAU DE BORD
@@ -874,90 +904,98 @@ body, html {
 <div id="main-app" class="scrollable-content hidden">
     
     <!-- BLOC BANNIÈRE ET SUPERPOSITION -->
-    <div class="profile-banner-wrapper">
-        <img id="user-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
-        <div class="banner-overlay"></div>
+<div class="profile-banner-wrapper">
+    <!-- BOUTON RETOUR SANS CERCLE NOIR ET PLUS HAUT -->
+    <button class="floating-back-btn" onclick="goBack()"><i class="fa-solid fa-arrow-left"></i></button>
 
-        <!-- ÉLÉMENTS DU PROFIL EN BANNIÈRE -->
-        <div class="profile-hero-content">
+    <img id="user-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
+    <div class="banner-overlay"></div>
+
+    <!-- ÉLÉMENTS DU PROFIL EN BANNIÈRE -->
+    <div class="profile-hero-content">
+        
+        <!-- CONTENEUR GAUCHE : AVATAR + INFOS UTILISATEUR -->
+        <div class="hero-left-col">
             
-            <!-- CONTENEUR GAUCHE : AVATAR + INFOS UTILISATEUR -->
-            <div class="hero-left-col">
-                <!-- AVATAR -->
+            <!-- 1. LIGNE DU HAUT : PHOTO + (NOM ET RANG À DROITE) -->
+            <div class="avatar-header-row">
                 <div class="avatar-container">
                     <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
                         <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar">
                         <div class="edit-avatar-badge"><i class="fa-solid fa-camera"></i></div>
                     </div>
                 </div>
-                
-                <!-- INFOS UTILISATEUR -->
-                <div class="user-info-group">
+
+                <div class="user-title-block">
                     <div class="user-title-row">
                         <span class="user-name-display" id="user-name-display">Draziel</span>
                         <i class="fa-solid fa-circle-check verified-badge"></i>
                     </div>
-                    
                     <div class="rank-status-container">
                         <div class="rank-badge-pill" id="profile-rank-badge">
                             <i class="fa-solid fa-shield-halved"></i> Rang 1 : Bronze
                         </div>
                     </div>
-
-                    <div class="reputation-stars-container">
-                        <div class="stars-list" id="reputation-stars">
-                            <i class="fa-solid fa-star star-gold"></i>
-                            <i class="fa-solid fa-star star-gold"></i>
-                            <i class="fa-solid fa-star star-gold"></i>
-                            <i class="fa-solid fa-star star-gold"></i>
-                            <i class="fa-regular fa-star star-gold"></i>
-                        </div>
-                        <span class="rating-text">4.6 <span class="reviews-count">(128 avis)</span></span>
-                        <button class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
-                            <i class="fa-solid fa-circle-info"></i>
-                        </button>
-                    </div>
-
-                    <p class="user-description-text" id="user-bio-text">Créateur de contenu • Passionné • Partageur</p>
-
-                    <div class="hero-action-buttons">
-                        <button class="btn-edit-profile-trigger" onclick="openEditProfileModal()">
-                            <i class="fa-solid fa-pen"></i> Modifier
-                        </button>
-                        <button class="btn-settings-trigger" onclick="openSettingsModal()">
-                            <i class="fa-solid fa-gear"></i> Paramètres
-                        </button>
-                    </div>
                 </div>
             </div>
 
-            <!-- CONTENEUR DROITE : 3 CARTES DE MÉTRIQUES -->
-            <div class="hero-right-metrics">
-                <div class="metric-badge-item">
-                    <div class="metric-icon-box icon-blue"><i class="fa-solid fa-calendar-day"></i></div>
-                    <div class="metric-data">
-                        <span class="metric-label">Membre depuis</span>
-                        <span class="metric-value">Août 2026</span>
+            <!-- 2. LIGNE DU BAS : RÉPUTATION, DESCRIPTION ET BOUTONS -->
+            <div class="user-details-block">
+                <div class="reputation-stars-container">
+                    <div class="stars-list" id="reputation-stars">
+                        <i class="fa-solid fa-star star-gold"></i>
+                        <i class="fa-solid fa-star star-gold"></i>
+                        <i class="fa-solid fa-star star-gold"></i>
+                        <i class="fa-solid fa-star star-gold"></i>
+                        <i class="fa-regular fa-star star-gold"></i>
                     </div>
+                    <span class="rating-text">4.6 <span class="reviews-count">(128 avis)</span></span>
+                    <button class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </button>
                 </div>
-                <div class="metric-badge-item">
-                    <div class="metric-icon-box icon-purple"><i class="fa-solid fa-users"></i></div>
-                    <div class="metric-data">
-                        <span class="metric-label">Parrainages</span>
-                        <span class="metric-value">156</span>
-                    </div>
-                </div>
-                <div class="metric-badge-item">
-                    <div class="metric-icon-box icon-yellow"><i class="fa-solid fa-bolt"></i></div>
-                    <div class="metric-data">
-                        <span class="metric-label">Score d'activité</span>
-                        <span class="metric-value">98%</span>
-                    </div>
+
+                <p class="user-description-text" id="user-bio-text">Créateur de contenu • Passionné • Partageur</p>
+
+                <div class="hero-action-buttons">
+                    <button class="btn-edit-profile-trigger" onclick="openEditProfileModal()">
+                        <i class="fa-solid fa-pen"></i> Modifier
+                    </button>
+                    <button class="btn-settings-trigger" onclick="openSettingsModal()">
+                        <i class="fa-solid fa-gear"></i> Paramètres
+                    </button>
                 </div>
             </div>
 
         </div>
-    </div> <!-- FERMETURE DE profile-banner-wrapper -->
+
+        <!-- CONTENEUR DROITE : 3 CARTES DE MÉTRIQUES -->
+        <div class="hero-right-metrics">
+            <div class="metric-badge-item">
+                <div class="metric-icon-box icon-blue"><i class="fa-solid fa-calendar-day"></i></div>
+                <div class="metric-data">
+                    <span class="metric-label">Membre depuis</span>
+                    <span class="metric-value">Août 2026</span>
+                </div>
+            </div>
+            <div class="metric-badge-item">
+                <div class="metric-icon-box icon-purple"><i class="fa-solid fa-users"></i></div>
+                <div class="metric-data">
+                    <span class="metric-label">Parrainages</span>
+                    <span class="metric-value">156</span>
+                </div>
+            </div>
+            <div class="metric-badge-item">
+                <div class="metric-icon-box icon-yellow"><i class="fa-solid fa-bolt"></i></div>
+                <div class="metric-data">
+                    <span class="metric-label">Score d'activité</span>
+                    <span class="metric-value">98%</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
 
     <!-- INPUTS MASQUÉS POUR LE TÉLÉCHARGEMENT D'IMAGES -->
     <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
