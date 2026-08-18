@@ -931,13 +931,26 @@ body, html {
             <i class="fa-solid fa-chevron-left"></i>
         </a>
 
+<!-- PRINCIPALE APPLICATION -->
+<div id="main-app" class="scrollable-content hidden">
+
+    <!-- BLOC BANNIÈRE ET SUPERPOSITION -->
+    <div class="profile-banner-wrapper">
+        <img id="user-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600" alt="Bannière">
+        <div class="banner-overlay"></div>
+        
+        <!-- BOUTON RETOUR -->
+        <a href="https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html" class="floating-back-btn">
+            <i class="fa-solid fa-chevron-left"></i>
+        </a>
+
         <!-- ÉLÉMENTS DU PROFIL EN BANNIÈRE -->
         <div class="profile-hero-content">
 
             <!-- CONTENEUR GAUCHE : AVATAR + INFOS UTILISATEUR -->
             <div class="hero-left-col">
                 
-                <!-- 1. LIGNE DU HAUT : PHOTO + (NOM ET RANG À DROITE) -->
+                <!-- 1. LIGNE DU HAUT : PHOTO + NOM ET RANG -->
                 <div class="avatar-header-row">
                     <div class="avatar-container">
                         <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
@@ -948,8 +961,7 @@ body, html {
 
                     <div class="user-title-block">
                         <div class="user-title-row">
-                            <!-- CHAMP NOM QUE TON JS REMPLIT VIA .value -->
-                            <input type="text" id="user-name" class="user-name-display" value="Chargement..." readonly style="background:transparent; border:none; color:#fff; font-size:18px; font-weight:800; outline:none; pointer-events:none;">
+                            <span class="user-name-display" id="user-name-display">Chargement...</span>
                             <i class="fa-solid fa-circle-check verified-badge"></i>
                         </div>
                         <div class="rank-status-container">
@@ -1018,7 +1030,7 @@ body, html {
         </div>
     </div>
 
-    <!-- ÉLÉMENTS MASQUÉS POUR CONDITIONS ET UPLOADS -->
+    <!-- ÉLÉMENTS MASQUÉS REQUIS PAR LE SCRIPT JS -->
     <div style="display:none;">
         <span id="m-cond-invite">0 / 10</span>
         <span id="m-cond-tasks">0 / 50</span>
@@ -2820,16 +2832,19 @@ onAuthStateChanged(auth, async (user) => {
             const d = snap.data();
             const totalCoins = d.coins || 0;
             
-            document.getElementById('user-name').value = d.name || "Utilisateur";
+            // LIGNE CORRIGÉE : Mise à jour du texte du span
+            const nameEl = document.getElementById('user-name-display') || document.getElementById('user-name');
+            if (nameEl) nameEl.innerText = d.name || "Utilisateur";
+
             document.getElementById('user-coins').innerText = totalCoins;
             
             const computedCash = (totalCoins * 0.001).toFixed(2);
             document.getElementById('user-cash-value').innerText = `$${computedCash}`;
             
-            // Photo de profil Firebase (Intact)
+            // Photo de profil Firebase
             if(d.photoURL) document.getElementById('user-photo').src = d.photoURL;
 
-            // Bannière : Si l'utilisateur a une bannière personnalisée, on l'affiche. Sinon, lance le carrousel 5s
+            // Bannière
             if(d.bannerURL) {
                 if (carouselTimer) clearInterval(carouselTimer);
                 document.getElementById('user-banner').src = d.bannerURL;
