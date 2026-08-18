@@ -860,6 +860,32 @@ body, html {
         .phone-payment-group input { flex: 1; padding: 12px; background: #14152d; border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 13px; outline: none; }
         .btn-pay-flutterwave { background: linear-gradient(90deg, #ff9900, #ff5500); color: #fff; border: none; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; justify-content: center; }
         .btn-pay-flutterwave:active { transform: scale(0.97); }
+    <!-- STYLE MODALES DE PROFIL -->
+.custom-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; opacity: 0; pointer-events: none; transition: all 0.3s ease;
+}
+.custom-modal-overlay.active { opacity: 1; pointer-events: auto; }
+.custom-modal-card {
+    background: #121318; border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px; width: 90%; max-width: 420px; padding: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6); color: #fff; transform: scale(0.9); transition: transform 0.3s ease;
+}
+.custom-modal-overlay.active .custom-modal-card { transform: scale(1); }
+.modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 16px; color: #fff; display: flex; align-items: center; gap: 10px; }
+.modal-field-group { margin-bottom: 16px; text-align: left; }
+.modal-field-group label { font-size: 0.85rem; color: #a0a0ab; display: block; margin-bottom: 6px; }
+.modal-input {
+    width: 100%; padding: 12px 14px; background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 10px; color: #fff;
+    font-size: 0.95rem; outline: none; transition: border-color 0.2s;
+}
+.modal-input:focus { border-color: #00ff88; }
+.modal-actions-row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+.btn-modal-cancel { background: transparent; border: 1px solid rgba(255, 255, 255, 0.2); color: #ccc; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.btn-modal-confirm { background: #00ff88; border: none; color: #000; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; }
     </style>
     <!-- Chargement Direct du SDK Officiel Flutterwave v3 -->
     <script src="https://checkout.flutterwave.com/v3.js"></script>
@@ -911,21 +937,15 @@ body, html {
     
   <!-- BLOC BANNIÈRE ET SUPERPOSITION -->
 <div class="profile-banner-wrapper">
- <!-- BOUTON RETOUR EN BALISE LIEN (OU DIV) -->
-<a href="https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html" class="floating-back-btn">
-    <i class="fa-solid fa-chevron-left"></i>
-</a>
+    <a href="https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html" class="floating-back-btn">
+        <i class="fa-solid fa-chevron-left"></i>
+    </a>
 
     <img id="user-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
     <div class="banner-overlay"></div>
 
-    <!-- ÉLÉMENTS DU PROFIL EN BANNIÈRE -->
     <div class="profile-hero-content">
-        
-        <!-- CONTENEUR GAUCHE : AVATAR + INFOS UTILISATEUR -->
         <div class="hero-left-col">
-            
-            <!-- 1. LIGNE DU HAUT : PHOTO + (NOM ET RANG À DROITE) -->
             <div class="avatar-header-row">
                 <div class="avatar-container">
                     <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
@@ -936,18 +956,18 @@ body, html {
 
                 <div class="user-title-block">
                     <div class="user-title-row">
-                        <span class="user-name-display" id="user-name-display">Draziel</span>
-                        <i class="fa-solid fa-circle-check verified-badge"></i>
+                        <span class="user-name-display" id="user-name-display">Chargement...</span>
+                        <!-- BADGE DE VÉRIFICATION CONTRÔLÉ PAR JS -->
+                        <i class="fa-solid fa-circle-check verified-badge" id="verified-badge-icon" style="display: none;"></i>
                     </div>
                     <div class="rank-status-container">
                         <div class="rank-badge-pill" id="profile-rank-badge">
-                            <i class="fa-solid fa-shield-halved"></i> Rang 1 : Bronze
+                            <i class="fa-solid fa-shield-halved"></i> Rang 0 : Débutant
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. LIGNE DU BAS : RÉPUTATION, DESCRIPTION ET BOUTONS -->
             <div class="user-details-block">
                 <div class="reputation-stars-container">
                     <div class="stars-list" id="reputation-stars">
@@ -965,19 +985,15 @@ body, html {
 
                 <p class="user-description-text" id="user-bio-text">Créateur de contenu • Passionné • Partageur</p>
 
+                <!-- BOUTON RETIRÉ : UN UNIQUEMENT -->
                 <div class="hero-action-buttons">
                     <button class="btn-edit-profile-trigger" onclick="openEditProfileModal()">
                         <i class="fa-solid fa-pen"></i> Modifier
                     </button>
-                    <button class="btn-settings-trigger" onclick="openSettingsModal()">
-                        <i class="fa-solid fa-gear"></i> Paramètres
-                    </button>
                 </div>
             </div>
-
         </div>
 
-        <!-- CONTENEUR DROITE : 3 CARTES DE MÉTRIQUES -->
         <div class="hero-right-metrics">
             <div class="metric-badge-item">
                 <div class="metric-icon-box icon-blue"><i class="fa-solid fa-calendar-day"></i></div>
@@ -1001,11 +1017,44 @@ body, html {
                 </div>
             </div>
         </div>
-
     </div>
 </div>
-    <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
-    <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
+
+<input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
+<input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
+
+<!-- MODALE 1 : MODIFICATION DU PROFIL (NOM & BIO) -->
+<div class="custom-modal-overlay" id="editProfileModal">
+    <div class="custom-modal-card">
+        <div class="modal-title"><i class="fa-solid fa-user-pen" style="color:#00ff88;"></i> Modifier le Profil</div>
+        <div class="modal-field-group">
+            <label for="edit-profile-name">Nom d'utilisateur</label>
+            <input type="text" id="edit-profile-name" class="modal-input" placeholder="Ton nom...">
+        </div>
+        <div class="modal-field-group">
+            <label for="edit-profile-bio">Description / Bio</label>
+            <textarea id="edit-profile-bio" class="modal-input" rows="3" placeholder="Parle un peu de toi..."></textarea>
+        </div>
+        <div class="modal-actions-row">
+            <button class="btn-modal-cancel" onclick="closeEditProfileModal()">Annuler</button>
+            <button class="btn-modal-confirm" onclick="saveProfileChanges()">Enregistrer</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODALE 2 : AVERTISSEMENT TAILLE IMAGE -->
+<div class="custom-modal-overlay" id="imageWarningModal">
+    <div class="custom-modal-card">
+        <div class="modal-title"><i class="fa-solid fa-image" style="color:#ffcc00;"></i> Choix de l'image</div>
+        <p style="font-size: 0.9rem; color: #ccc; line-height: 1.5; margin-bottom: 20px;">
+            Pour un chargement rapide de votre profil, veuillez sélectionner une image **légère** (de préférence moins de 1 Mo).
+        </p>
+        <div class="modal-actions-row">
+            <button class="btn-modal-cancel" onclick="closeImageWarningModal()">Annuler</button>
+            <button class="btn-modal-confirm" onclick="confirmImageSelection()">OK</button>
+        </div>
+    </div>
+</div>
 
             <div class="balance-card">
                 <div class="balance-label">Votre solde actuel</div>
@@ -2654,6 +2703,8 @@ window.copyLinkOnly = () => {
     });
 };
 
+let pendingFileInputId = null;
+
 window.sharePlatformNative = async () => {
     const linkText = document.getElementById('share-link-text').innerText;
     if (navigator.share) {
@@ -2666,15 +2717,62 @@ window.sharePlatformNative = async () => {
     }
 };
 
+// GESTION DES MODALES D'IMAGE
 window.triggerFileInput = (inputId) => {
-    document.getElementById(inputId).click();
+    pendingFileInputId = inputId;
+    document.getElementById('imageWarningModal').classList.add('active');
 };
 
-window.updateProfileName = async (newName) => {
-    if(!newName || newName === "...") return;
+window.closeImageWarningModal = () => {
+    document.getElementById('imageWarningModal').classList.remove('active');
+    pendingFileInputId = null;
+};
+
+window.confirmImageSelection = () => {
+    document.getElementById('imageWarningModal').classList.remove('active');
+    if (pendingFileInputId) {
+        document.getElementById(pendingFileInputId).click();
+    }
+};
+
+// GESTION DE LA MODALE MODIFIER LE PROFIL
+window.openEditProfileModal = () => {
+    const currentName = document.getElementById('user-name-display').innerText;
+    const currentBio = document.getElementById('user-bio-text').innerText;
+    
+    document.getElementById('edit-profile-name').value = currentName !== "Chargement..." ? currentName : "";
+    document.getElementById('edit-profile-bio').value = currentBio;
+    document.getElementById('editProfileModal').classList.add('active');
+};
+
+window.closeEditProfileModal = () => {
+    document.getElementById('editProfileModal').classList.remove('active');
+};
+
+window.saveProfileChanges = async () => {
+    const newName = document.getElementById('edit-profile-name').value.trim();
+    const newBio = document.getElementById('edit-profile-bio').value.trim();
+    
+    if (!newName) {
+        showPremiumToast("Le nom ne peut pas être vide.");
+        return;
+    }
+
     try {
-        await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { name: newName });
-    } catch (e) { console.error(e); }
+        await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
+            name: newName,
+            bio: newBio
+        });
+
+        document.getElementById('user-name-display').innerText = newName;
+        document.getElementById('user-bio-text').innerText = newBio || "Créateur de contenu • Passionné • Partageur";
+        
+        closeEditProfileModal();
+        showPremiumToast("Profil mis à jour avec succès !");
+    } catch (e) {
+        console.error("Erreur lors de la mise à jour du profil :", e);
+        showPremiumToast("Erreur lors de l'enregistrement.");
+    }
 };
 
 window.toggleAuthMode = () => {
@@ -2754,6 +2852,7 @@ window.handleAuth = async () => {
             
             await setDoc(doc(db, "rewards_users", cred.user.uid), { 
                 name: email.split('@')[0], 
+                bio: "Créateur de contenu • Passionné • Partageur",
                 coins: 0, 
                 birthdate: birthdateValue,
                 age: age,
@@ -2779,33 +2878,36 @@ window.handleAuth = async () => {
     }
 };
 
-// Synchronisation Firebase Auth & Base de données
+// SYNCHRONISATION FIREBASE AUTH & BASE DE DONNÉES
 onAuthStateChanged(auth, async (user) => {
     if(user) {
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
         
         const domain = window.location.origin + window.location.pathname;
-        document.getElementById('share-link-text').innerText = `${domain}?ref=${user.uid}`;
+        const shareEl = document.getElementById('share-link-text');
+        if(shareEl) shareEl.innerText = `${domain}?ref=${user.uid}`;
 
         const snap = await getDoc(doc(db, "rewards_users", user.uid));
         if(snap.exists()){
             const d = snap.data();
             const totalCoins = d.coins || 0;
             
-            // LIGNE CORRIGÉE : Mise à jour du texte du span
+            // SYNCHRO NOM ET BIO
             const nameEl = document.getElementById('user-name-display') || document.getElementById('user-name');
             if (nameEl) nameEl.innerText = d.name || "Utilisateur";
+            
+            const bioEl = document.getElementById('user-bio-text');
+            if (bioEl && d.bio) bioEl.innerText = d.bio;
 
             document.getElementById('user-coins').innerText = totalCoins;
             
             const computedCash = (totalCoins * 0.001).toFixed(2);
             document.getElementById('user-cash-value').innerText = `$${computedCash}`;
             
-            // Photo de profil Firebase
+            // PHOTO DE PROFIL & BANNIÈRE
             if(d.photoURL) document.getElementById('user-photo').src = d.photoURL;
 
-            // Bannière
             if(d.bannerURL) {
                 if (carouselTimer) clearInterval(carouselTimer);
                 document.getElementById('user-banner').src = d.bannerURL;
@@ -2813,7 +2915,19 @@ onAuthStateChanged(auth, async (user) => {
                 startBannerCarousel();
             }
             
+            // GESTION DU RANG ET DU BADGE DE VÉRIFICATION
             let userRank = d.rank !== undefined ? d.rank : 0;
+            const verifiedBadge = document.getElementById('verified-badge-icon');
+            const rankBadgePill = document.getElementById('profile-rank-badge');
+
+            if (verifiedBadge) {
+                verifiedBadge.style.display = userRank > 0 ? "inline-block" : "none";
+            }
+
+            if (rankBadgePill) {
+                rankBadgePill.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Rang ${userRank} : ${userRank > 0 ? 'Bronze' : 'Débutant'}`;
+            }
+
             let currentHistory = d.history || { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 };
             
             const todayISO = new Date().toISOString().split('T')[0];
@@ -2893,7 +3007,10 @@ window.uploadImage = (e, type) => {
             await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { photoURL: reader.result });
             showPremiumToast("Photo de profil mise à jour !");
         } else if(type === 'banner') {
-            ("Image de couverture mise à jour !");
+            if (carouselTimer) clearInterval(carouselTimer);
+            document.getElementById('user-banner').src = reader.result;
+            await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { bannerURL: reader.result });
+            showPremiumToast("Image de couverture mise à jour !");
         }
     };
     reader.readAsDataURL(file);
