@@ -59,15 +59,6 @@ body, html {
 .scrollable-content { flex: 1; overflow-y: auto; box-sizing: border-box; }
 .scrollable-content::-webkit-scrollbar { display: none; }
 
-.floating-back-btn {
-    position: absolute; top: 20px; left: 20px; z-index: 100;
-    background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff; width: 38px; height: 38px; border-radius: 50%;
-    display: flex; justify-content: center; align-items: center; cursor: pointer;
-    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); transition: 0.2s;
-}
-.floating-back-btn:active { transform: scale(0.95); background: rgba(0, 0, 0, 0.8); }
-
 /* ============================================================
    2. AUTHENTIFICATION
    ============================================================ */
@@ -85,23 +76,24 @@ body, html {
 #error-msg { color: var(--error); font-size: 13px; margin-bottom: 15px; display: none; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.2); text-align: left; line-height: 1.4; }
 
 /* ============================================================
-   1. BOUTON RETOUR (SANS CERCLE, PLUS HAUT)
+   1. BOUTON RETOUR (LIEN / DIV SANS CERCLE)
    ============================================================ */
 .floating-back-btn {
     position: absolute; 
-    top: 10px !important; /* Rehaussé au maximum */
+    top: 10px !important; 
     left: 12px !important; 
     z-index: 100;
-    background: transparent !important; /* Cercle noir enlevé */
-    border: none !important; /* Bordure enlevée */
+    background: transparent !important; 
+    border: none !important; 
     color: #ffffff !important; 
     width: auto !important; 
     height: auto !important; 
-    font-size: 22px !important; /* Flèche nette et lisible */
+    font-size: 22px !important; 
     display: flex; 
     justify-content: center; 
     align-items: center; 
     cursor: pointer;
+    text-decoration: none !important; /* Pour enlever le soulignement si balise <a> */
     box-shadow: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
@@ -119,7 +111,7 @@ body, html {
     background: #060713; 
     overflow: hidden; 
     box-sizing: border-box;
-    padding: 38px 10px 12px 10px !important; /* Dégage le bouton retour en haut */
+    padding: 42px 10px 12px 10px !important; /* Espace réservé en haut pour le bouton retour */
     display: flex;
     align-items: flex-end;
 }
@@ -167,7 +159,7 @@ body, html {
     z-index: 5;
     display: flex !important;
     flex-direction: row !important;
-    align-items: flex-end !important;
+    align-items: flex-end !important; /* Aligne tout le contenu sur le bas */
     justify-content: space-between !important;
     width: 100% !important;
     gap: 8px !important;
@@ -330,13 +322,16 @@ body, html {
     white-space: nowrap;
 }
 
-/* MÉTROLOGIES À DROITE */
+/* MÉTROLOGIES À DROITE (CORRIGÉ POUR DESCENDRE) */
 .hero-right-metrics {
     display: flex !important;
     flex-direction: column !important;
-    gap: 5px !important;
+    justify-content: flex-end !important; /* Pousse les éléments vers le bas */
+    align-self: flex-end !important; /* Force le bloc à rester collé au bas du conteneur */
+    gap: 4px !important;
     width: 110px !important;
     flex-shrink: 0 !important;
+    margin-top: auto !important; /* Empêche le bloc d'être tiré vers le haut */
 }
 
 .metric-badge-item {
@@ -345,19 +340,19 @@ body, html {
     gap: 5px !important;
     background: rgba(15, 18, 35, 0.65) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    padding: 4px 6px !important;
+    padding: 3.5px 6px !important;
     border-radius: 8px !important;
     backdrop-filter: blur(8px);
 }
 
 .metric-icon-box {
-    width: 20px !important; 
-    height: 20px !important; 
+    width: 18px !important; 
+    height: 18px !important; 
     border-radius: 5px !important;
     display: flex !important; 
     align-items: center !important; 
     justify-content: center !important;
-    font-size: 9.5px !important; 
+    font-size: 9px !important; 
     flex-shrink: 0 !important;
 }
 .icon-blue { background: rgba(56, 189, 248, 0.25); color: #38bdf8; }
@@ -365,9 +360,9 @@ body, html {
 .icon-yellow { background: rgba(250, 204, 21, 0.25); color: #facc15; }
 
 .metric-data { display: flex !important; flex-direction: column !important; }
-.metric-label { font-size: 7px !important; color: #9ca3af !important; text-transform: uppercase; line-height: 1; }
-.metric-value { font-size: 9.5px !important; font-weight: 700 !important; color: #ffffff !important; line-height: 1.1; }
-
+.metric-label { font-size: 6.5px !important; color: #9ca3af !important; text-transform: uppercase; line-height: 1; }
+.metric-value { font-size: 9px !important; font-weight: 700 !important; color: #ffffff !important; line-height: 1.1; }
+    
 /* ============================================================
    4. CARTE DE SOLDE ET TABLEAU DE BORD
    ============================================================ */
@@ -860,10 +855,11 @@ body, html {
 
     <div class="app-container">
 
-        <div class="floating-back-btn" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html'">
-            <i class="fa-solid fa-chevron-left"></i>
-        </div>
-
+       <!-- BOUTON RETOUR EN BALISE LIEN (OU DIV) -->
+<a href="https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html" class="floating-back-btn">
+    <i class="fa-solid fa-chevron-left"></i>
+</a>
+    
         <div id="custom-toast" class="premium-toast">
             <i class="fa-solid fa-circle-check"></i>
             <span id="toast-text">Lien copié dans le presse-papier !</span>
