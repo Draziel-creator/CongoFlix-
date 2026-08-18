@@ -12,7 +12,7 @@
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
-    <style>
+   <style>
         :root { 
             --purple: #9b51e0; 
             --neon: #00ffcc; 
@@ -96,7 +96,7 @@
             pointer-events: none;
         }
 
-        /* IMAGE NETTE, LUMINEUSE */
+        /* IMAGE NETTE, LUMINEUSE ET TRANSITION RALENTIE */
         .banner-slide { 
             position: absolute; 
             top: 0; left: 0; 
@@ -699,18 +699,16 @@
 
     <div class="app-container">
 
-        <!-- BOUTON RETOUR FLOTTANT -->
         <div class="floating-back-btn" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html'">
             <i class="fa-solid fa-chevron-left"></i>
         </div>
 
-        <!-- NOTIFICATION TOAST -->
-        <div id="custom-toast" class="premium-toast hidden">
+        <div id="custom-toast" class="premium-toast">
             <i class="fa-solid fa-circle-check"></i>
             <span id="toast-text">Lien copié dans le presse-papier !</span>
         </div>
 
-        <!-- ECRAN D'AUTHENTIFICATION -->
+        <!-- AUTHENTIFICATION -->
         <div id="auth-screen" class="scrollable-content hidden">
             <div class="auth-header-space"></div>
             <div class="auth-container">
@@ -741,144 +739,57 @@
             </div>
         </div>
 
-        <!-- APPLICATION PRINCIPALE -->
-        <div id="main-app" class="scrollable-content">
+        <!-- PRINCIPALE APPLICATION -->
+        <div id="main-app" class="scrollable-content hidden">
             
-            <!-- BLOC HERO : BANNIÈRE + SUPERPOSITION PROFIL -->
+            <!-- BLOC BANNÈRE ET SUPERPOSITION -->
             <div class="profile-banner-wrapper">
-                <img id="user-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600" alt="Bannière">
+                <img id="user-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
                 <div class="banner-overlay"></div>
 
-                <!-- CONTENU DU PROFIL -->
+                <!-- BOUTON MODIFIER LA COUVERTURE -->
+                <div class="edit-banner-badge" onclick="triggerFileInput('bannerInput')">
+                    <i class="fa-solid fa-pen"></i> Modifier la couverture
+                </div>
+
+                <!-- ÉLÉMENTS DU PROFIL SUPERPOSÉS SUR L'IMAGE -->
                 <div class="profile-hero-content">
-                    
-                    <!-- BLOC GAUCHE : AVATAR ET INFOS UTILISATEUR -->
                     <div class="hero-left-col">
                         <div class="avatar-container">
                             <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
-                                <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar">
+                                <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
                                 <div class="edit-avatar-badge"><i class="fa-solid fa-camera"></i></div>
                             </div>
                         </div>
                         
                         <div class="user-info-group">
-                            <!-- NOM + BADGE VÉRIFIÉ VIOLET -->
-                            <div class="user-title-row">
-                                <span class="user-name-display" id="user-name-display">Draziel</span>
-                                <i class="fa-solid fa-circle-check verified-badge"></i>
-                            </div>
+                            <input type="text" class="user-name-box" id="user-name" value="..." onchange="updateProfileName(this.value)">
                             
-                            <!-- BADGE RANG -->
                             <div class="rank-status-container">
                                 <div class="rank-badge-pill" id="profile-rank-badge">
-                                    <i class="fa-solid fa-shield-halved"></i> Rang 1 : Bronze
+                                    <i class="fa-solid fa-spinner fa-spin"></i> Chargement...
                                 </div>
-                            </div>
-
-                            <!-- ÉTOILES & AVIS -->
-                            <div class="reputation-stars-container">
-                                <div class="stars-list" id="reputation-stars">
-                                    <i class="fa-solid fa-star star-gold"></i>
-                                    <i class="fa-solid fa-star star-gold"></i>
-                                    <i class="fa-solid fa-star star-gold"></i>
-                                    <i class="fa-solid fa-star star-gold"></i>
-                                    <i class="fa-regular fa-star star-gold"></i>
-                                </div>
-                                <span class="rating-text">4.6 <span class="reviews-count">(128 avis)</span></span>
-                                <button class="btn-info-reputation" onclick="openReputationModal()" title="C'est quoi la réputation ?">
-                                    <i class="fa-solid fa-circle-info"></i>
-                                </button>
-                            </div>
-
-                            <!-- DESCRIPTION / BIO -->
-                            <p class="user-description-text" id="user-bio-text">Créateur de contenu • Passionné • Partageur</p>
-
-                            <!-- BOUTONS D'ACTION -->
-                            <div class="hero-action-buttons">
-                                <button class="btn-edit-profile-trigger" onclick="openEditProfileModal()">
-                                    <i class="fa-solid fa-pen"></i> Modifier le profil
-                                </button>
-                                <button class="btn-settings-trigger" onclick="openSettingsModal()">
-                                    <i class="fa-solid fa-gear"></i> Paramètres
-                                </button>
                             </div>
                         </div>
                     </div>
-
-                    <!-- COLONNE DROITE : MÉTRIQUES UTILISATEUR -->
-                    <div class="hero-right-metrics">
-                        <div class="metric-badge-item">
-                            <div class="metric-icon-box icon-blue">
-                                <i class="fa-solid fa-table-cells-large"></i>
-                            </div>
-                            <div class="metric-data">
-                                <span class="metric-label">Membre depuis</span>
-                                <span class="metric-value" id="user-entry-date">Août 2026</span>
-                            </div>
-                        </div>
-
-                        <div class="metric-badge-item">
-                            <div class="metric-icon-box icon-purple">
-                                <i class="fa-solid fa-user-group"></i>
-                            </div>
-                            <div class="metric-data">
-                                <span class="metric-label">Parrainages</span>
-                                <span class="metric-value" id="user-referral-count">156</span>
-                            </div>
-                        </div>
-
-                        <div class="metric-badge-item">
-                            <div class="metric-icon-box icon-yellow">
-                                <i class="fa-solid fa-bolt"></i>
-                            </div>
-                            <div class="metric-data">
-                                <span class="metric-label">Score d'activité</span>
-                                <span class="metric-value" id="user-activity-score">98%</span>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
 
-            <!-- INPUTS FICHIERS MASQUÉS -->
+            <!-- INPUTS MASQUÉS POUR LE TÉLÉCHARGEMENT D'IMAGES -->
             <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
             <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
 
-            <!-- CARTE COMPLÈTE FINANCIÈRE / SOLDE DE BORD -->
-            <div class="financial-dashboard-card">
-                <div class="fin-stat-col">
-                    <span class="fin-label">SOLDE ACTUEL <i class="fa-solid fa-circle-info" onclick="openRankModal()"></i></span>
-                    <div class="fin-amount cyan-highlight"><i class="fa-solid fa-coins"></i> <span id="user-coins">190</span></div>
-                    <span class="fin-converted">Valeur estimée : <span id="user-cash-value">$0.19</span></span>
-                </div>
-
-                <div class="fin-stat-col">
-                    <span class="fin-label">TOTAL GAGNÉ</span>
-                    <div class="fin-amount"><span id="total-earned-coins">1 245</span> <i class="fa-solid fa-coins icon-sub"></i></div>
-                    <span class="fin-converted">$1.24</span>
-                </div>
-
-                <div class="fin-stat-col">
-                    <span class="fin-label">CE MOIS</span>
-                    <div class="fin-amount"><span id="month-earned-coins">320</span> <i class="fa-solid fa-coins icon-sub"></i></div>
-                    <span class="fin-converted">$0.32</span>
-                </div>
-
-                <div class="fin-stat-col">
-                    <span class="fin-label">EN ATTENTE</span>
-                    <div class="fin-amount"><span id="pending-earned-coins">75</span> <i class="fa-solid fa-coins icon-sub"></i></div>
-                    <span class="fin-converted">$0.07</span>
-                </div>
-
-                <div class="fin-action-col">
-                    <button id="withdraw-gate-button" class="btn-gradient-withdraw" onclick="openRankModal()">
-                        <i class="fa-solid fa-wallet"></i> Retirer mes gains
-                    </button>
+            <div class="balance-card">
+                <div class="balance-label">Votre solde actuel</div>
+                <div class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="user-coins">0</span></div>
+                <div class="balance-value-converted">Valeur estimée : <span id="user-cash-value">$0.00</span></div>
+                
+                <div class="help-trigger-wrapper">
+                    <div class="help-incitation-tag">Info</div>
+                    <button class="btn-pulse-help" onclick="openRankModal()">?</button>
                 </div>
             </div>
 
-            <!-- LIEN DE PARRAINAGE -->
             <div class="share-box-wrapper">
                 <div class="share-box-title"><i class="fa-solid fa-share-nodes"></i> Votre lien de parrainage unique</div>
                 <div class="share-link-input-group">
@@ -890,7 +801,6 @@
                 </div>
             </div>
 
-            <!-- HISTORIQUE DES COINS -->
             <div class="section-box">
                 <div class="section-title"><i class="fa-solid fa-calendar-days"></i> Historique des Coins collectés</div>
                 <div class="history-table-wrapper">
@@ -909,7 +819,6 @@
                 </div>
             </div>
 
-            <!-- CONDITIONS DE RETRAIT -->
             <div class="section-box">
                 <div class="section-title"><i class="fa-solid fa-gavel"></i> Conditions de retrait</div>
                 <table class="rules-table">
@@ -950,13 +859,17 @@
                 </table>
             </div>
 
-            <!-- DÉCONNEXION -->
-            <div style="padding: 0 20px; margin-bottom: 30px;">
+            <div class="withdraw-action-container">
+                <button id="withdraw-gate-button" class="btn-withdraw-gate" disabled onclick="openRankModal()">
+                    <i class="fa-solid fa-wallet"></i> Demander un Retrait / Changer de Rang
+                </button>
+            </div>
+
+            <div style="padding: 0 20px;">
                 <button onclick="logout()" class="btn-logout">SE DÉCONNECTER DU COMPTE</button>
             </div>
         </div>
 
-        <!-- BARRE DE NAVIGATION INFÉRIEURE -->
         <nav class="nav-bar">
             <div class="nav-item" onclick="location.href='https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html'">
                 <i class="fa-solid fa-house nav-icon"></i>
@@ -982,44 +895,7 @@
 
     </div>
 
-    <!-- FENÊTRE MODALE : RÉPUTATION -->
-    <div id="reputation-info-modal" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-shield-halved"></i> C'est quoi la Réputation ?</h3>
-                <button class="btn-close-modal" onclick="closeReputationModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>Le score de réputation est calculé automatiquement pour garantir la transparence et la sécurité du réseau :</p>
-                <ul style="padding-left: 18px; color: #b8c1ec; font-size: 13px; line-height: 1.6;">
-                    <li><strong>Pas de VPN / Proxy :</strong> Vous vous connectez de manière authentique sans masquer votre position.</li>
-                    <li><strong>Aucune tricherie :</strong> Respect strict des règles de visionnage de publicités et de parrainage.</li>
-                    <li><strong>Activité régulière :</strong> Vous êtes très actif au quotidien sur la plateforme.</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- FENÊTRE MODALE : MODIFICATION PROFIL -->
-    <div id="edit-profile-modal" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-user-pen"></i> Modifier le Profil</h3>
-                <button class="btn-close-modal" onclick="closeEditProfileModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <span class="auth-label">Nom de profil</span>
-                <input type="text" id="edit-profile-name-input" class="auth-input" placeholder="Entrez votre nom">
-                
-                <span class="auth-label" style="margin-top:12px; display:block;">Description / Bio</span>
-                <textarea id="edit-profile-bio-input" class="auth-input" rows="3" placeholder="Écrivez votre description..."></textarea>
-                
-                <button class="btn-main" style="margin-top:15px;" onclick="saveProfileChanges()">ENREGISTRER</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- FENÊTRE MODALE : RANGS & PAIEMENT FLUTTERWAVE -->
+    <!-- FENÊTRE MODALE DES RANGS & FLUTTERWAVE CONFIGURÉE -->
     <div id="rank-info-modal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -1053,9 +929,10 @@
                     </div>
                 </div>
 
+                <!-- FLUTTERWAVE INTEGRATION AFRIQUE MULTI-RESEAUX -->
                 <div class="flutterwave-gate-section">
                     <div class="gate-title"><i class="fa-solid fa-credit-card"></i> Passerelle Flutterwave Mobile Money</div>
-                    <p style="font-size:11px; color:#8e92bc; margin-bottom:8px;">Sélectionnez votre pays pour activer le paiement local par opérateur (Airtel, Orange, MTN, Moov, Wave, etc.) :</p>
+                    <p style="font-size:11px; color:#8e92bc; margin-bottom:8px;">Sélectionnez votre pays pour activer le paiement local par opérateur opérateur (Airtel, Orange, MTN, Moov, Wave, etc.) :</p>
                     
                     <select id="user-country-network" class="select-payment-input">
                         <option value="RDC_AIRTEL">RDC - Airtel Money ($)</option>
