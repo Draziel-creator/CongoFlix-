@@ -85,49 +85,38 @@ body, html {
 #error-msg { color: var(--error); font-size: 13px; margin-bottom: 15px; display: none; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.2); text-align: left; line-height: 1.4; }
 
 /* ============================================================
-   3. BANNIÈRE ET EN-TÊTE DU PROFIL (CORRIGÉ)
+   3. BANNIÈRE ET EN-TÊTE DU PROFIL (AJUSTÉ RÉFÉRENCE)
    ============================================================ */
 .profile-banner-wrapper { 
     position: relative; 
     width: 100%; 
-    aspect-ratio: 16 / 9;
+    min-height: 220px;
     background: #060713; 
     overflow: hidden; 
     box-sizing: border-box;
-    padding: 10px 12px;
+    padding: 12px 10px;
     display: flex;
     align-items: flex-end;
 }
 
-/* Fondu sur l'image sans assombrir le centre */
-.profile-banner-wrapper::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(
-        180deg, 
-        rgba(6, 7, 19, 0.4) 0%, 
-        rgba(6, 7, 19, 0) 30%, 
-        rgba(6, 7, 19, 0.85) 100%
-    );
-    z-index: 2;
-    pointer-events: none;
-}
-
-/* Image de bannière dynamique */
 .banner-slide { 
     position: absolute; 
     top: 0; left: 0; 
     width: 100% !important; 
     height: 100% !important; 
     object-fit: cover !important; 
-    opacity: 1 !important; 
     z-index: 1;
-    filter: brightness(1.1) contrast(1.05);
-    transition: opacity 1.8s ease-in-out, transform 2s ease-in-out;
+    filter: brightness(0.85) contrast(1.05);
 }
 
-/* Alignement principal : Avatar à GAUCHE, Infos à DROITE */
+.banner-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(180deg, rgba(6,7,19,0.2) 0%, rgba(6,7,19,0.85) 100%);
+    z-index: 2;
+}
+
+/* Alignement Flex principal */
 .profile-hero-content {
     position: relative;
     z-index: 5;
@@ -136,24 +125,26 @@ body, html {
     align-items: flex-end !important;
     justify-content: space-between !important;
     width: 100% !important;
-    gap: 10px !important;
+    gap: 8px !important;
 }
 
-/* Conteneur Flex pour placer l'avatar à côté du bloc d'informations */
+/* Alignement Avatar + Infos */
 .hero-left-col {
     display: flex !important;
     flex-direction: row !important;
-    align-items: center !important;
-    gap: 10px !important;
+    align-items: flex-end !important;
+    gap: 8px !important; /* Rapproche l'image et le nom */
     flex: 1 !important;
+    min-width: 0;
 }
 
-/* AVATAR COMPACT */
+/* Avatar agrandi et légèrement réhaussé */
 .avatar-container { 
     position: relative; 
     flex-shrink: 0 !important; 
-    width: 62px !important; 
-    height: 62px !important; 
+    width: 76px !important; 
+    height: 76px !important; 
+    transform: translateY(-6px); /* Fait monter l'avatar */
 }
 
 .avatar-wrapper { 
@@ -175,19 +166,21 @@ body, html {
 }
 
 .edit-avatar-badge { 
-    position: absolute; bottom: 0px; right: 0px; 
+    position: absolute; bottom: 2px; right: 2px; 
     background: #8e2de2; color: #fff; 
-    border-radius: 50%; width: 20px; height: 20px; 
+    border-radius: 50%; width: 22px; height: 22px; 
     display: flex; align-items: center; justify-content: center; 
-    border: 1.5px solid #ffffff; font-size: 9px; z-index: 6;
+    border: 1.5px solid #ffffff; font-size: 10px; z-index: 6;
     box-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
 
-/* INFOS UTILISATEUR ALIGNÉES ET TEXTES COMPACTS */
+/* Infos Utilisateur */
 .user-info-group {
     display: flex !important;
     flex-direction: column !important;
     gap: 2px !important;
+    min-width: 0;
+    flex: 1;
 }
 
 .user-title-row { 
@@ -197,24 +190,23 @@ body, html {
 }
 
 .user-name-display { 
-    font-size: 15px !important; 
+    font-size: 16px !important; 
     color: #fff !important; 
     font-weight: 800 !important; 
     line-height: 1.1 !important;
     text-shadow: 0 2px 6px rgba(0,0,0,0.9);
 }
 
-.verified-badge { color: #a855f7 !important; font-size: 13px !important; }
+.verified-badge { color: #a855f7 !important; font-size: 14px !important; }
 
-/* BADGES ET NOTES */
 .rank-status-container { display: flex !important; }
 
 .rank-badge-pill { 
-    padding: 2px 7px !important; 
+    padding: 2px 8px !important; 
     border-radius: 12px !important; 
     font-size: 9px !important; 
     font-weight: 700 !important; 
-    background: rgba(0, 0, 0, 0.4) !important; 
+    background: rgba(0, 0, 0, 0.5) !important; 
     border: 1px solid rgba(255,255,255,0.2) !important; 
     color: #f97316 !important; 
     display: inline-flex !important; 
@@ -241,70 +233,73 @@ body, html {
     font-size: 9px !important; padding: 0 !important; margin-left: 2px !important;
 }
 
-/* BIO ET BOUTONS */
+/* Bio serrée qui s'empile verticalement */
 .user-description-text { 
-    font-size: 9.5px !important; 
+    font-size: 9px !important; 
     color: #e5e7eb !important; 
     opacity: 0.9; 
-    margin: 1px 0 !important;
+    margin: 2px 0 !important;
     text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+    max-width: 135px !important; /* Limite la largeur pour forcer le retour à la ligne */
+    line-height: 1.25 !important;
+    word-wrap: break-word !important;
 }
 
-.hero-action-buttons { display: flex !important; gap: 5px !important; margin-top: 3px !important; }
+.hero-action-buttons { display: flex !important; gap: 4px !important; margin-top: 3px !important; }
 
 .btn-edit-profile-trigger, .btn-settings-trigger { 
     background: rgba(255, 255, 255, 0.15) !important; 
     border: 1px solid rgba(255, 255, 255, 0.25) !important; 
     color: #fff !important; 
-    font-size: 9.5px !important; 
+    font-size: 9px !important; 
     font-weight: 600 !important; 
-    padding: 3px 8px !important; 
+    padding: 3px 6px !important; 
     border-radius: 6px !important; 
     cursor: pointer !important; 
     backdrop-filter: blur(8px); 
     display: flex !important; 
     align-items: center !important; 
-    gap: 4px !important; 
-    transition: 0.2s;
+    gap: 3px !important; 
+    white-space: nowrap;
 }
 
-.btn-edit-profile-trigger:active, .btn-settings-trigger:active { 
-    transform: scale(0.95); 
-    background: rgba(255,255,255,0.25) !important; 
-}
-
-/* COMPATIBILITÉ POUR MÉTRIQUES SI PLACÉES HORS BANNIÈRE */
+/* Bloc des 3 options/métriques alignées à droite */
 .hero-right-metrics {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    width: 100%;
-    padding: 10px 15px;
-    box-sizing: border-box;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 5px !important;
+    width: 115px !important;
+    flex-shrink: 0 !important;
 }
 
 .metric-badge-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border);
-    padding: 8px 12px;
-    border-radius: 12px;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background: rgba(15, 18, 35, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    padding: 5px 8px !important;
+    border-radius: 10px !important;
+    backdrop-filter: blur(8px);
 }
 
 .metric-icon-box {
-    width: 28px; height: 28px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; flex-shrink: 0;
+    width: 22px !important; 
+    height: 22px !important; 
+    border-radius: 6px !important;
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: center !important;
+    font-size: 10px !important; 
+    flex-shrink: 0 !important;
 }
-.icon-blue { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
-.icon-purple { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
-.icon-yellow { background: rgba(250, 204, 21, 0.2); color: #facc15; }
+.icon-blue { background: rgba(56, 189, 248, 0.25); color: #38bdf8; }
+.icon-purple { background: rgba(168, 85, 247, 0.25); color: #c084fc; }
+.icon-yellow { background: rgba(250, 204, 21, 0.25); color: #facc15; }
 
-.metric-data { display: flex; flex-direction: column; }
-.metric-label { font-size: 8px; color: #9ca3af; text-transform: uppercase; }
-.metric-value { font-size: 11px; font-weight: 700; color: #ffffff; }
+.metric-data { display: flex !important; flex-direction: column !important; }
+.metric-label { font-size: 7.5px !important; color: #9ca3af !important; text-transform: uppercase; line-height: 1; }
+.metric-value { font-size: 10px !important; font-weight: 700 !important; color: #ffffff !important; line-height: 1.1; }
 
 /* ============================================================
    4. CARTE DE SOLDE ET TABLEAU DE BORD
@@ -838,7 +833,7 @@ body, html {
             </div>
         </div>
 
-        <!-- PRINCIPALE APPLICATION -->
+       <!-- PRINCIPALE APPLICATION -->
 <div id="main-app" class="scrollable-content hidden">
     
     <!-- BLOC BANNIÈRE ET SUPERPOSITION -->
@@ -848,54 +843,84 @@ body, html {
 
         <!-- ÉLÉMENTS DU PROFIL EN BANNIÈRE -->
         <div class="profile-hero-content">
-            <!-- AVATAR À GAUCHE -->
-            <div class="avatar-container">
-                <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
-                    <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar">
-                    <div class="edit-avatar-badge"><i class="fa-solid fa-camera"></i></div>
-                </div>
-            </div>
             
-            <!-- INFOS ALIGNÉES À DROITE DE L'AVATAR -->
-            <div class="user-info-group">
-                <div class="user-title-row">
-                    <span class="user-name-display" id="user-name-display">Draziel</span>
-                    <i class="fa-solid fa-circle-check verified-badge"></i>
+            <!-- CONTENEUR GAUCHE : AVATAR + INFOS UTILISATEUR -->
+            <div class="hero-left-col">
+                <!-- AVATAR -->
+                <div class="avatar-container">
+                    <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
+                        <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar">
+                        <div class="edit-avatar-badge"><i class="fa-solid fa-camera"></i></div>
+                    </div>
                 </div>
                 
-                <div class="rank-status-container">
-                    <div class="rank-badge-pill" id="profile-rank-badge">
-                        <i class="fa-solid fa-shield-halved"></i> Rang 1 : Bronze
+                <!-- INFOS UTILISATEUR -->
+                <div class="user-info-group">
+                    <div class="user-title-row">
+                        <span class="user-name-display" id="user-name-display">Draziel</span>
+                        <i class="fa-solid fa-circle-check verified-badge"></i>
                     </div>
-                </div>
-
-                <div class="reputation-stars-container">
-                    <div class="stars-list" id="reputation-stars">
-                        <i class="fa-solid fa-star star-gold"></i>
-                        <i class="fa-solid fa-star star-gold"></i>
-                        <i class="fa-solid fa-star star-gold"></i>
-                        <i class="fa-solid fa-star star-gold"></i>
-                        <i class="fa-regular fa-star star-gold"></i>
+                    
+                    <div class="rank-status-container">
+                        <div class="rank-badge-pill" id="profile-rank-badge">
+                            <i class="fa-solid fa-shield-halved"></i> Rang 1 : Bronze
+                        </div>
                     </div>
-                    <span class="rating-text">4.6 <span class="reviews-count">(128 avis)</span></span>
-                    <button class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </button>
-                </div>
 
-                <p class="user-description-text" id="user-bio-text">Créateur de contenu • Passionné • Partageur</p>
+                    <div class="reputation-stars-container">
+                        <div class="stars-list" id="reputation-stars">
+                            <i class="fa-solid fa-star star-gold"></i>
+                            <i class="fa-solid fa-star star-gold"></i>
+                            <i class="fa-solid fa-star star-gold"></i>
+                            <i class="fa-solid fa-star star-gold"></i>
+                            <i class="fa-regular fa-star star-gold"></i>
+                        </div>
+                        <span class="rating-text">4.6 <span class="reviews-count">(128 avis)</span></span>
+                        <button class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </button>
+                    </div>
 
-                <div class="hero-action-buttons">
-                    <button class="btn-edit-profile-trigger" onclick="openEditProfileModal()">
-                        <i class="fa-solid fa-pen"></i> Modifier le profil
-                    </button>
-                    <button class="btn-settings-trigger" onclick="openSettingsModal()">
-                        <i class="fa-solid fa-gear"></i> Paramètres
-                    </button>
+                    <p class="user-description-text" id="user-bio-text">Créateur de contenu • Passionné • Partageur</p>
+
+                    <div class="hero-action-buttons">
+                        <button class="btn-edit-profile-trigger" onclick="openEditProfileModal()">
+                            <i class="fa-solid fa-pen"></i> Modifier
+                        </button>
+                        <button class="btn-settings-trigger" onclick="openSettingsModal()">
+                            <i class="fa-solid fa-gear"></i> Paramètres
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            <!-- CONTENEUR DROITE : 3 CARTES DE MÉTRIQUES -->
+            <div class="hero-right-metrics">
+                <div class="metric-badge-item">
+                    <div class="metric-icon-box icon-blue"><i class="fa-solid fa-calendar-day"></i></div>
+                    <div class="metric-data">
+                        <span class="metric-label">Membre depuis</span>
+                        <span class="metric-value">Août 2026</span>
+                    </div>
+                </div>
+                <div class="metric-badge-item">
+                    <div class="metric-icon-box icon-purple"><i class="fa-solid fa-users"></i></div>
+                    <div class="metric-data">
+                        <span class="metric-label">Parrainages</span>
+                        <span class="metric-value">156</span>
+                    </div>
+                </div>
+                <div class="metric-badge-item">
+                    <div class="metric-icon-box icon-yellow"><i class="fa-solid fa-bolt"></i></div>
+                    <div class="metric-data">
+                        <span class="metric-label">Score d'activité</span>
+                        <span class="metric-value">98%</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
-    </div> <!-- FERMETURE OBLIGATOIRE DE profile-banner-wrapper -->
+    </div> <!-- FERMETURE DE profile-banner-wrapper -->
 
     <!-- INPUTS MASQUÉS POUR LE TÉLÉCHARGEMENT D'IMAGES -->
     <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
