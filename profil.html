@@ -918,109 +918,117 @@ body, html {
             <i class="fa-solid fa-chevron-left"></i>
         </a>
 
-<!-- ÉLÉMENTS DU PROFIL EN BANNIÈRE -->
-<div class="profile-hero-content">
-    
-    <!-- CONTENEUR GAUCHE : AVATAR + INFOS UTILISATEUR -->
-    <div class="hero-left-col">
+<!-- PRINCIPALE APPLICATION (sans la classe 'hidden' pour tester l'affichage) -->
+<div id="main-app" class="scrollable-content">
+
+    <!-- BLOC BANNIÈRE ET SUPERPOSITION -->
+    <div class="profile-banner-wrapper">
+        <img id="user-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600" alt="Bannière">
+        <div class="banner-overlay"></div>
         
-        <!-- 1. LIGNE DU HAUT : PHOTO + (NOM ET RANG À DROITE) -->
-        <div class="avatar-header-row">
-            <div class="avatar-container">
-                <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
-                    <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar">
-                    <div class="edit-avatar-badge"><i class="fa-solid fa-camera"></i></div>
+        <!-- BOUTON RETOUR -->
+        <a href="https://draziel-creator.github.io/CongoFlix-/lancementpublicite.html" class="floating-back-btn">
+            <i class="fa-solid fa-chevron-left"></i>
+        </a>
+
+        <!-- ÉLÉMENTS DU PROFIL EN BANNIÈRE -->
+        <div class="profile-hero-content">
+
+            <!-- CONTENEUR GAUCHE : AVATAR + INFOS UTILISATEUR -->
+            <div class="hero-left-col">
+                
+                <!-- 1. LIGNE DU HAUT : PHOTO + (NOM ET RANG À DROITE) -->
+                <div class="avatar-header-row">
+                    <div class="avatar-container">
+                        <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
+                            <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar">
+                            <div class="edit-avatar-badge"><i class="fa-solid fa-camera"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="user-title-block">
+                        <div class="user-title-row">
+                            <!-- CHAMP NOM QUE TON JS REMPLIT VIA .value -->
+                            <input type="text" id="user-name" class="user-name-display" value="Chargement..." readonly style="background:transparent; border:none; color:#fff; font-size:18px; font-weight:800; outline:none; pointer-events:none;">
+                            <i class="fa-solid fa-circle-check verified-badge"></i>
+                        </div>
+                        <div class="rank-status-container">
+                            <div class="rank-badge-pill" id="profile-rank-badge">
+                                <i class="fa-solid fa-shield-halved"></i> Rang 1 : Bronze
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- 2. LIGNE DU BAS : RÉPUTATION, DESCRIPTION ET BOUTONS -->
+                <div class="user-details-block">
+                    <div class="reputation-stars-container">
+                        <div class="stars-list" id="reputation-stars">
+                            <i class="fa-solid fa-star star-gold"></i>
+                            <i class="fa-solid fa-star star-gold"></i>
+                            <i class="fa-solid fa-star star-gold"></i>
+                            <i class="fa-solid fa-star star-gold"></i>
+                            <i class="fa-regular fa-star star-gold"></i>
+                        </div>
+                        <span class="rating-text">4.6 <span class="reviews-count">(128 avis)</span></span>
+                        <button class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </button>
+                    </div>
+
+                    <p class="user-description-text" id="user-bio-text">Créateur de contenu • Passionné • Partageur</p>
+
+                    <div class="hero-action-buttons">
+                        <button class="btn-edit-profile-trigger" onclick="openEditProfileModal()">
+                            <i class="fa-solid fa-pen"></i> Modifier
+                        </button>
+                        <button class="btn-settings-trigger" onclick="openSettingsModal()">
+                            <i class="fa-solid fa-gear"></i> Paramètres
+                        </button>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="user-title-block">
-                <div class="user-title-row">
-                    <!-- SPAN D'ORIGINE RESTAURÉ AVEC COMPATIBILITÉ .value -->
-                    <span class="user-name-display" id="user-name">Chargement...</span>
-                    <i class="fa-solid fa-circle-check verified-badge"></i>
+            <!-- CONTENEUR DROITE : 3 CARTES DE MÉTRIQUES -->
+            <div class="hero-right-metrics">
+                <div class="metric-badge-item">
+                    <div class="metric-icon-box icon-blue"><i class="fa-solid fa-calendar-day"></i></div>
+                    <div class="metric-data">
+                        <span class="metric-label">Solde pièces</span>
+                        <span class="metric-value" id="user-coins">0</span>
+                    </div>
                 </div>
-                <div class="rank-status-container">
-                    <div class="rank-badge-pill" id="profile-rank-badge">
-                        <i class="fa-solid fa-shield-halved"></i> Rang 1 : Bronze
+                <div class="metric-badge-item">
+                    <div class="metric-icon-box icon-purple"><i class="fa-solid fa-wallet"></i></div>
+                    <div class="metric-data">
+                        <span class="metric-label">Valeur Cash</span>
+                        <span class="metric-value" id="user-cash-value">$0.00</span>
+                    </div>
+                </div>
+                <div class="metric-badge-item">
+                    <div class="metric-icon-box icon-yellow"><i class="fa-solid fa-link"></i></div>
+                    <div class="metric-data">
+                        <span class="metric-label">Lien Parrainage</span>
+                        <span class="metric-value" id="share-link-text" style="font-size:10px; overflow:hidden;">...</span>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- 2. LIGNE DU BAS : RÉPUTATION, DESCRIPTION ET BOUTONS -->
-        <div class="user-details-block">
-            <div class="reputation-stars-container">
-                <div class="stars-list" id="reputation-stars">
-                    <i class="fa-solid fa-star star-gold"></i>
-                    <i class="fa-solid fa-star star-gold"></i>
-                    <i class="fa-solid fa-star star-gold"></i>
-                    <i class="fa-solid fa-star star-gold"></i>
-                    <i class="fa-regular fa-star star-gold"></i>
-                </div>
-                <span class="rating-text">4.6 <span class="reviews-count">(128 avis)</span></span>
-                <button class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
-                    <i class="fa-solid fa-circle-info"></i>
-                </button>
-            </div>
-
-            <p class="user-description-text" id="user-bio-text">Créateur de contenu • Passionné • Partageur</p>
-
-            <div class="hero-action-buttons">
-                <button class="btn-edit-profile-trigger" onclick="openEditProfileModal()">
-                    <i class="fa-solid fa-pen"></i> Modifier
-                </button>
-                <button class="btn-settings-trigger" onclick="openSettingsModal()">
-                    <i class="fa-solid fa-gear"></i> Paramètres
-                </button>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- CONTENEUR DROITE : 3 CARTES DE MÉTRIQUES -->
-    <div class="hero-right-metrics">
-        <div class="metric-badge-item">
-            <div class="metric-icon-box icon-blue"><i class="fa-solid fa-calendar-day"></i></div>
-            <div class="metric-data">
-                <span class="metric-label">Membre depuis</span>
-                <span class="metric-value">Août 2026</span>
-            </div>
-        </div>
-        <div class="metric-badge-item">
-            <div class="metric-icon-box icon-purple"><i class="fa-solid fa-users"></i></div>
-            <div class="metric-data">
-                <span class="metric-label">Parrainages</span>
-                <span class="metric-value">156</span>
-            </div>
-        </div>
-        <div class="metric-badge-item">
-            <div class="metric-icon-box icon-yellow"><i class="fa-solid fa-bolt"></i></div>
-            <div class="metric-data">
-                <span class="metric-label">Score d'activité</span>
-                <span class="metric-value">98%</span>
-            </div>
         </div>
     </div>
+
+    <!-- ÉLÉMENTS MASQUÉS POUR CONDITIONS ET UPLOADS -->
+    <div style="display:none;">
+        <span id="m-cond-invite">0 / 10</span>
+        <span id="m-cond-tasks">0 / 50</span>
+        <span id="m-cond-days">0 / 14 Jours</span>
+    </div>
+
+    <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
+    <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
 
 </div>
-
-<!-- PASSERELLE DU SPAN VERS VOTRE CODE JS -->
-<script>
-    (function(){
-        const nameEl = document.getElementById('user-name');
-        if (nameEl) {
-            Object.defineProperty(nameEl, 'value', {
-                get: function() { return this.innerText; },
-                set: function(val) { this.innerText = val; },
-                configurable: true
-            });
-        }
-    })();
-</script>
-
-<!-- INPUTS MASQUÉS POUR LE TÉLÉCHARGEMENT D'IMAGES -->
-<input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
-<input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
 
             <div class="balance-card">
                 <div class="balance-label">Votre solde actuel</div>
