@@ -995,6 +995,25 @@ body, html {
     color: #888;
     margin-left: auto;
 }
+    /* ÉTATS ROUGE ET VERT */
+.modal-input.input-error { border: 2px solid #ff4d4d !important; background: rgba(255, 77, 77, 0.08) !important; }
+.modal-input.input-success { border: 2px solid #00ff88 !important; background: rgba(0, 255, 136, 0.08) !important; }
+
+.field-feedback { font-size: 0.78rem; margin-top: 4px; display: block; font-weight: 600; }
+.field-feedback.error { color: #ff4d4d; }
+.field-feedback.success { color: #00ff88; }
+
+.field-info-row { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+.char-counter { font-size: 0.75rem; color: #888; margin-left: auto; }
+
+.modal-actions-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.btn-modal-cancel { background: transparent; border: 1px solid rgba(255, 255, 255, 0.2); color: #ccc; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.btn-modal-confirm { background: #00ff88; border: none; color: #000; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 700; }
+
+/* STYLE LIEN PERSONNALISÉ PROFIL */
+.user-custom-link-block { margin: 8px 0 12px 0; display: flex; align-items: center; gap: 6px; font-size: 0.88rem; }
+.user-custom-link-block a { color: #00ff88; text-decoration: none; font-weight: 600; word-break: break-all; }
+.user-custom-link-block a:hover { text-decoration: underline; }
 </style>
     <!-- Chargement Direct du SDK Officiel Flutterwave v3 -->
     <script src="https://checkout.flutterwave.com/v3.js"></script>
@@ -2845,27 +2864,34 @@ window.confirmImageSelection = () => {
 };
 
 let usernameCheckTimer = null;
-let isUsernameValid = false;
-let isBioValid = false;
+let isUsernameValid = true;
+let isBioValid = true;
 let originalUsername = "";
 
 // OUVERTURE DE LA MODALE PROFIL
 window.openEditProfileModal = () => {
     const currentNameEl = document.getElementById('user-name-display');
     const currentBioEl = document.getElementById('user-bio-text');
+    const currentLinkEl = document.getElementById('user-link-display');
 
     const currentName = currentNameEl ? currentNameEl.innerText.trim() : "";
     const currentBio = currentBioEl ? currentBioEl.innerText.trim() : "";
 
-    originalUsername = (currentName !== "Chargement...") ? currentName : "";
+    originalUsername = (currentName !== "Chargement..." && currentName !== "...") ? currentName : "";
 
     const nameInput = document.getElementById('edit-profile-name');
     const bioInput = document.getElementById('edit-profile-bio');
+    const linkTitleInput = document.getElementById('edit-profile-link-title');
+    const linkUrlInput = document.getElementById('edit-profile-link-url');
 
     nameInput.value = originalUsername;
     bioInput.value = currentBio;
 
-    // Déclencher les vérifications initiales
+    if (currentLinkEl) {
+        linkTitleInput.value = currentLinkEl.innerText || "";
+        linkUrlInput.value = (currentLinkEl.getAttribute('href') && currentLinkEl.getAttribute('href') !== "#") ? currentLinkEl.getAttribute('href') : "";
+    }
+
     checkUsernameAvailability();
     updateBioCounter();
 
@@ -2891,7 +2917,7 @@ window.checkUsernameAvailability = () => {
         feedback.className = "field-feedback error";
         feedback.innerText = "Champ obligatoire";
         isUsernameValid = false;
-        if (saveBtn) saveBtn.disabled = true;
+        validateFormState();
         return;
     }
 
@@ -2911,14 +2937,13 @@ window.checkUsernameAvailability = () => {
     feedback.style.color = "#aaa";
     feedback.innerText = "Vérification de la disponibilité...";
 
-    // Anti-rebond (Debounce) de 400ms pour éviter trop de requêtes Firebase
+    // Anti-rebond (Debounce) de 350ms
     usernameCheckTimer = setTimeout(async () => {
         try {
             const usersRef = collection(db, "rewards_users");
             const q = query(usersRef, where("name", "==", nameValue));
             const querySnapshot = await getDocs(q);
 
-            // Filtre pour s'assurer qu'il ne s'agit pas du compte courant
             let isTaken = false;
             querySnapshot.forEach(docSnap => {
                 if (auth.currentUser && docSnap.id !== auth.currentUser.uid) {
@@ -2929,7 +2954,7 @@ window.checkUsernameAvailability = () => {
             if (isTaken) {
                 nameInput.className = "modal-input input-error";
                 feedback.className = "field-feedback error";
-                feedback.innerText = "Ce nom n'est pas disponible, veuillez en choisir un autre.";
+                feedback.innerText = "Ce nom n'est pas disponible, choisissez-en un autre.";
                 isUsernameValid = false;
             } else {
                 nameInput.className = "modal-input input-success";
@@ -2939,21 +2964,20 @@ window.checkUsernameAvailability = () => {
             }
         } catch (error) {
             console.error("Erreur vérification pseudo :", error);
-            // En cas d'erreur de recherche, on autorise si non vide
             isUsernameValid = true;
         }
         validateFormState();
-    }, 400);
+    }, 350);
 };
 
-// VÉRIFICATION EN TEMPS RÉEL DE LA BIO (COMPTEUR + OBLIGATOIRE)
+// VÉRIFICATION EN TEMPS RÉEL DE LA BIO (MAX 130 CHARS)
 window.updateBioCounter = () => {
     const bioInput = document.getElementById('edit-profile-bio');
     const feedback = document.getElementById('bio-feedback');
     const counter = document.getElementById('bio-counter');
     const bioValue = bioInput.value.trim();
 
-    if (counter) counter.innerText = `${bioInput.value.length}/40`;
+    if (counter) counter.innerText = `${bioInput.value.length}/130`;
 
     if (!bioValue) {
         bioInput.className = "modal-input input-error";
@@ -2970,58 +2994,64 @@ window.updateBioCounter = () => {
     validateFormState();
 };
 
-// GESTION DU BOUTON ENREGISTRER (DÉSACTIVÉ SI ERREUR)
+// GESTION DU BOUTON ENREGISTRER
 function validateFormState() {
     const saveBtn = document.getElementById('btn-save-profile');
     if (saveBtn) {
-        saveBtn.disabled = !(isUsernameValid && isBioValid);
-        saveBtn.style.opacity = (isUsernameValid && isBioValid) ? "1" : "0.5";
-        saveBtn.style.cursor = (isUsernameValid && isBioValid) ? "pointer" : "not-allowed";
+        const isValid = isUsernameValid && isBioValid;
+        saveBtn.disabled = !isValid;
+        saveBtn.style.opacity = isValid ? "1" : "0.5";
+        saveBtn.style.cursor = isValid ? "pointer" : "not-allowed";
     }
 }
 
 // SAUVEGARDER LES MODIFICATIONS DANS FIREBASE
 window.saveProfileChanges = async () => {
-    if (!isUsernameValid || !isBioValid) return;
+    if (!isUsernameValid || !isBioValid || !auth.currentUser) return;
 
     const newName = document.getElementById('edit-profile-name').value.trim();
     const newBio = document.getElementById('edit-profile-bio').value.trim();
-
-    if (!auth.currentUser) {
-        alert("Utilisateur non connecté.");
-        return;
-    }
+    const linkTitle = document.getElementById('edit-profile-link-title').value.trim();
+    const linkUrl = document.getElementById('edit-profile-link-url').value.trim();
 
     try {
-        // Enregistrement réel dans Firebase Firestore
+        // Enregistrement dans Firestore
         await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
             name: newName,
-            bio: newBio
+            bio: newBio,
+            linkTitle: linkTitle,
+            linkUrl: linkUrl
         });
 
-        // Mise à jour de l'affichage sur la page
+        // Mise à jour de l'affichage local
         const nameDisplay = document.getElementById('user-name-display');
         const bioDisplay = document.getElementById('user-bio-text');
 
         if (nameDisplay) nameDisplay.innerText = newName;
         if (bioDisplay) bioDisplay.innerText = newBio;
 
+        // Mise à jour du bloc Lien
+        const linkContainer = document.getElementById('user-link-container');
+        const linkDisplay = document.getElementById('user-link-display');
+
+        if (linkContainer && linkDisplay) {
+            if (linkTitle && linkUrl) {
+                linkDisplay.innerText = linkTitle;
+                linkDisplay.href = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+                linkContainer.style.display = 'flex';
+            } else {
+                linkContainer.style.display = 'none';
+            }
+        }
+
         closeEditProfileModal();
 
-        // Notification de succès sans déclencher de fausse erreur
         if (typeof showPremiumToast === "function") {
             showPremiumToast("Profil mis à jour avec succès !");
-        } else {
-            console.log("Profil mis à jour avec succès !");
         }
-
     } catch (error) {
-        console.error("Erreur réelle Firestore lors de la sauvegarde :", error);
-        if (typeof showPremiumToast === "function") {
-            showPremiumToast("Erreur lors de la sauvegarde.");
-        } else {
-            alert("Erreur lors de la sauvegarde : " + error.message);
-        }
+        console.error("Erreur Firestore lors de la sauvegarde :", error);
+        alert("Erreur lors de la sauvegarde : " + error.message);
     }
 };
 
@@ -3103,6 +3133,8 @@ window.handleAuth = async () => {
             await setDoc(doc(db, "rewards_users", cred.user.uid), { 
                 name: email.split('@')[0], 
                 bio: "Créateur de contenu • Passionné • Partageur",
+                linkTitle: "",
+                linkUrl: "",
                 coins: 0, 
                 birthdate: birthdateValue,
                 age: age,
@@ -3150,6 +3182,19 @@ onAuthStateChanged(auth, async (user) => {
             const bioEl = document.getElementById('user-bio-text');
             if (bioEl && d.bio) bioEl.innerText = d.bio;
 
+            // SYNCHRO LIEN PERSONNALISÉ
+            const linkContainer = document.getElementById('user-link-container');
+            const linkDisplay = document.getElementById('user-link-display');
+            if (linkContainer && linkDisplay) {
+                if (d.linkTitle && d.linkUrl) {
+                    linkDisplay.innerText = d.linkTitle;
+                    linkDisplay.href = d.linkUrl.startsWith('http') ? d.linkUrl : `https://${d.linkUrl}`;
+                    linkContainer.style.display = 'flex';
+                } else {
+                    linkContainer.style.display = 'none';
+                }
+            }
+
             document.getElementById('user-coins').innerText = totalCoins;
             
             const computedCash = (totalCoins * 0.001).toFixed(2);
@@ -3159,9 +3204,9 @@ onAuthStateChanged(auth, async (user) => {
             if(d.photoURL) document.getElementById('user-photo').src = d.photoURL;
 
             if(d.bannerURL) {
-                if (carouselTimer) clearInterval(carouselTimer);
+                if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
                 document.getElementById('user-banner').src = d.bannerURL;
-            } else {
+            } else if (typeof startBannerCarousel === "function") {
                 startBannerCarousel();
             }
             
@@ -3215,35 +3260,39 @@ onAuthStateChanged(auth, async (user) => {
             if (joursAuVert >= 7 && userRank === 0) {
                 userRank = 1;
                 await updateDoc(doc(db, "rewards_users", user.uid), { rank: 1 });
-                showPremiumToast("🎉 Félicitations ! Semaine 1 validée : Rang 1 débloqué !");
+                if (typeof showPremiumToast === "function") showPremiumToast("🎉 Félicitations ! Semaine 1 validée : Rang 1 débloqué !");
             }
 
-            applyRankDesign(userRank);
-            if (typeof generateHistoryUI === "function") {
-                generateHistoryUI(currentHistory, userRank);
-            }
+            if (typeof applyRankDesign === "function") applyRankDesign(userRank);
+            if (typeof generateHistoryUI === "function") generateHistoryUI(currentHistory, userRank);
 
             let condInv = (d.invitedCount || 0) >= 10;
             let condTsk = (d.tasksCompleted || 0) >= 50;
             let condDay = (d.daysActive || 0) >= 14;
 
-            document.getElementById('m-cond-invite').innerText = `${d.invitedCount || 0} / 10`;
-            if(condInv) document.getElementById('m-cond-invite').className = "badge-status status-ok";
+            if (document.getElementById('m-cond-invite')) {
+                document.getElementById('m-cond-invite').innerText = `${d.invitedCount || 0} / 10`;
+                if(condInv) document.getElementById('m-cond-invite').className = "badge-status status-ok";
+            }
 
-            document.getElementById('m-cond-tasks').innerText = `${d.tasksCompleted || 0} / 50`;
-            if(condTsk) document.getElementById('m-cond-tasks').className = "badge-status status-ok";
+            if (document.getElementById('m-cond-tasks')) {
+                document.getElementById('m-cond-tasks').innerText = `${d.tasksCompleted || 0} / 50`;
+                if(condTsk) document.getElementById('m-cond-tasks').className = "badge-status status-ok";
+            }
 
-            document.getElementById('m-cond-days').innerText = `${d.daysActive || 0} / 14 Jours`;
-            if(condDay) document.getElementById('m-cond-days').className = "badge-status status-ok";
+            if (document.getElementById('m-cond-days')) {
+                document.getElementById('m-cond-days').innerText = `${d.daysActive || 0} / 14 Jours`;
+                if(condDay) document.getElementById('m-cond-days').className = "badge-status status-ok";
+            }
             
             globalConditionsMet = condInv && condTsk && condDay;
-            evalWithdrawGateStatus();
+            if (typeof evalWithdrawGateStatus === "function") evalWithdrawGateStatus();
         }
     } else {
-        if (carouselTimer) clearInterval(carouselTimer);
+        if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
         document.getElementById('auth-screen').classList.remove('hidden');
         document.getElementById('main-app').classList.add('hidden');
-        if(!isLoginMode) checkLocalStorageDeviceLock();
+        if(!isLoginMode && typeof checkLocalStorageDeviceLock === "function") checkLocalStorageDeviceLock();
     }
 });
 
@@ -3255,30 +3304,31 @@ window.uploadImage = (e, type) => {
         if(type === 'avatar') {
             document.getElementById('user-photo').src = reader.result;
             await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { photoURL: reader.result });
-            showPremiumToast("Photo de profil mise à jour !");
+            if (typeof showPremiumToast === "function") showPremiumToast("Photo de profil mise à jour !");
         } else if(type === 'banner') {
-            if (carouselTimer) clearInterval(carouselTimer);
+            if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
             document.getElementById('user-banner').src = reader.result;
             await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { bannerURL: reader.result });
-            showPremiumToast("Image de couverture mise à jour !");
+            if (typeof showPremiumToast === "function") showPremiumToast("Image de couverture mise à jour !");
         }
     };
     reader.readAsDataURL(file);
 };
 
 window.logout = () => {
-    if (carouselTimer) clearInterval(carouselTimer);
+    if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
     signOut(auth);
 };
 </script>
-<!-- MODALE 1 : MODIFICATION DU PROFIL (NOM & BIO) -->
+
+<!-- MODALE 1 : MODIFICATION DU PROFIL (NOM, BIO & LIEN) -->
 <div class="custom-modal-overlay" id="editProfileModal">
     <div class="custom-modal-card">
         <div class="modal-title">
             <i class="fa-solid fa-user-pen" style="color:#00ff88;"></i> Modifier le Profil
         </div>
         
-        <!-- CHAMP NOM D'UTILISATEUR -->
+        <!-- CHAMP NOM D'UTILISATEUR (MAX 10) -->
         <div class="modal-field-group">
             <label for="edit-profile-name">Nom d'utilisateur (max 10 caractères)</label>
             <input 
@@ -3292,21 +3342,44 @@ window.logout = () => {
             <span id="username-feedback" class="field-feedback"></span>
         </div>
 
-        <!-- CHAMP DESCRIPTION / BIO -->
+        <!-- CHAMP DESCRIPTION / BIO (MAX 130) -->
         <div class="modal-field-group">
-            <label for="edit-profile-bio">Description / Bio (max 40 caractères)</label>
+            <label for="edit-profile-bio">Description / Bio (max 130 caractères)</label>
             <textarea 
                 id="edit-profile-bio" 
                 class="modal-input" 
-                rows="2" 
-                maxlength="40" 
+                rows="3" 
+                maxlength="130" 
                 placeholder="Parle un peu de toi..." 
                 oninput="updateBioCounter()"
             ></textarea>
             <div class="field-info-row">
                 <span id="bio-feedback" class="field-feedback"></span>
-                <span id="bio-counter" class="char-counter">0/40</span>
+                <span id="bio-counter" class="char-counter">0/130</span>
             </div>
+        </div>
+
+        <!-- CHAMP TITRE DU LIEN (MAX 15) -->
+        <div class="modal-field-group">
+            <label for="edit-profile-link-title">Titre du Lien (max 15 caractères)</label>
+            <input 
+                type="text" 
+                id="edit-profile-link-title" 
+                class="modal-input" 
+                maxlength="15" 
+                placeholder="Ex: Mon site / Youtube"
+            >
+        </div>
+
+        <!-- CHAMP URL DU LIEN -->
+        <div class="modal-field-group">
+            <label for="edit-profile-link-url">URL du Lien</label>
+            <input 
+                type="url" 
+                id="edit-profile-link-url" 
+                class="modal-input" 
+                placeholder="https://exemple.com"
+            >
         </div>
 
         <!-- BOUTONS D'ACTION -->
