@@ -2883,22 +2883,25 @@ let originalUsername = "";
 // GESTION DES MODALES D'IMAGE
 window.triggerFileInput = (inputId) => {
     pendingFileInputId = inputId;
-    document.getElementById('imageWarningModal').classList.add('active');
+    const modal = document.getElementById('imageWarningModal');
+    if (modal) modal.classList.add('active');
 };
 
 window.closeImageWarningModal = () => {
-    document.getElementById('imageWarningModal').classList.remove('active');
+    const modal = document.getElementById('imageWarningModal');
+    if (modal) modal.classList.remove('active');
     pendingFileInputId = null;
 };
 
 window.confirmImageSelection = () => {
-    document.getElementById('imageWarningModal').classList.remove('active');
+    closeImageWarningModal();
     if (pendingFileInputId) {
-        document.getElementById(pendingFileInputId).click();
+        const input = document.getElementById(pendingFileInputId);
+        if (input) input.click();
     }
 };
 
-// OUVERTURE DE LA MODALE PROFIL ET INITIALISATION DES VALEURS
+// OUVERTURE ET FERMETURE SÉCURISÉES DE LA MODALE PROFIL
 window.openEditProfileModal = () => {
     const currentNameEl = document.getElementById('user-name-display');
     const currentBioEl = document.getElementById('user-bio-text');
@@ -2914,42 +2917,53 @@ window.openEditProfileModal = () => {
     const linkTitleInput = document.getElementById('edit-profile-link-title');
     const linkUrlInput = document.getElementById('edit-profile-link-url');
 
-    nameInput.value = originalUsername;
-    bioInput.value = currentBio;
+    if (nameInput) nameInput.value = originalUsername;
+    if (bioInput) bioInput.value = currentBio;
 
-    if (currentLinkEl) {
+    if (currentLinkEl && linkTitleInput && linkUrlInput) {
         linkTitleInput.value = currentLinkEl.innerText !== "Mon site" ? currentLinkEl.innerText : "";
         const href = currentLinkEl.getAttribute('href');
         linkUrlInput.value = (href && href !== "#") ? href : "";
     }
 
-    // Mise à jour de tous les compteurs et validations au lancement
     handleUsernameInput();
     handleBioInput();
     handleLinkTitleInput();
     handleLinkUrlInput();
 
-    document.getElementById('editProfileModal').classList.add('active');
+    const modal = document.getElementById('editProfileModal');
+    if (modal) {
+        modal.classList.add('active');
+        modal.style.display = 'flex'; // Force l'affichage au cas où
+    }
 };
 
 window.closeEditProfileModal = () => {
-    document.getElementById('editProfileModal').classList.remove('active');
+    const modal = document.getElementById('editProfileModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none'; // Force la fermeture CSS
+    }
 };
 
-// 1. GESTION DU NOM D'UTILISATEUR + COMPTEUR + SPINNER FIREBASE
+// 1. GESTION DU NOM D'UTILISATEUR + COMPTEUR
 window.handleUsernameInput = () => {
     clearTimeout(usernameCheckTimer);
     const nameInput = document.getElementById('edit-profile-name');
     const feedback = document.getElementById('username-feedback');
     const counter = document.getElementById('username-counter');
+
+    if (!nameInput) return;
     const nameValue = nameInput.value.trim();
 
     if (counter) counter.innerText = `${nameInput.value.length}/10`;
 
     if (!nameValue) {
         nameInput.className = "modal-input input-error";
-        feedback.className = "field-feedback error";
-        feedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Champ obligatoire';
+        if (feedback) {
+            feedback.className = "field-feedback error";
+            feedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Champ obligatoire';
+        }
         isUsernameValid = false;
         validateFormState();
         return;
@@ -2957,21 +2971,23 @@ window.handleUsernameInput = () => {
 
     if (nameValue === originalUsername) {
         nameInput.className = "modal-input input-success";
-        feedback.className = "field-feedback success";
-        feedback.innerHTML = '<i class="fa-solid fa-circle-check"></i> Votre nom actuel';
+        if (feedback) {
+            feedback.className = "field-feedback success";
+            feedback.innerHTML = '<i class="fa-solid fa-circle-check"></i> Votre nom actuel';
+        }
         isUsernameValid = true;
         validateFormState();
         return;
     }
 
-    // Affichage de l'animation de recherche
     nameInput.className = "modal-input input-checking";
-    feedback.className = "field-feedback checking";
-    feedback.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Vérification du nom d\'utilisateur...';
+    if (feedback) {
+        feedback.className = "field-feedback checking";
+        feedback.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Vérification du nom d\'utilisateur...';
+    }
     isUsernameValid = false;
     validateFormState();
 
-    // Recherche Firestore différée (350ms)
     usernameCheckTimer = setTimeout(async () => {
         try {
             const usersRef = collection(db, "rewards_users");
@@ -2987,60 +3003,67 @@ window.handleUsernameInput = () => {
 
             if (isTaken) {
                 nameInput.className = "modal-input input-error";
-                feedback.className = "field-feedback error";
-                feedback.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Nom déjà pris, choisissez-en un autre';
+                if (feedback) {
+                    feedback.className = "field-feedback error";
+                    feedback.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Nom déjà pris, choisissez-en un autre';
+                }
                 isUsernameValid = false;
             } else {
                 nameInput.className = "modal-input input-success";
-                feedback.className = "field-feedback success";
-                feedback.innerHTML = '<i class="fa-solid fa-circle-check"></i> Nom disponible !';
+                if (feedback) {
+                    feedback.className = "field-feedback success";
+                    feedback.innerHTML = '<i class="fa-solid fa-circle-check"></i> Nom disponible !';
+                }
                 isUsernameValid = true;
             }
         } catch (error) {
             console.error("Erreur vérification pseudo :", error);
             nameInput.className = "modal-input input-success";
-            feedback.className = "field-feedback success";
-            feedback.innerText = "Nom valide";
+            if (feedback) feedback.innerText = "Nom valide";
             isUsernameValid = true;
         }
         validateFormState();
     }, 350);
 };
 
-// 2. GESTION DE LA BIO + COMPTEUR (MAX 130)
+// 2. GESTION DE LA BIO
 window.handleBioInput = () => {
     const bioInput = document.getElementById('edit-profile-bio');
     const feedback = document.getElementById('bio-feedback');
     const counter = document.getElementById('bio-counter');
+    
+    if (!bioInput) return;
     const bioValue = bioInput.value.trim();
 
     if (counter) counter.innerText = `${bioInput.value.length}/130`;
 
     if (!bioValue) {
         bioInput.className = "modal-input input-error";
-        feedback.className = "field-feedback error";
-        feedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Champ obligatoire';
+        if (feedback) {
+            feedback.className = "field-feedback error";
+            feedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Champ obligatoire';
+        }
         isBioValid = false;
     } else {
         bioInput.className = "modal-input input-success";
-        feedback.className = "field-feedback success";
-        feedback.innerText = "";
+        if (feedback) {
+            feedback.className = "field-feedback success";
+            feedback.innerText = "";
+        }
         isBioValid = true;
     }
 
     validateFormState();
 };
 
-// 3. GESTION DU TITRE DU LIEN + COMPTEUR (MAX 15)
+// 3. GESTION DU LIEN
 window.handleLinkTitleInput = () => {
     const titleInput = document.getElementById('edit-profile-link-title');
     const counter = document.getElementById('link-title-counter');
-
-    if (counter) counter.innerText = `${titleInput.value.length}/15`;
+    if (titleInput && counter) counter.innerText = `${titleInput.value.length}/15`;
     validateLinkFields();
 };
 
-// 4. GESTION DE L'URL DU LIEN & VALIDATION LOGIQUE
 window.handleLinkUrlInput = () => {
     validateLinkFields();
 };
@@ -3051,23 +3074,29 @@ function validateLinkFields() {
     const titleFeedback = document.getElementById('link-title-feedback');
     const urlFeedback = document.getElementById('link-url-feedback');
 
+    if (!titleInput || !urlInput) return;
+
     const titleVal = titleInput.value.trim();
     const urlVal = urlInput.value.trim();
 
-    titleFeedback.innerText = "";
-    urlFeedback.innerText = "";
+    if (titleFeedback) titleFeedback.innerText = "";
+    if (urlFeedback) urlFeedback.innerText = "";
     titleInput.className = "modal-input";
     urlInput.className = "modal-input";
 
     if (titleVal && !urlVal) {
         urlInput.className = "modal-input input-error";
-        urlFeedback.className = "field-feedback error";
-        urlFeedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Entrez une URL pour ce titre';
+        if (urlFeedback) {
+            urlFeedback.className = "field-feedback error";
+            urlFeedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Entrez une URL pour ce titre';
+        }
         isLinkValid = false;
     } else if (!titleVal && urlVal) {
         titleInput.className = "modal-input input-error";
-        titleFeedback.className = "field-feedback error";
-        titleFeedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Entrez un titre pour ce lien';
+        if (titleFeedback) {
+            titleFeedback.className = "field-feedback error";
+            titleFeedback.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Entrez un titre pour ce lien';
+        }
         isLinkValid = false;
     } else {
         if (titleVal) titleInput.className = "modal-input input-success";
@@ -3078,24 +3107,35 @@ function validateLinkFields() {
     validateFormState();
 }
 
-// 5. VALIDATION GLOBALE DU BOUTON
 function validateFormState() {
     const saveBtn = document.getElementById('btn-save-profile');
     if (saveBtn) {
-        const isValid = isUsernameValid && isBioValid && isLinkValid;
-        saveBtn.disabled = !isValid;
+        saveBtn.disabled = !(isUsernameValid && isBioValid && isLinkValid);
     }
 }
 
-// SAUVEGARDE EN BASE DE DONNÉES FIRESTORE
+// SAUVEGARDE ET FERMETURE FORCÉE
 window.saveProfileChanges = async () => {
-    if (!isUsernameValid || !isBioValid || !isLinkValid || !auth.currentUser) return;
+    if (!auth.currentUser) {
+        alert("Erreur : Aucun utilisateur connecté.");
+        return;
+    }
 
     const saveBtn = document.getElementById('btn-save-profile');
-    const newName = document.getElementById('edit-profile-name').value.trim();
-    const newBio = document.getElementById('edit-profile-bio').value.trim();
-    const linkTitle = document.getElementById('edit-profile-link-title').value.trim();
-    const linkUrl = document.getElementById('edit-profile-link-url').value.trim();
+    const nameEl = document.getElementById('edit-profile-name');
+    const bioEl = document.getElementById('edit-profile-bio');
+    const titleEl = document.getElementById('edit-profile-link-title');
+    const urlEl = document.getElementById('edit-profile-link-url');
+
+    if (!nameEl || !bioEl) {
+        alert("Erreur DOM : Champs introuvables.");
+        return;
+    }
+
+    const newName = nameEl.value.trim();
+    const newBio = bioEl.value.trim();
+    const linkTitle = titleEl ? titleEl.value.trim() : "";
+    const linkUrl = urlEl ? urlEl.value.trim() : "";
 
     try {
         if (saveBtn) {
@@ -3103,7 +3143,7 @@ window.saveProfileChanges = async () => {
             saveBtn.innerText = "Enregistrement...";
         }
 
-        // Sauvegarde dans Firebase
+        // Sauvegarde Firebase Firestore
         await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
             name: newName,
             bio: newBio,
@@ -3111,19 +3151,16 @@ window.saveProfileChanges = async () => {
             linkUrl: linkUrl
         });
 
-        // Mettre à jour la variable globale pour la prochaine validation
         originalUsername = newName;
 
-        // Mise à jour visuelle immédiate du profil
+        // Mise à jour de l'interface principale
         const nameDisplay = document.getElementById('user-name-display');
         const bioDisplay = document.getElementById('user-bio-text');
-
         if (nameDisplay) nameDisplay.innerText = newName;
         if (bioDisplay) bioDisplay.innerText = newBio;
 
         const linkContainer = document.getElementById('user-link-container');
         const linkDisplay = document.getElementById('user-link-display');
-
         if (linkContainer && linkDisplay) {
             if (linkTitle && linkUrl) {
                 linkDisplay.innerText = linkTitle;
@@ -3134,10 +3171,10 @@ window.saveProfileChanges = async () => {
             }
         }
 
-        // FERMETURE DE LA MODALE
+        // Fermeture explicite de la modale
         closeEditProfileModal();
 
-        // NOTIFICATION DE SUCCÈS
+        // Notification
         if (typeof showPremiumToast === "function") {
             showPremiumToast("Enregistrement réussi !");
         } else {
@@ -3145,12 +3182,8 @@ window.saveProfileChanges = async () => {
         }
 
     } catch (error) {
-        console.error("Erreur Firestore lors de la sauvegarde :", error);
-        if (typeof showPremiumToast === "function") {
-            showPremiumToast("Erreur lors de l'enregistrement");
-        } else {
-            alert("Erreur lors de la sauvegarde : " + error.message);
-        }
+        console.error("Erreur lors de la sauvegarde Firestore :", error);
+        alert("Erreur de sauvegarde : " + error.message);
     } finally {
         if (saveBtn) {
             saveBtn.disabled = false;
@@ -3165,44 +3198,52 @@ window.toggleAuthMode = () => {
     const err = document.getElementById('error-msg');
     
     document.getElementById('authBtn').innerText = isLoginMode ? "SE CONNECTER" : "CRÉER MON COMPTE";
-    err.style.display = 'none';
+    if (err) err.style.display = 'none';
     
     if (isLoginMode) {
-        birthdateBlock.classList.add('hidden');
+        if (birthdateBlock) birthdateBlock.classList.add('hidden');
         document.getElementById('authBtn').disabled = false;
     } else {
-        birthdateBlock.classList.remove('hidden');
-        checkLocalStorageDeviceLock();
+        if (birthdateBlock) birthdateBlock.classList.remove('hidden');
+        if (typeof checkLocalStorageDeviceLock === "function") checkLocalStorageDeviceLock();
     }
 
-    document.getElementById('switchBox').innerHTML = isLoginMode ? 
-        'Nouveau sur la plateforme ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>' :
-        'Déjà inscrit ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Se connecter</span>';
+    const switchBox = document.getElementById('switchBox');
+    if (switchBox) {
+        switchBox.innerHTML = isLoginMode ? 
+            'Nouveau sur la plateforme ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>' :
+            'Déjà inscrit ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Se connecter</span>';
+    }
 };
 
 window.togglePasswordVisibility = () => {
     const p = document.getElementById('password');
-    p.type = p.type === "password" ? "text" : "password";
+    if (p) p.type = p.type === "password" ? "text" : "password";
 };
 
 window.handleAuth = async () => {
-    const email = document.getElementById('email').value.trim();
-    const pass = document.getElementById('password').value;
-    const birthdateValue = document.getElementById('birthdate').value;
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    const birthdateEl = document.getElementById('birthdate');
     const err = document.getElementById('error-msg');
+
+    if (!emailEl || !passEl) return;
+
+    const email = emailEl.value.trim();
+    const pass = passEl.value;
+    const birthdateValue = birthdateEl ? birthdateEl.value : "";
     
     if(!email || !pass) return;
-    err.style.display = 'none';
+    if (err) err.style.display = 'none';
 
-    if (!isLoginMode && checkLocalStorageDeviceLock()) return;
+    if (!isLoginMode && typeof checkLocalStorageDeviceLock === "function" && checkLocalStorageDeviceLock()) return;
 
     try {
         if(isLoginMode) {
             await signInWithEmailAndPassword(auth, email, pass);
         } else {
             if (!birthdateValue) {
-                err.style.display = 'block';
-                err.innerText = "Date de naissance obligatoire.";
+                if (err) { err.style.display = 'block'; err.innerText = "Date de naissance obligatoire."; }
                 return;
             }
 
@@ -3213,8 +3254,7 @@ window.handleAuth = async () => {
             if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) { age--; }
 
             if (age < 18) {
-                err.style.display = 'block';
-                err.innerText = "Désolé, l'accès à la plateforme nécessite un âge de 18 ans.";
+                if (err) { err.style.display = 'block'; err.innerText = "Désolé, l'accès à la plateforme nécessite un âge de 18 ans."; }
                 return;
             }
 
@@ -3224,8 +3264,10 @@ window.handleAuth = async () => {
             const querySnapshot = await getDocs(fingerprintQuery);
 
             if (!querySnapshot.empty) {
-                err.style.display = 'block';
-                err.innerText = "Création refusée : Téléphone déjà associé à un compte.";
+                if (err) {
+                    err.style.display = 'block';
+                    err.innerText = "Création refusée : Téléphone déjà associé à un compte.";
+                }
                 localStorage.setItem('account_created_on_device', 'true');
                 document.getElementById('authBtn').disabled = true;
                 return;
@@ -3259,15 +3301,16 @@ window.handleAuth = async () => {
             localStorage.removeItem('pending_referrer');
         }
     } catch (e) { 
-        err.style.display = 'block'; 
-        err.innerText = "Erreur d'authentification."; 
+        if (err) { err.style.display = 'block'; err.innerText = "Erreur d'authentification : " + e.message; }
     }
 };
 
 onAuthStateChanged(auth, async (user) => {
     if(user) {
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('main-app').classList.remove('hidden');
+        const authScreen = document.getElementById('auth-screen');
+        const mainApp = document.getElementById('main-app');
+        if (authScreen) authScreen.classList.add('hidden');
+        if (mainApp) mainApp.classList.remove('hidden');
         
         const domain = window.location.origin + window.location.pathname;
         const shareEl = document.getElementById('share-link-text');
@@ -3296,15 +3339,21 @@ onAuthStateChanged(auth, async (user) => {
                 }
             }
 
-            document.getElementById('user-coins').innerText = totalCoins;
-            const computedCash = (totalCoins * 0.001).toFixed(2);
-            document.getElementById('user-cash-value').innerText = `$${computedCash}`;
+            const coinsEl = document.getElementById('user-coins');
+            if (coinsEl) coinsEl.innerText = totalCoins;
+
+            const cashEl = document.getElementById('user-cash-value');
+            if (cashEl) cashEl.innerText = `$${(totalCoins * 0.001).toFixed(2)}`;
             
-            if(d.photoURL) document.getElementById('user-photo').src = d.photoURL;
+            if(d.photoURL) {
+                const photoEl = document.getElementById('user-photo');
+                if (photoEl) photoEl.src = d.photoURL;
+            }
 
             if(d.bannerURL) {
                 if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
-                document.getElementById('user-banner').src = d.bannerURL;
+                const bannerEl = document.getElementById('user-banner');
+                if (bannerEl) bannerEl.src = d.bannerURL;
             } else if (typeof startBannerCarousel === "function") {
                 startBannerCarousel();
             }
@@ -3313,25 +3362,19 @@ onAuthStateChanged(auth, async (user) => {
             const verifiedBadge = document.getElementById('verified-badge-icon');
             const rankBadgePill = document.getElementById('profile-rank-badge');
 
-            if (verifiedBadge) {
-                verifiedBadge.style.display = userRank > 0 ? "inline-block" : "none";
-            }
-
+            if (verifiedBadge) verifiedBadge.style.display = userRank > 0 ? "inline-block" : "none";
             if (rankBadgePill) {
                 rankBadgePill.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Rang ${userRank} : ${userRank > 0 ? 'Bronze' : 'Débutant'}`;
             }
 
             let currentHistory = d.history || { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 };
-            
             const todayISO = new Date().toISOString().split('T')[0];
             const lastActiveDate = d.lastActiveDate || todayISO;
             const currentActiveDay = d.daysActive || 1;
             const currentDayKey = `w1_d${currentActiveDay}`;
 
             if (lastActiveDate !== todayISO) {
-                if ((currentHistory[currentDayKey] || 0) < 15) {
-                    currentHistory[currentDayKey] = 0;
-                }
+                if ((currentHistory[currentDayKey] || 0) < 15) currentHistory[currentDayKey] = 0;
                 await updateDoc(doc(db, "rewards_users", user.uid), {
                     pointsDuJour: 0,
                     lastActiveDate: todayISO,
@@ -3350,9 +3393,7 @@ onAuthStateChanged(auth, async (user) => {
 
             let joursAuVert = 0;
             for (let day = 1; day <= 7; day++) {
-                if ((currentHistory[`w1_d${day}`] || 0) >= 15) {
-                    joursAuVert++;
-                }
+                if ((currentHistory[`w1_d${day}`] || 0) >= 15) joursAuVert++;
             }
 
             if (joursAuVert >= 7 && userRank === 0) {
@@ -3388,8 +3429,10 @@ onAuthStateChanged(auth, async (user) => {
         }
     } else {
         if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
-        document.getElementById('auth-screen').classList.remove('hidden');
-        document.getElementById('main-app').classList.add('hidden');
+        const authScreen = document.getElementById('auth-screen');
+        const mainApp = document.getElementById('main-app');
+        if (authScreen) authScreen.classList.remove('hidden');
+        if (mainApp) mainApp.classList.add('hidden');
         if(!isLoginMode && typeof checkLocalStorageDeviceLock === "function") checkLocalStorageDeviceLock();
     }
 });
@@ -3400,12 +3443,14 @@ window.uploadImage = (e, type) => {
     const reader = new FileReader();
     reader.onloadend = async () => {
         if(type === 'avatar') {
-            document.getElementById('user-photo').src = reader.result;
+            const userPhoto = document.getElementById('user-photo');
+            if (userPhoto) userPhoto.src = reader.result;
             await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { photoURL: reader.result });
             if (typeof showPremiumToast === "function") showPremiumToast("Photo de profil mise à jour !");
         } else if(type === 'banner') {
             if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
-            document.getElementById('user-banner').src = reader.result;
+            const userBanner = document.getElementById('user-banner');
+            if (userBanner) userBanner.src = reader.result;
             await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { bannerURL: reader.result });
             if (typeof showPremiumToast === "function") showPremiumToast("Image de couverture mise à jour !");
         }
