@@ -3091,12 +3091,19 @@ function validateFormState() {
 window.saveProfileChanges = async () => {
     if (!isUsernameValid || !isBioValid || !isLinkValid || !auth.currentUser) return;
 
+    const saveBtn = document.getElementById('btn-save-profile');
     const newName = document.getElementById('edit-profile-name').value.trim();
     const newBio = document.getElementById('edit-profile-bio').value.trim();
     const linkTitle = document.getElementById('edit-profile-link-title').value.trim();
     const linkUrl = document.getElementById('edit-profile-link-url').value.trim();
 
     try {
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerText = "Enregistrement...";
+        }
+
+        // Sauvegarde dans Firebase
         await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
             name: newName,
             bio: newBio,
@@ -3104,7 +3111,10 @@ window.saveProfileChanges = async () => {
             linkUrl: linkUrl
         });
 
-        // Mise à jour interface
+        // Mettre à jour la variable globale pour la prochaine validation
+        originalUsername = newName;
+
+        // Mise à jour visuelle immédiate du profil
         const nameDisplay = document.getElementById('user-name-display');
         const bioDisplay = document.getElementById('user-bio-text');
 
@@ -3124,14 +3134,28 @@ window.saveProfileChanges = async () => {
             }
         }
 
+        // FERMETURE DE LA MODALE
         closeEditProfileModal();
 
+        // NOTIFICATION DE SUCCÈS
         if (typeof showPremiumToast === "function") {
-            showPremiumToast("Profil mis à jour avec succès !");
+            showPremiumToast("Enregistrement réussi !");
+        } else {
+            alert("Enregistrement réussi !");
         }
+
     } catch (error) {
         console.error("Erreur Firestore lors de la sauvegarde :", error);
-        alert("Erreur lors de la sauvegarde : " + error.message);
+        if (typeof showPremiumToast === "function") {
+            showPremiumToast("Erreur lors de l'enregistrement");
+        } else {
+            alert("Erreur lors de la sauvegarde : " + error.message);
+        }
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerText = "Enregistrer";
+        }
     }
 };
 
