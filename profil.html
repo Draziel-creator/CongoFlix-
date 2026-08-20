@@ -956,6 +956,45 @@ body, html {
     cursor: pointer; 
     font-weight: 700; 
 }
+    /* CONTOURS DE VALIDATION */
+.modal-input.input-error {
+    border-color: #ff4d4d !important;
+    box-shadow: 0 0 8px rgba(255, 77, 77, 0.4);
+}
+
+.modal-input.input-success {
+    border-color: #00ff88 !important;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+}
+
+/* MESSAGES DE FEEDBACK ET COMPTEUR */
+.field-feedback {
+    font-size: 0.78rem;
+    margin-top: 5px;
+    font-weight: 500;
+    display: block;
+}
+
+.field-feedback.error {
+    color: #ff4d4d;
+}
+
+.field-feedback.success {
+    color: #00ff88;
+}
+
+.field-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.char-counter {
+    font-size: 0.75rem;
+    color: #888;
+    margin-left: auto;
+}
 </style>
     <!-- Chargement Direct du SDK Officiel Flutterwave v3 -->
     <script src="https://checkout.flutterwave.com/v3.js"></script>
@@ -2805,43 +2844,184 @@ window.confirmImageSelection = () => {
     }
 };
 
-// GESTION DE LA MODALE MODIFIER LE PROFIL
+let usernameCheckTimer = null;
+let isUsernameValid = false;
+let isBioValid = false;
+let originalUsername = "";
+
+// OUVERTURE DE LA MODALE PROFIL
 window.openEditProfileModal = () => {
-    const currentName = document.getElementById('user-name-display').innerText;
-    const currentBio = document.getElementById('user-bio-text').innerText;
-    
-    document.getElementById('edit-profile-name').value = currentName !== "Chargement..." ? currentName : "";
-    document.getElementById('edit-profile-bio').value = currentBio;
+    const currentNameEl = document.getElementById('user-name-display');
+    const currentBioEl = document.getElementById('user-bio-text');
+
+    const currentName = currentNameEl ? currentNameEl.innerText.trim() : "";
+    const currentBio = currentBioEl ? currentBioEl.innerText.trim() : "";
+
+    originalUsername = (currentName !== "Chargement...") ? currentName : "";
+
+    const nameInput = document.getElementById('edit-profile-name');
+    const bioInput = document.getElementById('edit-profile-bio');
+
+    nameInput.value = originalUsername;
+    bioInput.value = currentBio;
+
+    // Déclencher les vérifications initiales
+    checkUsernameAvailability();
+    updateBioCounter();
+
     document.getElementById('editProfileModal').classList.add('active');
 };
 
+// FERMETURE DE LA MODALE PROFIL
 window.closeEditProfileModal = () => {
     document.getElementById('editProfileModal').classList.remove('active');
 };
 
+// VÉRIFICATION EN TEMPS RÉEL DU NOM D'UTILISATEUR (FIREBASE + LONGUEUR)
+window.checkUsernameAvailability = () => {
+    clearTimeout(usernameCheckTimer);
+    const nameInput = document.getElementById('edit-profile-name');
+    const feedback = document.getElementById('username-feedback');
+    const saveBtn = document.getElementById('btn-save-profile');
+    const nameValue = nameInput.value.trim();
+
+    // 1. Validation champ vide
+    if (!nameValue) {
+        nameInput.className = "modal-input input-error";
+        feedback.className = "field-feedback error";
+        feedback.innerText = "Champ obligatoire";
+        isUsernameValid = false;
+        if (saveBtn) saveBtn.disabled = true;
+        return;
+    }
+
+    // 2. Si le nom n'a pas changé par rapport à l'actuel
+    if (nameValue === originalUsername) {
+        nameInput.className = "modal-input input-success";
+        feedback.className = "field-feedback success";
+        feedback.innerText = "Votre nom actuel";
+        isUsernameValid = true;
+        validateFormState();
+        return;
+    }
+
+    // Indication de recherche
+    nameInput.className = "modal-input";
+    feedback.className = "field-feedback";
+    feedback.style.color = "#aaa";
+    feedback.innerText = "Vérification de la disponibilité...";
+
+    // Anti-rebond (Debounce) de 400ms pour éviter trop de requêtes Firebase
+    usernameCheckTimer = setTimeout(async () => {
+        try {
+            const usersRef = collection(db, "rewards_users");
+            const q = query(usersRef, where("name", "==", nameValue));
+            const querySnapshot = await getDocs(q);
+
+            // Filtre pour s'assurer qu'il ne s'agit pas du compte courant
+            let isTaken = false;
+            querySnapshot.forEach(docSnap => {
+                if (auth.currentUser && docSnap.id !== auth.currentUser.uid) {
+                    isTaken = true;
+                }
+            });
+
+            if (isTaken) {
+                nameInput.className = "modal-input input-error";
+                feedback.className = "field-feedback error";
+                feedback.innerText = "Ce nom n'est pas disponible, veuillez en choisir un autre.";
+                isUsernameValid = false;
+            } else {
+                nameInput.className = "modal-input input-success";
+                feedback.className = "field-feedback success";
+                feedback.innerText = "Nom disponible !";
+                isUsernameValid = true;
+            }
+        } catch (error) {
+            console.error("Erreur vérification pseudo :", error);
+            // En cas d'erreur de recherche, on autorise si non vide
+            isUsernameValid = true;
+        }
+        validateFormState();
+    }, 400);
+};
+
+// VÉRIFICATION EN TEMPS RÉEL DE LA BIO (COMPTEUR + OBLIGATOIRE)
+window.updateBioCounter = () => {
+    const bioInput = document.getElementById('edit-profile-bio');
+    const feedback = document.getElementById('bio-feedback');
+    const counter = document.getElementById('bio-counter');
+    const bioValue = bioInput.value.trim();
+
+    if (counter) counter.innerText = `${bioInput.value.length}/40`;
+
+    if (!bioValue) {
+        bioInput.className = "modal-input input-error";
+        feedback.className = "field-feedback error";
+        feedback.innerText = "Champ obligatoire";
+        isBioValid = false;
+    } else {
+        bioInput.className = "modal-input input-success";
+        feedback.className = "field-feedback success";
+        feedback.innerText = "";
+        isBioValid = true;
+    }
+
+    validateFormState();
+};
+
+// GESTION DU BOUTON ENREGISTRER (DÉSACTIVÉ SI ERREUR)
+function validateFormState() {
+    const saveBtn = document.getElementById('btn-save-profile');
+    if (saveBtn) {
+        saveBtn.disabled = !(isUsernameValid && isBioValid);
+        saveBtn.style.opacity = (isUsernameValid && isBioValid) ? "1" : "0.5";
+        saveBtn.style.cursor = (isUsernameValid && isBioValid) ? "pointer" : "not-allowed";
+    }
+}
+
+// SAUVEGARDER LES MODIFICATIONS DANS FIREBASE
 window.saveProfileChanges = async () => {
+    if (!isUsernameValid || !isBioValid) return;
+
     const newName = document.getElementById('edit-profile-name').value.trim();
     const newBio = document.getElementById('edit-profile-bio').value.trim();
-    
-    if (!newName) {
-        showPremiumToast("Le nom ne peut pas être vide.");
+
+    if (!auth.currentUser) {
+        alert("Utilisateur non connecté.");
         return;
     }
 
     try {
+        // Enregistrement réel dans Firebase Firestore
         await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
             name: newName,
             bio: newBio
         });
 
-        document.getElementById('user-name-display').innerText = newName;
-        document.getElementById('user-bio-text').innerText = newBio || "Créateur de contenu • Passionné • Partageur";
-        
+        // Mise à jour de l'affichage sur la page
+        const nameDisplay = document.getElementById('user-name-display');
+        const bioDisplay = document.getElementById('user-bio-text');
+
+        if (nameDisplay) nameDisplay.innerText = newName;
+        if (bioDisplay) bioDisplay.innerText = newBio;
+
         closeEditProfileModal();
-        showPremiumToast("Profil mis à jour avec succès !");
-    } catch (e) {
-        console.error("Erreur lors de la mise à jour du profil :", e);
-        showPremiumToast("Erreur lors de l'enregistrement.");
+
+        // Notification de succès sans déclencher de fausse erreur
+        if (typeof showPremiumToast === "function") {
+            showPremiumToast("Profil mis à jour avec succès !");
+        } else {
+            console.log("Profil mis à jour avec succès !");
+        }
+
+    } catch (error) {
+        console.error("Erreur réelle Firestore lors de la sauvegarde :", error);
+        if (typeof showPremiumToast === "function") {
+            showPremiumToast("Erreur lors de la sauvegarde.");
+        } else {
+            alert("Erreur lors de la sauvegarde : " + error.message);
+        }
     }
 };
 
@@ -3091,21 +3271,48 @@ window.logout = () => {
     signOut(auth);
 };
 </script>
-    <!-- MODALE 1 : MODIFICATION DU PROFIL (NOM & BIO) -->
+<!-- MODALE 1 : MODIFICATION DU PROFIL (NOM & BIO) -->
 <div class="custom-modal-overlay" id="editProfileModal">
     <div class="custom-modal-card">
-        <div class="modal-title"><i class="fa-solid fa-user-pen" style="color:#00ff88;"></i> Modifier le Profil</div>
-        <div class="modal-field-group">
-            <label for="edit-profile-name">Nom d'utilisateur</label>
-            <input type="text" id="edit-profile-name" class="modal-input" placeholder="Ton nom...">
+        <div class="modal-title">
+            <i class="fa-solid fa-user-pen" style="color:#00ff88;"></i> Modifier le Profil
         </div>
+        
+        <!-- CHAMP NOM D'UTILISATEUR -->
         <div class="modal-field-group">
-            <label for="edit-profile-bio">Description / Bio</label>
-            <textarea id="edit-profile-bio" class="modal-input" rows="3" placeholder="Parle un peu de toi..."></textarea>
+            <label for="edit-profile-name">Nom d'utilisateur (max 10 caractères)</label>
+            <input 
+                type="text" 
+                id="edit-profile-name" 
+                class="modal-input" 
+                maxlength="10" 
+                placeholder="Ton nom..." 
+                oninput="checkUsernameAvailability()"
+            >
+            <span id="username-feedback" class="field-feedback"></span>
         </div>
+
+        <!-- CHAMP DESCRIPTION / BIO -->
+        <div class="modal-field-group">
+            <label for="edit-profile-bio">Description / Bio (max 40 caractères)</label>
+            <textarea 
+                id="edit-profile-bio" 
+                class="modal-input" 
+                rows="2" 
+                maxlength="40" 
+                placeholder="Parle un peu de toi..." 
+                oninput="updateBioCounter()"
+            ></textarea>
+            <div class="field-info-row">
+                <span id="bio-feedback" class="field-feedback"></span>
+                <span id="bio-counter" class="char-counter">0/40</span>
+            </div>
+        </div>
+
+        <!-- BOUTONS D'ACTION -->
         <div class="modal-actions-row">
             <button class="btn-modal-cancel" onclick="closeEditProfileModal()">Annuler</button>
-            <button class="btn-modal-confirm" onclick="saveProfileChanges()">Enregistrer</button>
+            <button class="btn-modal-confirm" id="btn-save-profile" onclick="saveProfileChanges()">Enregistrer</button>
         </div>
     </div>
 </div>
