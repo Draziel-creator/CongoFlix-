@@ -1050,9 +1050,9 @@ body, html {
                         <span class="user-name-display" id="user-name-display">Chargement...</span>
                         <i class="fa-solid fa-circle-check verified-badge" id="verified-badge-icon" style="display: none;"></i>
                     </div>
-                    <div class="rank-status-container">
+                     <div class="rank-status-container">
                         <div class="rank-badge-pill" id="profile-rank-badge">
-                            <i class="fa-solid fa-shield-halved"></i> Rang 0 : Débutant
+                            <i class="fa-solid fa-lock"></i> Rang 0 : Novice
                         </div>
                     </div>
                 </div>
@@ -1194,8 +1194,7 @@ body, html {
         <!-- BOUTONS D'ACTION -->
         <div class="modal-actions-row">
             <button class="btn-modal-cancel" onclick="closeEditProfileModal()">Annuler</button>
-            <!-- Assure-toi d'avoir type="button" et non type="submit" -->
-            <button type="button" id="btn-save-profile" onclick="saveProfileChanges(event)">Enregistrer</button>
+            <button class="btn-modal-confirm" id="btn-save-profile" onclick="saveProfileChanges()">Enregistrer</button>
         </div>
     </div>
 </div>
@@ -1394,7 +1393,7 @@ body, html {
     </div>
 
 <script type="module">
-    // 1. IMPORTS TOUT EN HAUT (J'ai ajouté 'onSnapshot' dans les imports Firestore)
+    // 1. IMPORTS
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -1413,37 +1412,70 @@ body, html {
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // 3. SYNCHRONISATION EN DIRECT (PLACÉ APRÈS L'INITIALISATION DE AUTH ET DB)
-    var g_currentUserId = null; // 🟢 Déclaré ici en "var" pour éviter tout blocage d'initialisation
+    // 3. DONNÉES DE RANG (PLACÉES EN HAUT POUR ÊTRE DISPONIBLES DE SUITE)
+    const RANKS_METADATA = {
+        0:  { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
+        1:  { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
+        2:  { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
+        3:  { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
+        4:  { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
+        10: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
+    };
+
+    // Fonction d'affichage du rang accessible globalement
+    window.applyRankDesign = function(rankLevel) {
+        const rankNum = parseInt(rankLevel, 10) || 0;
+        const currentRank = RANKS_METADATA[rankNum] || RANKS_METADATA[0];
+
+        document.documentElement.style.setProperty('--rank-color', currentRank.color);
+
+        const badgeElement = document.getElementById('profile-rank-badge');
+        if (badgeElement) {
+            badgeElement.style.border = `1px solid ${currentRank.color}`;
+            badgeElement.innerHTML = `<i class="${currentRank.medal}" style="color:${currentRank.color}"></i> Rang ${rankNum} : ${currentRank.name}`;
+        }
+
+        const lockOverlay = document.getElementById('lock-overlay');
+        if (lockOverlay) {
+            if (rankNum > 0) {
+                lockOverlay.classList.add('hidden');
+                lockOverlay.style.setProperty('display', 'none', 'important');
+            } else {
+                lockOverlay.classList.remove('hidden');
+                lockOverlay.style.setProperty('display', 'flex', 'important');
+            }
+        }
+    };
+
+    // ⚡ ANTI-CLIGNOTEMENT : APPLIQUE LE CACHE LOCAL IMMÉDIATEMENT
+    const cachedRank = localStorage.getItem('app_user_rank_cache');
+    if (cachedRank !== null) {
+        window.applyRankDesign(cachedRank);
+    }
+
+    // 4. SYNCHRONISATION FIRESTORE EN TEMPS RÉEL
+    var g_currentUserId = null;
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
             g_currentUserId = user.uid;
-
-            // Référence vers le document utilisateur connecté dans 'users'
             const userRef = doc(db, "users", user.uid);
 
-            // Écouteur temps réel (Met à jour l'XP, le Rang et DÉGÈLE l'affichage automatiquement)
             onSnapshot(userRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const userData = docSnap.data() || {};
 
-                    // Lecture stricte de 'xp' et du rang ('rank' ou 'rang')
                     const xpLien = Number(userData.xp !== undefined ? userData.xp : 0);
                     const rangLien = Number(userData.rank !== undefined ? userData.rank : (userData.rang || 0));
 
-                    // Cache global & local
                     window.g_userXP = xpLien;
                     window.g_userRank = rangLien;
                     localStorage.setItem('app_user_xp_cache', xpLien);
                     localStorage.setItem('app_user_rank_cache', rangLien);
 
-                    // 🟢 APPLIQUE LE DESIGN ET DÉGÈLE/MASQUE LE LOCK-OVERLAY SI RANG > 0
-                    if (typeof applyRankDesign === "function") {
-                        applyRankDesign(rangLien);
-                    }
+                    // Application du rang mis à jour depuis Firestore
+                    window.applyRankDesign(rangLien);
 
-                    // Rafraîchissement de la barre d'historique/dates si la fonction existe
                     if (typeof generateHistoryUI === "function" && typeof g_userHistoryData !== "undefined") {
                         generateHistoryUI(g_userHistoryData, rangLien, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
                     }
@@ -1453,21 +1485,12 @@ body, html {
             });
         }
     });
-    
-    // 4. LE RESTE DE TES VARIABLES GLOBALES ET FONCTIONS
+
+    // 5. VARIABLES GLOBALES ET AUTRES FONCTIONS
     let isLoginMode = true;
     let globalConditionsMet = false;
     let globalUserRank = 0;
-    let selectedAmountUSD = 1; // Montant par défaut communiqué à Flutterwave
-
-    const RANKS_METADATA = {
-        0:  { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
-        1:  { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
-        2:  { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
-        3:  { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
-        4:  { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
-        10: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
-    };
+    let selectedAmountUSD = 1;
 
     function generateDeviceFingerprint() {
         const hardwareSpecs = [
@@ -2827,18 +2850,27 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==========================================
 // 2. FONCTIONS LOGIQUES ET FIREBASE EXISTANTES
 // ==========================================
-function applyRankDesign(rankLevel) {
-    globalUserRank = parseInt(rankLevel, 10) || 0;
-    const currentRank = RANKS_METADATA[globalUserRank] || RANKS_METADATA[0];
-    
+window.applyRankDesign = function(rankLevel) {
+    globalUserRank = parseInt(rankLevel, 10);
+    if (isNaN(globalUserRank)) globalUserRank = 0;
+
+    // Définition par défaut si RANKS_METADATA[globalUserRank] n'existe pas
+    const fallbackRank = { name: "Novice", color: "#8a8d93", medal: "fa-solid fa-shield" };
+    const currentRank = (typeof RANKS_METADATA !== 'undefined' && RANKS_METADATA[globalUserRank]) 
+        ? RANKS_METADATA[globalUserRank] 
+        : fallbackRank;
+
+    // 1. Application des variables CSS
     document.documentElement.style.setProperty('--rank-color', currentRank.color);
-    
+
+    // 2. Mise à jour du Badge de Rang
     const badgeElement = document.getElementById('profile-rank-badge');
     if (badgeElement) {
         badgeElement.style.border = `1px solid ${currentRank.color}`;
         badgeElement.innerHTML = `<i class="${currentRank.medal}" style="color:${currentRank.color}"></i> Rang ${globalUserRank} : ${currentRank.name}`;
     }
-    
+
+    // 3. Gestion du cadenas / verrouillage
     const lockOverlay = document.getElementById('lock-overlay');
     if (lockOverlay) {
         if (globalUserRank > 0) {
@@ -2849,6 +2881,7 @@ function applyRankDesign(rankLevel) {
             lockOverlay.style.setProperty('display', 'flex', 'important');
         }
     }
+};
 
     if (typeof evalWithdrawGateStatus === "function") {
         evalWithdrawGateStatus();
