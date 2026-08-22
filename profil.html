@@ -1433,18 +1433,34 @@ async function verifierAdBlock() {
 }
 
 // =========================================================================
-// 2. CALCUL DE RÉPUTATION (ACTIVITÉS + PERTE PAR INACTIVITÉ + ADBLOCK)
+// CALCUL DE LA RÉPUTATION AVEC TRAÇABILITÉ CONSOLE
 // =========================================================================
-async function calculerReputationEtEtoiles(historyData = {}, totalParrainages = 0) {
-    let score = 2.5; // Note de départ moyenne
+async function calculerReputationEtEtoiles(data = {}, totalParrainages = 156) {
+    // 1. Extraction automatique si les données contiennent le sous-objet 'history'
+    const historyData = data.history || data || {};
+    
+    console.log("📊 Données d'historique lues :", historyData);
 
-    // A. Détection AdBlock
+    let score = 2.5; // Note de départ
+
+    // A. Test AdBlock
     const adBlockDetecte = await verifierAdBlock();
     if (adBlockDetecte) {
-        score -= 1.0; // Pénalité immédiate si AdBlock est actif
+        score -= 1.0;
+        console.log("⚠️ AdBlock détecté (-1.0 pt)");
     }
 
-    // B. Vérification de la date d'aujourd'hui (YYYY-MM-DD)
+    // B. Prise en compte de TOUTES les dates passées (2026-08-06, 2026-08-07...)
+    const totalPointsTousLesJours = Object.values(historyData).reduce((acc, val) => {
+        const num = typeof extraireValeurJour === "function" ? extraireValeurJour(val) : (Number(val) || 0);
+        return acc + num;
+    }, 0);
+
+    const bonusHistorique = Math.min(1.5, (totalPointsTousLesJours / 120) * 1.5);
+    score += bonusHistorique;
+    console.log(`📈 Points cumulés (${totalPointsTousLesJours} pts sur ${Object.keys(historyData).length} jours) : +${bonusHistorique.toFixed(2)} pts`);
+
+    // C. Vérification de la date du jour (YYYY-MM-DD)
     const aujourdhui = new Date();
     const yyyy = aujourdhui.getFullYear();
     const mm = String(aujourdhui.getMonth() + 1).padStart(2, '0');
@@ -1454,31 +1470,28 @@ async function calculerReputationEtEtoiles(historyData = {}, totalParrainages = 
     const activiteAujourdhui = Number(historyData[dateAujourdhuiISO]) || 0;
 
     if (activiteAujourdhui === 0) {
-        // 📉 Date du jour absente ou égale à 0 -> Baisse de la réputation
-        score -= 0.4;
+        score -= 0.3;
+        console.log(`📉 Aucune activité enregistrée pour aujourd'hui (${dateAujourdhuiISO}) : -0.3 pt`);
     } else {
-        // 📈 Activité faite aujourd'hui -> Augmentation selon l'effort (max +0.6)
-        score += Math.min(0.6, (activiteAujourdhui / 15) * 0.6);
+        const bonusAujourdhui = Math.min(0.6, (activiteAujourdhui / 15) * 0.6);
+        score += bonusAujourdhui;
+        console.log(`📈 Activité du jour (${dateAujourdhuiISO}) validée : +${bonusAujourdhui.toFixed(2)} pts`);
     }
 
-    // C. Progression globale basée sur le total des activités passées
-    const totalPointsTousLesJours = Object.values(historyData).reduce((acc, val) => acc + (Number(val) || 0), 0);
-    score += Math.min(1.5, (totalPointsTousLesJours / 200) * 1.5);
+    // D. Bonus Parrainage
+    const bonusParrainage = Math.min(1.0, (totalParrainages / 10) * 1.0);
+    score += bonusParrainage;
 
-    // D. Bonus parrainage (+0.1 par parrainage, max +1.0)
-    score += Math.min(1.0, (totalParrainages / 10) * 1.0);
-
-    // E. Plafonnement strict entre 1.0 et 5.0
+    // E. Normalisation finale (1.0 à 5.0)
     score = Math.max(1.0, Math.min(5.0, score));
     const scoreArrondi = Math.round(score * 10) / 10;
 
-    // F. Mise à jour du texte HTML
-    const textElem = document.getElementById('reputation-score-text');
-    if (textElem) {
-        textElem.innerText = `${scoreArrondi.toFixed(1)} / 5`;
-    }
+    console.log(`⭐ SCORE FINAL : ${scoreArrondi} / 5`);
 
-    // G. Injection des étoiles (Pleines, Demies, Vides)
+    // F. Mise à jour de l'affichage HTML
+    const textElem = document.getElementById('reputation-score-text');
+    if (textElem) textElem.innerText = `${scoreArrondi.toFixed(1)} / 5`;
+
     const starsContainer = document.getElementById('reputation-stars');
     if (starsContainer) {
         let starsHTML = '';
