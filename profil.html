@@ -1422,6 +1422,65 @@ body, html {
         10: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
     };
 
+    // =========================================================================
+// CALCUL & INJECTION DU SCORE D'ACTIVITÉ (GLOBAL)
+// =========================================================================
+function mettreAJourScoreActivite(historyData = null) {
+    try {
+        const data = historyData || window.g_userHistoryData || {};
+
+        const FENETRE_JOURS = 14; 
+        const OBJECTIF_JOURNALIER = 15; 
+        const MAX_TOTAL_POINTS = FENETRE_JOURS * OBJECTIF_JOURNALIER; // 210 pts max
+
+        let totalPointsCumules = 0;
+        const aujourdhui = new Date();
+
+        for (let i = 0; i < FENETRE_JOURS; i++) {
+            const d = new Date(aujourdhui);
+            d.setDate(aujourdhui.getDate() - i);
+
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const dateISO = `${yyyy}-${mm}-${dd}`;
+
+            const valRaw = data[dateISO];
+            const valJour = typeof extraireValeurJour === "function" 
+                ? extraireValeurJour(valRaw) 
+                : (Number(valRaw) || 0);
+
+            totalPointsCumules += Math.min(valJour, OBJECTIF_JOURNALIER);
+        }
+
+        const scorePourcentage = Math.min(100, Math.round((totalPointsCumules / MAX_TOTAL_POINTS) * 100));
+
+        // Injection DOM
+        let scoreElement = document.getElementById('activity-score-value');
+        if (!scoreElement) {
+            const labels = document.querySelectorAll('.metric-label');
+            labels.forEach(label => {
+                if (label.textContent.includes("Score d'activité")) {
+                    scoreElement = label.parentNode.querySelector('.metric-value');
+                }
+            });
+        }
+
+        if (scoreElement) {
+            scoreElement.innerText = `${scorePourcentage}%`;
+            console.log(`⚡ Score d'activité appliqué : ${scorePourcentage}% (${totalPointsCumules}/${MAX_TOTAL_POINTS} pts)`);
+        }
+
+        return scorePourcentage;
+    } catch (err) {
+        console.error("❌ Erreur dans mettreAJourScoreActivite :", err);
+        return 0;
+    }
+}
+
+// 🔓 ATTACHEMENT STRICT À WINDOW (A exécuter immédiatement)
+window.mettreAJourScoreActivite = mettreAJourScoreActivite;
+
     // Fonction d'affichage du rang accessible globalement
     window.applyRankDesign = function(rankLevel) {
         const rankNum = parseInt(rankLevel, 10) || 0;
@@ -2645,77 +2704,23 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         localStorage.setItem('app_user_rank_cache', userRank);
         localStorage.setItem('app_user_xp_cache', userXP);
         
-        // Render UI
+        g_userHistoryData = historyData;
+        window.g_userHistoryData = historyData;
+
+        // Génération du tableau
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
-        // ⚡ DÉCLENCHEMENT DU CALCUL DU SCORE D'ACTIVITÉ
-        mettreAJourScoreActivite(historyData);
-
+        // ⚡ Calcul immédiat du score d'activité
+        if (typeof window.mettreAJourScoreActivite === "function") {
+            window.mettreAJourScoreActivite(historyData);
+        }
     } catch (error) {
         console.error("❌ Erreur lors de la synchronisation :", error);
     } finally {
         isSyncingProfilDate = false;
     }
 }
-    // =========================================================================
-// CALCUL DU SCORE D'ACTIVITÉ (FENÊTRE GLISSANTE DE 14 JOURS)
-// =========================================================================
-function mettreAJourScoreActivite(historyData = {}) {
-    try {
-        const FENETRE_JOURS = 14;
-        const OBJECTIF_JOURNALIER = 15;
-        const MAX_TOTAL_POINTS = FENETRE_JOURS * OBJECTIF_JOURNALIER; // 210 pts max
 
-        let totalPointsCumules = 0;
-        const aujourdhui = new Date();
-
-        // Parcours des 14 derniers jours
-        for (let i = 0; i < FENETRE_JOURS; i++) {
-            const d = new Date(aujourdhui);
-            d.setDate(aujourdhui.getDate() - i);
-
-            // Formatage YYYY-MM-DD local strict
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            const dateISO = `${yyyy}-${mm}-${dd}`;
-
-            // Récupération de la valeur
-            const valRaw = historyData[dateISO];
-            const valJour = typeof extraireValeurJour === "function" 
-                ? extraireValeurJour(valRaw) 
-                : (Number(valRaw) || 0);
-
-            totalPointsCumules += Math.min(valJour, OBJECTIF_JOURNALIER);
-        }
-
-        const scorePourcentage = Math.min(100, Math.round((totalPointsCumules / MAX_TOTAL_POINTS) * 100));
-
-        // Recherche de l'élément HTML (ID en priorité, sinon recherche par texte)
-        let scoreElement = document.getElementById('activity-score-value');
-        if (!scoreElement) {
-            const labels = document.querySelectorAll('.metric-label');
-            labels.forEach(label => {
-                if (label.textContent.includes("Score d'activité")) {
-                    scoreElement = label.parentNode.querySelector('.metric-value');
-                }
-            });
-        }
-
-        // Injection dans le HTML
-        if (scoreElement) {
-            scoreElement.innerText = `${scorePourcentage}%`;
-            console.log("⚡ Score d'activité appliqué :", scorePourcentage + "%");
-        } else {
-            console.warn("⚠️ Balise HTML du score d'activité introuvable.");
-        }
-
-        return scorePourcentage;
-    } catch (err) {
-        console.error("❌ Erreur calcul score d'activité :", err);
-        return 0;
-    }
-}
 // =========================================================================
 // 8. ÉCOUTEURS ET EXPORT GLOBAL
 // =========================================================================
