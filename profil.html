@@ -1058,21 +1058,21 @@ body, html {
                 </div>
             </div>
 
-            <div class="user-details-block">
-                <div class="reputation-stars-container">
-                    <div class="stars-list" id="reputation-stars">
-                        <i class="fa-solid fa-star star-gold"></i>
-                        <i class="fa-solid fa-star star-gold"></i>
-                        <i class="fa-solid fa-star star-gold"></i>
-                        <i class="fa-solid fa-star star-gold"></i>
-                        <i class="fa-regular fa-star star-gold"></i>
-                    </div>
-                    <span class="rating-text">4.6 <span class="reviews-count">(128 avis)</span></span>
-                    <button class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </button>
-                </div>
-
+           <div class="user-details-block">
+    <div class="reputation-stars-container">
+        <!-- Les étoiles seront générées dynamiquement par le JS -->
+        <div class="stars-list" id="reputation-stars">
+            <i class="fa-regular fa-star star-gold"></i>
+            <i class="fa-regular fa-star star-gold"></i>
+            <i class="fa-regular fa-star star-gold"></i>
+            <i class="fa-regular fa-star star-gold"></i>
+            <i class="fa-regular fa-star star-gold"></i>
+        </div>
+        <span class="rating-text" id="reputation-score-text">0.0 / 5</span>
+        <button class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
+            <i class="fa-solid fa-circle-info"></i>
+        </button>
+    </div>
                 <p class="user-description-text" id="user-bio-text">Créateur de contenu • Passionné • Partageur</p>
 
                 <!-- LIEN PERSONNALISÉ DANS LE PROFIL -->
@@ -1414,6 +1414,90 @@ body, html {
         4:  { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
         10: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
     };
+
+    // =========================================================================
+// 1. DÉTECTION GRATUITE ADBLOCK (JS pure)
+// =========================================================================
+async function verifierAdBlock() {
+    try {
+        // Tente de charger un script d'annonce standard
+        const requete = new Request('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', { 
+            method: 'HEAD', 
+            mode: 'no-cors' 
+        });
+        await fetch(requete);
+        return false; // AdBlock non détecté
+    } catch (e) {
+        return true; // AdBlock actif (requête bloquée par le navigateur)
+    }
+}
+
+// =========================================================================
+// 2. CALCUL DE RÉPUTATION (ACTIVITÉS + PERTE PAR INACTIVITÉ + ADBLOCK)
+// =========================================================================
+async function calculerReputationEtEtoiles(historyData = {}, totalParrainages = 0) {
+    let score = 2.5; // Note de départ moyenne
+
+    // A. Détection AdBlock
+    const adBlockDetecte = await verifierAdBlock();
+    if (adBlockDetecte) {
+        score -= 1.0; // Pénalité immédiate si AdBlock est actif
+    }
+
+    // B. Vérification de la date d'aujourd'hui (YYYY-MM-DD)
+    const aujourdhui = new Date();
+    const yyyy = aujourdhui.getFullYear();
+    const mm = String(aujourdhui.getMonth() + 1).padStart(2, '0');
+    const dd = String(aujourdhui.getDate()).padStart(2, '0');
+    const dateAujourdhuiISO = `${yyyy}-${mm}-${dd}`;
+
+    const activiteAujourdhui = Number(historyData[dateAujourdhuiISO]) || 0;
+
+    if (activiteAujourdhui === 0) {
+        // 📉 Date du jour absente ou égale à 0 -> Baisse de la réputation
+        score -= 0.4;
+    } else {
+        // 📈 Activité faite aujourd'hui -> Augmentation selon l'effort (max +0.6)
+        score += Math.min(0.6, (activiteAujourdhui / 15) * 0.6);
+    }
+
+    // C. Progression globale basée sur le total des activités passées
+    const totalPointsTousLesJours = Object.values(historyData).reduce((acc, val) => acc + (Number(val) || 0), 0);
+    score += Math.min(1.5, (totalPointsTousLesJours / 200) * 1.5);
+
+    // D. Bonus parrainage (+0.1 par parrainage, max +1.0)
+    score += Math.min(1.0, (totalParrainages / 10) * 1.0);
+
+    // E. Plafonnement strict entre 1.0 et 5.0
+    score = Math.max(1.0, Math.min(5.0, score));
+    const scoreArrondi = Math.round(score * 10) / 10;
+
+    // F. Mise à jour du texte HTML
+    const textElem = document.getElementById('reputation-score-text');
+    if (textElem) {
+        textElem.innerText = `${scoreArrondi.toFixed(1)} / 5`;
+    }
+
+    // G. Injection des étoiles (Pleines, Demies, Vides)
+    const starsContainer = document.getElementById('reputation-stars');
+    if (starsContainer) {
+        let starsHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            if (scoreArrondi >= i) {
+                starsHTML += '<i class="fa-solid fa-star star-gold"></i>';
+            } else if (scoreArrondi >= i - 0.5) {
+                starsHTML += '<i class="fa-solid fa-star-half-stroke star-gold"></i>';
+            } else {
+                starsHTML += '<i class="fa-regular fa-star star-gold"></i>';
+            }
+        }
+        starsContainer.innerHTML = starsHTML;
+    }
+
+    return scoreArrondi;
+}
+
+window.calculerReputationEtEtoiles = calculerReputationEtEtoiles;
 
     // Fonction d'affichage du rang accessible globalement
     window.applyRankDesign = function(rankLevel) {
@@ -2643,6 +2727,8 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
 
         // Génération du tableau
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+        // Exécution du calcul automatique
+calculerReputationEtEtoiles(g_userHistoryData, 156);
 
     } catch (error) {
         console.error("❌ Erreur lors de la synchronisation :", error);
