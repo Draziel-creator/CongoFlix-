@@ -2641,14 +2641,15 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         window.g_userXP = userXP;
         g_userStartDateISO = userStartDateISO;
 
-        // 🔒 SAUVEGARDE DOUBLE DANS LE CACHE : Empêche tout clignotement au F5
+        // Sauvegarde du cache
         localStorage.setItem('app_user_rank_cache', userRank);
         localStorage.setItem('app_user_xp_cache', userXP);
         
         // Render UI
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
-        // ⚡ Calcul et mise à jour automatique du Score d'activité
-        mettreAJourScoreActivite(g_userHistoryData);
+
+        // ⚡ DÉCLENCHEMENT DU CALCUL DU SCORE D'ACTIVITÉ
+        mettreAJourScoreActivite(historyData);
 
     } catch (error) {
         console.error("❌ Erreur lors de la synchronisation :", error);
@@ -2657,48 +2658,64 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
     }
 }
     // =========================================================================
-// CALCUL DYNAMIQUE DU SCORE D'ACTIVITÉ (FENÊTRE GLISSANTE DE 14 JOURS)
+// CALCUL DU SCORE D'ACTIVITÉ (FENÊTRE GLISSANTE DE 14 JOURS)
 // =========================================================================
 function mettreAJourScoreActivite(historyData = {}) {
-    const FENETRE_JOURS = 14; // Analyse des 14 derniers jours
-    const OBJECTIF_JOURNALIER = 15; // Max comptabilisé par jour
-    const MAX_TOTAL_POINTS = FENETRE_JOURS * OBJECTIF_JOURNALIER; // Ex: 14 * 15 = 210 pts max
+    try {
+        const FENETRE_JOURS = 14;
+        const OBJECTIF_JOURNALIER = 15;
+        const MAX_TOTAL_POINTS = FENETRE_JOURS * OBJECTIF_JOURNALIER; // 210 pts max
 
-    let totalPointsCumules = 0;
-    const aujourdhui = new Date();
+        let totalPointsCumules = 0;
+        const aujourdhui = new Date();
 
-    // Boucle sur les 14 derniers jours (du jour J jusqu'à J-13)
-    for (let i = 0; i < FENETRE_JOURS; i++) {
-        const dateEvaluee = new Date(aujourdhui);
-        dateEvaluee.setDate(aujourdhui.getDate() - i);
-        
-        // Formatage ISO (YYYY-MM-DD)
-        const dateISO = typeof FormaterDateISO === "function" 
-            ? FormaterDateISO(dateEvaluee) 
-            : dateEvaluee.toISOString().split('T')[0];
+        // Parcours des 14 derniers jours
+        for (let i = 0; i < FENETRE_JOURS; i++) {
+            const d = new Date(aujourdhui);
+            d.setDate(aujourdhui.getDate() - i);
 
-        // Extraction de la valeur brute enregistrée pour cette date
-        const valRaw = historyData[dateISO];
-        const valJour = typeof extraireValeurJour === "function" 
-            ? extraireValeurJour(valRaw) 
-            : (Number(valRaw) || 0);
+            // Formatage YYYY-MM-DD local strict
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const dateISO = `${yyyy}-${mm}-${dd}`;
 
-        // On cumule les points (limités à 15 max par jour pour l'équilibrage)
-        totalPointsCumules += Math.min(valJour, OBJECTIF_JOURNALIER);
+            // Récupération de la valeur
+            const valRaw = historyData[dateISO];
+            const valJour = typeof extraireValeurJour === "function" 
+                ? extraireValeurJour(valRaw) 
+                : (Number(valRaw) || 0);
+
+            totalPointsCumules += Math.min(valJour, OBJECTIF_JOURNALIER);
+        }
+
+        const scorePourcentage = Math.min(100, Math.round((totalPointsCumules / MAX_TOTAL_POINTS) * 100));
+
+        // Recherche de l'élément HTML (ID en priorité, sinon recherche par texte)
+        let scoreElement = document.getElementById('activity-score-value');
+        if (!scoreElement) {
+            const labels = document.querySelectorAll('.metric-label');
+            labels.forEach(label => {
+                if (label.textContent.includes("Score d'activité")) {
+                    scoreElement = label.parentNode.querySelector('.metric-value');
+                }
+            });
+        }
+
+        // Injection dans le HTML
+        if (scoreElement) {
+            scoreElement.innerText = `${scorePourcentage}%`;
+            console.log("⚡ Score d'activité appliqué :", scorePourcentage + "%");
+        } else {
+            console.warn("⚠️ Balise HTML du score d'activité introuvable.");
+        }
+
+        return scorePourcentage;
+    } catch (err) {
+        console.error("❌ Erreur calcul score d'activité :", err);
+        return 0;
     }
-
-    // Calcul du pourcentage global
-    const scorePourcentage = Math.min(100, Math.round((totalPointsCumules / MAX_TOTAL_POINTS) * 100));
-
-    // Injection du résultat dans le HTML
-    const scoreElement = document.getElementById('activity-score-value');
-    if (scoreElement) {
-        scoreElement.innerText = `${scorePourcentage}%`;
-    }
-
-    return scorePourcentage;
 }
-
 // =========================================================================
 // 8. ÉCOUTEURS ET EXPORT GLOBAL
 // =========================================================================
