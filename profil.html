@@ -1194,7 +1194,8 @@ body, html {
         <!-- BOUTONS D'ACTION -->
         <div class="modal-actions-row">
             <button class="btn-modal-cancel" onclick="closeEditProfileModal()">Annuler</button>
-            <button class="btn-modal-confirm" id="btn-save-profile" onclick="saveProfileChanges()">Enregistrer</button>
+            <!-- Assure-toi d'avoir type="button" et non type="submit" -->
+            <button type="button" id="btn-save-profile" onclick="saveProfileChanges(event)">Enregistrer</button>
         </div>
     </div>
 </div>
@@ -3114,9 +3115,36 @@ function validateFormState() {
     }
 }
 
-// SAUVEGARDE ET FERMETURE FORCÉE
-window.saveProfileChanges = async () => {
-    if (!auth.currentUser) {
+// FERMETURE SÉCURISÉE + NETTOYAGE DES ERREURS
+window.closeEditProfileModal = () => {
+    const modal = document.getElementById('editProfileModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.setProperty('display', 'none', 'important');
+    }
+
+    // Efface tous les messages et bordures rouges de la modale
+    const feedbacks = ['username-feedback', 'bio-feedback', 'link-title-feedback', 'link-url-feedback'];
+    feedbacks.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerText = '';
+            el.className = 'field-feedback';
+        }
+    });
+
+    const inputs = ['edit-profile-name', 'edit-profile-bio', 'edit-profile-link-title', 'edit-profile-link-url'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.className = 'modal-input';
+    });
+};
+
+// SAUVEGARDE REELLEMENT ISOLÉE ET FERMETURE GARANTIE
+window.saveProfileChanges = async (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+
+    if (!auth || !auth.currentUser) {
         alert("Erreur : Aucun utilisateur connecté.");
         return;
     }
@@ -3127,10 +3155,7 @@ window.saveProfileChanges = async () => {
     const titleEl = document.getElementById('edit-profile-link-title');
     const urlEl = document.getElementById('edit-profile-link-url');
 
-    if (!nameEl || !bioEl) {
-        alert("Erreur DOM : Champs introuvables.");
-        return;
-    }
+    if (!nameEl || !bioEl) return;
 
     const newName = nameEl.value.trim();
     const newBio = bioEl.value.trim();
@@ -3143,7 +3168,7 @@ window.saveProfileChanges = async () => {
             saveBtn.innerText = "Enregistrement...";
         }
 
-        // Sauvegarde Firebase Firestore
+        // 1. Sauvegarde réelle Firestore
         await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
             name: newName,
             bio: newBio,
@@ -3153,28 +3178,32 @@ window.saveProfileChanges = async () => {
 
         originalUsername = newName;
 
-        // Mise à jour de l'interface principale
-        const nameDisplay = document.getElementById('user-name-display');
-        const bioDisplay = document.getElementById('user-bio-text');
-        if (nameDisplay) nameDisplay.innerText = newName;
-        if (bioDisplay) bioDisplay.innerText = newBio;
+        // 2. Mise à jour visuelle (isolée pour ne pas bloquer la fermeture si un élément manque)
+        try {
+            const nameDisplay = document.getElementById('user-name-display');
+            const bioDisplay = document.getElementById('user-bio-text');
+            if (nameDisplay) nameDisplay.innerText = newName;
+            if (bioDisplay) bioDisplay.innerText = newBio;
 
-        const linkContainer = document.getElementById('user-link-container');
-        const linkDisplay = document.getElementById('user-link-display');
-        if (linkContainer && linkDisplay) {
-            if (linkTitle && linkUrl) {
-                linkDisplay.innerText = linkTitle;
-                linkDisplay.href = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
-                linkContainer.style.display = 'flex';
-            } else {
-                linkContainer.style.display = 'none';
+            const linkContainer = document.getElementById('user-link-container');
+            const linkDisplay = document.getElementById('user-link-display');
+            if (linkContainer && linkDisplay) {
+                if (linkTitle && linkUrl) {
+                    linkDisplay.innerText = linkTitle;
+                    linkDisplay.href = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+                    linkContainer.style.display = 'flex';
+                } else {
+                    linkContainer.style.display = 'none';
+                }
             }
+        } catch (domErr) {
+            console.warn("Mise à jour DOM secondaire ignorée :", domErr);
         }
 
-        // Fermeture explicite de la modale
+        // 3. FERMETURE IMPÉRATIVE DE LA MODALE
         closeEditProfileModal();
 
-        // Notification
+        // 4. Message de confirmation
         if (typeof showPremiumToast === "function") {
             showPremiumToast("Enregistrement réussi !");
         } else {
@@ -3182,8 +3211,8 @@ window.saveProfileChanges = async () => {
         }
 
     } catch (error) {
-        console.error("Erreur lors de la sauvegarde Firestore :", error);
-        alert("Erreur de sauvegarde : " + error.message);
+        console.error("Erreur Firestore réelle :", error);
+        alert("Erreur lors de la sauvegarde : " + error.message);
     } finally {
         if (saveBtn) {
             saveBtn.disabled = false;
