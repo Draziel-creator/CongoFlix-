@@ -3115,32 +3115,45 @@ function validateFormState() {
     }
 }
 
-// FERMETURE SÉCURISÉE + NETTOYAGE DES ERREURS
+// =============================================================================
+// FERMETURE SÉCURISÉE DE LA MODALE PROFIL (SANS AUCUN RISK DE TYPEERROR)
+// =============================================================================
 window.closeEditProfileModal = () => {
-    const modal = document.getElementById('editProfileModal');
+    // 1. Recherche blindée de la modale par tous les IDs / Classes possibles
+    const modal = document.getElementById('editProfileModal') 
+               || document.getElementById('edit-profile-modal') 
+               || document.querySelector('.modal-edit-profile')
+               || document.querySelector('.modal.active');
+
     if (modal) {
         modal.classList.remove('active');
-        modal.style.setProperty('display', 'none', 'important');
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
     }
 
-    // Efface tous les messages et bordures rouges de la modale
-    const feedbacks = ['username-feedback', 'bio-feedback', 'link-title-feedback', 'link-url-feedback'];
-    feedbacks.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.innerText = '';
-            el.className = 'field-feedback';
+    // 2. Nettoyage sécurisé des textes d'erreur (feedback)
+    const feedbackIds = ['username-feedback', 'bio-feedback', 'link-title-feedback', 'link-url-feedback'];
+    feedbackIds.forEach(id => {
+        const fb = document.getElementById(id);
+        if (fb) {
+            fb.innerText = '';
+            fb.className = 'field-feedback';
         }
     });
 
-    const inputs = ['edit-profile-name', 'edit-profile-bio', 'edit-profile-link-title', 'edit-profile-link-url'];
-    inputs.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.className = 'modal-input';
+    // 3. Nettoyage sécurisé des classes d'erreur sur les champs de saisie
+    const inputIds = ['edit-profile-name', 'edit-profile-bio', 'edit-profile-link-title', 'edit-profile-link-url'];
+    inputIds.forEach(id => {
+        const input = document.getElementById(id);
+        if (input && input.classList) {
+            input.classList.remove('input-error', 'input-checking', 'input-success');
+        }
     });
 };
 
-// SAUVEGARDE REELLEMENT ISOLÉE ET FERMETURE GARANTIE
+// =============================================================================
+// SAUVEGARDE ET FERMETURE GARANTIE DU PROFIL
+// =============================================================================
 window.saveProfileChanges = async (e) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
@@ -3162,13 +3175,13 @@ window.saveProfileChanges = async (e) => {
     const linkTitle = titleEl ? titleEl.value.trim() : "";
     const linkUrl = urlEl ? urlEl.value.trim() : "";
 
-    try {
-        if (saveBtn) {
-            saveBtn.disabled = true;
-            saveBtn.innerText = "Enregistrement...";
-        }
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerText = "Enregistrement...";
+    }
 
-        // 1. Sauvegarde réelle Firestore
+    try {
+        // 1. Mise à jour dans Firestore
         await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
             name: newName,
             bio: newBio,
@@ -3178,40 +3191,38 @@ window.saveProfileChanges = async (e) => {
 
         originalUsername = newName;
 
-        // 2. Mise à jour visuelle (isolée pour ne pas bloquer la fermeture si un élément manque)
-        try {
-            const nameDisplay = document.getElementById('user-name-display');
-            const bioDisplay = document.getElementById('user-bio-text');
-            if (nameDisplay) nameDisplay.innerText = newName;
-            if (bioDisplay) bioDisplay.innerText = newBio;
+        // 2. Mise à jour de l'affichage sur la page
+        const nameDisplay = document.getElementById('user-name-display') || document.getElementById('user-name');
+        const bioDisplay = document.getElementById('user-bio-text');
+        if (nameDisplay) nameDisplay.innerText = newName;
+        if (bioDisplay) bioDisplay.innerText = newBio;
 
-            const linkContainer = document.getElementById('user-link-container');
-            const linkDisplay = document.getElementById('user-link-display');
-            if (linkContainer && linkDisplay) {
-                if (linkTitle && linkUrl) {
-                    linkDisplay.innerText = linkTitle;
-                    linkDisplay.href = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
-                    linkContainer.style.display = 'flex';
-                } else {
-                    linkContainer.style.display = 'none';
-                }
+        const linkContainer = document.getElementById('user-link-container');
+        const linkDisplay = document.getElementById('user-link-display');
+        if (linkContainer && linkDisplay) {
+            if (linkTitle && linkUrl) {
+                linkDisplay.innerText = linkTitle;
+                linkDisplay.href = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+                linkContainer.style.display = 'flex';
+            } else {
+                linkContainer.style.display = 'none';
             }
-        } catch (domErr) {
-            console.warn("Mise à jour DOM secondaire ignorée :", domErr);
         }
 
-        // 3. FERMETURE IMPÉRATIVE DE LA MODALE
+        // 3. FERMETURE DE LA MODALE
         closeEditProfileModal();
 
-        // 4. Message de confirmation
+        // 4. Message de succès (compatible avec ton système d'alerte)
         if (typeof showPremiumToast === "function") {
             showPremiumToast("Enregistrement réussi !");
+        } else if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Profil mis à jour avec succès !", "Succès", "Super");
         } else {
             alert("Enregistrement réussi !");
         }
 
     } catch (error) {
-        console.error("Erreur Firestore réelle :", error);
+        console.error("Erreur lors de la sauvegarde :", error);
         alert("Erreur lors de la sauvegarde : " + error.message);
     } finally {
         if (saveBtn) {
