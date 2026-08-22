@@ -1435,11 +1435,13 @@ async function verifierAdBlock() {
 // =========================================================================
 // CALCUL DE LA RÉPUTATION AVEC TRAÇABILITÉ CONSOLE
 // =========================================================================
-async function calculerReputationEtEtoiles(data = {}, totalParrainages = 156) {
-    // 1. Extraction automatique si les données contiennent le sous-objet 'history'
-    const historyData = data.history || data || {};
+async function calculerReputationEtEtoiles(userHistoryData = {}, scoreInitial = 156) {
+    // Si les données transmises sont vides, charger le cache local d'urgence
+    if (!userHistoryData || Object.keys(userHistoryData).length === 0) {
+        userHistoryData = getGreenDaysCache();
+    }
     
-    console.log("📊 Données d'historique lues :", historyData);
+    console.log("📊 Données d'historique lues :", userHistoryData);
 
     let score = 2.5; // Note de départ
 
@@ -2659,30 +2661,28 @@ let isSyncingProfilDate = false;
 async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
     if (isSyncingProfilDate) return;
 
-    let firestoreDb = null;
-    if (typeof db !== 'undefined' && db) {
-        firestoreDb = db;
-    } else if (typeof firebase !== 'undefined' && firebase.firestore) {
-        firestoreDb = firebase.firestore();
-    }
+    let firestoreDb = (typeof db !== 'undefined' && db) 
+        ? db 
+        : (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
 
     if (!firestoreDb) return;
 
     try {
         isSyncingProfilDate = true;
 
-        let uid = currentUserId || g_currentUserId;
-        if (!uid && typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
-            uid = firebase.auth().currentUser.uid;
-        }
+        let uid = currentUserId || g_currentUserId 
+            || (typeof firebase !== 'undefined' && firebase.auth()?.currentUser?.uid);
         if (!uid) return;
 
         g_currentUserId = uid;
         g_dateAujourdhuiObj = new Date();
         const dateAujourdhuiISO = FormaterDateISO(g_dateAujourdhuiObj);
 
-        // 1. Lecture rewards_users
+        // 1. Lecture Firestore (rewards_users & users)
         const rewardsSnap = await firestoreDb.collection("rewards_users").doc(uid).get();
+        const userRef = firestoreDb.collection("users").doc(uid);
+        const userSnap = await userRef.get();
+
         let historyData = {};
 
         if (rewardsSnap.exists) {
@@ -2692,56 +2692,58 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             const ptToday = rewardsData.pointsDuJour !== undefined ? rewardsData.pointsDuJour : rewardsData.tasksToday;
             if (rewardsData.lastActiveDate === dateAujourdhuiISO && ptToday !== undefined) {
                 const ptJ = extraireValeurJour(ptToday);
-                if (!historyData[dateAujourdhuiISO] || ptJ > extraireValeurJour(historyData[dateAujourdhuiISO])) {
+                const ptEx = extraireValeurJour(historyData[dateAujourdhuiISO]) || 0;
+                if (!historyData[dateAujourdhuiISO] || ptJ > ptEx) {
                     historyData[dateAujourdhuiISO] = ptJ;
                 }
             }
         }
 
-        // 2. Fusionner avec le LocalStorage
+        // Secours si l'historique est enregistré dans la collection 'users'
+        if (Object.keys(historyData).length === 0 && userSnap.exists) {
+            const uData = userSnap.data() || {};
+            historyData = uData.history || uData.historique || {};
+        }
+
+        // 2. Fusion sécurisée avec le LocalStorage (Empêche NaN)
         const localCache = getGreenDaysCache();
         Object.keys(localCache).forEach(dateISO => {
-            if (Number(localCache[dateISO]) >= 15) {
-                historyData[dateISO] = Math.max(extraireValeurJour(historyData[dateISO]), Number(localCache[dateISO]));
+            const valLocal = Number(localCache[dateISO] || 0);
+            if (valLocal >= 15) {
+                const valExistante = typeof extraireValeurJour === "function" 
+                    ? (extraireValeurJour(historyData[dateISO]) || 0) 
+                    : Number(historyData[dateISO] || 0);
+                historyData[dateISO] = Math.max(valExistante, valLocal);
             }
         });
 
-        // 3. Lecture rang utilisateur dans "users"
-        const userRef = firestoreDb.collection("users").doc(uid);
-        const userSnap = await userRef.get();
-
-        let userRank = 0;
-        let userXP = 0;
-        let userStartDateISO = null;
-
+        // 3. Extraction du Rang et XP
+        let userRank = 0, userXP = 0, userStartDateISO = null;
         if (userSnap.exists) {
             const uData = userSnap.data() || {};
             userRank = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
-            
-            // 🎯 Lecture du 'xp' en minuscule
             userXP = Number(uData.xp !== undefined ? uData.xp : (uData.XP || 0));
             userStartDateISO = uData.startDate || null;
         }
 
+        // Affectation aux variables globales
         g_userHistoryData = historyData;
+        window.g_userHistoryData = historyData;
         g_userRank = userRank;
-        g_userXP = userXP;
-        
         window.g_userRank = userRank;
+        g_userXP = userXP;
         window.g_userXP = userXP;
         g_userStartDateISO = userStartDateISO;
 
-        // Sauvegarde du cache
         localStorage.setItem('app_user_rank_cache', userRank);
         localStorage.setItem('app_user_xp_cache', userXP);
-        
-        g_userHistoryData = historyData;
-        window.g_userHistoryData = historyData;
 
-        // Génération du tableau
+        // 4. Rendu de l'UI et calcul immédiat de la réputation
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
-        // Exécution du calcul automatique
-calculerReputationEtEtoiles(g_userHistoryData, 156);
+
+        if (typeof calculerReputationEtEtoiles === "function") {
+            calculerReputationEtEtoiles(g_userHistoryData, 156);
+        }
 
     } catch (error) {
         console.error("❌ Erreur lors de la synchronisation :", error);
