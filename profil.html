@@ -1104,14 +1104,6 @@ body, html {
             <span class="metric-value">156</span>
         </div>
     </div>
-    <div class="metric-badge-item">
-    <div class="metric-icon-box icon-yellow"><i class="fa-solid fa-bolt"></i></div>
-    <div class="metric-data">
-        <span class="metric-label">Score d'activité</span>
-        <span class="metric-value" id="activity-score-value">--%</span>
-    </div>
-</div>
- </div>
     </div>
 </div>
 
@@ -1421,65 +1413,6 @@ body, html {
         4:  { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
         10: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
     };
-
-    // =========================================================================
-// CALCUL & INJECTION DU SCORE D'ACTIVITÉ (GLOBAL)
-// =========================================================================
-function mettreAJourScoreActivite(historyData = null) {
-    try {
-        const data = historyData || window.g_userHistoryData || {};
-
-        const FENETRE_JOURS = 14; 
-        const OBJECTIF_JOURNALIER = 15; 
-        const MAX_TOTAL_POINTS = FENETRE_JOURS * OBJECTIF_JOURNALIER; // 210 pts max
-
-        let totalPointsCumules = 0;
-        const aujourdhui = new Date();
-
-        for (let i = 0; i < FENETRE_JOURS; i++) {
-            const d = new Date(aujourdhui);
-            d.setDate(aujourdhui.getDate() - i);
-
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            const dateISO = `${yyyy}-${mm}-${dd}`;
-
-            const valRaw = data[dateISO];
-            const valJour = typeof extraireValeurJour === "function" 
-                ? extraireValeurJour(valRaw) 
-                : (Number(valRaw) || 0);
-
-            totalPointsCumules += Math.min(valJour, OBJECTIF_JOURNALIER);
-        }
-
-        const scorePourcentage = Math.min(100, Math.round((totalPointsCumules / MAX_TOTAL_POINTS) * 100));
-
-        // Injection DOM
-        let scoreElement = document.getElementById('activity-score-value');
-        if (!scoreElement) {
-            const labels = document.querySelectorAll('.metric-label');
-            labels.forEach(label => {
-                if (label.textContent.includes("Score d'activité")) {
-                    scoreElement = label.parentNode.querySelector('.metric-value');
-                }
-            });
-        }
-
-        if (scoreElement) {
-            scoreElement.innerText = `${scorePourcentage}%`;
-            console.log(`⚡ Score d'activité appliqué : ${scorePourcentage}% (${totalPointsCumules}/${MAX_TOTAL_POINTS} pts)`);
-        }
-
-        return scorePourcentage;
-    } catch (err) {
-        console.error("❌ Erreur dans mettreAJourScoreActivite :", err);
-        return 0;
-    }
-}
-
-// 🔓 ATTACHEMENT STRICT À WINDOW (A exécuter immédiatement)
-window.mettreAJourScoreActivite = mettreAJourScoreActivite;
 
     // Fonction d'affichage du rang accessible globalement
     window.applyRankDesign = function(rankLevel) {
@@ -2710,10 +2643,6 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         // Génération du tableau
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
 
-        // ⚡ Calcul immédiat du score d'activité
-        if (typeof window.mettreAJourScoreActivite === "function") {
-            window.mettreAJourScoreActivite(historyData);
-        }
     } catch (error) {
         console.error("❌ Erreur lors de la synchronisation :", error);
     } finally {
