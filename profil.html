@@ -3639,6 +3639,31 @@ window.logout = () => {
     if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
     signOut(auth);
 };
+    // =========================================================================
+// LANCEMENT AUTOMATIQUE AU CHARGEMENT DE LA PAGE
+// =========================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Écouteur Firebase Modulaire (v9 / v10)
+    if (typeof auth !== "undefined" && typeof onAuthStateChanged === "function") {
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                chargerEtSynchroniserHistoriqueProfil(user.uid);
+            }
+        });
+    } 
+    // 2. Écouteur Firebase Classique (v8)
+    else if (typeof firebase !== "undefined" && firebase.auth) {
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                chargerEtSynchroniserHistoriqueProfil(user.uid);
+            }
+        });
+    } 
+    // 3. Secours immédiat si l'UID est déjà stocké
+    else {
+        chargerEtSynchroniserHistoriqueProfil();
+    }
+});
 </script>
 </body>
 </html>
