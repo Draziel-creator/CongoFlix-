@@ -1105,12 +1105,12 @@ body, html {
         </div>
     </div>
     <div class="metric-badge-item">
-        <div class="metric-icon-box icon-yellow"><i class="fa-solid fa-bolt"></i></div>
-        <div class="metric-data">
-            <span class="metric-label">Score d'activité</span>
-            <span class="metric-value">98%</span>
-        </div>
+    <div class="metric-icon-box icon-yellow"><i class="fa-solid fa-bolt"></i></div>
+    <div class="metric-data">
+        <span class="metric-label">Score d'activité</span>
+        <span class="metric-value" id="activity-score-value">--%</span>
     </div>
+</div>
  </div>
     </div>
 </div>
@@ -2647,12 +2647,56 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
         
         // Render UI
         generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+        // ⚡ Calcul et mise à jour automatique du Score d'activité
+        mettreAJourScoreActivite(g_userHistoryData);
 
     } catch (error) {
         console.error("❌ Erreur lors de la synchronisation :", error);
     } finally {
         isSyncingProfilDate = false;
     }
+}
+    // =========================================================================
+// CALCUL DYNAMIQUE DU SCORE D'ACTIVITÉ (FENÊTRE GLISSANTE DE 14 JOURS)
+// =========================================================================
+function mettreAJourScoreActivite(historyData = {}) {
+    const FENETRE_JOURS = 14; // Analyse des 14 derniers jours
+    const OBJECTIF_JOURNALIER = 15; // Max comptabilisé par jour
+    const MAX_TOTAL_POINTS = FENETRE_JOURS * OBJECTIF_JOURNALIER; // Ex: 14 * 15 = 210 pts max
+
+    let totalPointsCumules = 0;
+    const aujourdhui = new Date();
+
+    // Boucle sur les 14 derniers jours (du jour J jusqu'à J-13)
+    for (let i = 0; i < FENETRE_JOURS; i++) {
+        const dateEvaluee = new Date(aujourdhui);
+        dateEvaluee.setDate(aujourdhui.getDate() - i);
+        
+        // Formatage ISO (YYYY-MM-DD)
+        const dateISO = typeof FormaterDateISO === "function" 
+            ? FormaterDateISO(dateEvaluee) 
+            : dateEvaluee.toISOString().split('T')[0];
+
+        // Extraction de la valeur brute enregistrée pour cette date
+        const valRaw = historyData[dateISO];
+        const valJour = typeof extraireValeurJour === "function" 
+            ? extraireValeurJour(valRaw) 
+            : (Number(valRaw) || 0);
+
+        // On cumule les points (limités à 15 max par jour pour l'équilibrage)
+        totalPointsCumules += Math.min(valJour, OBJECTIF_JOURNALIER);
+    }
+
+    // Calcul du pourcentage global
+    const scorePourcentage = Math.min(100, Math.round((totalPointsCumules / MAX_TOTAL_POINTS) * 100));
+
+    // Injection du résultat dans le HTML
+    const scoreElement = document.getElementById('activity-score-value');
+    if (scoreElement) {
+        scoreElement.innerText = `${scorePourcentage}%`;
+    }
+
+    return scorePourcentage;
 }
 
 // =========================================================================
