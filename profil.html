@@ -2652,24 +2652,119 @@ function closeReputationModal() {
     document.getElementById('reputation-info-modal').classList.remove('active');
 }
 
-function openEditProfileModal() {
-    document.getElementById('edit-profile-name-input').value = document.getElementById('user-name-display').innerText;
-    document.getElementById('edit-profile-bio-input').value = document.getElementById('user-bio-text').innerText;
-    document.getElementById('edit-profile-modal').classList.add('active');
-}
-function closeEditProfileModal() {
-    document.getElementById('edit-profile-modal').classList.remove('active');
-}
+// =========================================================================
+// GESTION UNIFIÉE ET SÉCURISÉE DU PROFIL (OUVERTURE, FERMETURE, SAUVEGARDE)
+// =========================================================================
 
-function saveProfileChanges() {
-    const newName = document.getElementById('edit-profile-name-input').value;
-    const newBio = document.getElementById('edit-profile-bio-input').value;
+window.openEditProfileModal = () => {
+    // Cherche l'input avec ou sans "-input" pour éviter tout bug d'ID
+    const nameInput = document.getElementById('edit-profile-name-input') || document.getElementById('edit-profile-name');
+    const bioInput = document.getElementById('edit-profile-bio-input') || document.getElementById('edit-profile-bio');
     
-    if(newName.trim() !== '') document.getElementById('user-name-display').innerText = newName;
-    if(newBio.trim() !== '') document.getElementById('user-bio-text').innerText = newBio;
+    const nameDisplay = document.getElementById('user-name-display');
+    const bioDisplay = document.getElementById('user-bio-text');
+    const modal = document.getElementById('edit-profile-modal') || document.getElementById('editProfileModal');
+
+    if (nameInput && nameDisplay) nameInput.value = nameDisplay.innerText.trim();
+    if (bioInput && bioDisplay) bioInput.value = bioDisplay.innerText.trim();
     
-    closeEditProfileModal();
-}
+    if (modal) {
+        modal.classList.add('active');
+        modal.style.display = 'flex'; // Force l'affichage CSS
+    }
+};
+
+window.closeEditProfileModal = () => {
+    const modal = document.getElementById('edit-profile-modal') || document.getElementById('editProfileModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none'; // Force la fermeture CSS
+    }
+};
+
+window.saveProfileChanges = async (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+
+    if (!auth || !auth.currentUser) {
+        alert("Erreur : Aucun utilisateur connecté.");
+        return;
+    }
+
+    const saveBtn = document.getElementById('btn-save-profile');
+    const nameInput = document.getElementById('edit-profile-name-input') || document.getElementById('edit-profile-name');
+    const bioInput = document.getElementById('edit-profile-bio-input') || document.getElementById('edit-profile-bio');
+    const titleEl = document.getElementById('edit-profile-link-title');
+    const urlEl = document.getElementById('edit-profile-link-url');
+
+    if (!nameInput || !bioInput) {
+        alert("Erreur : Champs du profil introuvables.");
+        return;
+    }
+
+    const newName = nameInput.value.trim();
+    const newBio = bioInput.value.trim();
+    const linkTitle = titleEl ? titleEl.value.trim() : "";
+    const linkUrl = urlEl ? urlEl.value.trim() : "";
+
+    try {
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerText = "Enregistrement...";
+        }
+
+        // 1. Sauvegarde réelle dans Firebase Firestore
+        await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
+            name: newName,
+            bio: newBio,
+            linkTitle: linkTitle,
+            linkUrl: linkUrl
+        });
+
+        // 2. Mise à jour de l'affichage sur la page principale
+        const nameDisplay = document.getElementById('user-name-display');
+        const bioDisplay = document.getElementById('user-bio-text');
+        if (nameDisplay) nameDisplay.innerText = newName;
+        if (bioDisplay) bioDisplay.innerText = newBio;
+
+        const linkContainer = document.getElementById('user-link-container');
+        const linkDisplay = document.getElementById('user-link-display');
+        if (linkContainer && linkDisplay) {
+            if (linkTitle && linkUrl) {
+                linkDisplay.innerText = linkTitle;
+                linkDisplay.href = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+                linkContainer.style.display = 'flex';
+            } else {
+                linkContainer.style.display = 'none';
+            }
+        }
+
+        // 3. FERMETURE PROPRE DE LA MODALE
+        closeEditProfileModal();
+
+        // 4. Notification de succès
+        if (typeof showPremiumToast === "function") {
+            showPremiumToast("Enregistrement réussi !");
+        } else if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Profil mis à jour avec succès !", "Succès", "Super");
+        } else {
+            alert("Enregistrement réussi !");
+        }
+
+    } catch (error) {
+        console.error("Erreur lors de la sauvegarde Firestore :", error);
+        alert("Erreur de sauvegarde : " + error.message);
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerText = "Enregistrer";
+        }
+    }
+};
+
+// Export global pour s'assurer que le script les voit bien
+window.openEditProfileModal = openEditProfileModal;
+window.closeEditProfileModal = closeEditProfileModal;
+window.saveProfileChanges = saveProfileChanges;
     
     
 // ==========================================
@@ -3114,123 +3209,6 @@ function validateFormState() {
         saveBtn.disabled = !(isUsernameValid && isBioValid && isLinkValid);
     }
 }
-
-// =============================================================================
-// FERMETURE SÉCURISÉE DE LA MODALE PROFIL (SANS AUCUN RISK DE TYPEERROR)
-// =============================================================================
-window.closeEditProfileModal = () => {
-    // 1. Recherche blindée de la modale par tous les IDs / Classes possibles
-    const modal = document.getElementById('editProfileModal') 
-               || document.getElementById('edit-profile-modal') 
-               || document.querySelector('.modal-edit-profile')
-               || document.querySelector('.modal.active');
-
-    if (modal) {
-        modal.classList.remove('active');
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
-    }
-
-    // 2. Nettoyage sécurisé des textes d'erreur (feedback)
-    const feedbackIds = ['username-feedback', 'bio-feedback', 'link-title-feedback', 'link-url-feedback'];
-    feedbackIds.forEach(id => {
-        const fb = document.getElementById(id);
-        if (fb) {
-            fb.innerText = '';
-            fb.className = 'field-feedback';
-        }
-    });
-
-    // 3. Nettoyage sécurisé des classes d'erreur sur les champs de saisie
-    const inputIds = ['edit-profile-name', 'edit-profile-bio', 'edit-profile-link-title', 'edit-profile-link-url'];
-    inputIds.forEach(id => {
-        const input = document.getElementById(id);
-        if (input && input.classList) {
-            input.classList.remove('input-error', 'input-checking', 'input-success');
-        }
-    });
-};
-
-// =============================================================================
-// SAUVEGARDE ET FERMETURE GARANTIE DU PROFIL
-// =============================================================================
-window.saveProfileChanges = async (e) => {
-    if (e && typeof e.preventDefault === 'function') e.preventDefault();
-
-    if (!auth || !auth.currentUser) {
-        alert("Erreur : Aucun utilisateur connecté.");
-        return;
-    }
-
-    const saveBtn = document.getElementById('btn-save-profile');
-    const nameEl = document.getElementById('edit-profile-name');
-    const bioEl = document.getElementById('edit-profile-bio');
-    const titleEl = document.getElementById('edit-profile-link-title');
-    const urlEl = document.getElementById('edit-profile-link-url');
-
-    if (!nameEl || !bioEl) return;
-
-    const newName = nameEl.value.trim();
-    const newBio = bioEl.value.trim();
-    const linkTitle = titleEl ? titleEl.value.trim() : "";
-    const linkUrl = urlEl ? urlEl.value.trim() : "";
-
-    if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.innerText = "Enregistrement...";
-    }
-
-    try {
-        // 1. Mise à jour dans Firestore
-        await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
-            name: newName,
-            bio: newBio,
-            linkTitle: linkTitle,
-            linkUrl: linkUrl
-        });
-
-        originalUsername = newName;
-
-        // 2. Mise à jour de l'affichage sur la page
-        const nameDisplay = document.getElementById('user-name-display') || document.getElementById('user-name');
-        const bioDisplay = document.getElementById('user-bio-text');
-        if (nameDisplay) nameDisplay.innerText = newName;
-        if (bioDisplay) bioDisplay.innerText = newBio;
-
-        const linkContainer = document.getElementById('user-link-container');
-        const linkDisplay = document.getElementById('user-link-display');
-        if (linkContainer && linkDisplay) {
-            if (linkTitle && linkUrl) {
-                linkDisplay.innerText = linkTitle;
-                linkDisplay.href = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
-                linkContainer.style.display = 'flex';
-            } else {
-                linkContainer.style.display = 'none';
-            }
-        }
-
-        // 3. FERMETURE DE LA MODALE
-        closeEditProfileModal();
-
-        // 4. Message de succès (compatible avec ton système d'alerte)
-        if (typeof showPremiumToast === "function") {
-            showPremiumToast("Enregistrement réussi !");
-        } else if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Profil mis à jour avec succès !", "Succès", "Super");
-        } else {
-            alert("Enregistrement réussi !");
-        }
-
-    } catch (error) {
-        console.error("Erreur lors de la sauvegarde :", error);
-        alert("Erreur lors de la sauvegarde : " + error.message);
-    } finally {
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerText = "Enregistrer";
-        }
-    }
-};
 
 window.toggleAuthMode = () => {
     isLoginMode = !isLoginMode;
