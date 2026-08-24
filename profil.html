@@ -1236,14 +1236,13 @@ body, html {
     </div>
 
     <!-- CONTENU DU SOLDE (GAUCHE) -->
-    <div class="bal-metric-group">
-        <div class="bal-col main-solde">
-            <span class="b-label">Solde Actuel</span>
-            <span class="b-value"><i class="fa-solid fa-coins" style="color:#00ffcc;"></i> <span id="user-coins">0</span></span>
-            <span class="b-sub">Valeur : <strong id="user-cash-value" style="color:#fff;">$0.00</strong></span>
-        </div>
+<div class="bal-metric-group">
+    <div class="bal-col main-solde">
+        <span class="b-label">Solde Actuel</span>
+        <span class="b-value"><i class="fa-solid fa-coins" style="color:#00ffcc;"></i> <span id="user-coins">0</span> pts</span>
+        <span class="b-sub">Valeur : <strong id="user-cash-value" style="color:#fff;">$0.00</strong></span>
     </div>
-
+</div>
     <!-- ACTIONS & RETRAIT (DROITE) -->
     <div class="bal-actions-right">
         <button id="btn-withdraw-gains" class="btn-retirer-gains" disabled onclick="openRankModal()">
@@ -1460,68 +1459,80 @@ body, html {
         </div>
     </div>
 
-    <!-- MODALE RANGS & FLUTTERWAVE -->
-    <div id="rank-info-modal" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-layer-group"></i> Architecture & Grille des Rangs</h3>
-                <button class="btn-close-modal" onclick="closeRankModal()">&times;</button>
+    <!-- MODALE RANGS & RÈGLEMENT ÉCONOMIQUE -->
+<div id="rank-info-modal" class="custom-modal-overlay">
+    <div class="custom-modal-card" style="max-width: 440px;">
+        <div class="modal-title" style="justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+            <span style="font-size: 1.05rem;"><i class="fa-solid fa-trophy" style="color:#00ffcc;"></i> Système de Rang & Retraits</span>
+            <button type="button" class="reputation-modal-close" onclick="closeRankModal()">&times;</button>
+        </div>
+
+        <div class="reputation-modal-body" style="padding-top: 12px; max-height: 70vh; overflow-y: auto;">
+            
+            <!-- SECTION RETRAIT -->
+            <div class="info-block" style="border-left: 3px solid #00ffcc; background: rgba(0, 255, 204, 0.05);">
+                <strong style="color: #00ffcc;"><i class="fa-solid fa-wallet"></i> Règle des Retraits</strong>
+                <ul style="margin-top: 5px;">
+                    <li><strong>Seuil Minimum :</strong> Les demandes de retrait sont ouvertes dès l'atteinte de <strong>$50.00</strong>.</li>
+                    <li><strong>Équivalence :</strong> Vos points accumulés sont automatiquement convertis en dollars sur votre tableau de bord.</li>
+                </ul>
             </div>
-            <div class="modal-body">
-                <p style="margin-top:0; color:#ff4d4d; font-size:12px; font-weight:700;">Règle importante du Rang 0 :</p>
-                <p>Le <strong>Rang 0 (Novice)</strong> est une phase d'évaluation obligatoire. Les publicités visionnées au Rang 0 ne créditent pas de solde actif. Atteignez les grades supérieurs pour débloquer votre portefeuille.</p>
+
+            <!-- SECTION PROGRESSION DES RANGS -->
+            <div style="margin-top: 15px;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: #8e92bc; uppercase; letter-spacing: 0.5px;">Grille de Progression par le Travail</span>
                 
-                <div class="premium-rank-box">
-                    <div class="rank-explain-row" onclick="setPaymentAmount(0, 'Novice')" style="cursor:pointer;">
-                        <span><i class="fa-solid fa-lock" style="color:#6c757d"></i> Rang 0 : Novice</span>
-                        <span style="color:var(--neon)">Gratuit / Inactif</span>
-                    </div>
-                    <div class="rank-explain-row" onclick="setPaymentAmount(1, 'Bronze')" style="cursor:pointer;">
-                        <span><i class="fa-solid fa-medal" style="color:#cd7f32"></i> Rang 1 : Bronze</span>
-                        <span style="color:#ff9900; font-weight:700;">1 USD</span>
-                    </div>
-                    <div class="rank-explain-row" onclick="setPaymentAmount(3, 'Argent')" style="cursor:pointer;">
-                        <span><i class="fa-solid fa-medal" style="color:#c0c0c0"></i> Rang 2 : Argent</span>
-                        <span style="color:#ff9900; font-weight:700;">3 USD</span>
-                    </div>
-                    <div class="rank-explain-row" onclick="setPaymentAmount(5, 'Or')" style="cursor:pointer;">
-                        <span><i class="fa-solid fa-medal" style="color:#ffd700"></i> Rang 3 : Or</span>
-                        <span style="color:#ff9900; font-weight:700;">5 USD</span>
-                    </div>
-                    <div class="rank-explain-row" onclick="setPaymentAmount(10, 'Diamant')" style="cursor:pointer;">
-                        <span><i class="fa-solid fa-circle-nodes" style="color:#00ffcc"></i> Rang 10 : Diamant</span>
-                        <span style="color:#ff9900; font-weight:700;">10 USD</span>
-                    </div>
-                </div>
-
-                <div class="flutterwave-gate-section">
-                    <div class="gate-title"><i class="fa-solid fa-credit-card"></i> Passerelle Flutterwave Mobile Money</div>
-                    <p style="font-size:11px; color:#8e92bc; margin-bottom:8px;">Sélectionnez votre pays pour activer le paiement local par opérateur :</p>
+                <div class="premium-rank-box" style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
                     
-                    <select id="user-country-network" class="select-payment-input">
-                        <option value="RDC_AIRTEL">RDC - Airtel Money ($)</option>
-                        <option value="RDC_ORANGE">RDC - Orange Money ($)</option>
-                        <option value="RDC_MPESA">RDC - M-Pesa ($)</option>
-                        <option value="CAM_ORANGE">Cameroun - Orange Money (XAF)</option>
-                        <option value="CAM_MTN">Cameroun - MTN Mobile Money (XAF)</option>
-                        <option value="CI_ORANGE">Côte d'Ivoire - Orange Money (XOF)</option>
-                        <option value="CI_MTN">Côte d'Ivoire - MTN Money (XOF)</option>
-                        <option value="CI_MOOV">Côte d'Ivoire - Moov Money (XOF)</option>
-                        <option value="CI_WAVE">Côte d'Ivoire - Wave (XOF)</option>
-                        <option value="SEN_ORANGE">Sénégal - Orange Money (XOF)</option>
-                        <option value="SEN_WAVE">Sénégal - Wave (XOF)</option>
-                        <option value="GAB_AIRTEL">Gabon - Airtel Money (XAF)</option>
-                    </select>
-
-                    <div class="phone-payment-group">
-                        <input type="tel" id="payment-phone-number" placeholder="N° de téléphone (ex: 082...)">
-                        <input type="text" id="target-amount-display" value="Montant requis: 1$" readonly style="max-width:140px; text-align:center; color:var(--neon); font-weight:700; background:rgba(0,0,0,0.2);">
+                    <div class="info-block" style="margin: 0;">
+                        <span style="color: #8a8d93; font-weight: 700;"><i class="fa-solid fa-user-clock"></i> Rang 0 : Novice (Évaluation)</span>
+                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #a4a7b5;">
+                            Phase de vérification de compte. Permet de valider son profil et de débloquer le premier bonus quotidien. Les retraits restent verrouillés.
+                        </p>
                     </div>
 
-                    <button class="btn-pay-flutterwave" style="width:100%;" onclick="startFlutterwavePaymentFlow()">
-                        <i class="fa-solid fa-bolt"></i> ACTIVER PAR FLUTTERWAVE
-                    </button>
+                    <div class="info-block" style="margin: 0;">
+                        <span style="color: #cd7f32; font-weight: 700;"><i class="fa-solid fa-medal"></i> Rang 1 : Bronze (Membre Validé)</span>
+                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #a4a7b5;">
+                            Déblocage du portefeuille d'actifs. Accès aux tâches de base et accumulation des gains réels.
+                        </p>
+                    </div>
+
+                    <div class="info-block" style="margin: 0;">
+                        <span style="color: #c0c0c0; font-weight: 700;"><i class="fa-solid fa-medal"></i> Rang 2 : Argent (Actif)</span>
+                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #a4a7b5;">
+                            Attribué aux utilisateurs réguliers. Augmentation du plafond quotidien de points accumulables.
+                        </p>
+                    </div>
+
+                    <div class="info-block" style="margin: 0;">
+                        <span style="color: #ffd700; font-weight: 700;"><i class="fa-solid fa-medal"></i> Rang 3 : Or (Avancé)</span>
+                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #a4a7b5;">
+                            Bonifications sur les points journaliers et priorité de traitement des demandes de support.
+                        </p>
+                    </div>
+
+                    <div class="info-block" style="margin: 0;">
+                        <span style="color: #38bdf8; font-weight: 700;"><i class="fa-solid fa-gem"></i> Rang 4 : Platine (Expert)</span>
+                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #a4a7b5;">
+                            Accès aux campagnes partenaires exclusives et taux de conversion optimisé.
+                        </p>
+                    </div>
+
+                    <div class="info-block" style="margin: 0; border: 1px solid rgba(0,255,204,0.3);">
+                        <span style="color: #00ffcc; font-weight: 700;"><i class="fa-solid fa-crown"></i> Rang 5 : VIP (Élite)</span>
+                        <p style="margin: 4px 0 0 0; font-size: 11px; color: #a4a7b5;">
+                            Le plus haut niveau d'engagement. Accumulation maximale de points par jour et délais de retrait ultra-rapides.
+                        </p>
+                    </div>
+
                 </div>
+            </div>
+
+        </div>
+
+        <button type="button" class="btn-reputation-confirm" style="margin-top: 15px;" onclick="closeRankModal()">J'ai compris</button>
+              </div>
             </div>
         </div>
     </div>
@@ -3089,8 +3100,40 @@ document.addEventListener("DOMContentLoaded", () => {
 });
     
 // ==========================================
-// 2. FONCTIONS LOGIQUES ET FIREBASE EXISTANTES
+// CONFIGURATION & VARIABLES GLOBALES
 // ==========================================
+window.g_userRank = window.g_userRank || 0;
+window.g_userCoins = window.g_userCoins || 0;
+const COINS_PER_DOLLAR = 1000; // Taux de conversion : 1000 pièces = 1 USD
+const MIN_WITHDRAW_USD = 50;   // Seuil minimum de retrait : 50 USD (50 000 pièces)
+
+// ==========================================
+// 2. FONCTIONS LOGIQUES ET FIREBASE
+// ==========================================
+
+// Met à jour les valeurs et l'affichage du solde depuis Firebase (rewards_users)
+window.updateUserRewardsData = function(coinsAmount, rankLevel) {
+    if (coinsAmount !== undefined && coinsAmount !== null) {
+        window.g_userCoins = parseInt(coinsAmount, 10) || 0;
+    }
+    if (rankLevel !== undefined && rankLevel !== null) {
+        window.g_userRank = parseInt(rankLevel, 10) || 0;
+    }
+
+    // Calcul de la valeur en USD (1000 coins = 1$)
+    const cashValue = window.g_userCoins / COINS_PER_DOLLAR;
+
+    // Mise à jour de l'affichage dans le DOM
+    const coinsEl = document.getElementById('user-coins');
+    const cashEl = document.getElementById('user-cash-value');
+
+    if (coinsEl) coinsEl.textContent = window.g_userCoins.toLocaleString();
+    if (cashEl) cashEl.textContent = `$${cashValue.toFixed(2)}`;
+
+    // Mise à jour du design du rang et évaluation du bouton
+    window.applyRankDesign(window.g_userRank);
+};
+
 window.applyRankDesign = function(rankLevel) {
     let rankNum = parseInt(rankLevel, 10);
     if (isNaN(rankNum)) rankNum = 0;
@@ -3133,15 +3176,32 @@ window.applyRankDesign = function(rankLevel) {
         }
     }
 
-    // Évaluation du bouton de retrait
-    if (typeof evalWithdrawGateStatus === "function") {
-        evalWithdrawGateStatus();
-    }
+    // Évaluation rigoureuse du bouton de retrait
+    evalWithdrawGateStatus();
 };
 
 function evalWithdrawGateStatus() {
-    const btn = document.getElementById('withdraw-gate-button');
-    if (btn) btn.disabled = false;
+    // Vérification des deux identifiants possibles du bouton dans le HTML
+    const btn = document.getElementById('btn-withdraw-gains') || document.getElementById('withdraw-gate-button');
+    if (!btn) return;
+
+    const currentCoins = window.g_userCoins || 0;
+    const currentRank = window.g_userRank || 0;
+    const currentCashUSD = currentCoins / COINS_PER_DOLLAR;
+
+    // Condition déblocage : Rang >= 1 ET Solde >= 50$ (50 000 pièces)
+    const isRankValid = currentRank >= 1;
+    const isBalanceValid = currentCashUSD >= MIN_WITHDRAW_USD;
+
+    if (isRankValid && isBalanceValid) {
+        btn.removeAttribute('disabled');
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+    } else {
+        btn.setAttribute('disabled', 'disabled');
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+    }
 }
 function checkLocalStorageDeviceLock() {
     const err = document.getElementById('error-msg');
