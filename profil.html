@@ -556,56 +556,97 @@ body, html {
 .user-custom-link-block a:hover { text-decoration: underline; }
     
 /* ============================================================
-   4. CARTE DE SOLDE ET TABLEAU DE BORD
+   4. CARTE DE SOLDE MODERNE ET HORIZONTALE
    ============================================================ */
 .balance-card-dashboard {
-    background: rgba(15, 18, 35, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    margin: 12px 15px;
-    padding: 14px;
-    border-radius: 16px;
+    background: rgba(15, 18, 35, 0.75);
+    border: 1px solid rgba(0, 255, 204, 0.2);
+    margin: 14px 15px;
+    padding: 16px 18px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     position: relative;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(0, 255, 204, 0.05);
+    animation: cardGlowPulse 4s infinite alternate ease-in-out;
+    overflow: hidden;
+}
+
+/* Animation néon subtile */
+@keyframes cardGlowPulse {
+    0% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(0, 255, 204, 0.03); }
+    100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 22px rgba(0, 255, 204, 0.12); }
 }
 
 .bal-metric-group { display: flex; align-items: center; gap: 12px; flex: 1; }
-
 .bal-col { display: flex; flex-direction: column; }
-.bal-col .b-label { font-size: 8px; color: #6b7280; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 2px; }
-.bal-col .b-value { font-size: 14px; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 4px; }
-.bal-col .b-sub { font-size: 8.5px; color: #6b7280; font-weight: 500; margin-top: 1px; }
+.bal-col .b-label { font-size: 9px; color: #6b7280; text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 2px; }
+.bal-col.main-solde .b-value { font-size: 22px; color: #00ffcc; font-weight: 900; letter-spacing: -0.5px; text-shadow: 0 0 10px rgba(0, 255, 204, 0.3); }
+.bal-col .b-sub { font-size: 10px; color: #9ca3af; font-weight: 500; margin-top: 2px; }
 
-.bal-col.main-solde .b-value { font-size: 20px; color: #00ffcc; font-weight: 900; }
+.bal-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-.bal-divider { width: 1px; height: 26px; background: rgba(255, 255, 255, 0.08); }
-
+/* Bouton Retrait Actif */
 .btn-retirer-gains {
-    background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, #00ffcc 0%, #00b894 100%);
+    color: #060713;
     border: none;
-    padding: 10px 14px;
-    border-radius: 10px;
+    padding: 9px 13px;
+    border-radius: 12px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 5px;
-    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+    gap: 6px;
+    box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
     white-space: nowrap;
-    transition: transform 0.2s;
+    transition: all 0.3s ease;
 }
-.btn-retirer-gains:active { transform: scale(0.96); }
 
-/* Verrouillage du solde si inactif */
-.balance-locked-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(6, 7, 19, 0.92); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); border-radius: 16px; z-index: 10; }
-.lock-text-row { display: flex; align-items: center; gap: 14px; position: relative; }
-.balance-locked-overlay i.fa-lock { font-size: 22px; color: var(--error); }
-.balance-locked-overlay span { font-size: 13px; color: #cdcee0; font-weight: 600; letter-spacing: 0.3px; }
+.btn-retirer-gains:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 204, 0.5);
+}
+
+/* État Grisé / Désactivé (Moins de $50) */
+.btn-retirer-gains:disabled {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #555875 !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+    filter: grayscale(1);
+}
+
+/* Overlay de Verrouillage (Rang 0) */
+.balance-locked-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(6, 7, 19, 0.93);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(6px);
+    border-radius: 18px;
+    z-index: 25;
+    transition: all 0.4s ease;
+}
+
+.lock-text-row { display: flex; align-items: center; gap: 10px; }
+.balance-locked-overlay i.fa-lock { font-size: 18px; color: var(--error); }
+.balance-locked-overlay span { font-size: 12px; color: #cdcee0; font-weight: 600; }
 
 .help-trigger-wrapper { position: relative; display: flex; align-items: center; justify-content: center; }
 .help-incitation-tag { position: absolute; top: -16px; background: linear-gradient(45deg, #ff4d4d, #9b51e0); color: #fff; font-size: 8px; font-weight: 800; padding: 2px 5px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; animation: tagBlink 1s infinite alternate; white-space: nowrap; box-shadow: 0 2px 6px rgba(255, 77, 77, 0.4); }
@@ -1183,17 +1224,38 @@ body, html {
                 </div>
             </div>
 
-            <!-- 2. BLOC SOLDE -->
-            <div class="balance-card">
-                <div class="balance-label">Votre solde actuel</div>
-                <div class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="user-coins">0</span></div>
-                <div class="balance-value-converted">Valeur estimée : <span id="user-cash-value">$0.00</span></div>
-                
-                <div class="help-trigger-wrapper">
-                    <div class="help-incitation-tag">Info</div>
-                    <button class="btn-pulse-help" onclick="openRankModal()">?</button>
-                </div>
-            </div>
+           <!-- 2. BLOC SOLDE HORIZONTAL ET DYNAMIQUE -->
+<div class="balance-card-dashboard">
+    
+    <!-- OVERLAY DE VERROUILLAGE (Rang 0) -->
+    <div id="lock-overlay" class="balance-locked-overlay">
+        <div class="lock-text-row">
+            <i class="fa-solid fa-lock"></i>
+            <span>Solde verrouillé (Rang 1+ Requis)</span>
+        </div>
+    </div>
+
+    <!-- CONTENU DU SOLDE (GAUCHE) -->
+    <div class="bal-metric-group">
+        <div class="bal-col main-solde">
+            <span class="b-label">Solde Actuel</span>
+            <span class="b-value"><i class="fa-solid fa-coins" style="color:#00ffcc;"></i> <span id="user-coins">0</span></span>
+            <span class="b-sub">Valeur : <strong id="user-cash-value" style="color:#fff;">$0.00</strong></span>
+        </div>
+    </div>
+
+    <!-- ACTIONS & RETRAIT (DROITE) -->
+    <div class="bal-actions-right">
+        <button id="btn-withdraw-gains" class="btn-retirer-gains" disabled onclick="openRankModal()">
+            <i class="fa-solid fa-wallet"></i> Demander un retrait
+        </button>
+        
+        <div class="help-trigger-wrapper">
+            <div class="help-incitation-tag">Info</div>
+            <button class="btn-pulse-help" onclick="openRankModal()">?</button>
+        </div>
+    </div>
+</div>
 
             <!-- 3. LIEN DE PARRAINAGE -->
             <div class="share-box-wrapper">
