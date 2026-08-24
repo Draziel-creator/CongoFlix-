@@ -3181,17 +3181,17 @@ window.applyRankDesign = function(rankLevel) {
 };
 
 function evalWithdrawGateStatus() {
-    // Vérification des deux identifiants possibles du bouton dans le HTML
     const btn = document.getElementById('btn-withdraw-gains') || document.getElementById('withdraw-gate-button');
+    const lockOverlay = document.getElementById('lock-overlay');
     if (!btn) return;
 
     const currentCoins = window.g_userCoins || 0;
-    const currentRank = window.g_userRank || 0;
     const currentCashUSD = currentCoins / COINS_PER_DOLLAR;
 
-    // Condition déblocage : Rang >= 1 ET Solde >= 50$ (50 000 pièces)
-    const isRankValid = currentRank >= 1;
-    const isBalanceValid = currentCashUSD >= MIN_WITHDRAW_USD;
+    // Détection du rang : valide si g_userRank >= 1 OU si le cadenas est déjà masqué
+    const isLockHidden = lockOverlay && (lockOverlay.classList.contains('hidden') || lockOverlay.style.display === 'none');
+    const isRankValid = (window.g_userRank >= 1) || isLockHidden;
+    const isBalanceValid = currentCashUSD >= MIN_WITHDRAW_USD; // 50 USD (50 000 coins)
 
     if (isRankValid && isBalanceValid) {
         btn.removeAttribute('disabled');
@@ -3203,6 +3203,48 @@ function evalWithdrawGateStatus() {
         btn.style.cursor = 'not-allowed';
     }
 }
+    // Écouteur en temps réel sur la collection 'rewards_users'
+function startCoinsRealtimeListener(userId) {
+    if (!userId || typeof db === 'undefined') {
+        console.error("ID utilisateur ou Firestore (db) non disponible.");
+        return;
+    }
+
+    // Écoute directe du document de l'utilisateur dans 'rewards_users'
+    db.collection('rewards_users').doc(userId).onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            
+            // Lecture directe du champ 'coins' (ex: 50000)
+            const coins = parseInt(data.coins, 10) || 0;
+            window.g_userCoins = coins;
+
+            // Calcul de la valeur en USD (1000 points = 1$)
+            const cashValue = coins / COINS_PER_DOLLAR;
+
+            // Mise à jour de l'affichage HTML
+            const coinsEl = document.getElementById('user-coins');
+            const cashEl = document.getElementById('user-cash-value');
+
+            if (coinsEl) coinsEl.textContent = coins.toLocaleString();
+            if (cashEl) cashEl.textContent = `$${cashValue.toFixed(2)}`;
+
+            // Évaluation immédiate du bouton de retrait
+            evalWithdrawGateStatus();
+        } else {
+            console.warn("Aucun document trouvé dans 'rewards_users' pour cet utilisateur.");
+        }
+    }, (error) => {
+        console.error("Erreur de synchronisation coins:", error);
+    });
+}
+
+// Intégration automatique à la connexion Firebase Auth
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        startCoinsRealtimeListener(user.uid);
+    }
+});
 function checkLocalStorageDeviceLock() {
     const err = document.getElementById('error-msg');
     if(!isLoginMode && localStorage.getItem('account_created_on_device') === 'true') {
