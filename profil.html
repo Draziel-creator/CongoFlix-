@@ -3180,7 +3180,22 @@ window.applyRankDesign = function(rankLevel) {
     evalWithdrawGateStatus();
 };
 
-function evalWithdrawGateStatus() {
+// ==========================================
+// CONFIGURATION & VARIABLES GLOBALES
+// ==========================================
+window.g_userRank = window.g_userRank || 0;
+window.g_userCoins = window.g_userCoins || 0;
+const COINS_PER_DOLLAR = 1000;
+const MIN_WITHDRAW_USD = 50;
+
+// Fix pour les événements HTML (oninput) dans un module ES6
+window.handleUsernameInput = function(inputElement) {
+    if (!inputElement) return;
+    inputElement.value = inputElement.value.replace(/[^a-zA-Z0-9_]/g, '');
+};
+
+// Évaluation du bouton de retrait
+window.evalWithdrawGateStatus = function() {
     const btn = document.getElementById('btn-withdraw-gains') || document.getElementById('withdraw-gate-button');
     const lockOverlay = document.getElementById('lock-overlay');
     if (!btn) return;
@@ -3188,10 +3203,9 @@ function evalWithdrawGateStatus() {
     const currentCoins = window.g_userCoins || 0;
     const currentCashUSD = currentCoins / COINS_PER_DOLLAR;
 
-    // Détection du rang : valide si g_userRank >= 1 OU si le cadenas est déjà masqué
     const isLockHidden = lockOverlay && (lockOverlay.classList.contains('hidden') || lockOverlay.style.display === 'none');
     const isRankValid = (window.g_userRank >= 1) || isLockHidden;
-    const isBalanceValid = currentCashUSD >= MIN_WITHDRAW_USD; // 50 USD (50 000 coins)
+    const isBalanceValid = currentCashUSD >= MIN_WITHDRAW_USD; // 50$ (50 000 coins)
 
     if (isRankValid && isBalanceValid) {
         btn.removeAttribute('disabled');
@@ -3202,49 +3216,40 @@ function evalWithdrawGateStatus() {
         btn.style.opacity = '0.5';
         btn.style.cursor = 'not-allowed';
     }
-}
-    // Écouteur en temps réel sur la collection 'rewards_users'
-function startCoinsRealtimeListener(userId) {
-    if (!userId || typeof db === 'undefined') {
-        console.error("ID utilisateur ou Firestore (db) non disponible.");
-        return;
-    }
+};
 
-    // Écoute directe du document de l'utilisateur dans 'rewards_users'
-    db.collection('rewards_users').doc(userId).onSnapshot((doc) => {
-        if (doc.exists) {
-            const data = doc.data();
-            
-            // Lecture directe du champ 'coins' (ex: 50000)
+// Écouteur en temps réel sur la collection 'rewards_users' (Syntaxe Firebase v10 Modular)
+function startCoinsRealtimeListener(userId) {
+    const userDocRef = doc(db, "rewards_users", userId);
+    
+    onSnapshot(userDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
             const coins = parseInt(data.coins, 10) || 0;
             window.g_userCoins = coins;
 
-            // Calcul de la valeur en USD (1000 points = 1$)
             const cashValue = coins / COINS_PER_DOLLAR;
 
-            // Mise à jour de l'affichage HTML
             const coinsEl = document.getElementById('user-coins');
             const cashEl = document.getElementById('user-cash-value');
 
             if (coinsEl) coinsEl.textContent = coins.toLocaleString();
             if (cashEl) cashEl.textContent = `$${cashValue.toFixed(2)}`;
 
-            // Évaluation immédiate du bouton de retrait
-            evalWithdrawGateStatus();
-        } else {
-            console.warn("Aucun document trouvé dans 'rewards_users' pour cet utilisateur.");
+            window.evalWithdrawGateStatus();
         }
     }, (error) => {
-        console.error("Erreur de synchronisation coins:", error);
+        console.error("Erreur de lecture des coins :", error);
     });
 }
 
-// Intégration automatique à la connexion Firebase Auth
-firebase.auth().onAuthStateChanged((user) => {
+// Authentification en temps réel (Syntaxe Firebase v10 Modular)
+onAuthStateChanged(auth, (user) => {
     if (user) {
         startCoinsRealtimeListener(user.uid);
     }
 });
+    
 function checkLocalStorageDeviceLock() {
     const err = document.getElementById('error-msg');
     if(!isLoginMode && localStorage.getItem('account_created_on_device') === 'true') {
