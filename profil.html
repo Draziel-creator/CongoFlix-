@@ -977,13 +977,25 @@ body, html {
         .phone-payment-group input { flex: 1; padding: 12px; background: #14152d; border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 13px; outline: none; }
         .btn-pay-flutterwave { background: linear-gradient(90deg, #ff9900, #ff5500); color: #fff; border: none; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; justify-content: center; }
         .btn-pay-flutterwave:active { transform: scale(0.97); }
-    .reputation-modal-overlay {
+    /* Rendre le bouton réactif et au premier plan */
+.btn-info-reputation {
+    position: relative;
+    z-index: 20;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+/* S'assurer que la modale recouvre tout l'écran une fois ouverte */
+.reputation-modal-overlay {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.75);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 10000;
-    backdrop-filter: blur(4px);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 9999; /* Devant toute l'application */
+    align-items: center;
+    justify-content: center;
 }
 
 .reputation-modal-card {
@@ -1316,7 +1328,9 @@ body, html {
                     </ul>
                 </div>
             </div>
-            <button class="btn-reputation-confirm" onclick="closeReputationModal()">J'ai compris</button>
+            <button class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
+    <i class="fa-solid fa-circle-info"></i>
+</button>
         </div>
     </div>
 
@@ -2841,14 +2855,14 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
     function openReputationModal() {
     const modal = document.getElementById('modal-reputation-info');
     if (modal) {
-        modal.style.display = 'flex';
+        modal.style.display = 'flex'; // Passe de 'none' à 'flex' pour afficher
     }
 }
 
 function closeReputationModal() {
     const modal = document.getElementById('modal-reputation-info');
     if (modal) {
-        modal.style.display = 'none';
+        modal.style.display = 'none'; // Masque la modale
     }
 }
 
