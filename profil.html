@@ -663,6 +663,41 @@ body, html {
     0% { opacity: 0.6; transform: scale(0.95); }
     100% { opacity: 1; transform: scale(1.05); }
 }
+
+    /* Styling Parrainage & Modale Bannière */
+.btn-generate-color {
+    background: linear-gradient(135deg, #b370f7 0%, #7d2ae8 100%);
+    border: none;
+    color: #fff;
+}
+
+.btn-copy-success {
+    background: rgba(0, 255, 204, 0.15) !important;
+    border: 1px solid #00ffcc !important;
+    color: #00ffcc !important;
+}
+
+.btn-sponsor-color {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    color: #cdcee0;
+}
+
+.sponsor-banner-preview {
+    width: 100%;
+    height: 150px;
+    border-radius: 14px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+    
         /* ============================================================
            1. FORCE LE PARENT À SE DÉPLIER EN COLONNE (ANTI-ÉCRASEMENT)
            ============================================================ */
@@ -1239,6 +1274,73 @@ body, html {
                 </div>
             </div>
 
+                    BLOC POUR LES PARRAIN UNIQUEMENT
+            <!-- MODALE AFFICHAGE DU PROFIL / BANNIÈRE DU PARRAIN -->
+<div id="sponsor-info-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-card" style="max-width: 480px; padding: 0; overflow: hidden; border-radius: 20px;">
+        <div class="modal-header" style="position: absolute; top: 10px; right: 10px; z-index: 10;">
+            <button class="btn-close-modal" onclick="closeSponsorModal()" style="background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer;">&times;</button>
+        </div>
+        
+        <div class="profile-banner-wrapper" style="margin: 0;">
+            <img id="sponsor-modal-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
+            <div class="banner-overlay"></div>
+
+            <div class="profile-hero-content">
+                <!-- COLONNE GAUCHE -->
+                <div class="hero-left-col">
+                    <div class="avatar-header-row">
+                        <div class="avatar-container">
+                            <div class="avatar-wrapper">
+                                <img id="sponsor-modal-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar Parrain">
+                            </div>
+                        </div>
+
+                        <div class="user-title-block">
+                            <div class="user-title-row">
+                                <span class="user-name-display" id="sponsor-modal-name">Chargement...</span>
+                                <i class="fa-solid fa-circle-check verified-badge" id="sponsor-modal-verified" style="display: none;"></i>
+                            </div>
+                            <div class="rank-status-container">
+                                <div class="rank-badge-pill" id="sponsor-modal-rank">
+                                    <!-- Contenu du rang du parrain -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="user-details-block">
+                        <div class="reputation-stars-container">
+                            <div class="stars-list">
+                                <i class="fa-regular fa-star star-gold"></i>
+                                <i class="fa-regular fa-star star-gold"></i>
+                                <i class="fa-regular fa-star star-gold"></i>
+                                <i class="fa-regular fa-star star-gold"></i>
+                                <i class="fa-regular fa-star star-gold"></i>
+                            </div>
+                            <span class="rating-text" id="sponsor-modal-reputation">5.0 / 5</span>
+                        </div>
+                    </div>
+
+                    <p class="user-description-text" id="sponsor-modal-bio">Parrain officiel sur la plateforme.</p>
+                </div>
+
+                <!-- COLONNE DROITE (MÉTRIQUES) -->
+                <div class="hero-right-metrics">
+                    <div class="metric-badge-item">
+                        <div class="metric-icon-box icon-blue"><i class="fa-solid fa-calendar-day"></i></div>
+                        <div class="metric-data">
+                            <span class="metric-label">Membre depuis</span>
+                            <span class="metric-value" id="sponsor-modal-date">---</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+            
+
            <!-- 2. BLOC SOLDE HORIZONTAL ET DYNAMIQUE -->
 <div class="balance-card-dashboard">
     
@@ -1271,35 +1373,49 @@ body, html {
     </div>
 </div>
 
-           <!-- 3. LIEN DE PARRAINAGE ET ESPACE PARRAIN -->
+<!-- 3. ESPACE PARRAINAGE -->
 <div class="share-box-wrapper">
-    <div class="share-box-title"><i class="fa-solid fa-share-nodes"></i> Votre lien de parrainage unique</div>
+    <div class="share-box-title">
+        <i class="fa-solid fa-share-nodes"></i> Programme de Parrainage
+    </div>
+    
     <div class="share-link-input-group">
-        <div class="share-link-display" id="share-link-text">Génération du lien...</div>
+        <!-- Affichage du lien généré -->
+        <div class="share-link-display" id="share-link-text">
+            Aucun lien généré pour le moment
+        </div>
+        
         <div class="share-actions-row">
-            <button class="btn-share-act btn-copy-color" onclick="copyLinkOnly()"><i class="fa-solid fa-copy"></i> Copier</button>
-            <button class="btn-share-act btn-share-color" onclick="sharePlatformNative()"><i class="fa-solid fa-arrow-up-from-bracket"></i> Partager</button>
-            <button class="btn-share-act btn-sponsor-color" onclick="openSponsorModal()"><i class="fa-solid fa-user-shield"></i> Mon Parrain</button>
+            <!-- Bouton dynamique : Générer puis Copier -->
+            <button id="btn-generate-link" class="btn-share-act btn-generate-color" onclick="handleReferralButtonAction()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Générer mon lien
+            </button>
+            
+            <!-- Bouton Mon Parrain -->
+            <button class="btn-share-act btn-sponsor-color" onclick="openSponsorModal()">
+                <i class="fa-solid fa-user-shield"></i> Mon Parrain
+            </button>
         </div>
     </div>
 </div>
 
 <!-- MODALE AFFICHAGE BANNIÈRE DU PARRAIN -->
 <div id="sponsor-info-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-card" style="max-width: 360px; text-align: center;">
+    <div class="modal-card" style="max-width: 380px; text-align: center;">
         <div class="modal-header">
-            <h3><i class="fa-solid fa-id-card"></i> Espace de votre Parrain</h3>
+            <h3><i class="fa-solid fa-id-card"></i> Bannière de votre Parrain</h3>
             <button class="btn-close-modal" onclick="closeSponsorModal()">&times;</button>
         </div>
         <div class="modal-body" style="padding: 15px;">
+            <!-- Zone d'affichage de la bannière -->
             <div id="sponsor-banner-container" class="sponsor-banner-preview">
-                <p style="font-size: 11px; color: #8e92bc;">Chargement du parrain...</p>
+                <p style="font-size: 11px; color: #8e92bc;">Chargement...</p>
             </div>
-            <p id="sponsor-name-display" style="font-size: 13px; font-weight: 700; color: #fff; margin-top: 10px;"></p>
+            <p id="sponsor-name-display" style="font-size: 13px; font-weight: 700; color: #fff; margin-top: 12px;"></p>
         </div>
     </div>
 </div>
-
+            
             <!-- 4. HISTORIQUE DE COLLECTE -->
             <div class="section-box">
                 <div class="section-title"><i class="fa-solid fa-calendar-days"></i> Historique des Coins collectés</div>
@@ -1575,6 +1691,9 @@ body, html {
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { doc, getDoc, updateDoc, increment, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+
 
 // BASE URL DE TON SITE OU BLOGGER
 const BASE_APP_URL = "https://publiciteplusrdc.blogspot.com"; // Remplace par ton lien Blogger/Site
@@ -3285,10 +3404,25 @@ onAuthStateChanged(auth, (user) => {
         startCoinsRealtimeListener(user.uid);
     }
 });
-    // ==========================================
-// 1. DÉTECTION AUTOMATIQUE DU LIEN PARRAIN (URL)
+    
+   // Configuration URL du site Blogger
+window.BLOGGER_SITE_URL = "https://publiciteplusrdc.blogspot.com/";
+
+// Metadata des rangs (réutilisation pour la bannière parrain)
+const SPONSOR_RANKS_METADATA = {
+    0:  { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
+    1:  { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
+    2:  { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
+    3:  { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
+    4:  { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
+    10: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
+};
+
 // ==========================================
-// Exécuté au chargement : stocke temporairement l'ID du parrain présent dans l'URL ?ref=ID
+// 1. CAPTURE AUTOMATIQUE DE L'URL ET LIAISON PARRAIN
+// ==========================================
+
+// Exécuté immédiatement au chargement : capture ?ref=ID_PARRAIN
 (function captureReferralFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const refId = urlParams.get('ref');
@@ -3297,98 +3431,159 @@ onAuthStateChanged(auth, (user) => {
     }
 })();
 
-// À appeler juste après createUserWithEmailAndPassword ou lors de la création du document 'users'
+// À appeler lors de la création d'un nouveau compte filleul
 window.assignSponsorToNewUser = async function(newUserId) {
     const pendingSponsorId = localStorage.getItem('pending_sponsor_id');
     if (pendingSponsorId && pendingSponsorId !== newUserId) {
         try {
             const userRef = doc(db, "users", newUserId);
             await updateDoc(userRef, { sponsorId: pendingSponsorId });
-            localStorage.removeItem('pending_sponsor_id'); // Nettoyage
+            localStorage.removeItem('pending_sponsor_id');
         } catch (e) {
-            console.error("Erreur d'attribution du parrain :", e);
+            console.error("Erreur de liaison parrain :", e);
         }
     }
 };
 
 // ==========================================
-// 2. GÉNÉRATION DU LIEN UNIQUE UTILISATEUR
+// 2. GÉNÉRATION & COPIE DU LIEN UNIQUE
 // ==========================================
-window.initUserReferralLink = function(userId) {
-    const shareDisplay = document.getElementById('share-link-text');
-    if (!shareDisplay || !userId) return;
 
-    // Construit le lien unique rattaché à son UID Firestore
-    const uniqueLink = `${BASE_APP_URL}?ref=${userId}`;
-    shareDisplay.textContent = uniqueLink;
-    window.g_myReferralLink = uniqueLink;
-};
+window.checkUserReferralStatus = async function(userId) {
+    if (!userId) return;
+    try {
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
 
-window.copyLinkOnly = function() {
-    if (!window.g_myReferralLink) return;
-    navigator.clipboard.writeText(window.g_myReferralLink).then(() => {
-        alert("Lien de parrainage copié dans le presse-papier !");
-    });
-};
-
-window.sharePlatformNative = function() {
-    if (navigator.share && window.g_myReferralLink) {
-        navigator.share({
-            title: "Rejoins-moi !",
-            text: "Inscris-toi et gagne des récompenses !",
-            url: window.g_myReferralLink
-        }).catch(() => {});
-    } else {
-        copyLinkOnly();
+        if (userSnap.exists() && userSnap.data().referralLink) {
+            const savedLink = userSnap.data().referralLink;
+            window.g_myReferralLink = savedLink;
+            
+            const display = document.getElementById('share-link-text');
+            if (display) display.textContent = savedLink;
+            setButtonToCopyState();
+        }
+    } catch (e) {
+        console.error("Erreur de statut du lien :", e);
     }
 };
 
+window.handleReferralButtonAction = async function() {
+    if (window.g_myReferralLink) {
+        // Action COPICATEUR
+        navigator.clipboard.writeText(window.g_myReferralLink).then(() => {
+            const btn = document.getElementById('btn-generate-link');
+            if (btn) {
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> Copié !`;
+                setTimeout(() => { setButtonToCopyState(); }, 2000);
+            }
+        });
+    } else {
+        // Action GÉNÉRATION & ENREGISTREMENT
+        if (!auth.currentUser) return;
+        
+        const btn = document.getElementById('btn-generate-link');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Génération...";
+        }
+
+        const generatedLink = `${window.BLOGGER_SITE_URL}?ref=${auth.currentUser.uid}`;
+        
+        try {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            await updateDoc(userRef, { referralLink: generatedLink });
+
+            window.g_myReferralLink = generatedLink;
+            const display = document.getElementById('share-link-text');
+            if (display) display.textContent = generatedLink;
+            
+            setButtonToCopyState();
+        } catch (e) {
+            console.error("Erreur de génération :", e);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Générer mon lien`;
+            }
+        }
+    }
+};
+
+function setButtonToCopyState() {
+    const btn = document.getElementById('btn-generate-link');
+    if (!btn) return;
+    btn.disabled = false;
+    btn.className = "btn-share-act btn-copy-success";
+    btn.innerHTML = `<i class="fa-solid fa-copy"></i> Copier le lien`;
+}
+
 // ==========================================
-// 3. AFFICHAGE DE LA BANNIÈRE DU PARRAIN
+// 3. CHARGEMENT DE LA BANNIÈRE DU PARRAIN (DANS LA MODALE)
 // ==========================================
+
 window.openSponsorModal = async function() {
     const modal = document.getElementById('sponsor-info-modal');
-    const container = document.getElementById('sponsor-banner-container');
-    const nameEl = document.getElementById('sponsor-name-display');
-
     if (!modal || !auth.currentUser) return;
+    
     modal.style.display = 'flex';
 
+    // Éléments UI de la modale
+    const bannerImg = document.getElementById('sponsor-modal-banner');
+    const photoImg = document.getElementById('sponsor-modal-photo');
+    const nameEl = document.getElementById('sponsor-modal-name');
+    const rankEl = document.getElementById('sponsor-modal-rank');
+    const bioEl = document.getElementById('sponsor-modal-bio');
+    const dateEl = document.getElementById('sponsor-modal-date');
+    const verifiedBadge = document.getElementById('sponsor-modal-verified');
+
+    nameEl.textContent = "Chargement...";
+
     try {
-        // 1. Récupère le document du filleul pour trouver son sponsorId
-        const myDocRef = doc(db, "users", auth.currentUser.uid);
-        const myDocSnap = await getDoc(myDocRef);
+        // 1. Lire le sponsorId sur le compte du filleul
+        const myRef = doc(db, "users", auth.currentUser.uid);
+        const mySnap = await getDoc(myRef);
 
-        if (myDocSnap.exists() && myDocSnap.data().sponsorId) {
-            const sponsorId = myDocSnap.data().sponsorId;
+        if (mySnap.exists() && mySnap.data().sponsorId) {
+            const sponsorId = mySnap.data().sponsorId;
 
-            // 2. Récupère le profil du parrain
-            const sponsorDocRef = doc(db, "users", sponsorId);
-            const sponsorSnap = await getDoc(sponsorDocRef);
+            // 2. Charger les données du Parrain
+            const sponsorRef = doc(db, "users", sponsorId);
+            const sponsorSnap = await getDoc(sponsorRef);
 
             if (sponsorSnap.exists()) {
-                const sData = sponsorSnap.data();
-                const banner = sData.bannerURL || '';
-                const username = sData.username || sData.displayName || "Membre Parrain";
+                const data = sponsorSnap.data();
 
-                nameEl.textContent = `Parrain : ${username}`;
-                if (banner) {
-                    container.style.backgroundImage = `url('${banner}')`;
-                    container.innerHTML = '';
-                } else {
-                    container.style.backgroundImage = 'none';
-                    container.innerHTML = `<span style="color:#8e92bc; font-size:12px;">Bannière par défaut</span>`;
+                // Injection des données réelles du parrain
+                if (data.bannerURL && bannerImg) bannerImg.src = data.bannerURL;
+                if (data.photoURL && photoImg) photoImg.src = data.photoURL;
+                
+                nameEl.textContent = data.username || data.displayName || "Membre Parrain";
+                bioEl.textContent = data.bio || "Membre actif sur la plateforme.";
+                dateEl.textContent = data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Inconnue";
+
+                if (verifiedBadge) {
+                    verifiedBadge.style.display = data.isVerified ? "inline-block" : "none";
+                }
+
+                // Rendu du badge de rang du parrain
+                const sponsorRank = data.rank || 0;
+                const rankMeta = SPONSOR_RANKS_METADATA[sponsorRank] || SPONSOR_RANKS_METADATA[0];
+                if (rankEl) {
+                    rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> ${rankMeta.name}`;
                 }
                 return;
             }
         }
-        
-        // Aucun parrain rattaché
-        container.style.backgroundImage = 'none';
-        container.innerHTML = `<span style="color:#8e92bc; font-size:12px;"><i class="fa-solid fa-user-slash"></i> Aucun parrain rattaché</span>`;
-        nameEl.textContent = "";
+
+        // Cas sans parrain
+        nameEl.textContent = "Aucun parrain";
+        bioEl.textContent = "Vous n'avez pas été parrainé lors de votre inscription.";
+        if (rankEl) rankEl.innerHTML = `<i class="fa-solid fa-user-slash"></i> Aucun`;
+        dateEl.textContent = "---";
+
     } catch (e) {
-        console.error("Erreur affichage parrain :", e);
+        console.error("Erreur d'affichage du parrain :", e);
+        nameEl.textContent = "Erreur de chargement";
     }
 };
 
@@ -3398,46 +3593,40 @@ window.closeSponsorModal = function() {
 };
 
 // ==========================================
-// 4. VERSEMENT DU BONUS DE 10% AU PARRAIN
+// 4. VERSEMENT DU BONUS 10% SUR LA PAGE ACTIVITÉ
 // ==========================================
-// À appeler dans la page Activité lors du clic sur "Encaisser la tâche du jour"
+
 window.claimDailyTaskReward = async function(userId, taskPoints) {
     if (!userId || !taskPoints) return;
 
     try {
-        // 1. Crédite le solde du filleul
+        // 1. Créditer le filleul
         const myRewardRef = doc(db, "rewards_users", userId);
-        await updateDoc(myRewardRef, {
-            coins: increment(taskPoints)
-        });
+        await updateDoc(myRewardRef, { coins: increment(taskPoints) });
 
-        // 2. Vérifie si le filleul a un parrain
+        // 2. Récupérer le parrain
         const userRef = doc(db, "users", userId);
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists() && userSnap.data().sponsorId) {
             const sponsorId = userSnap.data().sponsorId;
-            
-            // Calcul de la commission de 10% (sorti de la banque plateforme)
-            const sponsorBonus = Math.floor(taskPoints * 0.10);
+            const sponsorBonus = Math.floor(taskPoints * 0.10); // 10%
 
             if (sponsorBonus > 0) {
                 const sponsorRewardRef = doc(db, "rewards_users", sponsorId);
-                // Crédite la commission sur le compte du parrain
-                await updateDoc(sponsorRewardRef, {
-                    coins: increment(sponsorBonus)
-                });
+                // Créditer les 10% au parrain
+                await updateDoc(sponsorRewardRef, { coins: increment(sponsorBonus) });
             }
         }
     } catch (e) {
-        console.error("Erreur lors de la distribution de la récompense/commission :", e);
+        console.error("Erreur versement 10% parrain :", e);
     }
 };
 
-// Initialisation globale au changement d'état d'auth
+// Auto-exécution à la connexion
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        window.initUserReferralLink(user.uid);
+        window.checkUserReferralStatus(user.uid);
     }
 });
     
