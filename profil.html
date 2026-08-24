@@ -269,10 +269,13 @@ body, html {
     width: 100% !important;
 }
 
+/* --- BOUTON DÉCLENCHEUR (ÉTOILES) --- */
 .reputation-stars-container { 
     display: flex !important; 
     align-items: center !important; 
     gap: 4px !important; 
+    position: relative;
+    z-index: 10; /* Permet de passer au-dessus de l'image de bannière */
 }
 
 .stars-list { display: flex !important; gap: 2px !important; }
@@ -287,8 +290,80 @@ body, html {
     cursor: pointer !important;
     font-size: 11px !important; 
     padding: 0 !important;
+    position: relative;
+    z-index: 20;
+    pointer-events: auto !important;
 }
 
+.btn-info-reputation i {
+    pointer-events: none; /* Empêche l'icône de bloquer l'événement de clic du bouton */
+}
+
+/* --- DESIGN DE LA MODALE --- */
+.reputation-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 9999; /* Superpose tout le reste du site */
+    align-items: center;
+    justify-content: center;
+}
+
+.reputation-modal-card {
+    background: #1c1f26;
+    color: #ffffff;
+    width: 90%; max-width: 420px;
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px solid #2a2e3d;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+    font-family: inherit;
+}
+
+.reputation-modal-close {
+    position: absolute; top: 12px; right: 16px;
+    background: transparent; border: none;
+    color: #8a8d9b; font-size: 24px; cursor: pointer;
+}
+
+.reputation-modal-header {
+    text-align: center; margin-bottom: 16px;
+}
+
+.star-icon-header {
+    font-size: 32px; color: #f39c12; margin-bottom: 8px;
+}
+
+.reputation-modal-body p {
+    font-size: 14px; color: #c5c7d0; line-height: 1.5; margin-bottom: 14px;
+}
+
+.info-block {
+    background: #252936;
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.info-block strong { color: #f1f2f6; display: block; margin-bottom: 6px; }
+.info-block ul { padding-left: 18px; margin: 0; }
+.info-block li { margin-bottom: 4px; color: #a4a7b5; }
+
+.text-green { color: #2ecc71; }
+.text-red { color: #e74c3c; }
+
+.btn-reputation-confirm {
+    width: 100%; padding: 12px;
+    background: #f39c12; border: none;
+    border-radius: 10px; color: #fff;
+    font-weight: bold; cursor: pointer; margin-top: 8px;
+}
 .user-description-text { 
     font-size: 12px !important; 
     color: #e5e7eb !important; 
@@ -977,78 +1052,6 @@ body, html {
         .phone-payment-group input { flex: 1; padding: 12px; background: #14152d; border: 1px solid var(--border); border-radius: 10px; color: #fff; font-size: 13px; outline: none; }
         .btn-pay-flutterwave { background: linear-gradient(90deg, #ff9900, #ff5500); color: #fff; border: none; padding: 12px 18px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; justify-content: center; }
         .btn-pay-flutterwave:active { transform: scale(0.97); }
-    /* Rendre le bouton réactif et au premier plan */
-.btn-info-reputation {
-    position: relative;
-    z-index: 20;
-    cursor: pointer;
-    pointer-events: auto;
-}
-
-/* S'assurer que la modale recouvre tout l'écran une fois ouverte */
-.reputation-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.75);
-    z-index: 9999; /* Devant toute l'application */
-    align-items: center;
-    justify-content: center;
-}
-
-.reputation-modal-card {
-    background: #1c1f26;
-    color: #ffffff;
-    width: 90%; max-width: 420px;
-    padding: 24px;
-    border-radius: 16px;
-    border: 1px solid #2a2e3d;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    position: relative;
-    font-family: inherit;
-}
-
-.reputation-modal-close {
-    position: absolute; top: 12px; right: 16px;
-    background: transparent; border: none;
-    color: #8a8d9b; font-size: 24px; cursor: pointer;
-}
-
-.reputation-modal-header {
-    text-align: center; margin-bottom: 16px;
-}
-
-.star-icon-header {
-    font-size: 32px; color: #f39c12; margin-bottom: 8px;
-}
-
-.reputation-modal-body p {
-    font-size: 14px; color: #c5c7d0; line-height: 1.5; margin-bottom: 14px;
-}
-
-.info-block {
-    background: #252936;
-    padding: 12px 14px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    font-size: 13px;
-}
-
-.info-block strong { color: #f1f2f6; display: block; margin-bottom: 6px; }
-.info-block ul { padding-left: 18px; margin: 0; }
-.info-block li { margin-bottom: 4px; color: #a4a7b5; }
-
-.text-green { color: #2ecc71; }
-.text-red { color: #e74c3c; }
-
-.btn-reputation-confirm {
-    width: 100%; padding: 12px;
-    background: #f39c12; border: none;
-    border-radius: 10px; color: #fff;
-    font-weight: bold; cursor: pointer; margin-top: 8px;
-}
 </style>
     <!-- Chargement Direct du SDK Officiel Flutterwave v3 -->
     <script src="https://checkout.flutterwave.com/v3.js"></script>
@@ -1130,19 +1133,19 @@ body, html {
                             </div>
                         </div>
 
-                        <div class="user-details-block">
-                            <div class="reputation-stars-container">
-                                <div class="stars-list" id="reputation-stars">
-                                    <i class="fa-regular fa-star star-gold"></i>
-                                    <i class="fa-regular fa-star star-gold"></i>
-                                    <i class="fa-regular fa-star star-gold"></i>
-                                    <i class="fa-regular fa-star star-gold"></i>
-                                    <i class="fa-regular fa-star star-gold"></i>
-                                </div>
-                                <span class="rating-text" id="reputation-score-text">0.0 / 5</span>
-                                <button class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
-                                    <i class="fa-solid fa-circle-info"></i>
-                                </button>
+                             <div class="user-details-block">
+                                <div class="reputation-stars-container">
+                                    <div class="stars-list" id="reputation-stars">
+                                        <i class="fa-regular fa-star star-gold"></i>
+                                        <i class="fa-regular fa-star star-gold"></i>
+                                        <i class="fa-regular fa-star star-gold"></i>
+                                        <i class="fa-regular fa-star star-gold"></i>
+                                        <i class="fa-regular fa-star star-gold"></i>
+                                    </div>
+                                    <span class="rating-text" id="reputation-score-text">0.0 / 5</span>
+                                    <button type="button" class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
+                                        <i class="fa-solid fa-circle-info"></i>
+                                    </button>
                             </div>
                         </div>
 
@@ -1303,34 +1306,32 @@ body, html {
     <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
     <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
 
-    <!-- MODALE RÉPUTATION -->
-    <div id="modal-reputation-info" class="reputation-modal-overlay" style="display: none;">
-        <div class="reputation-modal-card">
-            <button class="reputation-modal-close" onclick="closeReputationModal()">&times;</button>
-            <div class="reputation-modal-header">
-                <i class="fa-solid fa-star star-icon-header"></i>
-                <h3>À quoi sert la Réputation ?</h3>
+   <!-- MODALE RÉPUTATION -->
+<div id="modal-reputation-info" class="reputation-modal-overlay" style="display: none;">
+    <div class="reputation-modal-card">
+        <button type="button" class="reputation-modal-close" onclick="closeReputationModal()">&times;</button>
+        <div class="reputation-modal-header">
+            <i class="fa-solid fa-star star-icon-header"></i>
+            <h3>À quoi sert la Réputation ?</h3>
+        </div>
+        <div class="reputation-modal-body">
+            <p>Le score de réputation mesure votre <strong>régularité</strong> et votre <strong>engagement</strong> quotidien sur la plateforme.</p>
+            <div class="info-block">
+                <strong>⭐ Pourquoi avoir un score élevé ?</strong>
+                <ul>
+                    <li><strong>Confiance des filleuls :</strong> Un badge de parrain actif et fiable pour inspirer votre réseau.</li>
+                    <li><strong>Statut Privilégié :</strong> Accès prioritaire aux récompenses et avantages exclusifs de la plateforme.</li>
+                </ul>
             </div>
-            <div class="reputation-modal-body">
-                <p>Le score de réputation mesure votre <strong>régularité</strong> et votre <strong>engagement</strong> quotidien sur la plateforme.</p>
-                <div class="info-block">
-                    <strong>⭐ Pourquoi avoir un score élevé ?</strong>
-                    <ul>
-                        <li><strong>Confiance des filleuls :</strong> Un badge de parrain actif et fiable pour inspirer votre réseau.</li>
-                        <li><strong>Statut Privilégié :</strong> Accès prioritaire aux récompenses et avantages exclusifs de la plateforme.</li>
-                    </ul>
-                </div>
-                <div class="info-block">
-                    <strong>📈 Comment varie le score ?</strong>
-                    <ul>
-                        <li><span class="text-green"><strong>+ Gain :</strong></span> Valider au moins 15 points par jour augmente votre note.</li>
-                        <li><span class="text-red"><strong>- Perte :</strong></span> Chaque journée d'inactivité applique un malus (-0.3 pt) et fait baisser vos étoiles.</li>
-                    </ul>
-                </div>
+            <div class="info-block">
+                <strong>📈 Comment varie le score ?</strong>
+                <ul>
+                    <li><span class="text-green"><strong>+ Gain :</strong></span> Valider au moins 15 points par jour augmente votre note.</li>
+                    <li><span class="text-red"><strong>- Perte :</strong></span> Chaque journée d'inactivité applique un malus (-0.3 pt) et fait baisser vos étoiles.</li>
+                </ul>
             </div>
-            <button class="btn-info-reputation" onclick="openReputationModal()" title="Info réputation">
-    <i class="fa-solid fa-circle-info"></i>
-</button>
+        </div>
+        <button type="button" class="btn-reputation-confirm" onclick="closeReputationModal()">J'ai compris</button>
         </div>
     </div>
 
@@ -2852,27 +2853,6 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
         }
     });
 }
-    function openReputationModal() {
-    const modal = document.getElementById('modal-reputation-info');
-    if (modal) {
-        modal.style.display = 'flex'; // Passe de 'none' à 'flex' pour afficher
-    }
-}
-
-function closeReputationModal() {
-    const modal = document.getElementById('modal-reputation-info');
-    if (modal) {
-        modal.style.display = 'none'; // Masque la modale
-    }
-}
-
-// Fermeture si l'utilisateur clique en dehors de la carte
-window.addEventListener('click', (event) => {
-    const modal = document.getElementById('modal-reputation-info');
-    if (event.target === modal) {
-        closeReputationModal();
-    }
-});
 
 // =========================================================================
 // GESTION UNIFIÉE ET SÉCURISÉE DU PROFIL (OUVERTURE, FERMETURE, SAUVEGARDE)
@@ -3732,6 +3712,28 @@ window.logout = () => {
     if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
     signOut(auth);
 };
+
+    
+    window.openReputationModal = function() {
+    const modal = document.getElementById('modal-reputation-info');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+};
+
+window.closeReputationModal = function() {
+    const modal = document.getElementById('modal-reputation-info');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+};
+
+window.addEventListener('click', (event) => {
+    const modal = document.getElementById('modal-reputation-info');
+    if (event.target === modal) {
+        window.closeReputationModal();
+    }
+});
     // =========================================================================
 // LANCEMENT AUTOMATIQUE AU CHARGEMENT DE LA PAGE
 // =========================================================================
