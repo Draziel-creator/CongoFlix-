@@ -3181,14 +3181,14 @@ window.applyRankDesign = function(rankLevel) {
 };
 
 // ==========================================
-// CONFIGURATION & VARIABLES GLOBALES
+// CONFIGURATION SÉCURISÉE (SANS REDÉCLARATION)
 // ==========================================
 window.g_userRank = window.g_userRank || 0;
 window.g_userCoins = window.g_userCoins || 0;
-const COINS_PER_DOLLAR = 1000;
-const MIN_WITHDRAW_USD = 50;
+window.COINS_PER_DOLLAR = 1000;
+window.MIN_WITHDRAW_USD = 50;
 
-// Fix pour les événements HTML (oninput) dans un module ES6
+// Fix pour les événements HTML (oninput)
 window.handleUsernameInput = function(inputElement) {
     if (!inputElement) return;
     inputElement.value = inputElement.value.replace(/[^a-zA-Z0-9_]/g, '');
@@ -3201,11 +3201,11 @@ window.evalWithdrawGateStatus = function() {
     if (!btn) return;
 
     const currentCoins = window.g_userCoins || 0;
-    const currentCashUSD = currentCoins / COINS_PER_DOLLAR;
+    const currentCashUSD = currentCoins / window.COINS_PER_DOLLAR;
 
     const isLockHidden = lockOverlay && (lockOverlay.classList.contains('hidden') || lockOverlay.style.display === 'none');
     const isRankValid = (window.g_userRank >= 1) || isLockHidden;
-    const isBalanceValid = currentCashUSD >= MIN_WITHDRAW_USD; // 50$ (50 000 coins)
+    const isBalanceValid = currentCashUSD >= window.MIN_WITHDRAW_USD; // 50$ (50 000 coins)
 
     if (isRankValid && isBalanceValid) {
         btn.removeAttribute('disabled');
@@ -3218,7 +3218,7 @@ window.evalWithdrawGateStatus = function() {
     }
 };
 
-// Écouteur en temps réel sur la collection 'rewards_users' (Syntaxe Firebase v10 Modular)
+// Écouteur en temps réel sur la collection 'rewards_users' (Firebase v10)
 function startCoinsRealtimeListener(userId) {
     const userDocRef = doc(db, "rewards_users", userId);
     
@@ -3228,7 +3228,7 @@ function startCoinsRealtimeListener(userId) {
             const coins = parseInt(data.coins, 10) || 0;
             window.g_userCoins = coins;
 
-            const cashValue = coins / COINS_PER_DOLLAR;
+            const cashValue = coins / window.COINS_PER_DOLLAR;
 
             const coinsEl = document.getElementById('user-coins');
             const cashEl = document.getElementById('user-cash-value');
@@ -3243,7 +3243,7 @@ function startCoinsRealtimeListener(userId) {
     });
 }
 
-// Authentification en temps réel (Syntaxe Firebase v10 Modular)
+// Authentification en temps réel (Firebase v10)
 onAuthStateChanged(auth, (user) => {
     if (user) {
         startCoinsRealtimeListener(user.uid);
