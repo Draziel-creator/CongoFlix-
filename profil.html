@@ -75,6 +75,15 @@ body, html {
 .toggle-pass { position: absolute; right: 18px; top: 18px; color: #41435c; cursor: pointer; }
 #error-msg { color: var(--error); font-size: 13px; margin-bottom: 15px; display: none; background: rgba(255, 77, 77, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 77, 77, 0.2); text-align: left; line-height: 1.4; }
 
+    @keyframes pulse-btn {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 255, 204, 0.7); }
+    70% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(0, 255, 204, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 255, 204, 0); }
+}
+.btn-pulse {
+    animation: pulse-btn 1.5s infinite;
+}    
+
 /* ============================================================
    1. BOUTON RETOUR (LIEN / DIV SANS CERCLE)
    ============================================================ */
@@ -1189,6 +1198,14 @@ body, html {
                     <span class="auth-label">Date de naissance (Obligatoire pour vérification +18 ans)</span>
                     <input type="date" id="birthdate" class="auth-input">
                 </div>
+                <!-- BLOC PARRAINAGE OBLIGATOIRE (Mode Inscription) -->
+<div id="sponsor-search-block" class="hidden" style="margin: 15px 0;">
+    <span class="auth-label" style="color: #00ffcc;">Vérification du Parrain (Obligatoire)</span>
+    <button type="button" id="btn-search-sponsor" onclick="searchMySponsor()" class="btn-pulse" style="width:100%; padding: 12px; background: #00ffcc; color: #111; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; margin-top: 5px;">
+        <i class="fa-solid fa-magnifying-glass"></i> Chercher mon parrain
+    </button>
+    <div id="sponsor-search-result" style="margin-top: 8px; font-size: 13px; text-align: center; font-weight: 600; min-height: 20px;"></div>
+</div>
                 
                 <span class="auth-label">Mot de passe</span>
                 <div class="pass-group">
@@ -1289,7 +1306,6 @@ body, html {
                 </div>
             </div>
 
-                    BLOC POUR LES PARRAIN UNIQUEMENT
             <!-- MODALE AFFICHAGE DU PROFIL / BANNIÈRE DU PARRAIN -->
 <div id="sponsor-info-modal" class="modal-overlay" style="display:none;">
     <div class="modal-card" style="max-width: 480px; padding: 0; overflow: hidden; border-radius: 20px;">
@@ -3434,30 +3450,81 @@ const SPONSOR_RANKS_METADATA = {
 // ==========================================
 // 1. CAPTURE AUTOMATIQUE DE L'URL ET LIAISON PARRAIN
 // ==========================================
+// Variables de contrôle de la recherche
+let isSponsorChecked = false;
+let verifiedSponsorId = "";
 
-// Exécuté immédiatement au chargement : capture ?ref=ID_PARRAIN
+// Capture automatique dès l'ouverture
 (function captureReferralFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const refId = urlParams.get('ref');
     if (refId) {
+        localStorage.setItem('pending_referrer', refId);
         localStorage.setItem('pending_sponsor_id', refId);
     }
 })();
 
-// À appeler lors de la création d'un nouveau compte filleul
-window.assignSponsorToNewUser = async function(newUserId) {
-    const pendingSponsorId = localStorage.getItem('pending_sponsor_id');
-    if (pendingSponsorId && pendingSponsorId !== newUserId) {
-        try {
-            const userRef = doc(db, "users", newUserId);
-            await updateDoc(userRef, { sponsorId: pendingSponsorId });
-            localStorage.removeItem('pending_sponsor_id');
-        } catch (e) {
-            console.error("Erreur de liaison parrain :", e);
+// Action lors du clic sur "Chercher mon parrain"
+window.searchMySponsor = async function() {
+    const resultEl = document.getElementById('sponsor-search-result');
+    const btn = document.getElementById('btn-search-sponsor');
+
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Recherche en cours...';
+
+    // Lecture dans le LocalStorage
+    const refId = localStorage.getItem('pending_referrer') || localStorage.getItem('pending_sponsor_id');
+
+    if (!refId) {
+        // Recherche faite, mais aucun lien n'était dans le navigateur
+        isSponsorChecked = true;
+        verifiedSponsorId = "";
+        if (resultEl) {
+            resultEl.style.color = "#aaa";
+            resultEl.innerHTML = `<i class="fa-solid fa-info-circle"></i> Aucun lien détecté (Inscription sans parrain)`;
+        }
+        if (btn) {
+            btn.classList.remove('btn-pulse');
+            btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Recherche terminée';
+        }
+        return;
+    }
+
+    try {
+        // Lecture dans la collection rewards_users
+        const sponsorSnap = await getDoc(doc(db, "rewards_users", refId));
+
+        if (sponsorSnap.exists()) {
+            const data = sponsorSnap.data();
+            const sponsorName = data.name || "Membre Utilisateur";
+
+            isSponsorChecked = true;
+            verifiedSponsorId = refId;
+
+            if (resultEl) {
+                resultEl.style.color = "#00ffcc";
+                resultEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Parrain trouvé : <strong>${sponsorName}</strong>`;
+            }
+        } else {
+            isSponsorChecked = true;
+            verifiedSponsorId = "";
+            if (resultEl) {
+                resultEl.style.color = "#ff4444";
+                resultEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Code invalide ou parrain introuvable`;
+            }
+        }
+    } catch (e) {
+        console.error("Erreur recherche parrain :", e);
+        if (resultEl) {
+            resultEl.style.color = "#ff4444";
+            resultEl.innerHTML = `Erreur de connexion. Réessayez.`;
+        }
+    } finally {
+        if (btn) {
+            btn.classList.remove('btn-pulse');
+            btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Vérification effectuée';
         }
     }
 };
-
 // ==========================================
 // 2. GÉNÉRATION & COPIE DU LIEN UNIQUE
 // ==========================================
@@ -3668,68 +3735,7 @@ window.setPaymentAmount = (amount, label) => {
     document.getElementById('target-amount-display').value = `Requis: ${amount}$ (${label})`;
     showPremiumToast(`Option choisie : ${label} (${amount}$)`);
 };
-
-window.startFlutterwavePaymentFlow = () => {
-    const phoneNumber = document.getElementById('payment-phone-number').value.trim();
-    const networkSelection = document.getElementById('user-country-network').value;
     
-    if(!phoneNumber) {
-        alert("Veuillez saisir votre numéro de téléphone mobile pour la requête de débit direct Mobile Money.");
-        return;
-    }
-
-    if(selectedAmountUSD === 0) {
-        alert("Le Rang 0 est gratuit. Sélectionnez un autre rang payant.");
-        return;
-    }
-
-    let currencyCode = "USD";
-    let finalAmount = selectedAmountUSD;
-
-    if(networkSelection.startsWith("CAM") || networkSelection.startsWith("GAB")) {
-        currencyCode = "XAF";
-        finalAmount = selectedAmountUSD * 615;
-    } else if(networkSelection.startsWith("CI") || networkSelection.startsWith("SEN")) {
-        currencyCode = "XOF";
-        finalAmount = selectedAmountUSD * 615;
-    }
-
-    FlutterwaveCheckout({
-        public_key: "FLWPUBK_TEST-a386ef8bf2cb859bcf72c36a4ba2cc05-X",
-        tx_ref: "CFX-REV-" + Date.now(),
-        amount: finalAmount,
-        currency: currencyCode,
-        payment_options: "mobilemoneyafrica, card",
-        customer: {
-            email: auth.currentUser ? auth.currentUser.email : "client@congoflix.com",
-            phone_number: phoneNumber,
-            name: auth.currentUser ? document.getElementById('user-name').value : "Utilisateur Congoflix",
-        },
-        customizations: {
-            title: "CONGOFLIX REWARDS",
-            description: `Paiement Mobile Money pour l'activation du Rang d'accès`,
-            logo: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-        },
-        callback: async function (data) {
-            if (data.status === "successful" || data.status === "completed") {
-                showPremiumToast("Paiement validé avec succès par Flutterwave !");
-                closeRankModal();
-                try {
-                    let newRankCalculated = selectedAmountUSD === 1 ? 1 : (selectedAmountUSD === 3 ? 2 : 3);
-                    if(selectedAmountUSD === 10) newRankCalculated = 10;
-                    await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { rank: newRankCalculated });
-                    applyRankDesign(newRankCalculated);
-                } catch(err) { console.error(err); }
-            } else {
-                alert("Le paiement n'a pas pu aboutir. Veuillez réessayer.");
-            }
-        },
-        onclose: function() {
-            showPremiumToast("Fermeture du module de paiement.");
-        }
-    });
-};
-
 window.copyLinkOnly = () => {
     const txt = document.getElementById('share-link-text').innerText;
     navigator.clipboard.writeText(txt).then(() => {
@@ -3996,16 +4002,30 @@ function validateFormState() {
 window.toggleAuthMode = () => {
     isLoginMode = !isLoginMode;
     const birthdateBlock = document.getElementById('birthdate-block');
+    const sponsorBlock = document.getElementById('sponsor-search-block');
     const err = document.getElementById('error-msg');
-    
+
+    // Réinitialisation de la recherche parrain
+    isSponsorChecked = false;
+    verifiedSponsorId = "";
+    const resultEl = document.getElementById('sponsor-search-result');
+    if (resultEl) resultEl.innerHTML = "";
+    const btnSearch = document.getElementById('btn-search-sponsor');
+    if (btnSearch) {
+        btnSearch.classList.add('btn-pulse');
+        btnSearch.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Chercher mon parrain';
+    }
+
     document.getElementById('authBtn').innerText = isLoginMode ? "SE CONNECTER" : "CRÉER MON COMPTE";
     if (err) err.style.display = 'none';
-    
+
     if (isLoginMode) {
         if (birthdateBlock) birthdateBlock.classList.add('hidden');
+        if (sponsorBlock) sponsorBlock.classList.add('hidden');
         document.getElementById('authBtn').disabled = false;
     } else {
         if (birthdateBlock) birthdateBlock.classList.remove('hidden');
+        if (sponsorBlock) sponsorBlock.classList.remove('hidden');
         if (typeof checkLocalStorageDeviceLock === "function") checkLocalStorageDeviceLock();
     }
 
@@ -4047,6 +4067,14 @@ window.handleAuth = async () => {
                 if (err) { err.style.display = 'block'; err.innerText = "Date de naissance obligatoire."; }
                 return;
             }
+            // 2. VÉRIFICATION OBLIGATOIRE DU PARRAIN
+    if (!isSponsorChecked) {
+        if (err) { 
+            err.style.display = 'block'; 
+            err.innerText = "La recherche du parrain est obligatoire ! Veuillez cliquer sur le bouton 'Chercher mon parrain' pour continuer."; 
+        }
+        return;
+    }
 
             const birthDate = new Date(birthdateValue);
             const today = new Date();
@@ -4077,30 +4105,36 @@ window.handleAuth = async () => {
             const referrerId = localStorage.getItem('pending_referrer') || "";
             const cred = await createUserWithEmailAndPassword(auth, email, pass);
             
-            await setDoc(doc(db, "rewards_users", cred.user.uid), { 
-                name: email.split('@')[0], 
-                bio: "Créateur de contenu • Passionné • Partageur",
-                linkTitle: "",
-                linkUrl: "",
-                coins: 0, 
-                birthdate: birthdateValue,
-                age: age,
-                rank: 0,
-                invitedCount: 0,
-                tasksCompleted: 0,
-                daysActive: 1,
-                pointsDuJour: 0,
-                parrainePar: referrerId,
-                statutParrainage: referrerId ? "en_attente" : "aucun",
-                photoURL: "", 
-                bannerURL: "",
-                deviceFingerprint: phoneFingerprint,
-                history: { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 }
-            });
+// Enregistrement dans rewards_users avec le parrain vérifié
+    await setDoc(doc(db, "rewards_users", cred.user.uid), { 
+        name: email.split('@')[0], 
+        bio: "Créateur de contenu • Passionné • Partageur",
+        linkTitle: "",
+        linkUrl: "",
+        coins: 0, 
+        birthdate: birthdateValue,
+        age: age,
+        rank: 0,
+        invitedCount: 0,
+        tasksCompleted: 0,
+        daysActive: 1,
+        pointsDuJour: 0,
+        
+        // Champs Parrainage (Harmonisés)
+        parrainePar: verifiedSponsorId,
+        sponsorId: verifiedSponsorId,
+        statutParrainage: verifiedSponsorId ? "valide" : "aucun",
 
-            localStorage.setItem('account_created_on_device', 'true');
-            localStorage.removeItem('pending_referrer');
-        }
+        photoURL: "", 
+        bannerURL: "",
+        deviceFingerprint: phoneFingerprint,
+        history: { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 }
+    });
+
+    localStorage.setItem('account_created_on_device', 'true');
+    localStorage.removeItem('pending_referrer');
+    localStorage.removeItem('pending_sponsor_id');
+}
     } catch (e) { 
         if (err) { err.style.display = 'block'; err.innerText = "Erreur d'authentification : " + e.message; }
     }
