@@ -3465,6 +3465,7 @@ let verifiedSponsorId = "";
 })();
 
 // Action lors du clic sur "Chercher mon parrain"
+// Action lors du clic sur "Chercher mon parrain"
 window.searchMySponsor = async function() {
     const resultEl = document.getElementById('sponsor-search-result');
     const btn = document.getElementById('btn-search-sponsor');
@@ -3479,34 +3480,61 @@ window.searchMySponsor = async function() {
 
     let refId = null;
 
-    // 1. RECHERCHE AUTOMATIQUE DANS PENDING_INSTALLS (Empreinte Blogger)
+    // 1. RECHERCHE DANS PENDING_INSTALLS
     try {
-        let userIp = "0.0.0.0";
+        let userIp = "";
         try {
             const ipRes = await fetch('https://api.ipify.org?format=json');
             const ipData = await ipRes.json();
             userIp = ipData.ip;
         } catch (e) {
-            console.log("Erreur récupération IP :", e);
+            console.warn("⚠️ Impossible de récupérer l'IP :", e);
         }
 
         const userAgent = navigator.userAgent || "";
         const safeFingerprint = (userIp + "_" + userAgent).replace(/[^a-zA-Z0-9]/g, "_").substring(0, 100);
 
-        // Interrogation de la collection pending_installs
-        const installSnap = await getDoc(doc(db, "pending_installs", safeFingerprint));
+        console.log("🔍 [DEBUG] IP détectée :", userIp);
+        console.log("🔍 [DEBUG] Empreinte générée :", safeFingerprint);
+
+        // Méthode A : Recherche par ID de document
+        const docRef = doc(db, "pending_installs", safeFingerprint);
+        const installSnap = await getDoc(docRef);
 
         if (installSnap.exists()) {
-            refId = installSnap.data().refId;
-            console.log("Parrain identifié automatiquement via pending_installs :", refId);
+            const data = installSnap.data();
+            console.log("✅ [DEBUG] Document trouvé dans pending_installs :", data);
+            refId = data.refId || data.sponsorId || data.sponsor_id || data.pending_sponsor_id;
+        } else {
+            console.log("❌ [DEBUG] Aucun document trouvé avec l'ID d'empreinte exact.");
+
+            // Méthode B : Recherche de secours par IP seule
+            if (userIp) {
+                console.log("🔄 [DEBUG] Recherche par champ IP dans la collection...");
+                const q = query(
+                    collection(db, "pending_installs"),
+                    where("ip", "==", userIp),
+                    limit(1)
+                );
+                const querySnap = await getDocs(q);
+
+                if (!querySnap.empty) {
+                    const data = querySnap.docs[0].data();
+                    console.log("✅ [DEBUG] Document trouvé par IP :", data);
+                    refId = data.refId || data.sponsorId || data.sponsor_id || data.pending_sponsor_id;
+                } else {
+                    console.log("❌ [DEBUG] Aucun document trouvé avec cette IP.");
+                }
+            }
         }
     } catch (err) {
-        console.error("Erreur lors de la lecture de pending_installs :", err);
+        console.error("❌ Erreur pendant l'interrogation de pending_installs :", err);
     }
 
     // 2. REPLI SUR LOCALSTORAGE OU SAISIE MANUELLE
     if (!refId) {
         refId = localStorage.getItem('pending_referrer') || localStorage.getItem('pending_sponsor_id');
+        if (refId) console.log("ℹ️ [DEBUG] Parrain trouvé dans le localStorage :", refId);
     }
 
     if (!refId) {
@@ -3516,7 +3544,7 @@ window.searchMySponsor = async function() {
         }
     }
 
-    // Aucun parrain trouvé ou saisi
+    // Aucun parrain trouvé
     if (!refId) {
         isSponsorChecked = true;
         verifiedSponsorId = "";
@@ -3531,8 +3559,9 @@ window.searchMySponsor = async function() {
         return;
     }
 
-    // 3. VÉRIFICATION DE L'EXISTENCE DU PARRAIN DANS REWARDS_USERS
+    // 3. VÉRIFICATION DANS REWARDS_USERS
     try {
+        console.log("🔍 [DEBUG] Vérification du parrain ID dans rewards_users :", refId);
         const sponsorSnap = await getDoc(doc(db, "rewards_users", refId));
 
         if (sponsorSnap.exists()) {
@@ -3555,7 +3584,7 @@ window.searchMySponsor = async function() {
             }
         }
     } catch (e) {
-        console.error("Erreur recherche parrain :", e);
+        console.error("❌ Erreur vérification rewards_users :", e);
         if (resultEl) {
             resultEl.style.color = "#ff4444";
             resultEl.innerHTML = `Erreur réseau lors de la recherche.`;
