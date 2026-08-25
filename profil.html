@@ -3469,18 +3469,33 @@ window.searchMySponsor = async function() {
     const resultEl = document.getElementById('sponsor-search-result');
     const btn = document.getElementById('btn-search-sponsor');
 
+    // 1. On force l'affichage de l'animation de recherche
     if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Recherche en cours...';
+    if (resultEl) {
+        resultEl.style.color = "#00ffcc";
+        resultEl.innerHTML = 'Interrogation de la base de données...';
+    }
 
-    // Lecture dans le LocalStorage
-    const refId = localStorage.getItem('pending_referrer') || localStorage.getItem('pending_sponsor_id');
+    // Petit délai visuel de 500ms pour montrer que l'action s'exécute
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // 2. Récupération de l'ID (depuis le localStorage OU depuis un champ texte de secours)
+    let refId = localStorage.getItem('pending_referrer') || localStorage.getItem('pending_sponsor_id');
+
+    // Si pas de lien détecté, on demande de saisir le code manuellement
+    if (!refId) {
+        const manualInput = prompt("Aucun lien détecté dans l'adresse. Entrez ou collez le code d'affiliation de votre parrain :");
+        if (manualInput && manualInput.trim() !== "") {
+            refId = manualInput.trim();
+        }
+    }
 
     if (!refId) {
-        // Recherche faite, mais aucun lien n'était dans le navigateur
         isSponsorChecked = true;
         verifiedSponsorId = "";
         if (resultEl) {
             resultEl.style.color = "#aaa";
-            resultEl.innerHTML = `<i class="fa-solid fa-info-circle"></i> Aucun lien détecté (Inscription sans parrain)`;
+            resultEl.innerHTML = `<i class="fa-solid fa-info-circle"></i> Inscription confirmée sans parrain`;
         }
         if (btn) {
             btn.classList.remove('btn-pulse');
@@ -3490,7 +3505,7 @@ window.searchMySponsor = async function() {
     }
 
     try {
-        // Lecture dans la collection rewards_users
+        // 3. Recherche réelle dans Firebase
         const sponsorSnap = await getDoc(doc(db, "rewards_users", refId));
 
         if (sponsorSnap.exists()) {
@@ -3502,21 +3517,21 @@ window.searchMySponsor = async function() {
 
             if (resultEl) {
                 resultEl.style.color = "#00ffcc";
-                resultEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Parrain trouvé : <strong>${sponsorName}</strong>`;
+                resultEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Parrain confirmé : <strong>${sponsorName}</strong>`;
             }
         } else {
             isSponsorChecked = true;
             verifiedSponsorId = "";
             if (resultEl) {
                 resultEl.style.color = "#ff4444";
-                resultEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Code invalide ou parrain introuvable`;
+                resultEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Code invalide : aucun parrain trouvé`;
             }
         }
     } catch (e) {
         console.error("Erreur recherche parrain :", e);
         if (resultEl) {
             resultEl.style.color = "#ff4444";
-            resultEl.innerHTML = `Erreur de connexion. Réessayez.`;
+            resultEl.innerHTML = `Erreur réseau lors de la recherche.`;
         }
     } finally {
         if (btn) {
