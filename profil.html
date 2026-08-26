@@ -1720,7 +1720,7 @@ body, html {
     // 1. IMPORTS
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     
 
@@ -3465,7 +3465,6 @@ let verifiedSponsorId = "";
 })();
 
 // Action lors du clic sur "Chercher mon parrain"
-// Action lors du clic sur "Chercher mon parrain"
 window.searchMySponsor = async function() {
     const resultEl = document.getElementById('sponsor-search-result');
     const btn = document.getElementById('btn-search-sponsor');
@@ -3492,39 +3491,44 @@ window.searchMySponsor = async function() {
         }
 
         const userAgent = navigator.userAgent || "";
-        const safeFingerprint = (userIp + "_" + userAgent).replace(/[^a-zA-Z0-9]/g, "_").substring(0, 100);
+        
+        // Empreinte encodée en Base64 (identique à Blogger)
+        let base64Fingerprint = "";
+        try {
+            base64Fingerprint = btoa(userIp + "_" + userAgent).replace(/[^a-zA-Z0-9]/g, "").substring(0, 100);
+        } catch(e) {
+            console.warn("Erreur encodage btoa :", e);
+        }
 
         console.log("🔍 [DEBUG] IP détectée :", userIp);
-        console.log("🔍 [DEBUG] Empreinte générée :", safeFingerprint);
+        console.log("🔍 [DEBUG] Empreinte Base64 :", base64Fingerprint);
 
-        // Méthode A : Recherche par ID de document
-        const docRef = doc(db, "pending_installs", safeFingerprint);
-        const installSnap = await getDoc(docRef);
+        // Méthode A : Recherche directe par l'ID encodé en Base64
+        if (base64Fingerprint) {
+            const installSnap = await getDoc(doc(db, "pending_installs", base64Fingerprint));
+            if (installSnap.exists()) {
+                const data = installSnap.data();
+                console.log("✅ [DEBUG] Document trouvé par ID Base64 :", data);
+                refId = data.refId || data.sponsorId;
+            }
+        }
 
-        if (installSnap.exists()) {
-            const data = installSnap.data();
-            console.log("✅ [DEBUG] Document trouvé dans pending_installs :", data);
-            refId = data.refId || data.sponsorId || data.sponsor_id || data.pending_sponsor_id;
-        } else {
-            console.log("❌ [DEBUG] Aucun document trouvé avec l'ID d'empreinte exact.");
+        // Méthode B : Recherche par champ IP (Secours)
+        if (!refId && userIp) {
+            console.log("🔄 [DEBUG] Recherche par champ IP dans la collection...");
+            const q = query(
+                collection(db, "pending_installs"),
+                where("ip", "==", userIp),
+                limit(1)
+            );
+            const querySnap = await getDocs(q);
 
-            // Méthode B : Recherche de secours par IP seule
-            if (userIp) {
-                console.log("🔄 [DEBUG] Recherche par champ IP dans la collection...");
-                const q = query(
-                    collection(db, "pending_installs"),
-                    where("ip", "==", userIp),
-                    limit(1)
-                );
-                const querySnap = await getDocs(q);
-
-                if (!querySnap.empty) {
-                    const data = querySnap.docs[0].data();
-                    console.log("✅ [DEBUG] Document trouvé par IP :", data);
-                    refId = data.refId || data.sponsorId || data.sponsor_id || data.pending_sponsor_id;
-                } else {
-                    console.log("❌ [DEBUG] Aucun document trouvé avec cette IP.");
-                }
+            if (!querySnap.empty) {
+                const data = querySnap.docs[0].data();
+                console.log("✅ [DEBUG] Document trouvé par champ IP :", data);
+                refId = data.refId || data.sponsorId;
+            } else {
+                console.log("❌ [DEBUG] Aucun document trouvé avec cette IP.");
             }
         }
     } catch (err) {
@@ -3559,7 +3563,7 @@ window.searchMySponsor = async function() {
         return;
     }
 
-    // 3. VÉRIFICATION DANS REWARDS_USERS
+    // 3. VÉRIFICATION DE L'EXISTENCE DU PARRAIN DANS REWARDS_USERS
     try {
         console.log("🔍 [DEBUG] Vérification du parrain ID dans rewards_users :", refId);
         const sponsorSnap = await getDoc(doc(db, "rewards_users", refId));
@@ -3596,6 +3600,7 @@ window.searchMySponsor = async function() {
         }
     }
 };
+    
 // ==========================================
 // 2. GÉNÉRATION & COPIE DU LIEN UNIQUE
 // ==========================================
