@@ -4279,6 +4279,9 @@ window.handleAuth = async () => {
                 tasksCompleted: 0,
                 daysActive: 1,
                 pointsDuJour: 0,
+
+                // CHAMP AJOUTÉ POUR L'AFFICHAGE "MEMBRE DEPUIS"
+                createdAt: new Date().toISOString(),
                 
                 // Informations du parrain stockées chez le filleul
                 parrainePar: verifiedSponsorId || "",
@@ -4294,7 +4297,6 @@ window.handleAuth = async () => {
             // B. ENREGISTREMENT DANS LA SOUS-COLLECTION DU PARRAIN (SI UN PARRAIN A ÉTÉ TROUVÉ)
             if (verifiedSponsorId) {
                 try {
-                    // Enregistre le nouveau filleul dans la liste du parrain
                     await setDoc(doc(db, "rewards_users", verifiedSponsorId, "mes_filleuls", newUserId), {
                         filleulId: newUserId,
                         name: newUserName,
@@ -4302,13 +4304,10 @@ window.handleAuth = async () => {
                         createdAt: new Date().toISOString()
                     });
 
-                    // Optionnel : Tentative de mise à jour du compteur sur le doc du parrain
                     await updateDoc(doc(db, "rewards_users", verifiedSponsorId), {
                         invitedCount: increment(1)
                     });
                 } catch (sponsorError) {
-                    // Si les règles Firestore bloquent l'écriture directe sur le document du parrain,
-                    // l'inscription du filleul reste réussie sans faire planter le script.
                     console.warn("⚠️ Note sur l'écriture chez le parrain :", sponsorError.message);
                 }
             }
