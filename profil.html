@@ -3587,14 +3587,19 @@ window.openSponsorModal = async function() {
     
     const modal = document.getElementById('sponsor-info-modal');
     if (!modal) {
-        console.error("Erreur : La modale avec l'ID 'sponsor-info-modal' n'existe pas dans la page.");
+        console.error("Erreur : La modale avec l'ID 'sponsor-info-modal' n'existe pas dans le DOM.");
         return;
     }
 
-    // FORCE L'AFFICHAGE EN DÉPASSANT LE CSS
-    modal.style.setProperty('display', 'flex', 'important');
+    // 🚀 ASTUCE MAGIQUE : Force la modale à se placer à la racine du <body> 
+    // Cela annule instantanément l'effet des balises HTML mal fermées au-dessus !
+    document.body.appendChild(modal);
 
-    // Éléments UI
+    // Force l'affichage et le z-index
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('z-index', '999999', 'important');
+
+    // Récupération des éléments de la modale
     const bannerImg = document.getElementById('sponsor-modal-banner');
     const photoImg = document.getElementById('sponsor-modal-photo');
     const nameEl = document.getElementById('sponsor-modal-name');
@@ -3636,7 +3641,10 @@ window.openSponsorModal = async function() {
                 if (verifiedBadge) verifiedBadge.style.display = data.isVerified ? "inline-block" : "none";
 
                 const sponsorRank = data.rank || 0;
-                const rankMeta = SPONSOR_RANKS_METADATA[sponsorRank] || SPONSOR_RANKS_METADATA[0];
+                const rankMeta = (typeof SPONSOR_RANKS_METADATA !== 'undefined' && SPONSOR_RANKS_METADATA[sponsorRank]) 
+                    ? SPONSOR_RANKS_METADATA[sponsorRank] 
+                    : { medal: 'fa-solid fa-award', color: '#00ff88', name: 'Membre' };
+
                 if (rankEl) {
                     rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> ${rankMeta.name}`;
                 }
@@ -3655,7 +3663,6 @@ window.openSponsorModal = async function() {
             }
         }
 
-        // Si aucun parrain
         if (nameEl) nameEl.textContent = "Aucun parrain";
         if (bioEl) bioEl.textContent = "Vous n'avez pas de parrain actuellement.";
         if (rankEl) rankEl.innerHTML = `<i class="fa-solid fa-user-slash"></i> Aucun`;
