@@ -3492,7 +3492,6 @@ window.searchMySponsor = async function() {
 
         const userAgent = navigator.userAgent || "";
         
-        // Empreinte encodée en Base64 (identique à Blogger)
         let base64Fingerprint = "";
         try {
             base64Fingerprint = btoa(userIp + "_" + userAgent).replace(/[^a-zA-Z0-9]/g, "").substring(0, 100);
@@ -3500,22 +3499,15 @@ window.searchMySponsor = async function() {
             console.warn("Erreur encodage btoa :", e);
         }
 
-        console.log("🔍 [DEBUG] IP détectée :", userIp);
-        console.log("🔍 [DEBUG] Empreinte Base64 :", base64Fingerprint);
-
-        // Méthode A : Recherche directe par l'ID encodé en Base64
         if (base64Fingerprint) {
             const installSnap = await getDoc(doc(db, "pending_installs", base64Fingerprint));
             if (installSnap.exists()) {
                 const data = installSnap.data();
-                console.log("✅ [DEBUG] Document trouvé par ID Base64 :", data);
                 refId = data.refId || data.sponsorId;
             }
         }
 
-        // Méthode B : Recherche par champ IP (Secours)
         if (!refId && userIp) {
-            console.log("🔄 [DEBUG] Recherche par champ IP dans la collection...");
             const q = query(
                 collection(db, "pending_installs"),
                 where("ip", "==", userIp),
@@ -3525,10 +3517,7 @@ window.searchMySponsor = async function() {
 
             if (!querySnap.empty) {
                 const data = querySnap.docs[0].data();
-                console.log("✅ [DEBUG] Document trouvé par champ IP :", data);
                 refId = data.refId || data.sponsorId;
-            } else {
-                console.log("❌ [DEBUG] Aucun document trouvé avec cette IP.");
             }
         }
     } catch (err) {
@@ -3538,7 +3527,6 @@ window.searchMySponsor = async function() {
     // 2. REPLI SUR LOCALSTORAGE OU SAISIE MANUELLE
     if (!refId) {
         refId = localStorage.getItem('pending_referrer') || localStorage.getItem('pending_sponsor_id');
-        if (refId) console.log("ℹ️ [DEBUG] Parrain trouvé dans le localStorage :", refId);
     }
 
     if (!refId) {
@@ -3565,7 +3553,6 @@ window.searchMySponsor = async function() {
 
     // 3. VÉRIFICATION DE L'EXISTENCE DU PARRAIN DANS REWARDS_USERS
     try {
-        console.log("🔍 [DEBUG] Vérification du parrain ID dans rewards_users :", refId);
         const sponsorSnap = await getDoc(doc(db, "rewards_users", refId));
 
         if (sponsorSnap.exists()) {
@@ -3573,7 +3560,7 @@ window.searchMySponsor = async function() {
             const sponsorName = data.name || "Membre Utilisateur";
 
             isSponsorChecked = true;
-            verifiedSponsorId = refId;
+            verifiedSponsorId = refId; // Stocke l'ID globalement
 
             if (resultEl) {
                 resultEl.style.color = "#00ffcc";
@@ -4143,14 +4130,15 @@ window.handleAuth = async () => {
                 if (err) { err.style.display = 'block'; err.innerText = "Date de naissance obligatoire."; }
                 return;
             }
-            // 2. VÉRIFICATION OBLIGATOIRE DU PARRAIN
-    if (!isSponsorChecked) {
-        if (err) { 
-            err.style.display = 'block'; 
-            err.innerText = "La recherche du parrain est obligatoire ! Veuillez cliquer sur le bouton 'Chercher mon parrain' pour continuer."; 
-        }
-        return;
-    }
+            
+            // 1. VÉRIFICATION OBLIGATOIRE DU PARRAIN
+            if (!isSponsorChecked) {
+                if (err) { 
+                    err.style.display = 'block'; 
+                    err.innerText = "La recherche du parrain est obligatoire ! Veuillez cliquer sur le bouton 'Chercher mon parrain' pour continuer."; 
+                }
+                return;
+            }
 
             const birthDate = new Date(birthdateValue);
             const today = new Date();
@@ -4178,39 +4166,63 @@ window.handleAuth = async () => {
                 return;
             }
 
-            const referrerId = localStorage.getItem('pending_referrer') || "";
+            // CRÉATION DU COMPTE FIREBASE AUTH
             const cred = await createUserWithEmailAndPassword(auth, email, pass);
-            
-// Enregistrement dans rewards_users avec le parrain vérifié
-    await setDoc(doc(db, "rewards_users", cred.user.uid), { 
-        name: email.split('@')[0], 
-        bio: "Créateur de contenu • Passionné • Partageur",
-        linkTitle: "",
-        linkUrl: "",
-        coins: 0, 
-        birthdate: birthdateValue,
-        age: age,
-        rank: 0,
-        invitedCount: 0,
-        tasksCompleted: 0,
-        daysActive: 1,
-        pointsDuJour: 0,
-        
-        // Champs Parrainage (Harmonisés)
-        parrainePar: verifiedSponsorId,
-        sponsorId: verifiedSponsorId,
-        statutParrainage: verifiedSponsorId ? "valide" : "aucun",
+            const newUserId = cred.user.uid;
+            const newUserName = email.split('@')[0];
 
-        photoURL: "", 
-        bannerURL: "",
-        deviceFingerprint: phoneFingerprint,
-        history: { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 }
-    });
+            // A. ENREGISTREMENT DU FILLEUL (Son propre document)
+            await setDoc(doc(db, "rewards_users", newUserId), { 
+                name: newUserName, 
+                bio: "Créateur de contenu • Passionné • Partageur",
+                linkTitle: "",
+                linkUrl: "",
+                coins: 0, 
+                birthdate: birthdateValue,
+                age: age,
+                rank: 0,
+                invitedCount: 0,
+                tasksCompleted: 0,
+                daysActive: 1,
+                pointsDuJour: 0,
+                
+                // Informations du parrain stockées chez le filleul
+                parrainePar: verifiedSponsorId || "",
+                sponsorId: verifiedSponsorId || "",
+                statutParrainage: verifiedSponsorId ? "valide" : "aucun",
 
-    localStorage.setItem('account_created_on_device', 'true');
-    localStorage.removeItem('pending_referrer');
-    localStorage.removeItem('pending_sponsor_id');
-}
+                photoURL: "", 
+                bannerURL: "",
+                deviceFingerprint: phoneFingerprint,
+                history: { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 }
+            });
+
+            // B. ENREGISTREMENT DANS LA SOUS-COLLECTION DU PARRAIN (SI UN PARRAIN A ÉTÉ TROUVÉ)
+            if (verifiedSponsorId) {
+                try {
+                    // Enregistre le nouveau filleul dans la liste du parrain
+                    await setDoc(doc(db, "rewards_users", verifiedSponsorId, "mes_filleuls", newUserId), {
+                        filleulId: newUserId,
+                        name: newUserName,
+                        email: email,
+                        createdAt: new Date().toISOString()
+                    });
+
+                    // Optionnel : Tentative de mise à jour du compteur sur le doc du parrain
+                    await updateDoc(doc(db, "rewards_users", verifiedSponsorId), {
+                        invitedCount: increment(1)
+                    });
+                } catch (sponsorError) {
+                    // Si les règles Firestore bloquent l'écriture directe sur le document du parrain,
+                    // l'inscription du filleul reste réussie sans faire planter le script.
+                    console.warn("⚠️ Note sur l'écriture chez le parrain :", sponsorError.message);
+                }
+            }
+
+            localStorage.setItem('account_created_on_device', 'true');
+            localStorage.removeItem('pending_referrer');
+            localStorage.removeItem('pending_sponsor_id');
+        }
     } catch (e) { 
         if (err) { err.style.display = 'block'; err.innerText = "Erreur d'authentification : " + e.message; }
     }
