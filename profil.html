@@ -1358,7 +1358,7 @@ body, html {
             </button>
             
             <!-- Bouton Mon Parrain -->
-            <button class="btn-share-act btn-sponsor-color" onclick="openSponsorModal()">
+            <button class="btn-share-act btn-sponsor-color" onclick="openSponsorModal(event)">
                 <i class="fa-solid fa-user-shield"></i> Mon Parrain
             </button>
         </div>
@@ -3582,8 +3582,13 @@ function setButtonToCopyState() {
 // 3. CHARGEMENT DE LA BANNIÈRE DU PARRAIN (DANS LA MODALE)
 // ==========================================
 
-window.openSponsorModal = async function() {
-    console.log("--> Clic détecté sur openSponsorModal");
+window.openSponsorModal = async function(event) {
+    // 1. Empêche le clic de se propager et de fermer la modale aussitôt
+    if (event && event.stopPropagation) {
+        event.stopPropagation();
+    }
+
+    console.log("--> Ouverture forcée de la modale parrain...");
     
     const modal = document.getElementById('sponsor-info-modal');
     if (!modal) {
@@ -3591,15 +3596,27 @@ window.openSponsorModal = async function() {
         return;
     }
 
-    // 🚀 ASTUCE MAGIQUE : Force la modale à se placer à la racine du <body> 
-    // Cela annule instantanément l'effet des balises HTML mal fermées au-dessus !
+    // 2. Téléporte la modale à la racine du <body> (Sort de tout conteneur bloquant)
     document.body.appendChild(modal);
 
-    // Force l'affichage et le z-index
+    // 3. FORCE EXACTEMENT LES MÊMES STYLES QUE LE SCRIPT DE TEST QUI A MARCHÉ
     modal.style.setProperty('display', 'flex', 'important');
-    modal.style.setProperty('z-index', '999999', 'important');
+    modal.style.setProperty('position', 'fixed', 'important');
+    modal.style.setProperty('top', '0', 'important');
+    modal.style.setProperty('left', '0', 'important');
+    modal.style.setProperty('width', '100vw', 'important');
+    modal.style.setProperty('height', '100vh', 'important');
+    modal.style.setProperty('background', 'rgba(0, 0, 0, 0.85)', 'important');
+    modal.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
+    modal.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
+    modal.style.setProperty('justify-content', 'center', 'important');
+    modal.style.setProperty('align-items', 'center', 'important');
+    modal.style.setProperty('z-index', '99999999', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+    modal.style.setProperty('transform', 'none', 'important');
 
-    // Récupération des éléments de la modale
+    // Éléments de la modale
     const bannerImg = document.getElementById('sponsor-modal-banner');
     const photoImg = document.getElementById('sponsor-modal-photo');
     const nameEl = document.getElementById('sponsor-modal-name');
@@ -3613,6 +3630,7 @@ window.openSponsorModal = async function() {
 
     if (nameEl) nameEl.textContent = "Chargement...";
 
+    // Récupération des données Firebase
     try {
         if (typeof auth === 'undefined' || !auth.currentUser) {
             if (nameEl) nameEl.textContent = "Non connecté";
