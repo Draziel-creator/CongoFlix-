@@ -3581,115 +3581,161 @@ function setButtonToCopyState() {
 // ==========================================
 // 3. CHARGEMENT DE LA BANNIÈRE DU PARRAIN (DANS LA MODALE)
 // ==========================================
-window.openSponsorModal = async () => {
+window.openSponsorModal = async function(event) {
+    if (event && event.stopPropagation) event.stopPropagation();
+
+    const modal = document.getElementById('sponsor-info-modal');
+    if (!modal) {
+        console.error("Erreur : La modale avec l'ID 'sponsor-info-modal' est introuvable.");
+        return;
+    }
+
+    // 1. Téléportation CSS et affichage au premier plan
+    document.body.appendChild(modal);
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('position', 'fixed', 'important');
+    modal.style.setProperty('top', '0', 'important');
+    modal.style.setProperty('left', '0', 'important');
+    modal.style.setProperty('width', '100vw', 'important');
+    modal.style.setProperty('height', '100vh', 'important');
+    modal.style.setProperty('background', 'rgba(0, 0, 0, 0.85)', 'important');
+    modal.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
+    modal.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
+    modal.style.setProperty('justify-content', 'center', 'important');
+    modal.style.setProperty('align-items', 'center', 'important');
+    modal.style.setProperty('z-index', '99999999', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+
+    // Éléments HTML de la modale
+    const bannerImg = document.getElementById('sponsor-modal-banner');
+    const photoImg = document.getElementById('sponsor-modal-photo');
+    const nameEl = document.getElementById('sponsor-modal-name');
+    const rankEl = document.getElementById('sponsor-modal-rank');
+    const bioEl = document.getElementById('sponsor-modal-bio');
+    const dateEl = document.getElementById('sponsor-modal-date');
+    const verifiedBadge = document.getElementById('sponsor-modal-verified');
+    const linkContainer = document.getElementById('sponsor-modal-link-container');
+    const linkEl = document.getElementById('sponsor-modal-link');
+    const referralsEl = document.getElementById('sponsor-modal-referrals');
+
+    if (nameEl) nameEl.textContent = "Chargement...";
+    if (bioEl) bioEl.textContent = "Recherche des informations du parrain...";
+
     try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-            alert("Vous devez être connecté pour afficher votre parrain.");
+        if (typeof auth === 'undefined' || !auth.currentUser) {
+            if (nameEl) nameEl.textContent = "Non connecté";
+            if (bioEl) bioEl.textContent = "Veuillez vous connecter pour voir votre parrain.";
             return;
         }
 
-        // 1. Va chercher le champ 'sponsorId' dans 'rewards_users' pour l'utilisateur connecté
-        const userDocRef = doc(db, "rewards_users", currentUser.uid);
-        let userSnap = await getDoc(userDocRef);
+        const uid = auth.currentUser.uid;
 
-        // Fallback sur la collection 'users' si non trouvé dans rewards_users
-        if (!userSnap.exists()) {
-            userSnap = await getDoc(doc(db, "users", currentUser.uid));
-        }
-
-        if (!userSnap.exists()) {
-            alert("Impossible de charger votre profil utilisateur.");
+        // 2. Lecture du document de l'utilisateur dans rewards_users pour lire 'parrainePar'
+        const myRewardsSnap = await getDoc(doc(db, "rewards_users", uid));
+        if (!myRewardsSnap.exists()) {
+            if (nameEl) nameEl.textContent = "Profil introuvable";
             return;
         }
 
-        const userData = userSnap.data();
-        // Récupère l'ID du parrain depuis le champ sponsorId (ou invitedBy)
-        const sponsorId = userData.sponsorId || userData.invitedBy;
+        const myData = myRewardsSnap.data();
+        const sponsorId = myData.parrainePar || myData.sponsorId || myData.sponsor;
 
-        if (!sponsorId) {
-            alert("Vous n'avez aucun parrain enregistré.");
+        if (!sponsorId || sponsorId.trim() === "") {
+            if (nameEl) nameEl.textContent = "Aucun parrain";
+            if (bioEl) bioEl.textContent = "Vous n'avez pas encore de parrain attribué.";
+            if (rankEl) rankEl.innerHTML = `<i class="fa-solid fa-user-slash"></i> Aucun`;
+            if (linkContainer) linkContainer.style.display = "none";
             return;
         }
 
-        // 2. Récupère les informations du parrain dans Firebase
-        const sponsorIdStr = String(sponsorId).trim();
-        let sponsorSnap = await getDoc(doc(db, "users", sponsorIdStr));
+        const cleanSponsorId = String(sponsorId).trim();
 
-        if (!sponsorSnap.exists()) {
-            sponsorSnap = await getDoc(doc(db, "rewards_users", sponsorIdStr));
-        }
+        // 3. Récupération parallèle : Infos Profil dans 'rewards_users' et Rang dans 'users'
+        const [sponsorRewardsSnap, sponsorUsersSnap] = await Promise.all([
+            getDoc(doc(db, "rewards_users", cleanSponsorId)),
+            getDoc(doc(db, "users", cleanSponsorId))
+        ]);
 
-        if (!sponsorSnap.exists()) {
-            alert("Les informations de votre parrain n'ont pas été trouvées.");
+        if (!sponsorRewardsSnap.exists()) {
+            if (nameEl) nameEl.textContent = "Parrain introuvable";
+            if (bioEl) bioEl.textContent = "Les données du parrain n'existent pas.";
             return;
         }
 
-        const d = sponsorSnap.data();
+        const rData = sponsorRewardsSnap.data();
+        const uData = sponsorUsersSnap.exists() ? sponsorUsersSnap.data() : {};
 
-        // 3. Injection des données dans la modale
-        document.getElementById('sponsor-modal-name').innerText = d.name || "Parrain";
-        document.getElementById('sponsor-modal-bio').innerText = d.bio || "Parrain officiel sur la plateforme.";
+        // 4. Injection des données principales (rewards_users)
+        if (nameEl) nameEl.textContent = rData.name || "Membre Parrain";
+        if (bioEl) bioEl.textContent = rData.bio || "Ce membre n'a pas rédigé de bio.";
 
-        if (d.photoURL) document.getElementById('sponsor-modal-photo').src = d.photoURL;
-        if (d.bannerURL) document.getElementById('sponsor-modal-banner').src = d.bannerURL;
-
-        // Rang & Badge
-        const userRank = d.rank !== undefined ? d.rank : 0;
-        const verifiedBadge = document.getElementById('sponsor-modal-verified');
-        const rankBadgePill = document.getElementById('sponsor-modal-rank');
-
-        if (verifiedBadge) verifiedBadge.style.display = userRank > 0 ? "inline-block" : "none";
-        if (rankBadgePill) {
-            const rankLabel = userRank > 0 ? 'Bronze' : 'Débutant';
-            rankBadgePill.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Rang ${userRank} : ${rankLabel}`;
+        // Images avec gestion des chaînes vides ("")
+        if (bannerImg) {
+            bannerImg.src = (rData.bannerURL && rData.bannerURL !== "")
+                ? rData.bannerURL
+                : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600";
+        }
+        if (photoImg) {
+            photoImg.src = (rData.photoURL && rData.photoURL !== "")
+                ? rData.photoURL
+                : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
         }
 
-        // Lien personnalisé
-        const linkContainer = document.getElementById('sponsor-modal-link-container');
-        const linkAnchor = document.getElementById('sponsor-modal-link');
-
-        if (linkContainer && linkAnchor) {
-            if (d.linkTitle && d.linkUrl) {
-                linkAnchor.innerText = d.linkTitle;
-                const formattedUrl = d.linkUrl.startsWith('http') ? d.linkUrl : `https://${d.linkUrl}`;
-                linkAnchor.href = formattedUrl;
-                linkContainer.style.display = 'flex';
-            } else {
-                linkContainer.style.display = 'none';
-            }
+        // Compteur de filleuls
+        if (referralsEl) {
+            referralsEl.textContent = rData.invitedCount !== undefined ? rData.invitedCount : "0";
         }
 
-        // Date d'inscription
-        const dateEl = document.getElementById('sponsor-modal-date');
+        // Date d'activité ou de création
         if (dateEl) {
-            if (d.createdAt) {
-                const dateObj = new Date(d.createdAt);
-                const dateFormatted = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-                dateEl.innerText = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
+            dateEl.textContent = rData.lastActiveDate || "Membre actif";
+        }
+
+        // Lien personnalisé (linkTitle & linkUrl dans rewards_users)
+        if (linkContainer && linkEl) {
+            if (rData.linkUrl && rData.linkUrl !== "") {
+                const formattedUrl = rData.linkUrl.startsWith('http') ? rData.linkUrl : `https://${rData.linkUrl}`;
+                linkEl.href = formattedUrl;
+                linkEl.textContent = rData.linkTitle || "Visiter le site";
+                linkContainer.style.display = "flex";
             } else {
-                dateEl.innerText = "Non spécifiée";
+                linkContainer.style.display = "none";
             }
         }
 
-        // Compteur de parrainages
-        const referralsEl = document.getElementById('sponsor-modal-referrals');
-        if (referralsEl) referralsEl.innerText = d.invitedCount || 0;
+        // 5. Injection du Rang (uniquement depuis la collection 'users')
+        const sponsorRank = uData.rank !== undefined ? uData.rank : (uData.rang !== undefined ? uData.rang : 0);
 
-        // 4. Ouverture de la modale
-        const modal = document.getElementById('sponsor-info-modal');
-        if (modal) modal.style.display = 'flex';
+        if (verifiedBadge) {
+            verifiedBadge.style.display = sponsorRank > 0 ? "inline-block" : "none";
+        }
 
-    } catch (error) {
-        console.error("Erreur lors de l'ouverture de la modale parrain :", error);
+        if (rankEl) {
+            if (typeof SPONSOR_RANKS_METADATA !== 'undefined' && SPONSOR_RANKS_METADATA[sponsorRank]) {
+                const meta = SPONSOR_RANKS_METADATA[sponsorRank];
+                rankEl.innerHTML = `<i class="${meta.medal}" style="color:${meta.color};"></i> ${meta.name}`;
+            } else {
+                const rankLabel = sponsorRank > 0 ? 'Bronze' : 'Débutant';
+                rankEl.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Rang ${sponsorRank} : ${rankLabel}`;
+            }
+        }
+
+    } catch (e) {
+        console.error("Erreur lors du chargement du parrain :", e);
+        if (nameEl) nameEl.textContent = "Erreur de chargement";
+        if (bioEl) bioEl.textContent = "Une erreur est survenue lors du chargement des données.";
     }
 };
 
-window.closeSponsorModal = () => {
+window.closeSponsorModal = function() {
     const modal = document.getElementById('sponsor-info-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
+    }
 };
-// Fermeture si clic en dehors de la carte
+
+// Fermeture au clic à l'extérieur
 window.addEventListener('click', (event) => {
     const modal = document.getElementById('sponsor-info-modal');
     if (event.target === modal) {
