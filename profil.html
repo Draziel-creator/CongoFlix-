@@ -3581,25 +3581,17 @@ function setButtonToCopyState() {
 // ==========================================
 // 3. CHARGEMENT DE LA BANNIÈRE DU PARRAIN (DANS LA MODALE)
 // ==========================================
-
 window.openSponsorModal = async function(event) {
-    // 1. Empêche le clic de se propager et de fermer la modale aussitôt
-    if (event && event.stopPropagation) {
-        event.stopPropagation();
-    }
+    if (event && event.stopPropagation) event.stopPropagation();
 
-    console.log("--> Ouverture forcée de la modale parrain...");
-    
     const modal = document.getElementById('sponsor-info-modal');
     if (!modal) {
-        console.error("Erreur : La modale avec l'ID 'sponsor-info-modal' n'existe pas dans le DOM.");
+        console.error("Erreur : La modale avec l'ID 'sponsor-info-modal' est introuvable.");
         return;
     }
 
-    // 2. Téléporte la modale à la racine du <body> (Sort de tout conteneur bloquant)
+    // 1. Force la téléportation et l'affichage de la modale en premier plan
     document.body.appendChild(modal);
-
-    // 3. FORCE EXACTEMENT LES MÊMES STYLES QUE LE SCRIPT DE TEST QUI A MARCHÉ
     modal.style.setProperty('display', 'flex', 'important');
     modal.style.setProperty('position', 'fixed', 'important');
     modal.style.setProperty('top', '0', 'important');
@@ -3614,9 +3606,8 @@ window.openSponsorModal = async function(event) {
     modal.style.setProperty('z-index', '99999999', 'important');
     modal.style.setProperty('opacity', '1', 'important');
     modal.style.setProperty('visibility', 'visible', 'important');
-    modal.style.setProperty('transform', 'none', 'important');
 
-    // Éléments de la modale
+    // Récupération des éléments de la modale
     const bannerImg = document.getElementById('sponsor-modal-banner');
     const photoImg = document.getElementById('sponsor-modal-photo');
     const nameEl = document.getElementById('sponsor-modal-name');
@@ -3628,66 +3619,93 @@ window.openSponsorModal = async function(event) {
     const linkEl = document.getElementById('sponsor-modal-link');
     const referralsEl = document.getElementById('sponsor-modal-referrals');
 
+    // État de chargement initial
     if (nameEl) nameEl.textContent = "Chargement...";
+    if (bioEl) bioEl.textContent = "Recherche des informations du parrain...";
 
-    // Récupération des données Firebase
     try {
         if (typeof auth === 'undefined' || !auth.currentUser) {
             if (nameEl) nameEl.textContent = "Non connecté";
+            if (bioEl) bioEl.textContent = "Veuillez vous connecter pour voir votre parrain.";
             return;
         }
 
-        const myRef = doc(db, "users", auth.currentUser.uid);
+        // 2. Lecture du document de l'utilisateur actuel dans rewards_users
+        const myRef = doc(db, "rewards_users", auth.currentUser.uid);
         const mySnap = await getDoc(myRef);
 
-        if (mySnap.exists() && mySnap.data().sponsorId) {
-            const sponsorId = mySnap.data().sponsorId;
-            const sponsorRef = doc(db, "users", sponsorId);
-            const sponsorSnap = await getDoc(sponsorRef);
+        if (mySnap.exists()) {
+            const myData = mySnap.data();
+            // Détection de l'ID du parrain (sponsorId ou parrainId)
+            const sponsorId = myData.sponsorId || myData.parrainId || myData.sponsor;
 
-            if (sponsorSnap.exists()) {
-                const data = sponsorSnap.data();
+            if (sponsorId) {
+                // 3. Lecture du document du parrain dans rewards_users
+                const sponsorRef = doc(db, "rewards_users", sponsorId);
+                const sponsorSnap = await getDoc(sponsorRef);
 
-                if (data.bannerURL && bannerImg) bannerImg.src = data.bannerURL;
-                if (data.photoURL && photoImg) photoImg.src = data.photoURL;
-                
-                if (nameEl) nameEl.textContent = data.username || data.displayName || "Membre Parrain";
-                if (bioEl) bioEl.textContent = data.bio || "Membre actif sur la plateforme.";
-                if (dateEl) dateEl.textContent = data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Inconnue";
-                if (referralsEl) referralsEl.textContent = data.referralsCount || "0";
+                if (sponsorSnap.exists()) {
+                    const data = sponsorSnap.data();
 
-                if (verifiedBadge) verifiedBadge.style.display = data.isVerified ? "inline-block" : "none";
+                    // Remplissage des photos/bannières
+                    if (data.bannerURL && bannerImg) bannerImg.src = data.bannerURL;
+                    if (data.photoURL && photoImg) photoImg.src = data.photoURL;
 
-                const sponsorRank = data.rank || 0;
-                const rankMeta = (typeof SPONSOR_RANKS_METADATA !== 'undefined' && SPONSOR_RANKS_METADATA[sponsorRank]) 
-                    ? SPONSOR_RANKS_METADATA[sponsorRank] 
-                    : { medal: 'fa-solid fa-award', color: '#00ff88', name: 'Membre' };
+                    // Remplissage du Nom et de la Bio
+                    if (nameEl) nameEl.textContent = data.name || data.displayName || data.username || "Membre Parrain";
+                    if (bioEl) bioEl.textContent = data.bio || "Ce membre n'a pas encore rédigé de bio.";
 
-                if (rankEl) {
-                    rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> ${rankMeta.name}`;
-                }
+                    // Remplissage des Métriques (Date, Références)
+                    if (dateEl) {
+                        if (data.createdAt) {
+                            const dateObj = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+                            dateEl.textContent = dateObj.toLocaleDateString();
+                        } else {
+                            dateEl.textContent = "Membre actif";
+                        }
+                    }
+                    if (referralsEl) referralsEl.textContent = data.referralsCount || data.parrains || "0";
 
-                if (linkContainer && linkEl) {
-                    const customUrl = data.customLink || data.website || data.userLink;
-                    if (customUrl) {
-                        linkEl.href = customUrl.startsWith('http') ? customUrl : `https://${customUrl}`;
-                        linkEl.textContent = data.customLinkLabel || "Visiter le site";
+                    // Badge vérifié
+                    if (verifiedBadge) verifiedBadge.style.display = data.isVerified ? "inline-block" : "none";
+
+                    // Rang / Médaille
+                    const sponsorRank = data.rank || 0;
+                    const rankMeta = (typeof SPONSOR_RANKS_METADATA !== 'undefined' && SPONSOR_RANKS_METADATA[sponsorRank])
+                        ? SPONSOR_RANKS_METADATA[sponsorRank]
+                        : { medal: 'fa-solid fa-award', color: '#00ff88', name: 'Membre' };
+
+                    if (rankEl) {
+                        rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> ${rankMeta.name}`;
+                    }
+
+                    // Gestion du Lien Personnalisé (linkTitle & linkUrl)
+                    const lTitle = data.linkTitle || data.customLinkLabel;
+                    const lUrl = data.linkUrl || data.customLink || data.website;
+
+                    if (linkContainer && linkEl && lUrl) {
+                        linkEl.href = lUrl.startsWith('http') ? lUrl : `https://${lUrl}`;
+                        linkEl.textContent = lTitle || "Visiter le site";
                         linkContainer.style.display = "flex";
-                    } else {
+                    } else if (linkContainer) {
                         linkContainer.style.display = "none";
                     }
+
+                    return; // Succès, on s'arrête ici
                 }
-                return;
             }
         }
 
+        // Si l'utilisateur n'a pas de parrain dans son document
         if (nameEl) nameEl.textContent = "Aucun parrain";
-        if (bioEl) bioEl.textContent = "Vous n'avez pas de parrain actuellement.";
+        if (bioEl) bioEl.textContent = "Vous n'avez pas encore attribué de parrain à votre compte.";
         if (rankEl) rankEl.innerHTML = `<i class="fa-solid fa-user-slash"></i> Aucun`;
+        if (linkContainer) linkContainer.style.display = "none";
 
     } catch (e) {
-        console.error("Erreur chargement parrain :", e);
+        console.error("Erreur lors de la récupération du parrain :", e);
         if (nameEl) nameEl.textContent = "Erreur de chargement";
+        if (bioEl) bioEl.textContent = "Impossible de charger les données du parrain.";
     }
 };
 
@@ -3697,6 +3715,14 @@ window.closeSponsorModal = function() {
         modal.style.setProperty('display', 'none', 'important');
     }
 };
+
+// Fermeture si clic en dehors de la carte
+window.addEventListener('click', (event) => {
+    const modal = document.getElementById('sponsor-info-modal');
+    if (event.target === modal) {
+        window.closeSponsorModal();
+    }
+});
     
 // ==========================================
 // 4. VERSEMENT DU BONUS 10% SUR LA PAGE ACTIVITÉ
