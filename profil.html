@@ -3590,7 +3590,7 @@ window.openSponsorModal = async function(event) {
         return;
     }
 
-    // 1. Positionnement et affichage prioritaire
+    // 1. Force l'affichage et la priorité d'affichage
     document.body.appendChild(modal);
     modal.style.setProperty('display', 'flex', 'important');
     modal.style.setProperty('position', 'fixed', 'important');
@@ -3607,7 +3607,19 @@ window.openSponsorModal = async function(event) {
     modal.style.setProperty('opacity', '1', 'important');
     modal.style.setProperty('visibility', 'visible', 'important');
 
-    // Récupération des éléments DOM
+    // Déblocage explicite du bouton de fermeture (X)
+    const closeBtn = modal.querySelector('.close-modal, .btn-close, .modal-close, [onclick*="closeSponsorModal"]');
+    if (closeBtn) {
+        closeBtn.style.setProperty('z-index', '100000000', 'important');
+        closeBtn.style.setProperty('pointer-events', 'auto', 'important');
+        closeBtn.style.setProperty('cursor', 'pointer', 'important');
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.closeSponsorModal();
+        };
+    }
+
+    // Éléments HTML
     const bannerImg = document.getElementById('sponsor-modal-banner');
     const photoImg = document.getElementById('sponsor-modal-photo');
     const nameEl = document.getElementById('sponsor-modal-name');
@@ -3631,7 +3643,7 @@ window.openSponsorModal = async function(event) {
 
         const uid = auth.currentUser.uid;
 
-        // 2. Recherche du parrain dans le profil de l'utilisateur connecté
+        // 2. Recherche du parrain dans le document du filleul
         const myRewardsSnap = await getDoc(doc(db, "rewards_users", uid));
         if (!myRewardsSnap.exists()) {
             if (nameEl) nameEl.textContent = "Profil introuvable";
@@ -3651,7 +3663,7 @@ window.openSponsorModal = async function(event) {
 
         const cleanSponsorId = String(sponsorId).trim();
 
-        // 3. Récupération parallèle des collections du parrain
+        // 3. Récupération parallèle dans rewards_users ET users
         const [sponsorRewardsSnap, sponsorUsersSnap] = await Promise.all([
             getDoc(doc(db, "rewards_users", cleanSponsorId)),
             getDoc(doc(db, "users", cleanSponsorId))
@@ -3666,11 +3678,11 @@ window.openSponsorModal = async function(event) {
         const rData = sponsorRewardsSnap.exists() ? sponsorRewardsSnap.data() : {};
         const uData = sponsorUsersSnap.exists() ? sponsorUsersSnap.data() : {};
 
-        // 4. Injection des données principales (Profil & Bio)
+        // 4. Injection Nom et Bio
         if (nameEl) nameEl.textContent = rData.name || uData.name || uData.displayName || "Membre Parrain";
         if (bioEl) bioEl.textContent = rData.bio || uData.bio || "Ce membre n'a pas rédigé de bio.";
 
-        // Photo de profil (cherche dans users puis rewards_users)
+        // Photos (avec Fallbacks si vides)
         const userPhoto = uData.photoURL || uData.photo || rData.photoURL || rData.photo;
         if (photoImg) {
             photoImg.src = (userPhoto && userPhoto.trim() !== "")
@@ -3678,7 +3690,6 @@ window.openSponsorModal = async function(event) {
                 : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
         }
 
-        // Bannière
         const userBanner = rData.bannerURL || uData.bannerURL;
         if (bannerImg) {
             bannerImg.src = (userBanner && userBanner.trim() !== "")
@@ -3686,24 +3697,29 @@ window.openSponsorModal = async function(event) {
                 : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600";
         }
 
-        // Nombre de filleuls parrainés
+        // Vraie valeur dynamique de invitedCount (Image 1 : invitedCount: 1)
         if (referralsEl) {
-            referralsEl.textContent = rData.invitedCount !== undefined ? rData.invitedCount : (uData.invitedCount || "0");
+            const count = rData.invitedCount !== undefined ? rData.invitedCount : (uData.invitedCount !== undefined ? uData.invitedCount : 0);
+            referralsEl.textContent = count;
         }
 
-        // Formatage de la Date ("Membre depuis : Mois Année")
+        // Date 100% dynamique (Lit createdAt, dateJoined ou lastActiveDate)
         if (dateEl) {
-            const rawDate = rData.createdAt || uData.createdAt || rData.dateJoined || uData.dateJoined;
+            const rawDate = rData.createdAt || uData.createdAt || rData.dateJoined || uData.dateJoined || rData.lastActiveDate;
             if (rawDate) {
                 const dateObj = rawDate.toDate ? rawDate.toDate() : new Date(rawDate);
-                const formatted = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-                dateEl.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+                if (!isNaN(dateObj.getTime())) {
+                    const formatted = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                    dateEl.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+                } else {
+                    dateEl.textContent = "Actif récemment";
+                }
             } else {
-                dateEl.textContent = "Juillet 2026";
+                dateEl.textContent = "Membre actif";
             }
         }
 
-        // 5. Affichage du Rang conforme à l'image 2 ("Rang X : Nom")
+        // 5. Affichage du Rang ("Rang 1 : Bronze")
         const sponsorRank = uData.rank !== undefined ? Number(uData.rank) : (uData.rang !== undefined ? Number(uData.rang) : 0);
 
         if (verifiedBadge) {
@@ -3722,11 +3738,10 @@ window.openSponsorModal = async function(event) {
                 medalColor = meta.color;
             }
 
-            // Affiche explicitement "Rang X : Nom"
             rankEl.innerHTML = `<i class="${medalIcon}" style="color:${medalColor};"></i> Rang ${sponsorRank} : ${rankName}`;
         }
 
-        // 6. Gestion du lien cliquable
+        // 6. Lien Personnalisé
         const lTitle = rData.linkTitle || uData.linkTitle || "mon lien site";
         const lUrl = rData.linkUrl || uData.linkUrl;
 
@@ -3737,7 +3752,6 @@ window.openSponsorModal = async function(event) {
             linkEl.setAttribute('target', '_blank');
             linkEl.setAttribute('rel', 'noopener noreferrer');
             
-            // Garantit que le clic n'est pas bloqué par un z-index ou overlay CSS
             linkEl.style.pointerEvents = 'auto';
             linkContainer.style.pointerEvents = 'auto';
             linkContainer.style.display = "flex";
@@ -3752,6 +3766,7 @@ window.openSponsorModal = async function(event) {
     }
 };
 
+// Fonction de fermeture explicite
 window.closeSponsorModal = function() {
     const modal = document.getElementById('sponsor-info-modal');
     if (modal) {
@@ -3759,6 +3774,7 @@ window.closeSponsorModal = function() {
     }
 };
 
+// Fermeture au clic en dehors de la carte
 window.addEventListener('click', (event) => {
     const modal = document.getElementById('sponsor-info-modal');
     if (event.target === modal) {
@@ -4480,9 +4496,9 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="modal-card" style="max-width: 480px; width: 90%; padding: 0; overflow: hidden; border-radius: 20px; position: relative; background: #121212;">
         
         <!-- BOUTON FERMER -->
-        <div class="modal-header" style="position: absolute; top: 10px; right: 10px; z-index: 20;">
-            <button class="btn-close-modal" onclick="closeSponsorModal()" style="background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer;">&times;</button>
-        </div>
+<div class="modal-header" style="position: absolute; top: 12px; right: 12px; z-index: 9999; pointer-events: auto;">
+    <button class="btn-close-modal" onclick="closeSponsorModal()" style="background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; pointer-events: auto;">&times;</button>
+</div>
         
         <div class="profile-banner-wrapper" style="margin: 0; position: relative;">
             <!-- BANNIÈRE PARRAIN -->
