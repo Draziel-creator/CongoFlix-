@@ -3581,141 +3581,99 @@ function setButtonToCopyState() {
 // ==========================================
 // 3. CHARGEMENT DE LA BANNIÈRE DU PARRAIN (DANS LA MODALE)
 // ==========================================
-window.openSponsorModal = async function(event) {
-    if (event && event.stopPropagation) event.stopPropagation();
-
-    const modal = document.getElementById('sponsor-info-modal');
-    if (!modal) {
-        console.error("Erreur : La modale avec l'ID 'sponsor-info-modal' est introuvable.");
-        return;
-    }
-
-    // 1. Force la téléportation et l'affichage de la modale en premier plan
-    document.body.appendChild(modal);
-    modal.style.setProperty('display', 'flex', 'important');
-    modal.style.setProperty('position', 'fixed', 'important');
-    modal.style.setProperty('top', '0', 'important');
-    modal.style.setProperty('left', '0', 'important');
-    modal.style.setProperty('width', '100vw', 'important');
-    modal.style.setProperty('height', '100vh', 'important');
-    modal.style.setProperty('background', 'rgba(0, 0, 0, 0.85)', 'important');
-    modal.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
-    modal.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
-    modal.style.setProperty('justify-content', 'center', 'important');
-    modal.style.setProperty('align-items', 'center', 'important');
-    modal.style.setProperty('z-index', '99999999', 'important');
-    modal.style.setProperty('opacity', '1', 'important');
-    modal.style.setProperty('visibility', 'visible', 'important');
-
-    // Récupération des éléments de la modale
-    const bannerImg = document.getElementById('sponsor-modal-banner');
-    const photoImg = document.getElementById('sponsor-modal-photo');
-    const nameEl = document.getElementById('sponsor-modal-name');
-    const rankEl = document.getElementById('sponsor-modal-rank');
-    const bioEl = document.getElementById('sponsor-modal-bio');
-    const dateEl = document.getElementById('sponsor-modal-date');
-    const verifiedBadge = document.getElementById('sponsor-modal-verified');
-    const linkContainer = document.getElementById('sponsor-modal-link-container');
-    const linkEl = document.getElementById('sponsor-modal-link');
-    const referralsEl = document.getElementById('sponsor-modal-referrals');
-
-    // État de chargement initial
-    if (nameEl) nameEl.textContent = "Chargement...";
-    if (bioEl) bioEl.textContent = "Recherche des informations du parrain...";
+window.openSponsorModal = async (sponsorId) => {
+    if (!sponsorId) return;
 
     try {
-        if (typeof auth === 'undefined' || !auth.currentUser) {
-            if (nameEl) nameEl.textContent = "Non connecté";
-            if (bioEl) bioEl.textContent = "Veuillez vous connecter pour voir votre parrain.";
+        // 1. Récupération des infos du parrain depuis la collection 'users'
+        const sponsorDocRef = doc(db, "users", sponsorId);
+        let sponsorSnap = await getDoc(sponsorDocRef);
+
+        // Si non trouvé dans 'users', fallback sur 'rewards_users'
+        if (!sponsorSnap.exists()) {
+            sponsorSnap = await getDoc(doc(db, "rewards_users", sponsorId));
+        }
+
+        if (!sponsorSnap.exists()) {
+            console.warn("Parrain introuvable dans la base de données.");
             return;
         }
 
-        // 2. Lecture du document de l'utilisateur actuel dans rewards_users
-        const myRef = doc(db, "rewards_users", auth.currentUser.uid);
-        const mySnap = await getDoc(myRef);
+        const d = sponsorSnap.data();
 
-        if (mySnap.exists()) {
-            const myData = mySnap.data();
-            // Détection de l'ID du parrain (sponsorId ou parrainId)
-            const sponsorId = myData.sponsorId || myData.parrainId || myData.sponsor;
+        // 2. Nom et Bio
+        document.getElementById('sponsor-modal-name').innerText = d.name || "Parrain";
+        document.getElementById('sponsor-modal-bio').innerText = d.bio || "Parrain officiel sur la plateforme.";
 
-            if (sponsorId) {
-                // 3. Lecture du document du parrain dans rewards_users
-                const sponsorRef = doc(db, "rewards_users", sponsorId);
-                const sponsorSnap = await getDoc(sponsorRef);
+        // 3. Photos (Avatar et Bannière)
+        if (d.photoURL) {
+            document.getElementById('sponsor-modal-photo').src = d.photoURL;
+        }
+        if (d.bannerURL) {
+            document.getElementById('sponsor-modal-banner').src = d.bannerURL;
+        }
 
-                if (sponsorSnap.exists()) {
-                    const data = sponsorSnap.data();
+        // 4. Rang & Badge de vérification (Récupéré du champ 'rank')
+        const userRank = d.rank !== undefined ? d.rank : 0;
+        const verifiedBadge = document.getElementById('sponsor-modal-verified');
+        const rankBadgePill = document.getElementById('sponsor-modal-rank');
 
-                    // Remplissage des photos/bannières
-                    if (data.bannerURL && bannerImg) bannerImg.src = data.bannerURL;
-                    if (data.photoURL && photoImg) photoImg.src = data.photoURL;
+        if (verifiedBadge) {
+            verifiedBadge.style.display = userRank > 0 ? "inline-block" : "none";
+        }
+        if (rankBadgePill) {
+            const rankLabel = userRank > 0 ? 'Bronze' : 'Débutant';
+            rankBadgePill.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Rang ${userRank} : ${rankLabel}`;
+        }
 
-                    // Remplissage du Nom et de la Bio
-                    if (nameEl) nameEl.textContent = data.name || data.displayName || data.username || "Membre Parrain";
-                    if (bioEl) bioEl.textContent = data.bio || "Ce membre n'a pas encore rédigé de bio.";
+        // 5. Titre et URL du Lien personnalisé
+        const linkContainer = document.getElementById('sponsor-modal-link-container');
+        const linkAnchor = document.getElementById('sponsor-modal-link');
 
-                    // Remplissage des Métriques (Date, Références)
-                    if (dateEl) {
-                        if (data.createdAt) {
-                            const dateObj = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
-                            dateEl.textContent = dateObj.toLocaleDateString();
-                        } else {
-                            dateEl.textContent = "Membre actif";
-                        }
-                    }
-                    if (referralsEl) referralsEl.textContent = data.referralsCount || data.parrains || "0";
-
-                    // Badge vérifié
-                    if (verifiedBadge) verifiedBadge.style.display = data.isVerified ? "inline-block" : "none";
-
-                    // Rang / Médaille
-                    const sponsorRank = data.rank || 0;
-                    const rankMeta = (typeof SPONSOR_RANKS_METADATA !== 'undefined' && SPONSOR_RANKS_METADATA[sponsorRank])
-                        ? SPONSOR_RANKS_METADATA[sponsorRank]
-                        : { medal: 'fa-solid fa-award', color: '#00ff88', name: 'Membre' };
-
-                    if (rankEl) {
-                        rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> ${rankMeta.name}`;
-                    }
-
-                    // Gestion du Lien Personnalisé (linkTitle & linkUrl)
-                    const lTitle = data.linkTitle || data.customLinkLabel;
-                    const lUrl = data.linkUrl || data.customLink || data.website;
-
-                    if (linkContainer && linkEl && lUrl) {
-                        linkEl.href = lUrl.startsWith('http') ? lUrl : `https://${lUrl}`;
-                        linkEl.textContent = lTitle || "Visiter le site";
-                        linkContainer.style.display = "flex";
-                    } else if (linkContainer) {
-                        linkContainer.style.display = "none";
-                    }
-
-                    return; // Succès, on s'arrête ici
-                }
+        if (linkContainer && linkAnchor) {
+            if (d.linkTitle && d.linkUrl) {
+                // Définit le texte avec le titre personnalisé
+                linkAnchor.innerText = d.linkTitle;
+                // Formate l'URL correctement pour autoriser l'ouverture
+                const formattedUrl = d.linkUrl.startsWith('http') ? d.linkUrl : `https://${d.linkUrl}`;
+                linkAnchor.href = formattedUrl;
+                linkContainer.style.display = 'flex';
+            } else {
+                linkContainer.style.display = 'none';
             }
         }
 
-        // Si l'utilisateur n'a pas de parrain dans son document
-        if (nameEl) nameEl.textContent = "Aucun parrain";
-        if (bioEl) bioEl.textContent = "Vous n'avez pas encore attribué de parrain à votre compte.";
-        if (rankEl) rankEl.innerHTML = `<i class="fa-solid fa-user-slash"></i> Aucun`;
-        if (linkContainer) linkContainer.style.display = "none";
+        // 6. Date d'inscription ("Membre depuis")
+        const dateEl = document.getElementById('sponsor-modal-date');
+        if (dateEl) {
+            if (d.createdAt) {
+                const dateObj = new Date(d.createdAt);
+                const dateFormatted = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                dateEl.innerText = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
+            } else {
+                dateEl.innerText = "Non spécifiée";
+            }
+        }
 
-    } catch (e) {
-        console.error("Erreur lors de la récupération du parrain :", e);
-        if (nameEl) nameEl.textContent = "Erreur de chargement";
-        if (bioEl) bioEl.textContent = "Impossible de charger les données du parrain.";
+        // 7. Compteur de parrainages
+        const referralsEl = document.getElementById('sponsor-modal-referrals');
+        if (referralsEl) {
+            referralsEl.innerText = d.invitedCount || 0;
+        }
+
+        // 8. Affichage de la modale
+        const modal = document.getElementById('sponsor-info-modal');
+        if (modal) modal.style.display = 'flex';
+
+    } catch (error) {
+        console.error("Erreur lors de l'ouverture de la modale parrain :", error);
     }
 };
 
-window.closeSponsorModal = function() {
+window.closeSponsorModal = () => {
     const modal = document.getElementById('sponsor-info-modal');
-    if (modal) {
-        modal.style.setProperty('display', 'none', 'important');
-    }
+    if (modal) modal.style.display = 'none';
 };
-
 // Fermeture si clic en dehors de la carte
 window.addEventListener('click', (event) => {
     const modal = document.getElementById('sponsor-info-modal');
@@ -4433,37 +4391,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
-    <!-- MODALE AFFICHAGE DU PROFIL / BANNIÈRE DU PARRAIN (LECTURE SEULE) -->
-<div id="sponsor-info-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-card" style="max-width: 480px; padding: 0; overflow: hidden; border-radius: 20px;">
+<!-- MODALE AFFICHAGE DU PROFIL / BANNIÈRE DU PARRAIN (LECTURE SEULE) -->
+<div id="sponsor-info-modal" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="modal-card" style="max-width: 480px; width: 90%; padding: 0; overflow: hidden; border-radius: 20px; position: relative; background: #121212;">
         
         <!-- BOUTON FERMER -->
-        <div class="modal-header" style="position: absolute; top: 10px; right: 10px; z-index: 10;">
+        <div class="modal-header" style="position: absolute; top: 10px; right: 10px; z-index: 20;">
             <button class="btn-close-modal" onclick="closeSponsorModal()" style="background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer;">&times;</button>
         </div>
         
-        <div class="profile-banner-wrapper" style="margin: 0;">
+        <div class="profile-banner-wrapper" style="margin: 0; position: relative;">
             <!-- BANNIÈRE PARRAIN -->
-            <img id="sponsor-modal-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
+            <img id="sponsor-modal-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600" style="width: 100%; height: 140px; object-fit: cover;">
             <div class="banner-overlay"></div>
 
-            <div class="profile-hero-content">
+            <div class="profile-hero-content" style="padding: 15px; position: relative; z-index: 10;">
                 <!-- COLONNE GAUCHE -->
                 <div class="hero-left-col">
-                    <div class="avatar-header-row">
+                    <div class="avatar-header-row" style="display: flex; align-items: center; gap: 12px;">
                         <div class="avatar-container">
-                            <div class="avatar-wrapper">
-                                <!-- AVATAR PARRAIN (SANS BOUTON/BADGE DE MODIFICATION) -->
-                                <img id="sponsor-modal-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar Parrain">
+                            <!-- DIMENSIONS FIXÉES POUR ÉVITER L'AGRANDISSEMENT -->
+                            <div class="avatar-wrapper" style="width: 70px; height: 70px; border-radius: 50%; overflow: hidden; border: 2px solid #fff; flex-shrink: 0;">
+                                <img id="sponsor-modal-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar Parrain" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
                         </div>
 
                         <div class="user-title-block">
-                            <div class="user-title-row">
-                                <span class="user-name-display" id="sponsor-modal-name">Chargement...</span>
-                                <i class="fa-solid fa-circle-check verified-badge" id="sponsor-modal-verified" style="display: none;"></i>
+                            <div class="user-title-row" style="display: flex; align-items: center; gap: 6px;">
+                                <span class="user-name-display" id="sponsor-modal-name" style="font-weight: bold; font-size: 1.2rem; color: #fff;">Chargement...</span>
+                                <i class="fa-solid fa-circle-check verified-badge" id="sponsor-modal-verified" style="display: none; color: #a855f7;"></i>
                             </div>
-                            <div class="rank-status-container">
+                            <div class="rank-status-container" style="margin-top: 4px;">
                                 <div class="rank-badge-pill" id="sponsor-modal-rank">
                                     <!-- Rang injecté par JS -->
                                 </div>
@@ -4472,8 +4430,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <!-- RÉPUTATION ET ÉTOILES -->
-                    <div class="user-details-block">
-                        <div class="reputation-stars-container">
+                    <div class="user-details-block" style="margin-top: 10px;">
+                        <div class="reputation-stars-container" style="display: flex; align-items: center; gap: 6px;">
                             <div class="stars-list" id="sponsor-modal-stars">
                                 <i class="fa-regular fa-star star-gold"></i>
                                 <i class="fa-regular fa-star star-gold"></i>
@@ -4486,29 +4444,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
 
                     <!-- BIO / DESCRIPTION DU PARRAIN -->
-                    <p class="user-description-text" id="sponsor-modal-bio">Parrain officiel sur la plateforme.</p>
+                    <p class="user-description-text" id="sponsor-modal-bio" style="margin-top: 8px; font-size: 0.9rem; color: #ccc;">Parrain officiel sur la plateforme.</p>
 
-                    <!-- SEUL ÉLÉMENT CLIQUABLE : LIEN PERSONNALISÉ DU PARRAIN -->
-                    <div class="user-custom-link-block" id="sponsor-modal-link-container" style="display: none;">
+                    <!-- LIEN PERSONNALISÉ (Rendu cliquable avec z-index élevé) -->
+                    <div class="user-custom-link-block" id="sponsor-modal-link-container" style="display: none; margin-top: 10px; align-items: center; gap: 8px; position: relative; z-index: 15;">
                         <i class="fa-solid fa-link" style="color:#00ff88;"></i>
-                        <a id="sponsor-modal-link" href="#" target="_blank" rel="noopener noreferrer">Visiter le site</a>
+                        <a id="sponsor-modal-link" href="#" target="_blank" rel="noopener noreferrer" style="color: #00ff88; text-decoration: underline; cursor: pointer;">Visiter le site</a>
                     </div>
                 </div>
 
                 <!-- COLONNE DROITE (MÉTRIQUES DU PARRAIN) -->
-                <div class="hero-right-metrics">
-                    <div class="metric-badge-item">
+                <div class="hero-right-metrics" style="margin-top: 15px; display: flex; gap: 10px;">
+                    <div class="metric-badge-item" style="flex: 1; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 10px; display: flex; align-items: center; gap: 8px;">
                         <div class="metric-icon-box icon-blue"><i class="fa-solid fa-calendar-day"></i></div>
                         <div class="metric-data">
-                            <span class="metric-label">Membre depuis</span>
-                            <span class="metric-value" id="sponsor-modal-date">---</span>
+                            <span class="metric-label" style="display: block; font-size: 0.75rem; color: #888;">Membre depuis</span>
+                            <span class="metric-value" id="sponsor-modal-date" style="font-weight: bold; font-size: 0.85rem; color: #fff;">---</span>
                         </div>
                     </div>
-                    <div class="metric-badge-item">
+                    <div class="metric-badge-item" style="flex: 1; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 10px; display: flex; align-items: center; gap: 8px;">
                         <div class="metric-icon-box icon-purple"><i class="fa-solid fa-users"></i></div>
                         <div class="metric-data">
-                            <span class="metric-label">Parrainages</span>
-                            <span class="metric-value" id="sponsor-modal-referrals">0</span>
+                            <span class="metric-label" style="display: block; font-size: 0.75rem; color: #888;">Parrainages</span>
+                            <span class="metric-value" id="sponsor-modal-referrals" style="font-weight: bold; font-size: 0.85rem; color: #fff;">0</span>
                         </div>
                     </div>
                 </div>
