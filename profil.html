@@ -673,40 +673,11 @@ body, html {
     100% { opacity: 1; transform: scale(1.05); }
 }
 
-    /* Styling Parrainage & Modale Bannière */
-.btn-generate-color {
-    background: linear-gradient(135deg, #b370f7 0%, #7d2ae8 100%);
-    border: none;
-    color: #fff;
-}
+/* ==========================================
+   MODALE DU PARRAIN (STYLES FORCÉS)
+   ========================================== */
 
-.btn-copy-success {
-    background: rgba(0, 255, 204, 0.15) !important;
-    border: 1px solid #00ffcc !important;
-    color: #00ffcc !important;
-}
-
-.btn-sponsor-color {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--border);
-    color: #cdcee0;
-}
-
-.sponsor-banner-preview {
-    width: 100%;
-    height: 150px;
-    border-radius: 14px;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(0, 0, 0, 0.3);
-}
-
-    /* Style forcé pour la modale Mon Parrain */
+/* Fond sombre superposé */
 #sponsor-info-modal.modal-overlay {
     position: fixed !important;
     top: 0 !important;
@@ -714,12 +685,39 @@ body, html {
     width: 100vw !important;
     height: 100vh !important;
     background: rgba(0, 0, 0, 0.85) !important;
-    display: none; /* Masqué par défaut */
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    display: none; /* Géré directement par JS avec important */
     justify-content: center !important;
     align-items: center !important;
-    z-index: 99999 !important; /* Passe au-dessus de tout le reste */
-    padding: 15px;
-    box-sizing: border-box;
+    z-index: 999999 !important; /* Priorité maximale */
+    padding: 15px !important;
+    box-sizing: border-box !important;
+}
+
+/* Carte de la modale parrain */
+#sponsor-info-modal .modal-card {
+    background: #060713 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 20px !important;
+    width: 100% !important;
+    max-width: 480px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9) !important;
+    animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Animation d'ouverture fluide */
+@keyframes modalPopIn {
+    from {
+        transform: scale(0.85);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
     
         /* ============================================================
@@ -3589,16 +3587,12 @@ window.openSponsorModal = async function() {
     
     const modal = document.getElementById('sponsor-info-modal');
     if (!modal) {
-        console.error("Erreur : La modale avec l'ID 'sponsor-info-modal' est introuvable dans le DOM.");
+        console.error("Erreur : La modale avec l'ID 'sponsor-info-modal' n'existe pas dans la page.");
         return;
     }
 
-    if (!auth || !auth.currentUser) {
-        console.warn("Attention : auth.currentUser est null ou indéfini. Affichage temporaire de la modale.");
-    }
-
-    // 1. AFFICHER LA MODALE D'ABORD pour vérifier le CSS
-    modal.style.display = 'flex';
+    // FORCE L'AFFICHAGE EN DÉPASSANT LE CSS
+    modal.style.setProperty('display', 'flex', 'important');
 
     // Éléments UI
     const bannerImg = document.getElementById('sponsor-modal-banner');
@@ -3615,12 +3609,11 @@ window.openSponsorModal = async function() {
     if (nameEl) nameEl.textContent = "Chargement...";
 
     try {
-        if (!auth.currentUser) {
-            if (nameEl) nameEl.textContent = "Utilisateur non connecté";
+        if (typeof auth === 'undefined' || !auth.currentUser) {
+            if (nameEl) nameEl.textContent = "Non connecté";
             return;
         }
 
-        // 2. Lire le sponsorId du filleul
         const myRef = doc(db, "users", auth.currentUser.uid);
         const mySnap = await getDoc(myRef);
 
@@ -3662,20 +3655,22 @@ window.openSponsorModal = async function() {
             }
         }
 
-        // Si aucun parrain trouvé
+        // Si aucun parrain
         if (nameEl) nameEl.textContent = "Aucun parrain";
-        if (bioEl) bioEl.textContent = "Vous n'avez pas de parrain.";
+        if (bioEl) bioEl.textContent = "Vous n'avez pas de parrain actuellement.";
         if (rankEl) rankEl.innerHTML = `<i class="fa-solid fa-user-slash"></i> Aucun`;
 
     } catch (e) {
-        console.error("Erreur d'affichage du parrain :", e);
+        console.error("Erreur chargement parrain :", e);
         if (nameEl) nameEl.textContent = "Erreur de chargement";
     }
 };
 
 window.closeSponsorModal = function() {
     const modal = document.getElementById('sponsor-info-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
+    }
 };
     
 // ==========================================
