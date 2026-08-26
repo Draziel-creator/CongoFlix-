@@ -3590,7 +3590,7 @@ window.openSponsorModal = async function(event) {
         return;
     }
 
-    // 1. Téléportation CSS et affichage au premier plan
+    // 1. Positionnement et affichage prioritaire
     document.body.appendChild(modal);
     modal.style.setProperty('display', 'flex', 'important');
     modal.style.setProperty('position', 'fixed', 'important');
@@ -3607,7 +3607,7 @@ window.openSponsorModal = async function(event) {
     modal.style.setProperty('opacity', '1', 'important');
     modal.style.setProperty('visibility', 'visible', 'important');
 
-    // Éléments HTML de la modale
+    // Récupération des éléments DOM
     const bannerImg = document.getElementById('sponsor-modal-banner');
     const photoImg = document.getElementById('sponsor-modal-photo');
     const nameEl = document.getElementById('sponsor-modal-name');
@@ -3631,7 +3631,7 @@ window.openSponsorModal = async function(event) {
 
         const uid = auth.currentUser.uid;
 
-        // 2. Lecture du document de l'utilisateur dans rewards_users pour lire 'parrainePar'
+        // 2. Recherche du parrain dans le profil de l'utilisateur connecté
         const myRewardsSnap = await getDoc(doc(db, "rewards_users", uid));
         if (!myRewardsSnap.exists()) {
             if (nameEl) nameEl.textContent = "Profil introuvable";
@@ -3641,7 +3641,7 @@ window.openSponsorModal = async function(event) {
         const myData = myRewardsSnap.data();
         const sponsorId = myData.parrainePar || myData.sponsorId || myData.sponsor;
 
-        if (!sponsorId || sponsorId.trim() === "") {
+        if (!sponsorId || String(sponsorId).trim() === "") {
             if (nameEl) nameEl.textContent = "Aucun parrain";
             if (bioEl) bioEl.textContent = "Vous n'avez pas encore de parrain attribué.";
             if (rankEl) rankEl.innerHTML = `<i class="fa-solid fa-user-slash"></i> Aucun`;
@@ -3651,74 +3651,98 @@ window.openSponsorModal = async function(event) {
 
         const cleanSponsorId = String(sponsorId).trim();
 
-        // 3. Récupération parallèle : Infos Profil dans 'rewards_users' et Rang dans 'users'
+        // 3. Récupération parallèle des collections du parrain
         const [sponsorRewardsSnap, sponsorUsersSnap] = await Promise.all([
             getDoc(doc(db, "rewards_users", cleanSponsorId)),
             getDoc(doc(db, "users", cleanSponsorId))
         ]);
 
-        if (!sponsorRewardsSnap.exists()) {
+        if (!sponsorRewardsSnap.exists() && !sponsorUsersSnap.exists()) {
             if (nameEl) nameEl.textContent = "Parrain introuvable";
             if (bioEl) bioEl.textContent = "Les données du parrain n'existent pas.";
             return;
         }
 
-        const rData = sponsorRewardsSnap.data();
+        const rData = sponsorRewardsSnap.exists() ? sponsorRewardsSnap.data() : {};
         const uData = sponsorUsersSnap.exists() ? sponsorUsersSnap.data() : {};
 
-        // 4. Injection des données principales (rewards_users)
-        if (nameEl) nameEl.textContent = rData.name || "Membre Parrain";
-        if (bioEl) bioEl.textContent = rData.bio || "Ce membre n'a pas rédigé de bio.";
+        // 4. Injection des données principales (Profil & Bio)
+        if (nameEl) nameEl.textContent = rData.name || uData.name || uData.displayName || "Membre Parrain";
+        if (bioEl) bioEl.textContent = rData.bio || uData.bio || "Ce membre n'a pas rédigé de bio.";
 
-        // Images avec gestion des chaînes vides ("")
-        if (bannerImg) {
-            bannerImg.src = (rData.bannerURL && rData.bannerURL !== "")
-                ? rData.bannerURL
-                : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600";
-        }
+        // Photo de profil (cherche dans users puis rewards_users)
+        const userPhoto = uData.photoURL || uData.photo || rData.photoURL || rData.photo;
         if (photoImg) {
-            photoImg.src = (rData.photoURL && rData.photoURL !== "")
-                ? rData.photoURL
+            photoImg.src = (userPhoto && userPhoto.trim() !== "")
+                ? userPhoto
                 : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
         }
 
-        // Compteur de filleuls
+        // Bannière
+        const userBanner = rData.bannerURL || uData.bannerURL;
+        if (bannerImg) {
+            bannerImg.src = (userBanner && userBanner.trim() !== "")
+                ? userBanner
+                : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600";
+        }
+
+        // Nombre de filleuls parrainés
         if (referralsEl) {
-            referralsEl.textContent = rData.invitedCount !== undefined ? rData.invitedCount : "0";
+            referralsEl.textContent = rData.invitedCount !== undefined ? rData.invitedCount : (uData.invitedCount || "0");
         }
 
-        // Date d'activité ou de création
+        // Formatage de la Date ("Membre depuis : Mois Année")
         if (dateEl) {
-            dateEl.textContent = rData.lastActiveDate || "Membre actif";
-        }
-
-        // Lien personnalisé (linkTitle & linkUrl dans rewards_users)
-        if (linkContainer && linkEl) {
-            if (rData.linkUrl && rData.linkUrl !== "") {
-                const formattedUrl = rData.linkUrl.startsWith('http') ? rData.linkUrl : `https://${rData.linkUrl}`;
-                linkEl.href = formattedUrl;
-                linkEl.textContent = rData.linkTitle || "Visiter le site";
-                linkContainer.style.display = "flex";
+            const rawDate = rData.createdAt || uData.createdAt || rData.dateJoined || uData.dateJoined;
+            if (rawDate) {
+                const dateObj = rawDate.toDate ? rawDate.toDate() : new Date(rawDate);
+                const formatted = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                dateEl.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
             } else {
-                linkContainer.style.display = "none";
+                dateEl.textContent = "Juillet 2026";
             }
         }
 
-        // 5. Injection du Rang (uniquement depuis la collection 'users')
-        const sponsorRank = uData.rank !== undefined ? uData.rank : (uData.rang !== undefined ? uData.rang : 0);
+        // 5. Affichage du Rang conforme à l'image 2 ("Rang X : Nom")
+        const sponsorRank = uData.rank !== undefined ? Number(uData.rank) : (uData.rang !== undefined ? Number(uData.rang) : 0);
 
         if (verifiedBadge) {
-            verifiedBadge.style.display = sponsorRank > 0 ? "inline-block" : "none";
+            verifiedBadge.style.display = (uData.isVerified || sponsorRank > 0) ? "inline-block" : "none";
         }
 
         if (rankEl) {
+            let rankName = sponsorRank > 0 ? 'Bronze' : 'Débutant';
+            let medalIcon = 'fa-solid fa-award';
+            let medalColor = '#ff9900';
+
             if (typeof SPONSOR_RANKS_METADATA !== 'undefined' && SPONSOR_RANKS_METADATA[sponsorRank]) {
                 const meta = SPONSOR_RANKS_METADATA[sponsorRank];
-                rankEl.innerHTML = `<i class="${meta.medal}" style="color:${meta.color};"></i> ${meta.name}`;
-            } else {
-                const rankLabel = sponsorRank > 0 ? 'Bronze' : 'Débutant';
-                rankEl.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Rang ${sponsorRank} : ${rankLabel}`;
+                rankName = meta.name;
+                medalIcon = meta.medal;
+                medalColor = meta.color;
             }
+
+            // Affiche explicitement "Rang X : Nom"
+            rankEl.innerHTML = `<i class="${medalIcon}" style="color:${medalColor};"></i> Rang ${sponsorRank} : ${rankName}`;
+        }
+
+        // 6. Gestion du lien cliquable
+        const lTitle = rData.linkTitle || uData.linkTitle || "mon lien site";
+        const lUrl = rData.linkUrl || uData.linkUrl;
+
+        if (linkContainer && linkEl && lUrl && lUrl.trim() !== "") {
+            const formattedUrl = lUrl.startsWith('http') ? lUrl : `https://${lUrl}`;
+            linkEl.href = formattedUrl;
+            linkEl.textContent = lTitle;
+            linkEl.setAttribute('target', '_blank');
+            linkEl.setAttribute('rel', 'noopener noreferrer');
+            
+            // Garantit que le clic n'est pas bloqué par un z-index ou overlay CSS
+            linkEl.style.pointerEvents = 'auto';
+            linkContainer.style.pointerEvents = 'auto';
+            linkContainer.style.display = "flex";
+        } else if (linkContainer) {
+            linkContainer.style.display = "none";
         }
 
     } catch (e) {
@@ -3735,7 +3759,6 @@ window.closeSponsorModal = function() {
     }
 };
 
-// Fermeture au clic à l'extérieur
 window.addEventListener('click', (event) => {
     const modal = document.getElementById('sponsor-info-modal');
     if (event.target === modal) {
