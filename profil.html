@@ -1306,89 +1306,7 @@ body, html {
                 </div>
             </div>
 
-<!-- MODALE AFFICHAGE DU PROFIL / BANNIÈRE DU PARRAIN (LECTURE SEULE) -->
-<div id="sponsor-info-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-card" style="max-width: 480px; padding: 0; overflow: hidden; border-radius: 20px;">
-        
-        <!-- BOUTON FERMER -->
-        <div class="modal-header" style="position: absolute; top: 10px; right: 10px; z-index: 10;">
-            <button class="btn-close-modal" onclick="closeSponsorModal()" style="background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer;">&times;</button>
-        </div>
-        
-        <div class="profile-banner-wrapper" style="margin: 0;">
-            <!-- BANNIÈRE PARRAIN -->
-            <img id="sponsor-modal-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
-            <div class="banner-overlay"></div>
 
-            <div class="profile-hero-content">
-                <!-- COLONNE GAUCHE -->
-                <div class="hero-left-col">
-                    <div class="avatar-header-row">
-                        <div class="avatar-container">
-                            <div class="avatar-wrapper">
-                                <!-- AVATAR PARRAIN (SANS BOUTON/BADGE DE MODIFICATION) -->
-                                <img id="sponsor-modal-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar Parrain">
-                            </div>
-                        </div>
-
-                        <div class="user-title-block">
-                            <div class="user-title-row">
-                                <span class="user-name-display" id="sponsor-modal-name">Chargement...</span>
-                                <i class="fa-solid fa-circle-check verified-badge" id="sponsor-modal-verified" style="display: none;"></i>
-                            </div>
-                            <div class="rank-status-container">
-                                <div class="rank-badge-pill" id="sponsor-modal-rank">
-                                    <!-- Rang injecté par JS -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- RÉPUTATION ET ÉTOILES -->
-                    <div class="user-details-block">
-                        <div class="reputation-stars-container">
-                            <div class="stars-list" id="sponsor-modal-stars">
-                                <i class="fa-regular fa-star star-gold"></i>
-                                <i class="fa-regular fa-star star-gold"></i>
-                                <i class="fa-regular fa-star star-gold"></i>
-                                <i class="fa-regular fa-star star-gold"></i>
-                                <i class="fa-regular fa-star star-gold"></i>
-                            </div>
-                            <span class="rating-text" id="sponsor-modal-reputation">5.0 / 5</span>
-                        </div>
-                    </div>
-
-                    <!-- BIO / DESCRIPTION DU PARRAIN -->
-                    <p class="user-description-text" id="sponsor-modal-bio">Parrain officiel sur la plateforme.</p>
-
-                    <!-- SEUL ÉLÉMENT CLIQUABLE : LIEN PERSONNALISÉ DU PARRAIN -->
-                    <div class="user-custom-link-block" id="sponsor-modal-link-container" style="display: none;">
-                        <i class="fa-solid fa-link" style="color:#00ff88;"></i>
-                        <a id="sponsor-modal-link" href="#" target="_blank" rel="noopener noreferrer">Visiter le site</a>
-                    </div>
-                </div>
-
-                <!-- COLONNE DROITE (MÉTRIQUES DU PARRAIN) -->
-                <div class="hero-right-metrics">
-                    <div class="metric-badge-item">
-                        <div class="metric-icon-box icon-blue"><i class="fa-solid fa-calendar-day"></i></div>
-                        <div class="metric-data">
-                            <span class="metric-label">Membre depuis</span>
-                            <span class="metric-value" id="sponsor-modal-date">---</span>
-                        </div>
-                    </div>
-                    <div class="metric-badge-item">
-                        <div class="metric-icon-box icon-purple"><i class="fa-solid fa-users"></i></div>
-                        <div class="metric-data">
-                            <span class="metric-label">Parrainages</span>
-                            <span class="metric-value" id="sponsor-modal-referrals">0</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
             
 
            <!-- 2. BLOC SOLDE HORIZONTAL ET DYNAMIQUE -->
@@ -1445,23 +1363,6 @@ body, html {
             <button class="btn-share-act btn-sponsor-color" onclick="openSponsorModal()">
                 <i class="fa-solid fa-user-shield"></i> Mon Parrain
             </button>
-        </div>
-    </div>
-</div>
-
-<!-- MODALE AFFICHAGE BANNIÈRE DU PARRAIN -->
-<div id="sponsor-info-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-card" style="max-width: 380px; text-align: center;">
-        <div class="modal-header">
-            <h3><i class="fa-solid fa-id-card"></i> Bannière de votre Parrain</h3>
-            <button class="btn-close-modal" onclick="closeSponsorModal()">&times;</button>
-        </div>
-        <div class="modal-body" style="padding: 15px;">
-            <!-- Zone d'affichage de la bannière -->
-            <div id="sponsor-banner-container" class="sponsor-banner-preview">
-                <p style="font-size: 11px; color: #8e92bc;">Chargement...</p>
-            </div>
-            <p id="sponsor-name-display" style="font-size: 13px; font-weight: 700; color: #fff; margin-top: 12px;"></p>
         </div>
     </div>
 </div>
@@ -3684,12 +3585,22 @@ function setButtonToCopyState() {
 // ==========================================
 
 window.openSponsorModal = async function() {
-    const modal = document.getElementById('sponsor-info-modal');
-    if (!modal || !auth.currentUser) return;
+    console.log("--> Clic détecté sur openSponsorModal");
     
+    const modal = document.getElementById('sponsor-info-modal');
+    if (!modal) {
+        console.error("Erreur : La modale avec l'ID 'sponsor-info-modal' est introuvable dans le DOM.");
+        return;
+    }
+
+    if (!auth || !auth.currentUser) {
+        console.warn("Attention : auth.currentUser est null ou indéfini. Affichage temporaire de la modale.");
+    }
+
+    // 1. AFFICHER LA MODALE D'ABORD pour vérifier le CSS
     modal.style.display = 'flex';
 
-    // Éléments UI de la modale parrain
+    // Éléments UI
     const bannerImg = document.getElementById('sponsor-modal-banner');
     const photoImg = document.getElementById('sponsor-modal-photo');
     const nameEl = document.getElementById('sponsor-modal-name');
@@ -3700,77 +3611,65 @@ window.openSponsorModal = async function() {
     const linkContainer = document.getElementById('sponsor-modal-link-container');
     const linkEl = document.getElementById('sponsor-modal-link');
     const referralsEl = document.getElementById('sponsor-modal-referrals');
-    const reputationEl = document.getElementById('sponsor-modal-reputation');
 
-    nameEl.textContent = "Chargement...";
+    if (nameEl) nameEl.textContent = "Chargement...";
 
     try {
-        // 1. Lire le sponsorId sur le compte du filleul
+        if (!auth.currentUser) {
+            if (nameEl) nameEl.textContent = "Utilisateur non connecté";
+            return;
+        }
+
+        // 2. Lire le sponsorId du filleul
         const myRef = doc(db, "users", auth.currentUser.uid);
         const mySnap = await getDoc(myRef);
 
         if (mySnap.exists() && mySnap.data().sponsorId) {
             const sponsorId = mySnap.data().sponsorId;
-
-            // 2. Charger les données réelles du Parrain
             const sponsorRef = doc(db, "users", sponsorId);
             const sponsorSnap = await getDoc(sponsorRef);
 
             if (sponsorSnap.exists()) {
                 const data = sponsorSnap.data();
 
-                // Injection des images & textes
                 if (data.bannerURL && bannerImg) bannerImg.src = data.bannerURL;
                 if (data.photoURL && photoImg) photoImg.src = data.photoURL;
                 
-                nameEl.textContent = data.username || data.displayName || "Membre Parrain";
-                bioEl.textContent = data.bio || "Membre actif sur la plateforme.";
-                dateEl.textContent = data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Inconnue";
+                if (nameEl) nameEl.textContent = data.username || data.displayName || "Membre Parrain";
+                if (bioEl) bioEl.textContent = data.bio || "Membre actif sur la plateforme.";
+                if (dateEl) dateEl.textContent = data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "Inconnue";
+                if (referralsEl) referralsEl.textContent = data.referralsCount || "0";
 
-                // Métriques (Parrainages & Réputation)
-                if (referralsEl) referralsEl.textContent = data.referralsCount || data.totalReferrals || "0";
-                if (reputationEl) reputationEl.textContent = `${(data.reputation || 5.0).toFixed(1)} / 5`;
+                if (verifiedBadge) verifiedBadge.style.display = data.isVerified ? "inline-block" : "none";
 
-                // Badge Vérifié
-                if (verifiedBadge) {
-                    verifiedBadge.style.display = data.isVerified ? "inline-block" : "none";
-                }
-
-                // Rendu du badge de rang du parrain
                 const sponsorRank = data.rank || 0;
                 const rankMeta = SPONSOR_RANKS_METADATA[sponsorRank] || SPONSOR_RANKS_METADATA[0];
                 if (rankEl) {
                     rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> ${rankMeta.name}`;
                 }
 
-                // --- GESTION DU SEUL LIEN CLIQUABLE EN BAS DE LA BIO ---
                 if (linkContainer && linkEl) {
                     const customUrl = data.customLink || data.website || data.userLink;
                     if (customUrl) {
-                        const formattedUrl = customUrl.startsWith('http') ? customUrl : `https://${customUrl}`;
-                        linkEl.href = formattedUrl;
+                        linkEl.href = customUrl.startsWith('http') ? customUrl : `https://${customUrl}`;
                         linkEl.textContent = data.customLinkLabel || "Visiter le site";
                         linkContainer.style.display = "flex";
                     } else {
                         linkContainer.style.display = "none";
                     }
                 }
-
                 return;
             }
         }
 
-        // Cas sans parrain
-        nameEl.textContent = "Aucun parrain";
-        bioEl.textContent = "Vous n'avez pas été parrainé lors de votre inscription.";
+        // Si aucun parrain trouvé
+        if (nameEl) nameEl.textContent = "Aucun parrain";
+        if (bioEl) bioEl.textContent = "Vous n'avez pas de parrain.";
         if (rankEl) rankEl.innerHTML = `<i class="fa-solid fa-user-slash"></i> Aucun`;
-        dateEl.textContent = "---";
-        if (referralsEl) referralsEl.textContent = "0";
-        if (linkContainer) linkContainer.style.display = "none";
 
     } catch (e) {
         console.error("Erreur d'affichage du parrain :", e);
-        nameEl.textContent = "Erreur de chargement";
+        if (nameEl) nameEl.textContent = "Erreur de chargement";
     }
 };
 
@@ -4488,5 +4387,88 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
+    <!-- MODALE AFFICHAGE DU PROFIL / BANNIÈRE DU PARRAIN (LECTURE SEULE) -->
+<div id="sponsor-info-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-card" style="max-width: 480px; padding: 0; overflow: hidden; border-radius: 20px;">
+        
+        <!-- BOUTON FERMER -->
+        <div class="modal-header" style="position: absolute; top: 10px; right: 10px; z-index: 10;">
+            <button class="btn-close-modal" onclick="closeSponsorModal()" style="background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer;">&times;</button>
+        </div>
+        
+        <div class="profile-banner-wrapper" style="margin: 0;">
+            <!-- BANNIÈRE PARRAIN -->
+            <img id="sponsor-modal-banner" class="banner-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600">
+            <div class="banner-overlay"></div>
+
+            <div class="profile-hero-content">
+                <!-- COLONNE GAUCHE -->
+                <div class="hero-left-col">
+                    <div class="avatar-header-row">
+                        <div class="avatar-container">
+                            <div class="avatar-wrapper">
+                                <!-- AVATAR PARRAIN (SANS BOUTON/BADGE DE MODIFICATION) -->
+                                <img id="sponsor-modal-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar Parrain">
+                            </div>
+                        </div>
+
+                        <div class="user-title-block">
+                            <div class="user-title-row">
+                                <span class="user-name-display" id="sponsor-modal-name">Chargement...</span>
+                                <i class="fa-solid fa-circle-check verified-badge" id="sponsor-modal-verified" style="display: none;"></i>
+                            </div>
+                            <div class="rank-status-container">
+                                <div class="rank-badge-pill" id="sponsor-modal-rank">
+                                    <!-- Rang injecté par JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RÉPUTATION ET ÉTOILES -->
+                    <div class="user-details-block">
+                        <div class="reputation-stars-container">
+                            <div class="stars-list" id="sponsor-modal-stars">
+                                <i class="fa-regular fa-star star-gold"></i>
+                                <i class="fa-regular fa-star star-gold"></i>
+                                <i class="fa-regular fa-star star-gold"></i>
+                                <i class="fa-regular fa-star star-gold"></i>
+                                <i class="fa-regular fa-star star-gold"></i>
+                            </div>
+                            <span class="rating-text" id="sponsor-modal-reputation">5.0 / 5</span>
+                        </div>
+                    </div>
+
+                    <!-- BIO / DESCRIPTION DU PARRAIN -->
+                    <p class="user-description-text" id="sponsor-modal-bio">Parrain officiel sur la plateforme.</p>
+
+                    <!-- SEUL ÉLÉMENT CLIQUABLE : LIEN PERSONNALISÉ DU PARRAIN -->
+                    <div class="user-custom-link-block" id="sponsor-modal-link-container" style="display: none;">
+                        <i class="fa-solid fa-link" style="color:#00ff88;"></i>
+                        <a id="sponsor-modal-link" href="#" target="_blank" rel="noopener noreferrer">Visiter le site</a>
+                    </div>
+                </div>
+
+                <!-- COLONNE DROITE (MÉTRIQUES DU PARRAIN) -->
+                <div class="hero-right-metrics">
+                    <div class="metric-badge-item">
+                        <div class="metric-icon-box icon-blue"><i class="fa-solid fa-calendar-day"></i></div>
+                        <div class="metric-data">
+                            <span class="metric-label">Membre depuis</span>
+                            <span class="metric-value" id="sponsor-modal-date">---</span>
+                        </div>
+                    </div>
+                    <div class="metric-badge-item">
+                        <div class="metric-icon-box icon-purple"><i class="fa-solid fa-users"></i></div>
+                        <div class="metric-data">
+                            <span class="metric-label">Parrainages</span>
+                            <span class="metric-value" id="sponsor-modal-referrals">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
