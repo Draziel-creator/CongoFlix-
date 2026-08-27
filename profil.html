@@ -1803,33 +1803,35 @@ async function verifierAdBlock() {
 }
 
 // ==========================================
-// 2. CALCUL DE LA RÉPUTATION SÉVÈRE & DYNAMIQUE
+// 2. CALCUL DE LA RÉPUTATION SÉVÈRE & PROGRESSION LENTE
 // ==========================================
 async function calculerReputationEtEtoiles(
     userHistoryData = null, 
     totalParrainagesCustom = null, 
     textElemId = 'reputation-score-text', 
     starsContainerId = 'reputation-stars',
-    isViewingOtherUser = false // Option pour éviter les fausses sanctions sur le profil d'un tiers
+    isViewingOtherUser = false
 ) {
     const historyData = userHistoryData || window.g_userHistoryData || {};
     const totalParrainages = totalParrainagesCustom !== null 
         ? Number(totalParrainagesCustom) 
         : Number(window.g_totalParrainages || 0);
 
-    // A. Note de départ stricte (1.0 sur 5)
-    let score = 1.0; 
+    // A. Note de départ stricte à ZERO (0.0 / 5)
+    let score = 0.0; 
 
-    // B. Calcul du nombre de jours réels d'activité
+    // B. Calcul des jours réels d'activité
     const joursActifs = Object.keys(historyData).filter(key => {
         const val = typeof extraireValeurJour === "function" ? extraireValeurJour(historyData[key]) : Number(historyData[key]);
         return val > 0;
     }).length;
 
-    const bonusHistorique = Math.min(2.0, (joursActifs / 60) * 2.0);
+    // C. Progression lente : 7 jours d'activité = +0.5 étoile (+0.071 par jour)
+    // Plafond maximum de +3.5 étoiles pour l'assiduité (exige 49 jours d'activité)
+    const bonusHistorique = Math.min(3.5, (joursActifs / 7) * 0.5);
     score += bonusHistorique;
 
-    // C. Activité du jour & SANCTION
+    // D. Activité du jour & Micro-bonus/Sanction
     const aujourdhui = new Date();
     const yyyy = aujourdhui.getFullYear();
     const mm = String(aujourdhui.getMonth() + 1).padStart(2, '0');
@@ -1838,28 +1840,28 @@ async function calculerReputationEtEtoiles(
 
     const activiteAujourdhui = Number(historyData[dateAujourdhuiISO]) || 0;
 
-    if (activiteAujourdhui === 0) {
-        // Applique la sanction uniquement si c'est le profil local ou si l'utilisateur est vraiment inactif
-        if (!isViewingOtherUser || joursActifs === 0) {
-            score -= 1.2;
-        }
-    } else {
-        const bonusAujourdhui = Math.min(0.5, (activiteAujourdhui / 10) * 0.5);
+    if (activiteAujourdhui > 0) {
+        // Micro-bonus du jour (max +0.05 point)
+        const bonusAujourdhui = Math.min(0.05, (activiteAujourdhui / 10) * 0.05);
         score += bonusAujourdhui;
+    } else if (joursActifs > 3 && (!isViewingOtherUser || joursActifs > 0)) {
+        // Sanction d'inactivité légère (-0.1) uniquement si l'utilisateur a déjà un profil actif
+        score -= 0.3;
     }
 
-    // D. Bonus Parrainage (Max +1.5 étoiles pour 30 filleuls)
+    // E. Bonus Parrainage (Max +1.5 étoiles pour 30 filleuls -> +0.05 par filleul)
     const bonusParrainage = Math.min(1.5, (totalParrainages / 30) * 1.5);
     score += bonusParrainage;
 
-    // E. Normalisation entre 1.0 et 5.0
-    score = Math.max(1.0, Math.min(5.0, score));
+    // F. Normalisation stricte entre 0.0 et 5.0
+    score = Math.max(0.0, Math.min(5.0, score));
     const scoreArrondi = Math.round(score * 10) / 10;
 
-    // F. Injection HTML
+    // G. Injection HTML du score texte
     const textElem = document.getElementById(textElemId);
     if (textElem) textElem.innerText = `${scoreArrondi.toFixed(1)} / 5`;
 
+    // H. Rendu dynamique des étoiles
     const starsContainer = document.getElementById(starsContainerId);
     if (starsContainer) {
         let starsHTML = '';
@@ -1875,16 +1877,24 @@ async function calculerReputationEtEtoiles(
         starsContainer.innerHTML = starsHTML;
     }
 
+    // I. Sauvegarde silencieuse dans Firestore
+    try {
+        const firebaseAuth = typeof auth !== 'undefined' ? auth : (window.auth || null);
+        if (firebaseAuth && firebaseAuth.currentUser && !isViewingOtherUser) {
+            updateDoc(doc(db, "rewards_users", firebaseAuth.currentUser.uid), {
+                reputationScore: scoreArrondi
+            }).catch(() => {});
+        }
+    } catch (e) {
+        // Erreur ignorée en cas d'absence de session
+    }
+
     return scoreArrondi;
 }
-    // À la fin de la fonction calculerReputationEtEtoiles :
-if (auth.currentUser && !isViewingOtherUser) {
-    updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
-        reputationScore: scoreArrondi
-    }).catch(() => {}); // Sauvegarde silencieuse
-}
+
 window.calculerReputationEtEtoiles = calculerReputationEtEtoiles;
 
+    
     // Fonction d'affichage du rang accessible globalement
     window.applyRankDesign = function(rankLevel) {
         const rankNum = parseInt(rankLevel, 10) || 0;
