@@ -3289,17 +3289,18 @@ window.applyRankDesign = function(rankLevel) {
         window.g_userRank = rankNum;
     }
 
-    const currentRank = (typeof RANKS_METADATA !== 'undefined' && RANKS_METADATA[rankNum]) 
-        ? RANKS_METADATA[rankNum] 
-         {
-        0: { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
-        1: { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
-        2: { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
-        3: { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
-        4: { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
-        5: { name: "Diamant", medal: "fa-solid fa-gem", color: "#00ffcc" }
-    };
+   const fallbackRanks = {
+    0: { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
+    1: { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
+    2: { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
+    3: { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
+    4: { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
+    5: { name: "Diamant", medal: "fa-solid fa-gem", color: "#00ffcc" }
+};
 
+const currentRank = (typeof RANKS_METADATA !== 'undefined' && RANKS_METADATA[rankNum]) 
+    ? RANKS_METADATA[rankNum] 
+    : (fallbackRanks[rankNum] || fallbackRanks[0]);
     document.documentElement.style.setProperty('--rank-color', currentRank.color);
 
     // 1. Badge de Rang (Pill)
