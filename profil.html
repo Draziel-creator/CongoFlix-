@@ -3624,17 +3624,18 @@ function setButtonToCopyState() {
 }
 
 // ==========================================
-// METADATA DES RANKS (0 À 5)
+// METADATA DES RANKS (Déclaration sécurisée)
 // ==========================================
-const SPONSOR_RANKS_METADATA = {
-    0: { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
-    1: { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
-    2: { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
-    3: { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
-    4: { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
-    5: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
-};
-window.SPONSOR_RANKS_METADATA = SPONSOR_RANKS_METADATA;
+if (typeof window.SPONSOR_RANKS_METADATA === 'undefined' && typeof SPONSOR_RANKS_METADATA === 'undefined') {
+    window.SPONSOR_RANKS_METADATA = {
+        0: { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
+        1: { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
+        2: { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
+        3: { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
+        4: { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
+        5: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
+    };
+}
 
 // ==========================================
 // 3. CHARGEMENT DE LA BANNIÈRE ET PROFIL DU PARRAIN
@@ -3783,7 +3784,8 @@ window.openSponsorModal = async function(event) {
         }
 
         if (rankEl) {
-            const meta = SPONSOR_RANKS_METADATA[sponsorRank] || SPONSOR_RANKS_METADATA[0];
+            const ranksMetadata = (typeof SPONSOR_RANKS_METADATA !== 'undefined') ? SPONSOR_RANKS_METADATA : window.SPONSOR_RANKS_METADATA;
+            const meta = (ranksMetadata && ranksMetadata[sponsorRank]) ? ranksMetadata[sponsorRank] : { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" };
             rankEl.innerHTML = `<i class="${meta.medal}" style="color:${meta.color};"></i> Rang ${sponsorRank} : ${meta.name}`;
         }
 
