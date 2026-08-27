@@ -3731,15 +3731,11 @@ if (typeof auth !== 'undefined') {
     });
 }
 
-// =========================================================
-// 2. OUVERTURE DE LA MODALE "MES FILLEULS"
-// =========================================================
 window.openFilleulsModal = async function() {
     const modal = document.getElementById('filleuls-list-modal');
     const container = document.getElementById('filleuls-container');
     if (!modal || !container) return;
 
-    // Placer dans body & afficher
     if (modal.parentNode !== document.body) document.body.appendChild(modal);
     modal.style.setProperty('display', 'flex', 'important');
     modal.style.setProperty('position', 'fixed', 'important');
@@ -3753,7 +3749,7 @@ window.openFilleulsModal = async function() {
     modal.style.setProperty('justify-content', 'center', 'important');
     modal.style.setProperty('align-items', 'center', 'important');
 
-    container.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Chargement de vos filleuls...</div>';
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Chargement...</div>';
 
     try {
         const firebaseAuth = typeof auth !== 'undefined' ? auth : (window.auth || null);
@@ -3763,15 +3759,13 @@ window.openFilleulsModal = async function() {
         const snap = await getDocs(collection(db, "rewards_users", uid, "mes_filleuls"));
 
         if (snap.empty) {
-            container.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Vous n\'avez encore parrainé aucun membre.</div>';
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Aucun filleul trouvé.</div>';
             return;
         }
 
-        // Récupération des données pour chaque filleul
         const listHTMLPromises = snap.docs.map(async (docSnap) => {
             const filleulUid = docSnap.id;
 
-            // Charger les détails du filleul
             const [fRewardsSnap, fUsersSnap] = await Promise.all([
                 getDoc(doc(db, "rewards_users", filleulUid)),
                 getDoc(doc(db, "users", filleulUid))
@@ -3795,8 +3789,8 @@ window.openFilleulsModal = async function() {
         container.innerHTML = htmlList.join('');
 
     } catch (e) {
-        console.error("Erreur chargement liste filleuls :", e);
-        container.innerHTML = '<div style="text-align:center; color:#ff4d4d; padding:20px;">Erreur lors du chargement.</div>';
+        console.error("Erreur liste filleuls :", e);
+        container.innerHTML = '<div style="text-align:center; color:#ff4d4d; padding:20px;">Erreur de chargement.</div>';
     }
 };
 
@@ -3821,144 +3815,152 @@ window.SPONSOR_RANKS_METADATA = {
 // 3. ADAPTATION DE openSponsorModal (PREND EN CHARGE LE PARRAIN OU UN FILLEUL)
 // =========================================================
 window.openSponsorModal = async function(event, targetUserId = null) {
-    if (event && event.stopPropagation) event.stopPropagation();
+    if (event) {
+        if (event.stopPropagation) event.stopPropagation();
+        if (event.preventDefault) event.preventDefault();
+    }
 
-    // Si on ouvre le détail d'un filleul, on ferme la modale de la liste
+    // 1. Fermer la liste des filleuls
     closeFilleulsModal();
 
-    const modal = document.getElementById('sponsor-info-modal');
-    if (!modal) return;
+    // 2. Anti-conflit de clic pour éviter la fermeture instantanée
+    setTimeout(async () => {
+        const modal = document.getElementById('sponsor-info-modal');
+        if (!modal) return;
 
-    if (modal.parentNode !== document.body) document.body.appendChild(modal);
-    
-    modal.style.setProperty('display', 'flex', 'important');
-    modal.style.setProperty('position', 'fixed', 'important');
-    modal.style.setProperty('top', '0', 'important');
-    modal.style.setProperty('left', '0', 'important');
-    modal.style.setProperty('width', '100vw', 'important');
-    modal.style.setProperty('height', '100vh', 'important');
-    modal.style.setProperty('background', 'rgba(0, 0, 0, 0.85)', 'important');
-    modal.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
-    modal.style.setProperty('z-index', '99999999', 'important');
+        if (modal.parentNode !== document.body) document.body.appendChild(modal);
 
-    const nameEl = document.getElementById('sponsor-modal-name');
-    const bioEl = document.getElementById('sponsor-modal-bio');
-    const photoImg = document.getElementById('sponsor-modal-photo');
-    const bannerImg = document.getElementById('sponsor-modal-banner');
-    const rankEl = document.getElementById('sponsor-modal-rank');
-    const dateEl = document.getElementById('sponsor-modal-date');
-    const verifiedBadge = document.getElementById('sponsor-modal-verified');
-    const linkContainer = document.getElementById('sponsor-modal-link-container');
-    const linkEl = document.getElementById('sponsor-modal-link');
-    const referralsEl = document.getElementById('sponsor-modal-referrals');
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('position', 'fixed', 'important');
+        modal.style.setProperty('top', '0', 'important');
+        modal.style.setProperty('left', '0', 'important');
+        modal.style.setProperty('width', '100vw', 'important');
+        modal.style.setProperty('height', '100vh', 'important');
+        modal.style.setProperty('background', 'rgba(0, 0, 0, 0.85)', 'important');
+        modal.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
+        modal.style.setProperty('z-index', '99999999', 'important');
 
-    if (nameEl) nameEl.textContent = "Chargement...";
-    if (bioEl) bioEl.textContent = "Recherche des informations...";
+        const nameEl = document.getElementById('sponsor-modal-name');
+        const bioEl = document.getElementById('sponsor-modal-bio');
+        const photoImg = document.getElementById('sponsor-modal-photo');
+        const bannerImg = document.getElementById('sponsor-modal-banner');
+        const rankEl = document.getElementById('sponsor-modal-rank');
+        const dateEl = document.getElementById('sponsor-modal-date');
+        const verifiedBadge = document.getElementById('sponsor-modal-verified');
+        const linkContainer = document.getElementById('sponsor-modal-link-container');
+        const linkEl = document.getElementById('sponsor-modal-link');
+        const referralsEl = document.getElementById('sponsor-modal-referrals');
 
-    try {
-        let cleanUserId = targetUserId;
+        if (nameEl) nameEl.textContent = "Chargement...";
+        if (bioEl) bioEl.textContent = "Recherche des informations...";
 
-        // Si aucun ID cible n'est fourni, on cherche l'ID du Parrain de l'utilisateur connecté
-        if (!cleanUserId) {
-            const firebaseAuth = typeof auth !== 'undefined' ? auth : (window.auth || null);
-            if (!firebaseAuth || !firebaseAuth.currentUser) return;
+        try {
+            let cleanUserId = targetUserId;
 
-            const uid = firebaseAuth.currentUser.uid;
-            const myRewardsSnap = await getDoc(doc(db, "rewards_users", uid));
-            if (!myRewardsSnap.exists()) return;
+            // Si aucun ID spécifié, on va chercher l'ID du Parrain
+            if (!cleanUserId) {
+                const firebaseAuth = typeof auth !== 'undefined' ? auth : (window.auth || null);
+                if (!firebaseAuth || !firebaseAuth.currentUser) return;
 
-            const myData = myRewardsSnap.data();
-            cleanUserId = myData.parrainePar || myData.sponsorId || myData.sponsor;
-        }
+                const uid = firebaseAuth.currentUser.uid;
+                const myRewardsSnap = await getDoc(doc(db, "rewards_users", uid));
+                if (!myRewardsSnap.exists()) return;
 
-        if (!cleanUserId || String(cleanUserId).trim() === "") {
-            if (nameEl) nameEl.textContent = "Aucun membre";
-            if (bioEl) bioEl.textContent = "Aucune information trouvée.";
-            return;
-        }
+                const myData = myRewardsSnap.data();
+                cleanUserId = myData.parrainePar || myData.sponsorId || myData.sponsor;
+            }
 
-        cleanUserId = String(cleanUserId).trim();
+            if (!cleanUserId || String(cleanUserId).trim() === "") {
+                if (nameEl) nameEl.textContent = "Aucun membre";
+                if (bioEl) bioEl.textContent = "Information indisponible.";
+                return;
+            }
 
-        // Récupération des données du membre cible (Parrain OU Filleul)
-        const [sponsorRewardsSnap, sponsorUsersSnap] = await Promise.all([
-            getDoc(doc(db, "rewards_users", cleanUserId)),
-            getDoc(doc(db, "users", cleanUserId))
-        ]);
+            cleanUserId = String(cleanUserId).trim();
 
-        const rData = sponsorRewardsSnap.exists() ? sponsorRewardsSnap.data() : {};
-        const uData = sponsorUsersSnap.exists() ? sponsorUsersSnap.data() : {};
+            // Récupération des données Firestore du membre ciblé
+            const [sponsorRewardsSnap, sponsorUsersSnap] = await Promise.all([
+                getDoc(doc(db, "rewards_users", cleanUserId)),
+                getDoc(doc(db, "users", cleanUserId))
+            ]);
 
-        if (nameEl) nameEl.textContent = rData.name || uData.name || uData.displayName || "Membre";
-        if (bioEl) bioEl.textContent = rData.bio || uData.bio || "Ce membre n'a pas rédigé de bio.";
+            const rData = sponsorRewardsSnap.exists() ? sponsorRewardsSnap.data() : {};
+            const uData = sponsorUsersSnap.exists() ? sponsorUsersSnap.data() : {};
 
-        const userPhoto = uData.photoURL || uData.photo || rData.photoURL || rData.photo;
-        if (photoImg) photoImg.src = userPhoto || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+            if (nameEl) nameEl.textContent = rData.name || uData.name || uData.displayName || "Membre";
+            if (bioEl) bioEl.textContent = rData.bio || uData.bio || "Ce membre n'a pas rédigé de bio.";
 
-        const userBanner = rData.bannerURL || uData.bannerURL;
-        if (bannerImg) bannerImg.src = userBanner || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600";
+            const userPhoto = uData.photoURL || uData.photo || rData.photoURL || rData.photo;
+            if (photoImg) photoImg.src = userPhoto || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
 
-        const countR = Number(rData.invitedCount ?? rData.totalParrainages ?? 0);
-        const countU = Number(uData.invitedCount ?? uData.totalParrainages ?? 0);
-        const realCount = Math.max(countR, countU);
-        if (referralsEl) referralsEl.textContent = realCount;
+            const userBanner = rData.bannerURL || uData.bannerURL;
+            if (bannerImg) bannerImg.src = userBanner || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600";
 
-        if (dateEl) {
-            const rawDate = rData.createdAt || uData.createdAt || rData.dateJoined || uData.dateJoined;
-            if (rawDate) {
-                const dateObj = rawDate.toDate ? rawDate.toDate() : new Date(rawDate);
-                if (!isNaN(dateObj.getTime())) {
-                    const formatted = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-                    dateEl.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+            const countR = Number(rData.invitedCount ?? rData.totalParrainages ?? 0);
+            const countU = Number(uData.invitedCount ?? uData.totalParrainages ?? 0);
+            const realCount = Math.max(countR, countU);
+            if (referralsEl) referralsEl.textContent = realCount;
+
+            if (dateEl) {
+                const rawDate = rData.createdAt || uData.createdAt || rData.dateJoined || uData.dateJoined;
+                if (rawDate) {
+                    const dateObj = rawDate.toDate ? rawDate.toDate() : new Date(rawDate);
+                    if (!isNaN(dateObj.getTime())) {
+                        const formatted = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                        dateEl.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+                    }
                 }
             }
+
+            let rawRank = uData.rank ?? uData.rang ?? rData.rank ?? rData.rang ?? 0;
+            let sponsorRank = parseInt(rawRank, 10);
+            if (isNaN(sponsorRank) || sponsorRank < 0) sponsorRank = 0;
+
+            if (verifiedBadge) {
+                verifiedBadge.style.display = (uData.isVerified || sponsorRank > 0) ? "inline-block" : "none";
+            }
+
+            if (rankEl) {
+                const rankMeta = (window.SPONSOR_RANKS_METADATA && window.SPONSOR_RANKS_METADATA[sponsorRank]) || { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" };
+                rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> Rang ${sponsorRank} : ${rankMeta.name}`;
+            }
+
+            if (typeof calculerReputationEtEtoiles === "function") {
+                const sponsorHistory = rData.history || uData.history || {};
+                await calculerReputationEtEtoiles(
+                    sponsorHistory, 
+                    realCount, 
+                    'sponsor-modal-reputation', 
+                    'sponsor-modal-stars',
+                    true
+                );
+            }
+
+            // Lien personnalisé
+            const lUrl = rData.linkUrl || uData.linkUrl || rData.url || uData.url;
+            const lTitle = rData.linkTitle || uData.linkTitle || rData.titleLink || uData.titleLink;
+
+            if (linkContainer && linkEl && lUrl && String(lUrl).trim() !== "") {
+                const cleanUrl = String(lUrl).trim();
+                const formattedUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+
+                linkEl.href = formattedUrl;
+                linkEl.textContent = (lTitle && String(lTitle).trim() !== "") ? String(lTitle).trim() : cleanUrl;
+                linkEl.setAttribute('target', '_blank');
+                linkEl.setAttribute('rel', 'noopener noreferrer');
+
+                linkContainer.style.setProperty('display', 'flex', 'important');
+                linkContainer.style.setProperty('pointer-events', 'auto', 'important');
+                linkEl.style.setProperty('pointer-events', 'auto', 'important');
+                linkEl.style.setProperty('cursor', 'pointer', 'important');
+            } else if (linkContainer) {
+                linkContainer.style.display = "none";
+            }
+
+        } catch (e) {
+            console.error("Erreur profil filleul/parrain :", e);
         }
-
-        let rawRank = uData.rank ?? uData.rang ?? rData.rank ?? rData.rang ?? 0;
-        let sponsorRank = parseInt(rawRank, 10);
-        if (isNaN(sponsorRank) || sponsorRank < 0) sponsorRank = 0;
-
-        if (verifiedBadge) {
-            verifiedBadge.style.display = (uData.isVerified || sponsorRank > 0) ? "inline-block" : "none";
-        }
-
-        if (rankEl) {
-            const rankMeta = window.SPONSOR_RANKS_METADATA[sponsorRank] || window.SPONSOR_RANKS_METADATA[0];
-            rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> Rang ${sponsorRank} : ${rankMeta.name}`;
-        }
-
-        const sponsorHistory = rData.history || uData.history || {};
-        await calculerReputationEtEtoiles(
-            sponsorHistory, 
-            realCount, 
-            'sponsor-modal-reputation', 
-            'sponsor-modal-stars',
-            true
-        );
-
-        // Lien personnalisé
-        const lUrl = rData.linkUrl || uData.linkUrl || rData.url || uData.url;
-        const lTitle = rData.linkTitle || uData.linkTitle || rData.titleLink || uData.titleLink;
-
-        if (linkContainer && linkEl && lUrl && String(lUrl).trim() !== "") {
-            const cleanUrl = String(lUrl).trim();
-            const formattedUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-
-            linkEl.href = formattedUrl;
-            linkEl.textContent = (lTitle && String(lTitle).trim() !== "") ? String(lTitle).trim() : cleanUrl;
-            linkEl.setAttribute('target', '_blank');
-            linkEl.setAttribute('rel', 'noopener noreferrer');
-
-            linkContainer.style.setProperty('display', 'flex', 'important');
-            linkContainer.style.setProperty('pointer-events', 'auto', 'important');
-            linkEl.style.setProperty('pointer-events', 'auto', 'important');
-            linkEl.style.setProperty('cursor', 'pointer', 'important');
-        } else if (linkContainer) {
-            linkContainer.style.display = "none";
-        }
-
-    } catch (e) {
-        console.error("Erreur chargement profil :", e);
-    }
+    }, 50);
 };
 
 // Fermeture
