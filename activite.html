@@ -2376,11 +2376,12 @@ async function reclamerPointsBanniereSeule() {
         );
 
         // B) Enregistrement dans l'historique v2
+        const idMissionBanniere = window.banniereMissionActiveId || "banniere_generique";
         promises.push(
             db.collection("users")
                 .doc(currentUserId)
                 .collection("historique_taches_v2")
-                .doc(banniereMissionActiveId)
+                .doc(idMissionBanniere)
                 .set({
                     date: dateAujourdhui,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -2388,7 +2389,7 @@ async function reclamerPointsBanniereSeule() {
                 })
         );
 
-        // C) Crédit des Points et de l'XP UNIQUEMENT si le rang est >= 1
+        // C) Crédit des Points ET de l'XP UNIQUEMENT si le rang est >= 1
         if (rangUtilisateur >= 1) {
             promises.push(
                 db.collection("users").doc(currentUserId).update({
@@ -2403,7 +2404,7 @@ async function reclamerPointsBanniereSeule() {
 
         // 5. Verrouillage Visuel Instantané
         if (typeof bloquerBoutonBanniereVisuellement === "function") {
-            bloquerBoutonBanniereVisuellement(banniereMissionActiveId);
+            bloquerBoutonBanniereVisuellement(idMissionBanniere);
         }
 
         if (btnClaim) {
@@ -2413,7 +2414,7 @@ async function reclamerPointsBanniereSeule() {
 
         // 6. Modale adaptée au Rang
         if (rangUtilisateur >= 1) {
-            const msg = `Vous avez reçu +${pts} Points et +1 XP !\n\nCette mission est validée pour aujourd'hui.`;
+            const msg = `Félicitations ! Vos +${pts} Points et +1 XP ont été crédités !`;
             if (typeof afficherAlertePersonnalisee === "function") {
                 afficherAlertePersonnalisee(msg, "Mission Validée", "Super", function() {
                     if (typeof fermerModaleBanniereExclusive === "function") fermerModaleBanniereExclusive();
