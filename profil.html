@@ -1734,7 +1734,7 @@ async function verifierAdBlock() {
 }
 
 // =========================================================================
-// CALCUL DE LA RÉPUTATION DYNAMIQUE (POUR SOIT-MÊME OU UN PARRAIN)
+// CALCUL DE LA RÉPUTATION SÉVÈRE & DYNAMIQUE
 // =========================================================================
 async function calculerReputationEtEtoiles(
     userHistoryData = null, 
@@ -1742,30 +1742,25 @@ async function calculerReputationEtEtoiles(
     textElemId = 'reputation-score-text', 
     starsContainerId = 'reputation-stars'
 ) {
-    // Si aucune donnée n'est fournie, on prend celles de l'utilisateur en cours
     const historyData = userHistoryData || window.g_userHistoryData || {};
-    const totalParrainages = totalParrainagesCustom !== null ? Number(totalParrainagesCustom) : Number(window.g_totalParrainages || 0);
+    const totalParrainages = totalParrainagesCustom !== null 
+        ? Number(totalParrainagesCustom) 
+        : Number(window.g_totalParrainages || 0);
 
-    let score = 2.5; // Note de départ
+    // A. Note de départ stricte (1.0 sur 5)
+    let score = 1.0; 
 
-    // A. AdBlock (Appliqué uniquement si on calcule pour l'utilisateur courant)
-    if (!userHistoryData && typeof verifierAdBlock === "function") {
-        const adBlockDetecte = await verifierAdBlock();
-        if (adBlockDetecte) {
-            score -= 1.0;
-        }
-    }
+    // B. Calcul du nombre de jours réels d'activité
+    const joursActifs = Object.keys(historyData).filter(key => {
+        const val = typeof extraireValeurJour === "function" ? extraireValeurJour(historyData[key]) : Number(historyData[key]);
+        return val > 0;
+    }).length;
 
-    // B. Prise en compte des points d'historique
-    const totalPointsTousLesJours = Object.values(historyData).reduce((acc, val) => {
-        const num = typeof extraireValeurJour === "function" ? extraireValeurJour(val) : (Number(val) || 0);
-        return acc + num;
-    }, 0);
-
-    const bonusHistorique = Math.min(1.5, (totalPointsTousLesJours / 120) * 1.5);
+    // Progression lente : 60 jours d'activité requis pour +2.0 étoiles max (16 jours ≈ +0.53 -> 1.5 étoiles total)
+    const bonusHistorique = Math.min(2.0, (joursActifs / 60) * 2.0);
     score += bonusHistorique;
 
-    // C. Vérification de l'activité du jour (YYYY-MM-DD)
+    // C. Activité du jour & SANCTION SÉVÈRE
     const aujourdhui = new Date();
     const yyyy = aujourdhui.getFullYear();
     const mm = String(aujourdhui.getMonth() + 1).padStart(2, '0');
@@ -1775,21 +1770,23 @@ async function calculerReputationEtEtoiles(
     const activiteAujourdhui = Number(historyData[dateAujourdhuiISO]) || 0;
 
     if (activiteAujourdhui === 0) {
-        score -= 0.3;
+        // SANCTION LOURDE : Baisse directe de -1.2 point pour forcer le retour quotidien
+        score -= 1.2;
     } else {
-        const bonusAujourdhui = Math.min(0.6, (activiteAujourdhui / 15) * 0.6);
+        // Bonus présence du jour (+0.5 max)
+        const bonusAujourdhui = Math.min(0.5, (activiteAujourdhui / 10) * 0.5);
         score += bonusAujourdhui;
     }
 
-    // D. Bonus Parrainage
-    const bonusParrainage = Math.min(1.0, (totalParrainages / 10) * 1.0);
+    // D. Bonus Parrainage (Max +1.5 étoiles pour 30 filleuls)
+    const bonusParrainage = Math.min(1.5, (totalParrainages / 30) * 1.5);
     score += bonusParrainage;
 
-    // E. Normalisation finale (1.0 à 5.0)
+    // E. Normalisation stricte entre 1.0 et 5.0
     score = Math.max(1.0, Math.min(5.0, score));
     const scoreArrondi = Math.round(score * 10) / 10;
 
-    // F. Mise à jour de l'affichage HTML ciblé
+    // F. Injection HTML
     const textElem = document.getElementById(textElemId);
     if (textElem) textElem.innerText = `${scoreArrondi.toFixed(1)} / 5`;
 
@@ -1810,7 +1807,6 @@ async function calculerReputationEtEtoiles(
 
     return scoreArrondi;
 }
-
 window.calculerReputationEtEtoiles = calculerReputationEtEtoiles;
 
     // Fonction d'affichage du rang accessible globalement
@@ -3624,21 +3620,19 @@ function setButtonToCopyState() {
 }
 
 // ==========================================
-// METADATA DES RANKS (Déclaration sécurisée)
+// METADATA DES RANKS (Déclaration Globale Sécurisée)
 // ==========================================
-if (typeof window.SPONSOR_RANKS_METADATA === 'undefined' && typeof SPONSOR_RANKS_METADATA === 'undefined') {
-    window.SPONSOR_RANKS_METADATA = {
-        0: { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
-        1: { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
-        2: { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
-        3: { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
-        4: { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
-        5: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
-    };
-}
+window.SPONSOR_RANKS_METADATA = {
+    0: { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
+    1: { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
+    2: { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
+    3: { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
+    4: { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
+    5: { name: "Diamant", medal: "fa-solid fa-gem", color: "#00ffcc" }
+};
 
 // ==========================================
-// 3. CHARGEMENT DE LA BANNIÈRE ET PROFIL DU PARRAIN
+// 3. OUVERTURE DE LA MODALE PARRAIN
 // ==========================================
 window.openSponsorModal = async function(event) {
     if (event && event.stopPropagation) event.stopPropagation();
@@ -3649,7 +3643,7 @@ window.openSponsorModal = async function(event) {
         return;
     }
 
-    // 1. Force l'affichage et la priorité d'affichage
+    // 1. Force l'affichage et la priorité CSS
     document.body.appendChild(modal);
     modal.style.setProperty('display', 'flex', 'important');
     modal.style.setProperty('position', 'fixed', 'important');
@@ -3666,7 +3660,7 @@ window.openSponsorModal = async function(event) {
     modal.style.setProperty('opacity', '1', 'important');
     modal.style.setProperty('visibility', 'visible', 'important');
 
-    // Déblocage explicite du bouton de fermeture (X)
+    // Déblocage du bouton fermer
     const closeBtn = modal.querySelector('.close-modal, .btn-close, .modal-close, [onclick*="closeSponsorModal"]');
     if (closeBtn) {
         closeBtn.style.setProperty('z-index', '100000000', 'important');
@@ -3678,7 +3672,7 @@ window.openSponsorModal = async function(event) {
         };
     }
 
-    // Éléments HTML
+    // Éléments du DOM
     const bannerImg = document.getElementById('sponsor-modal-banner');
     const photoImg = document.getElementById('sponsor-modal-photo');
     const nameEl = document.getElementById('sponsor-modal-name');
@@ -3702,7 +3696,7 @@ window.openSponsorModal = async function(event) {
 
         const uid = auth.currentUser.uid;
 
-        // 2. Recherche du parrain dans le document du filleul
+        // 2. Recherche du parrain chez l'utilisateur connecté
         const myRewardsSnap = await getDoc(doc(db, "rewards_users", uid));
         if (!myRewardsSnap.exists()) {
             if (nameEl) nameEl.textContent = "Profil introuvable";
@@ -3722,7 +3716,7 @@ window.openSponsorModal = async function(event) {
 
         const cleanSponsorId = String(sponsorId).trim();
 
-        // 3. Récupération parallèle dans rewards_users ET users
+        // 3. Récupération simultanée dans rewards_users ET users
         const [sponsorRewardsSnap, sponsorUsersSnap] = await Promise.all([
             getDoc(doc(db, "rewards_users", cleanSponsorId)),
             getDoc(doc(db, "users", cleanSponsorId))
@@ -3737,30 +3731,32 @@ window.openSponsorModal = async function(event) {
         const rData = sponsorRewardsSnap.exists() ? sponsorRewardsSnap.data() : {};
         const uData = sponsorUsersSnap.exists() ? sponsorUsersSnap.data() : {};
 
-        // 4. Injection Nom et Bio
+        // 4. Injections Nom et Bio
         if (nameEl) nameEl.textContent = rData.name || uData.name || uData.displayName || "Membre Parrain";
         if (bioEl) bioEl.textContent = rData.bio || uData.bio || "Ce membre n'a pas rédigé de bio.";
 
-        // Photos (avec Fallbacks si vides)
+        // Photos
         const userPhoto = uData.photoURL || uData.photo || rData.photoURL || rData.photo;
         if (photoImg) {
-            photoImg.src = (userPhoto && userPhoto.trim() !== "")
+            photoImg.src = (userPhoto && String(userPhoto).trim() !== "")
                 ? userPhoto
                 : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
         }
 
         const userBanner = rData.bannerURL || uData.bannerURL;
         if (bannerImg) {
-            bannerImg.src = (userBanner && userBanner.trim() !== "")
+            bannerImg.src = (userBanner && String(userBanner).trim() !== "")
                 ? userBanner
                 : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600";
         }
 
-        // Compteur de parrainages
-        const count = rData.invitedCount !== undefined ? rData.invitedCount : (uData.invitedCount !== undefined ? uData.invitedCount : 0);
-        if (referralsEl) referralsEl.textContent = count;
+        // 5. Synchro du Nombre de Filleuls (Valeur maximale exacte)
+        const countR = Number(rData.invitedCount || 0);
+        const countU = Number(uData.invitedCount || 0);
+        const realCount = Math.max(countR, countU);
+        if (referralsEl) referralsEl.textContent = realCount;
 
-        // Date dynamique (createdAt / dateJoined)
+        // 6. Synchro Date de création
         if (dateEl) {
             const rawDate = rData.createdAt || uData.createdAt || rData.dateJoined || uData.dateJoined || rData.lastActiveDate;
             if (rawDate) {
@@ -3776,35 +3772,35 @@ window.openSponsorModal = async function(event) {
             }
         }
 
-        // 5. AFFICHAGE DYNAMIQUE DU RANG (Du Rang 0 au Rang 5)
-        const sponsorRank = uData.rank !== undefined ? Number(uData.rank) : (uData.rang !== undefined ? Number(uData.rang) : (rData.rank !== undefined ? Number(rData.rank) : 0));
+        // 7. PARSING DU RANG DU PARRAIN (Résout le problème de nom de rang)
+        let rawRank = uData.rank ?? uData.rang ?? rData.rank ?? rData.rang ?? 0;
+        let sponsorRank = parseInt(rawRank, 10);
+        if (isNaN(sponsorRank) || sponsorRank < 0) sponsorRank = 0;
+        if (sponsorRank > 5) sponsorRank = 5;
 
         if (verifiedBadge) {
             verifiedBadge.style.display = (uData.isVerified || sponsorRank > 0) ? "inline-block" : "none";
         }
 
         if (rankEl) {
-            const ranksMetadata = (typeof SPONSOR_RANKS_METADATA !== 'undefined') ? SPONSOR_RANKS_METADATA : window.SPONSOR_RANKS_METADATA;
-            const meta = (ranksMetadata && ranksMetadata[sponsorRank]) ? ranksMetadata[sponsorRank] : { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" };
-            rankEl.innerHTML = `<i class="${meta.medal}" style="color:${meta.color};"></i> Rang ${sponsorRank} : ${meta.name}`;
+            const rankMeta = window.SPONSOR_RANKS_METADATA[sponsorRank] || window.SPONSOR_RANKS_METADATA[0];
+            rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> Rang ${sponsorRank} : ${rankMeta.name}`;
         }
 
-        // 6. CALCUL ET AFFICHAGE DYNAMIQUE DES ÉTOILES / RÉPUTATION DU PARRAIN
+        // 8. CALCUL DES ÉTOILES ET RÉPUTATION SÉVÈRE DU PARRAIN
         const sponsorHistory = rData.history || uData.history || {};
-        if (typeof calculerReputationEtEtoiles === 'function') {
-            await calculerReputationEtEtoiles(
-                sponsorHistory, 
-                count, 
-                'sponsor-modal-reputation', 
-                'sponsor-modal-stars'
-            );
-        }
+        await calculerReputationEtEtoiles(
+            sponsorHistory, 
+            realCount, 
+            'sponsor-modal-reputation', 
+            'sponsor-modal-stars'
+        );
 
-        // 7. Lien Personnalisé
+        // 9. Lien Personnalisé
         const lTitle = rData.linkTitle || uData.linkTitle || "mon lien site";
         const lUrl = rData.linkUrl || uData.linkUrl;
 
-        if (linkContainer && linkEl && lUrl && lUrl.trim() !== "") {
+        if (linkContainer && linkEl && lUrl && String(lUrl).trim() !== "") {
             const formattedUrl = lUrl.startsWith('http') ? lUrl : `https://${lUrl}`;
             linkEl.href = formattedUrl;
             linkEl.textContent = lTitle;
@@ -3825,7 +3821,9 @@ window.openSponsorModal = async function(event) {
     }
 };
 
-// Fonction de fermeture explicite
+// ==========================================
+// 4. FERMETURE ET ÉVÉNEMENTS
+// ==========================================
 window.closeSponsorModal = function() {
     const modal = document.getElementById('sponsor-info-modal');
     if (modal) {
@@ -3833,14 +3831,12 @@ window.closeSponsorModal = function() {
     }
 };
 
-// Fermeture au clic en dehors de la carte
 window.addEventListener('click', (event) => {
     const modal = document.getElementById('sponsor-info-modal');
     if (event.target === modal) {
         window.closeSponsorModal();
     }
 });
-    
 // ==========================================
 // 4. VERSEMENT DU BONUS 10% SUR LA PAGE ACTIVITÉ
 // ==========================================
