@@ -1734,26 +1734,29 @@ async function verifierAdBlock() {
 }
 
 // =========================================================================
-// CALCUL DE LA RÉPUTATION AVEC TRAÇABILITÉ CONSOLE
+// CALCUL DE LA RÉPUTATION DYNAMIQUE (POUR SOIT-MÊME OU UN PARRAIN)
 // =========================================================================
-async function calculerReputationEtEtoiles(userHistoryData, scoreInitial = 156) {
+async function calculerReputationEtEtoiles(
+    userHistoryData = null, 
+    totalParrainagesCustom = null, 
+    textElemId = 'reputation-score-text', 
+    starsContainerId = 'reputation-stars'
+) {
+    // Si aucune donnée n'est fournie, on prend celles de l'utilisateur en cours
     const historyData = userHistoryData || window.g_userHistoryData || {};
-    
-    // 🔴 AJOUTE CETTE LIGNE POUR FIXER L'ERREUR DU PARRAINAGE :
-    const totalParrainages = Number(window.g_totalParrainages || 0);
-
-    console.log("📊 Données d'historique lues :", historyData);
+    const totalParrainages = totalParrainagesCustom !== null ? Number(totalParrainagesCustom) : Number(window.g_totalParrainages || 0);
 
     let score = 2.5; // Note de départ
 
-    // A. Test AdBlock
-    const adBlockDetecte = await verifierAdBlock();
-    if (adBlockDetecte) {
-        score -= 1.0;
-        console.log("⚠️ AdBlock détecté (-1.0 pt)");
+    // A. AdBlock (Appliqué uniquement si on calcule pour l'utilisateur courant)
+    if (!userHistoryData && typeof verifierAdBlock === "function") {
+        const adBlockDetecte = await verifierAdBlock();
+        if (adBlockDetecte) {
+            score -= 1.0;
+        }
     }
 
-    // B. Prise en compte de TOUTES les dates passées (2026-08-06, 2026-08-07...)
+    // B. Prise en compte des points d'historique
     const totalPointsTousLesJours = Object.values(historyData).reduce((acc, val) => {
         const num = typeof extraireValeurJour === "function" ? extraireValeurJour(val) : (Number(val) || 0);
         return acc + num;
@@ -1761,9 +1764,8 @@ async function calculerReputationEtEtoiles(userHistoryData, scoreInitial = 156) 
 
     const bonusHistorique = Math.min(1.5, (totalPointsTousLesJours / 120) * 1.5);
     score += bonusHistorique;
-    console.log(`📈 Points cumulés (${totalPointsTousLesJours} pts sur ${Object.keys(historyData).length} jours) : +${bonusHistorique.toFixed(2)} pts`);
 
-    // C. Vérification de la date du jour (YYYY-MM-DD)
+    // C. Vérification de l'activité du jour (YYYY-MM-DD)
     const aujourdhui = new Date();
     const yyyy = aujourdhui.getFullYear();
     const mm = String(aujourdhui.getMonth() + 1).padStart(2, '0');
@@ -1774,11 +1776,9 @@ async function calculerReputationEtEtoiles(userHistoryData, scoreInitial = 156) 
 
     if (activiteAujourdhui === 0) {
         score -= 0.3;
-        console.log(`📉 Aucune activité enregistrée pour aujourd'hui (${dateAujourdhuiISO}) : -0.3 pt`);
     } else {
         const bonusAujourdhui = Math.min(0.6, (activiteAujourdhui / 15) * 0.6);
         score += bonusAujourdhui;
-        console.log(`📈 Activité du jour (${dateAujourdhuiISO}) validée : +${bonusAujourdhui.toFixed(2)} pts`);
     }
 
     // D. Bonus Parrainage
@@ -1789,13 +1789,11 @@ async function calculerReputationEtEtoiles(userHistoryData, scoreInitial = 156) 
     score = Math.max(1.0, Math.min(5.0, score));
     const scoreArrondi = Math.round(score * 10) / 10;
 
-    console.log(`⭐ SCORE FINAL : ${scoreArrondi} / 5`);
-
-    // F. Mise à jour de l'affichage HTML
-    const textElem = document.getElementById('reputation-score-text');
+    // F. Mise à jour de l'affichage HTML ciblé
+    const textElem = document.getElementById(textElemId);
     if (textElem) textElem.innerText = `${scoreArrondi.toFixed(1)} / 5`;
 
-    const starsContainer = document.getElementById('reputation-stars');
+    const starsContainer = document.getElementById(starsContainerId);
     if (starsContainer) {
         let starsHTML = '';
         for (let i = 1; i <= 5; i++) {
@@ -3626,7 +3624,20 @@ function setButtonToCopyState() {
 }
 
 // ==========================================
-// 3. CHARGEMENT DE LA BANNIÈRE DU PARRAIN (DANS LA MODALE)
+// METADATA DES RANKS (0 À 5)
+// ==========================================
+const SPONSOR_RANKS_METADATA = {
+    0: { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
+    1: { name: "Bronze", medal: "fa-solid fa-medal", color: "#cd7f32" },
+    2: { name: "Argent", medal: "fa-solid fa-medal", color: "#c0c0c0" },
+    3: { name: "Or", medal: "fa-solid fa-medal", color: "#ffd700" },
+    4: { name: "Platine", medal: "fa-solid fa-trophy", color: "#e5e4e2" },
+    5: { name: "Diamant", medal: "fa-solid fa-circle-nodes", color: "#00ffcc" }
+};
+window.SPONSOR_RANKS_METADATA = SPONSOR_RANKS_METADATA;
+
+// ==========================================
+// 3. CHARGEMENT DE LA BANNIÈRE ET PROFIL DU PARRAIN
 // ==========================================
 window.openSponsorModal = async function(event) {
     if (event && event.stopPropagation) event.stopPropagation();
@@ -3744,13 +3755,11 @@ window.openSponsorModal = async function(event) {
                 : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600";
         }
 
-        // Vraie valeur dynamique de invitedCount (Image 1 : invitedCount: 1)
-        if (referralsEl) {
-            const count = rData.invitedCount !== undefined ? rData.invitedCount : (uData.invitedCount !== undefined ? uData.invitedCount : 0);
-            referralsEl.textContent = count;
-        }
+        // Compteur de parrainages
+        const count = rData.invitedCount !== undefined ? rData.invitedCount : (uData.invitedCount !== undefined ? uData.invitedCount : 0);
+        if (referralsEl) referralsEl.textContent = count;
 
-        // Date 100% dynamique (Lit createdAt, dateJoined ou lastActiveDate)
+        // Date dynamique (createdAt / dateJoined)
         if (dateEl) {
             const rawDate = rData.createdAt || uData.createdAt || rData.dateJoined || uData.dateJoined || rData.lastActiveDate;
             if (rawDate) {
@@ -3766,29 +3775,30 @@ window.openSponsorModal = async function(event) {
             }
         }
 
-        // 5. Affichage du Rang ("Rang 1 : Bronze")
-        const sponsorRank = uData.rank !== undefined ? Number(uData.rank) : (uData.rang !== undefined ? Number(uData.rang) : 0);
+        // 5. AFFICHAGE DYNAMIQUE DU RANG (Du Rang 0 au Rang 5)
+        const sponsorRank = uData.rank !== undefined ? Number(uData.rank) : (uData.rang !== undefined ? Number(uData.rang) : (rData.rank !== undefined ? Number(rData.rank) : 0));
 
         if (verifiedBadge) {
             verifiedBadge.style.display = (uData.isVerified || sponsorRank > 0) ? "inline-block" : "none";
         }
 
         if (rankEl) {
-            let rankName = sponsorRank > 0 ? 'Bronze' : 'Débutant';
-            let medalIcon = 'fa-solid fa-award';
-            let medalColor = '#ff9900';
-
-            if (typeof SPONSOR_RANKS_METADATA !== 'undefined' && SPONSOR_RANKS_METADATA[sponsorRank]) {
-                const meta = SPONSOR_RANKS_METADATA[sponsorRank];
-                rankName = meta.name;
-                medalIcon = meta.medal;
-                medalColor = meta.color;
-            }
-
-            rankEl.innerHTML = `<i class="${medalIcon}" style="color:${medalColor};"></i> Rang ${sponsorRank} : ${rankName}`;
+            const meta = SPONSOR_RANKS_METADATA[sponsorRank] || SPONSOR_RANKS_METADATA[0];
+            rankEl.innerHTML = `<i class="${meta.medal}" style="color:${meta.color};"></i> Rang ${sponsorRank} : ${meta.name}`;
         }
 
-        // 6. Lien Personnalisé
+        // 6. CALCUL ET AFFICHAGE DYNAMIQUE DES ÉTOILES / RÉPUTATION DU PARRAIN
+        const sponsorHistory = rData.history || uData.history || {};
+        if (typeof calculerReputationEtEtoiles === 'function') {
+            await calculerReputationEtEtoiles(
+                sponsorHistory, 
+                count, 
+                'sponsor-modal-reputation', 
+                'sponsor-modal-stars'
+            );
+        }
+
+        // 7. Lien Personnalisé
         const lTitle = rData.linkTitle || uData.linkTitle || "mon lien site";
         const lUrl = rData.linkUrl || uData.linkUrl;
 
