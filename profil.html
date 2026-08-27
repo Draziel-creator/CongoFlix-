@@ -4421,8 +4421,9 @@ window.handleAuth = async () => {
             const cred = await createUserWithEmailAndPassword(auth, email, pass);
             const newUserId = cred.user.uid;
             const newUserName = email.split('@')[0];
+            const nowIso = new Date().toISOString();
 
-            // A. ENREGISTREMENT DU FILLEUL (Son propre document)
+            // A.1 ENREGISTREMENT DU FILLEUL DANS "rewards_users"
             await setDoc(doc(db, "rewards_users", newUserId), { 
                 name: newUserName, 
                 bio: "Créateur de contenu • Passionné • Partageur",
@@ -4437,10 +4438,8 @@ window.handleAuth = async () => {
                 daysActive: 1,
                 pointsDuJour: 0,
 
-                // CHAMP AJOUTÉ POUR L'AFFICHAGE "MEMBRE DEPUIS"
-                createdAt: new Date().toISOString(),
+                createdAt: nowIso,
                 
-                // Informations du parrain stockées chez le filleul
                 parrainePar: verifiedSponsorId || "",
                 sponsorId: verifiedSponsorId || "",
                 statutParrainage: verifiedSponsorId ? "valide" : "aucun",
@@ -4451,14 +4450,30 @@ window.handleAuth = async () => {
                 history: { w1_d1: 0, w1_d2: 0, w1_d3: 0, w1_d4: 0, w1_d5: 0, w1_d6: 0, w1_d7: 0 }
             });
 
-            // B. ENREGISTREMENT DANS LA SOUS-COLLECTION DU PARRAIN (SI UN PARRAIN A ÉTÉ TROUVÉ)
+            // A.2 ENREGISTREMENT DU MEMBRE DANS LA COLLECTION "users"
+            await setDoc(doc(db, "users", newUserId), {
+                uid: newUserId,
+                name: newUserName,
+                displayName: newUserName,
+                email: email,
+                photoURL: "",
+                photo: "",
+                bannerURL: "",
+                bio: "Créateur de contenu • Passionné • Partageur",
+                rank: 0,
+                invitedCount: 0,
+                isVerified: false,
+                createdAt: nowIso
+            });
+
+            // B. ENREGISTREMENT DANS LA SOUS-COLLECTION DU PARRAIN
             if (verifiedSponsorId) {
                 try {
                     await setDoc(doc(db, "rewards_users", verifiedSponsorId, "mes_filleuls", newUserId), {
                         filleulId: newUserId,
                         name: newUserName,
                         email: email,
-                        createdAt: new Date().toISOString()
+                        createdAt: nowIso
                     });
 
                     await updateDoc(doc(db, "rewards_users", verifiedSponsorId), {
