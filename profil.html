@@ -4518,21 +4518,12 @@ onAuthStateChanged(auth, async (user) => {
         if(snap.exists()){
             const d = snap.data();
             const totalCoins = d.coins || 0;
-}// INSÉRER DANS onAuthStateChanged (juste après la récupération de snap.data())
-const userInvitedCount = d.invitedCount || 0;
-const userHistory = d.history || {};
-
-// Appel du calcul pour l'écran principal (remplace les IDs si besoin)
-if (typeof calculerReputationEtEtoiles === "function") {
-    calculerReputationEtEtoiles(
-        userHistory, 
-        userInvitedCount, 
-        'reputation-score-text', // ID de l'élément texte du score sur la page
-        'reputation-stars',      // ID du conteneur des étoiles sur la page
-        false
-    );
-}
-            
+            if (typeof calculerReputationEtEtoiles === "function") {
+            calculerReputationEtEtoiles(
+                d.history || {}, 
+                d.invitedCount || 0
+            );
+        }
             const nameEl = document.getElementById('user-name-display') || document.getElementById('user-name');
             if (nameEl) nameEl.innerText = d.name || "Utilisateur";
             
