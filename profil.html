@@ -3641,16 +3641,23 @@ window.SPONSOR_RANKS_METADATA = {
 };
 
 // ==========================================
-// 3. OUVERTURE DE LA MODALE PARRAIN
+// 3. OUVERTURE DE LA MODALE PARRAIN (TÉLÉPORTATION CORRIGÉE)
 // ==========================================
 window.openSponsorModal = async function(event) {
     if (event && event.stopPropagation) event.stopPropagation();
 
     const modal = document.getElementById('sponsor-info-modal');
-    if (!modal) return;
+    if (!modal) {
+        console.error("Erreur : La modale 'sponsor-info-modal' est introuvable.");
+        return;
+    }
 
-    // Affichage modale
-    document.body.appendChild(modal);
+    // 1. Téléportation directe dans la racine document.body
+    if (modal.parentNode !== document.body) {
+        document.body.appendChild(modal);
+    }
+
+    // 2. Application stricte des styles d'affichage plein écran
     modal.style.setProperty('display', 'flex', 'important');
     modal.style.setProperty('position', 'fixed', 'important');
     modal.style.setProperty('top', '0', 'important');
@@ -3659,8 +3666,27 @@ window.openSponsorModal = async function(event) {
     modal.style.setProperty('height', '100vh', 'important');
     modal.style.setProperty('background', 'rgba(0, 0, 0, 0.85)', 'important');
     modal.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
+    modal.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
+    modal.style.setProperty('justify-content', 'center', 'important');
+    modal.style.setProperty('align-items', 'center', 'important');
     modal.style.setProperty('z-index', '99999999', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
 
+    // 3. Réactivation du bouton de fermeture
+    const closeBtn = modal.querySelector('.close-modal, .btn-close, .modal-close, [onclick*="closeSponsorModal"]');
+    if (closeBtn) {
+        closeBtn.style.setProperty('z-index', '100000000', 'important');
+        closeBtn.style.setProperty('pointer-events', 'auto', 'important');
+        closeBtn.style.setProperty('cursor', 'pointer', 'important');
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.closeSponsorModal();
+        };
+    }
+
+    // Elements DOM
     const nameEl = document.getElementById('sponsor-modal-name');
     const bioEl = document.getElementById('sponsor-modal-bio');
     const photoImg = document.getElementById('sponsor-modal-photo');
@@ -3676,9 +3702,14 @@ window.openSponsorModal = async function(event) {
     if (bioEl) bioEl.textContent = "Recherche des informations du parrain...";
 
     try {
-        if (typeof auth === 'undefined' || !auth.currentUser) return;
+        const firebaseAuth = typeof auth !== 'undefined' ? auth : (window.auth || null);
+        if (!firebaseAuth || !firebaseAuth.currentUser) {
+            if (nameEl) nameEl.textContent = "Non connecté";
+            if (bioEl) bioEl.textContent = "Veuillez vous connecter.";
+            return;
+        }
 
-        const uid = auth.currentUser.uid;
+        const uid = firebaseAuth.currentUser.uid;
         const myRewardsSnap = await getDoc(doc(db, "rewards_users", uid));
         if (!myRewardsSnap.exists()) return;
 
@@ -3695,7 +3726,6 @@ window.openSponsorModal = async function(event) {
 
         const cleanSponsorId = String(sponsorId).trim();
 
-        // Récupération simultanée dans rewards_users et users
         const [sponsorRewardsSnap, sponsorUsersSnap] = await Promise.all([
             getDoc(doc(db, "rewards_users", cleanSponsorId)),
             getDoc(doc(db, "users", cleanSponsorId))
@@ -3704,24 +3734,20 @@ window.openSponsorModal = async function(event) {
         const rData = sponsorRewardsSnap.exists() ? sponsorRewardsSnap.data() : {};
         const uData = sponsorUsersSnap.exists() ? sponsorUsersSnap.data() : {};
 
-        // Injections Nom et Bio
         if (nameEl) nameEl.textContent = rData.name || uData.name || uData.displayName || "Membre Parrain";
         if (bioEl) bioEl.textContent = rData.bio || uData.bio || "Ce membre n'a pas rédigé de bio.";
 
-        // Photos
         const userPhoto = uData.photoURL || uData.photo || rData.photoURL || rData.photo;
         if (photoImg) photoImg.src = userPhoto || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
 
         const userBanner = rData.bannerURL || uData.bannerURL;
         if (bannerImg) bannerImg.src = userBanner || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600";
 
-        // Lecture unifiée du nombre de filleuls depuis le champ Firestore
         const countR = Number(rData.invitedCount ?? rData.totalParrainages ?? 0);
         const countU = Number(uData.invitedCount ?? uData.totalParrainages ?? 0);
         const realCount = Math.max(countR, countU);
         if (referralsEl) referralsEl.textContent = realCount;
 
-        // Date de création
         if (dateEl) {
             const rawDate = rData.createdAt || uData.createdAt || rData.dateJoined || uData.dateJoined;
             if (rawDate) {
@@ -3733,7 +3759,6 @@ window.openSponsorModal = async function(event) {
             }
         }
 
-        // Rang
         let rawRank = uData.rank ?? uData.rang ?? rData.rank ?? rData.rang ?? 0;
         let sponsorRank = parseInt(rawRank, 10);
         if (isNaN(sponsorRank) || sponsorRank < 0) sponsorRank = 0;
@@ -3747,17 +3772,15 @@ window.openSponsorModal = async function(event) {
             rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> Rang ${sponsorRank} : ${rankMeta.name}`;
         }
 
-        // Calcul exact des Étoiles
         const sponsorHistory = rData.history || uData.history || rData.historique || uData.historique || {};
         await calculerReputationEtEtoiles(
             sponsorHistory, 
             realCount, 
             'sponsor-modal-reputation', 
             'sponsor-modal-stars',
-            true // Désactive le retrait injuste de -1.2 si la date du jour n'est pas encore enregistrée dans Firestore
+            true
         );
 
-        // Lien Personnalisé
         const lTitle = rData.linkTitle || uData.linkTitle || "mon lien site";
         const lUrl = rData.linkUrl || uData.linkUrl;
 
