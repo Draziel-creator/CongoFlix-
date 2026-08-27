@@ -3131,10 +3131,10 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
         }
 
-        if (typeof calculerReputationEtEtoiles === "function") {
-            calculerReputationEtEtoiles(g_userHistoryData, 156);
-        }
-
+       if (typeof calculerReputationEtEtoiles === "function") {
+    const totalFilleuls = window.g_totalParrainages || 0;
+    calculerReputationEtEtoiles(g_userHistoryData, totalFilleuls);
+}
     } catch (error) {
         console.error("❌ Erreur lors de la synchronisation :", error);
     } finally {
@@ -4518,6 +4518,33 @@ onAuthStateChanged(auth, async (user) => {
         if(snap.exists()){
             const d = snap.data();
             const totalCoins = d.coins || 0;
+            // INSÉRER DANS onAuthStateChanged (juste après la récupération de snap.data())
+const userInvitedCount = d.invitedCount || 0;
+const userHistory = d.history || {};
+
+// Appel du calcul pour l'écran principal (remplace les IDs si besoin)
+if (typeof calculerReputationEtEtoiles === "function") {
+    calculerReputationEtEtoiles(
+        userHistory, 
+        userInvitedCount, 
+        'reputation-score-text', // ID de l'élément texte du score sur la page
+        'reputation-stars',      // ID du conteneur des étoiles sur la page
+        false
+    );
+}// INSÉRER DANS onAuthStateChanged (juste après la récupération de snap.data())
+const userInvitedCount = d.invitedCount || 0;
+const userHistory = d.history || {};
+
+// Appel du calcul pour l'écran principal (remplace les IDs si besoin)
+if (typeof calculerReputationEtEtoiles === "function") {
+    calculerReputationEtEtoiles(
+        userHistory, 
+        userInvitedCount, 
+        'reputation-score-text', // ID de l'élément texte du score sur la page
+        'reputation-stars',      // ID du conteneur des étoiles sur la page
+        false
+    );
+}
             
             const nameEl = document.getElementById('user-name-display') || document.getElementById('user-name');
             if (nameEl) nameEl.innerText = d.name || "Utilisateur";
