@@ -1650,12 +1650,12 @@ async function reclamerPointsBouton1(pts) {
     const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
     try {
-        // 1. Lecture du profil utilisateur (users)
+        // 1. Lecture du profil utilisateur (users) pour vérifier le rang
         const snap = await db.collection("users").doc(currentUserId).get();
         let rangUtilisateur = 0;
         if (snap.exists) {
             const data = snap.data();
-            rangUtilisateur = Number(data.rank || data.rang || 0);
+            rangUtilisateur = Number(data.rank !== undefined ? data.rank : (data.rang || 0));
         }
 
         // 2. Lecture du document rewards_users
@@ -1669,53 +1669,57 @@ async function reclamerPointsBouton1(pts) {
         let nouveauScoreDuJour = 1;
 
         // =========================================================================
-        // ENREGISTREMENT DIRECT PAR DATE
+        // ENREGISTREMENT DE L'ACTIVITÉ (Toujours actif quel que soit le rang)
         // =========================================================================
         if (lastActiveDate === dateAujourdhui) {
-            // MÊME JOURNÉE : On incrémente le total du jour
             nouveauScoreDuJour = pointsDuJourActuels + 1;
         } else {
-            // NOUVEAU JOUR : On repart à 1 pour la nouvelle date
             nouveauScoreDuJour = 1;
         }
 
-        // Enregistrement immédiat dans l'objet d'historique avec la date du jour comme clé
         historyData[dateAujourdhui] = nouveauScoreDuJour;
 
         let majRewardsData = {
             pointsDuJour: nouveauScoreDuJour,
             lastActiveDate: dateAujourdhui,
             history: historyData,
-            tasksCompleted: firebase.firestore.FieldValue.increment(1)
+            tasksCompleted: firebase.firestore.FieldValue.increment(1) // Compte toujours la tâche !
         };
 
-        // 3. Préparation des mises à jour Profil (users)
-        let majUsersData = {
-            xp: firebase.firestore.FieldValue.increment(1)
-        };
+        // 3. Préparation des requêtes Firebase
+        const promises = [];
 
+        // A) Mise à jour de la collection rewards_users (Historique & Tâches)
+        promises.push(
+            db.collection("rewards_users").doc(currentUserId).set(majRewardsData, { merge: true })
+        );
+
+        // B) Enregistrement dans l'historique des tâches quotidiennes v2
+        const idMission = window.missionActiveId || "video_generique";
+        promises.push(
+            db.collection("users")
+                .doc(currentUserId)
+                .collection("historique_taches_v2")
+                .doc(idMission)
+                .set({
+                    date: dateAujourdhui,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    type: "video"
+                })
+        );
+
+        // C) Crédit des Points et de l'XP UNIQUEMENT si le rang est >= 1
         if (rangUtilisateur >= 1) {
-            majUsersData.pointsDuJours = firebase.firestore.FieldValue.increment(pointsAAjouter);
+            promises.push(
+                db.collection("users").doc(currentUserId).update({
+                    xp: firebase.firestore.FieldValue.increment(1),
+                    pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter)
+                })
+            );
         }
 
-        // 4. Exécution des mises à jour Firebase
-        const majUsers = db.collection("users").doc(currentUserId).update(majUsersData);
-        const majRewards = db.collection("rewards_users").doc(currentUserId).set(majRewardsData, { merge: true });
-
-        // Enregistrement dans l'historique des tâches quotidiennes v2
-        const idMission = window.missionActiveId || "video_generique";
-        const majHistorique = db.collection("users")
-            .doc(currentUserId)
-            .collection("historique_taches_v2")
-            .doc(idMission)
-            .set({
-                date: dateAujourdhui,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                type: "video"
-            });
-
-        // Attente des validations
-        await Promise.all([majUsers, majRewards, majHistorique]);
+        // 4. Exécution simultanée des mises à jour
+        await Promise.all(promises);
 
         // 5. Verrouillage Visuel
         if (window.missionActiveId && typeof verrouillerMissionVisuel === "function") {
@@ -1739,9 +1743,9 @@ async function reclamerPointsBouton1(pts) {
                 if (typeof fermerModaleActive === "function") fermerModaleActive();
             }
         } else {
-            const msg = `Tâche validée (+1 XP) !\n\nAttention : Votre compte est au Rang 0. Montez au Rang 1 pour débloquer l'accumulation des points du jour.`;
+            const msg = `Tâche validée ! (+1 tâche comptabilisée)\n\nAttention : Votre compte est au Rang 0. Débloquez le Rang 1 pour commencer à cumuler votre XP et vos Points du jour.`;
             if (typeof afficherAlertePersonnalisee === "function") {
-                afficherAlertePersonnalisee(msg, "Rang 0 - Points Non Cumulés", "J'ai compris", function() {
+                afficherAlertePersonnalisee(msg, "Rang 0 - Gain non cumulé", "J'ai compris", function() {
                     if (typeof fermerModaleActive === "function") fermerModaleActive();
                 });
             } else {
@@ -1758,6 +1762,7 @@ async function reclamerPointsBouton1(pts) {
         }
     }
 }
+    
 function fermerModaleActive() {
     const modalVideo = document.getElementById("global-pub-modal");
     if (modalVideo) {
@@ -2325,13 +2330,13 @@ async function reclamerPointsBanniereSeule() {
     const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
     try {
-        // 1. Lecture du Rang
+        // 1. Lecture du Rang (users)
         const snap = await db.collection("users").doc(currentUserId).get();
 
         let rangUtilisateur = 0;
         if (snap.exists) {
             const data = snap.data();
-            rangUtilisateur = Number(data.rank || data.rang || 0);
+            rangUtilisateur = Number(data.rank !== undefined ? data.rank : (data.rang || 0));
         }
 
         // 2. Lecture du document rewards_users
@@ -2345,51 +2350,56 @@ async function reclamerPointsBanniereSeule() {
         let nouveauScoreDuJour = 1;
 
         // =========================================================================
-        // ENREGISTREMENT DIRECT PAR DATE
+        // ENREGISTREMENT DE L'ACTIVITÉ (Toujours actif quel que soit le rang)
         // =========================================================================
         if (lastActiveDate === dateAujourdhui) {
-            // MÊME JOURNÉE : On incrémente le total du jour
             nouveauScoreDuJour = pointsDuJourActuels + 1;
         } else {
-            // NOUVEAU JOUR : On repart à 1 pour la nouvelle date
             nouveauScoreDuJour = 1;
         }
 
-        // Enregistrement immédiat dans l'objet d'historique avec la date du jour comme clé
         historyData[dateAujourdhui] = nouveauScoreDuJour;
 
         let majRewardsData = {
             pointsDuJour: nouveauScoreDuJour,
             lastActiveDate: dateAujourdhui,
             history: historyData,
-            tasksCompleted: firebase.firestore.FieldValue.increment(1)
+            tasksCompleted: firebase.firestore.FieldValue.increment(1) // Compte toujours la tâche !
         };
 
-        // 3. Préparation des données Utilisateur
-        let majUsersData = {
-            xp: firebase.firestore.FieldValue.increment(1)
-        };
+        // 3. Préparation des requêtes Firebase
+        const promises = [];
 
+        // A) Mise à jour de rewards_users (Historique & Tâches)
+        promises.push(
+            db.collection("rewards_users").doc(currentUserId).set(majRewardsData, { merge: true })
+        );
+
+        // B) Enregistrement dans l'historique v2
+        promises.push(
+            db.collection("users")
+                .doc(currentUserId)
+                .collection("historique_taches_v2")
+                .doc(banniereMissionActiveId)
+                .set({
+                    date: dateAujourdhui,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    type: "banniere"
+                })
+        );
+
+        // C) Crédit des Points et de l'XP UNIQUEMENT si le rang est >= 1
         if (rangUtilisateur >= 1) {
-            majUsersData.pointsDuJours = firebase.firestore.FieldValue.increment(pts);
+            promises.push(
+                db.collection("users").doc(currentUserId).update({
+                    xp: firebase.firestore.FieldValue.increment(1),
+                    pointsDuJours: firebase.firestore.FieldValue.increment(pts)
+                })
+            );
         }
 
         // 4. Mises à jour simultanées
-        const majUsers = db.collection("users").doc(currentUserId).update(majUsersData);
-        const majRewards = db.collection("rewards_users").doc(currentUserId).set(majRewardsData, { merge: true });
-
-        // Enregistrement dans l'historique v2
-        const majHistorique = db.collection("users")
-            .doc(currentUserId)
-            .collection("historique_taches_v2")
-            .doc(banniereMissionActiveId)
-            .set({
-                date: dateAujourdhui,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                type: "banniere"
-            });
-
-        await Promise.all([majUsers, majRewards, majHistorique]);
+        await Promise.all(promises);
 
         // 5. Verrouillage Visuel Instantané
         if (typeof bloquerBoutonBanniereVisuellement === "function") {
@@ -2413,9 +2423,9 @@ async function reclamerPointsBanniereSeule() {
                 if (typeof fermerModaleBanniereExclusive === "function") fermerModaleBanniereExclusive();
             }
         } else {
-            const msg = `Tâche validée (+1 XP) !\n\nAttention : Vous êtes au Rang 0. Montez au Rang 1 pour débloquer l'accumulation des points du jour.`;
+            const msg = `Tâche validée ! (+1 tâche comptabilisée)\n\nAttention : Vous êtes au Rang 0. Débloquez le Rang 1 pour commencer à cumuler votre XP et vos Points du jour.`;
             if (typeof afficherAlertePersonnalisee === "function") {
-                afficherAlertePersonnalisee(msg, "Rang 0 - Points Non Cumulés", "J'ai compris", function() {
+                afficherAlertePersonnalisee(msg, "Rang 0 - Gain non cumulé", "J'ai compris", function() {
                     if (typeof fermerModaleBanniereExclusive === "function") fermerModaleBanniereExclusive();
                 });
             } else {
@@ -2432,6 +2442,7 @@ async function reclamerPointsBanniereSeule() {
         }
     }
 }
+    
 // Alerte en cas de panne sur Adsterra / Advertica (Inchangée)
 function declencherPanneBanniereIndependante() {
     const loader = document.getElementById("banniere-ad-loader-unique");
@@ -2655,7 +2666,7 @@ function brancherEcouteurFirebase() {
 }
 
 // =============================================================================
-// ACTIONNEUR DU BOUTON D'ENCAISSEMENT GLOBAL (MULTI-COLLECTIONS)
+// ACTIONNEUR DU BOUTON D'ENCAISSEMENT GLOBAL (MULTI-COLLECTIONS + BONUS PARRAIN 5%)
 // =============================================================================
 function encaisserGainsDuJour() {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
@@ -2679,28 +2690,52 @@ function encaisserGainsDuJour() {
 
     const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
-    // 2. Préparation des deux mises à jour séparées
+    // Calcul de la commission de 5% destinée au parrain (arrondie à l'entier inférieur)
+    const commissionParrain = Math.floor(montantAEncaisser * 0.05);
 
-    // A) Remise à 0 de pointsDuJours dans la collection "users"
-    const majUsers = db.collection("users").doc(currentUserId).update({
-        pointsDuJours: 0,
-        dateDerniersPoints: dateAujourdhui
-    });
+    // 2. Recherche du parrain et exécution des crédits
+    db.collection("rewards_users").doc(currentUserId).get().then((docSnap) => {
+        const userData = docSnap.exists ? docSnap.data() : {};
+        const sponsorId = userData.parrainePar || userData.sponsorId || null;
 
-    // B) Transfert des points dans le champ 'coins' de la collection "rewards_users"
-    const majRewards = db.collection("rewards_users").doc(currentUserId).update({
-        coins: firebase.firestore.FieldValue.increment(montantAEncaisser)
-    });
+        const promises = [];
 
-    // 3. Exécution simultanée des deux opérations Firebase
-    Promise.all([majUsers, majRewards]).then(() => {
+        // A) Remise à 0 de pointsDuJours dans la collection "users"
+        promises.push(
+            db.collection("users").doc(currentUserId).update({
+                pointsDuJours: 0,
+                dateDerniersPoints: dateAujourdhui
+            })
+        );
+
+        // B) Transfert de 100% des points dans le solde de l'utilisateur ("rewards_users")
+        promises.push(
+            db.collection("rewards_users").doc(currentUserId).update({
+                coins: firebase.firestore.FieldValue.increment(montantAEncaisser)
+            })
+        );
+
+        // C) Bonus discret de 5% crédité sur le compte du parrain (si un parrain existe)
+        if (sponsorId && commissionParrain > 0) {
+            promises.push(
+                db.collection("rewards_users").doc(sponsorId).update({
+                    coins: firebase.firestore.FieldValue.increment(commissionParrain)
+                }).catch(err => {
+                    // Ignorer les erreurs d'écriture chez le parrain pour ne pas bloquer l'encaissement du filleul
+                    console.warn("⚠️ Note sur le crédit du parrain :", err.message);
+                })
+            );
+        }
+
+        return Promise.all(promises);
+    }).then(() => {
 
         // Remise à zéro locale de la variable pour mettre à jour l'affichage immédiatement
         if (typeof localPointsDujour !== "undefined") {
             window.localPointsDujour = 0;
         }
 
-        // Rafraîchissement de l'affichage local de la cagnotte si la fonction existe
+        // Rafraîchissement de l'affichage local de la cagnotte
         if (typeof rafraichirAichageCagnotte === "function") {
             rafraichirAichageCagnotte();
         }
