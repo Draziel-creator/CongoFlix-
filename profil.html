@@ -3815,152 +3815,165 @@ window.SPONSOR_RANKS_METADATA = {
 // 3. ADAPTATION DE openSponsorModal (PREND EN CHARGE LE PARRAIN OU UN FILLEUL)
 // =========================================================
 window.openSponsorModal = async function(event, targetUserId = null) {
+    // 1. Bloquer la propagation du clic pour éviter la fermeture automatique
     if (event) {
-        if (event.stopPropagation) event.stopPropagation();
-        if (event.preventDefault) event.preventDefault();
+        if (typeof event.stopPropagation === 'function') event.stopPropagation();
+        if (typeof event.preventDefault === 'function') event.preventDefault();
     }
 
-    // 1. Fermer la liste des filleuls
-    closeFilleulsModal();
+    // 2. Masquer immédiatement la liste des filleuls
+    const filleulsModal = document.getElementById('filleuls-list-modal');
+    if (filleulsModal) {
+        filleulsModal.style.setProperty('display', 'none', 'important');
+    }
 
-    // 2. Anti-conflit de clic pour éviter la fermeture instantanée
-    setTimeout(async () => {
-        const modal = document.getElementById('sponsor-info-modal');
-        if (!modal) return;
+    // 3. Récupérer et afficher la modale de profil
+    const modal = document.getElementById('sponsor-info-modal');
+    if (!modal) {
+        console.error("Erreur : La modale 'sponsor-info-modal' est introuvable.");
+        return;
+    }
 
-        if (modal.parentNode !== document.body) document.body.appendChild(modal);
+    if (modal.parentNode !== document.body) {
+        document.body.appendChild(modal);
+    }
 
-        modal.style.setProperty('display', 'flex', 'important');
-        modal.style.setProperty('position', 'fixed', 'important');
-        modal.style.setProperty('top', '0', 'important');
-        modal.style.setProperty('left', '0', 'important');
-        modal.style.setProperty('width', '100vw', 'important');
-        modal.style.setProperty('height', '100vh', 'important');
-        modal.style.setProperty('background', 'rgba(0, 0, 0, 0.85)', 'important');
-        modal.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
-        modal.style.setProperty('z-index', '99999999', 'important');
+    // Force l'affichage immédiat
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('position', 'fixed', 'important');
+    modal.style.setProperty('top', '0', 'important');
+    modal.style.setProperty('left', '0', 'important');
+    modal.style.setProperty('width', '100vw', 'important');
+    modal.style.setProperty('height', '100vh', 'important');
+    modal.style.setProperty('background', 'rgba(0, 0, 0, 0.85)', 'important');
+    modal.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
+    modal.style.setProperty('z-index', '99999999', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+    modal.style.setProperty('pointer-events', 'auto', 'important');
 
-        const nameEl = document.getElementById('sponsor-modal-name');
-        const bioEl = document.getElementById('sponsor-modal-bio');
-        const photoImg = document.getElementById('sponsor-modal-photo');
-        const bannerImg = document.getElementById('sponsor-modal-banner');
-        const rankEl = document.getElementById('sponsor-modal-rank');
-        const dateEl = document.getElementById('sponsor-modal-date');
-        const verifiedBadge = document.getElementById('sponsor-modal-verified');
-        const linkContainer = document.getElementById('sponsor-modal-link-container');
-        const linkEl = document.getElementById('sponsor-modal-link');
-        const referralsEl = document.getElementById('sponsor-modal-referrals');
+    // Réinitialisation des textes pendant le chargement
+    const nameEl = document.getElementById('sponsor-modal-name');
+    const bioEl = document.getElementById('sponsor-modal-bio');
+    const photoImg = document.getElementById('sponsor-modal-photo');
+    const bannerImg = document.getElementById('sponsor-modal-banner');
+    const rankEl = document.getElementById('sponsor-modal-rank');
+    const dateEl = document.getElementById('sponsor-modal-date');
+    const verifiedBadge = document.getElementById('sponsor-modal-verified');
+    const linkContainer = document.getElementById('sponsor-modal-link-container');
+    const linkEl = document.getElementById('sponsor-modal-link');
+    const referralsEl = document.getElementById('sponsor-modal-referrals');
 
-        if (nameEl) nameEl.textContent = "Chargement...";
-        if (bioEl) bioEl.textContent = "Recherche des informations...";
+    if (nameEl) nameEl.textContent = "Chargement...";
+    if (bioEl) bioEl.textContent = "Recherche des informations du membre...";
 
-        try {
-            let cleanUserId = targetUserId;
+    try {
+        let cleanUserId = targetUserId;
 
-            // Si aucun ID spécifié, on va chercher l'ID du Parrain
-            if (!cleanUserId) {
-                const firebaseAuth = typeof auth !== 'undefined' ? auth : (window.auth || null);
-                if (!firebaseAuth || !firebaseAuth.currentUser) return;
-
+        // Si aucun ID passé en paramètre, on cherche le Parrain du compte connecté
+        if (!cleanUserId) {
+            const firebaseAuth = typeof auth !== 'undefined' ? auth : (window.auth || null);
+            if (firebaseAuth && firebaseAuth.currentUser) {
                 const uid = firebaseAuth.currentUser.uid;
                 const myRewardsSnap = await getDoc(doc(db, "rewards_users", uid));
-                if (!myRewardsSnap.exists()) return;
-
-                const myData = myRewardsSnap.data();
-                cleanUserId = myData.parrainePar || myData.sponsorId || myData.sponsor;
-            }
-
-            if (!cleanUserId || String(cleanUserId).trim() === "") {
-                if (nameEl) nameEl.textContent = "Aucun membre";
-                if (bioEl) bioEl.textContent = "Information indisponible.";
-                return;
-            }
-
-            cleanUserId = String(cleanUserId).trim();
-
-            // Récupération des données Firestore du membre ciblé
-            const [sponsorRewardsSnap, sponsorUsersSnap] = await Promise.all([
-                getDoc(doc(db, "rewards_users", cleanUserId)),
-                getDoc(doc(db, "users", cleanUserId))
-            ]);
-
-            const rData = sponsorRewardsSnap.exists() ? sponsorRewardsSnap.data() : {};
-            const uData = sponsorUsersSnap.exists() ? sponsorUsersSnap.data() : {};
-
-            if (nameEl) nameEl.textContent = rData.name || uData.name || uData.displayName || "Membre";
-            if (bioEl) bioEl.textContent = rData.bio || uData.bio || "Ce membre n'a pas rédigé de bio.";
-
-            const userPhoto = uData.photoURL || uData.photo || rData.photoURL || rData.photo;
-            if (photoImg) photoImg.src = userPhoto || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
-
-            const userBanner = rData.bannerURL || uData.bannerURL;
-            if (bannerImg) bannerImg.src = userBanner || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600";
-
-            const countR = Number(rData.invitedCount ?? rData.totalParrainages ?? 0);
-            const countU = Number(uData.invitedCount ?? uData.totalParrainages ?? 0);
-            const realCount = Math.max(countR, countU);
-            if (referralsEl) referralsEl.textContent = realCount;
-
-            if (dateEl) {
-                const rawDate = rData.createdAt || uData.createdAt || rData.dateJoined || uData.dateJoined;
-                if (rawDate) {
-                    const dateObj = rawDate.toDate ? rawDate.toDate() : new Date(rawDate);
-                    if (!isNaN(dateObj.getTime())) {
-                        const formatted = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-                        dateEl.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
-                    }
+                if (myRewardsSnap.exists()) {
+                    const myData = myRewardsSnap.data();
+                    cleanUserId = myData.parrainePar || myData.sponsorId || myData.sponsor;
                 }
             }
-
-            let rawRank = uData.rank ?? uData.rang ?? rData.rank ?? rData.rang ?? 0;
-            let sponsorRank = parseInt(rawRank, 10);
-            if (isNaN(sponsorRank) || sponsorRank < 0) sponsorRank = 0;
-
-            if (verifiedBadge) {
-                verifiedBadge.style.display = (uData.isVerified || sponsorRank > 0) ? "inline-block" : "none";
-            }
-
-            if (rankEl) {
-                const rankMeta = (window.SPONSOR_RANKS_METADATA && window.SPONSOR_RANKS_METADATA[sponsorRank]) || { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" };
-                rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> Rang ${sponsorRank} : ${rankMeta.name}`;
-            }
-
-            if (typeof calculerReputationEtEtoiles === "function") {
-                const sponsorHistory = rData.history || uData.history || {};
-                await calculerReputationEtEtoiles(
-                    sponsorHistory, 
-                    realCount, 
-                    'sponsor-modal-reputation', 
-                    'sponsor-modal-stars',
-                    true
-                );
-            }
-
-            // Lien personnalisé
-            const lUrl = rData.linkUrl || uData.linkUrl || rData.url || uData.url;
-            const lTitle = rData.linkTitle || uData.linkTitle || rData.titleLink || uData.titleLink;
-
-            if (linkContainer && linkEl && lUrl && String(lUrl).trim() !== "") {
-                const cleanUrl = String(lUrl).trim();
-                const formattedUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-
-                linkEl.href = formattedUrl;
-                linkEl.textContent = (lTitle && String(lTitle).trim() !== "") ? String(lTitle).trim() : cleanUrl;
-                linkEl.setAttribute('target', '_blank');
-                linkEl.setAttribute('rel', 'noopener noreferrer');
-
-                linkContainer.style.setProperty('display', 'flex', 'important');
-                linkContainer.style.setProperty('pointer-events', 'auto', 'important');
-                linkEl.style.setProperty('pointer-events', 'auto', 'important');
-                linkEl.style.setProperty('cursor', 'pointer', 'important');
-            } else if (linkContainer) {
-                linkContainer.style.display = "none";
-            }
-
-        } catch (e) {
-            console.error("Erreur profil filleul/parrain :", e);
         }
-    }, 50);
+
+        if (!cleanUserId || String(cleanUserId).trim() === "") {
+            if (nameEl) nameEl.textContent = "Membre introuvable";
+            if (bioEl) bioEl.textContent = "Impossible d'accéder au profil de ce membre.";
+            return;
+        }
+
+        cleanUserId = String(cleanUserId).trim();
+
+        // Charger les informations Firestore du membre (Filleul ou Parrain)
+        const [sponsorRewardsSnap, sponsorUsersSnap] = await Promise.all([
+            getDoc(doc(db, "rewards_users", cleanUserId)),
+            getDoc(doc(db, "users", cleanUserId))
+        ]);
+
+        const rData = sponsorRewardsSnap.exists() ? sponsorRewardsSnap.data() : {};
+        const uData = sponsorUsersSnap.exists() ? sponsorUsersSnap.data() : {};
+
+        // Injection des données
+        if (nameEl) nameEl.textContent = rData.name || uData.name || uData.displayName || "Membre";
+        if (bioEl) bioEl.textContent = rData.bio || uData.bio || "Ce membre n'a pas rédigé de bio.";
+
+        const userPhoto = uData.photoURL || uData.photo || rData.photoURL || rData.photo;
+        if (photoImg) photoImg.src = userPhoto || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+
+        const userBanner = rData.bannerURL || uData.bannerURL;
+        if (bannerImg) bannerImg.src = userBanner || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&width=600";
+
+        const countR = Number(rData.invitedCount ?? rData.totalParrainages ?? 0);
+        const countU = Number(uData.invitedCount ?? uData.totalParrainages ?? 0);
+        const realCount = Math.max(countR, countU);
+        if (referralsEl) referralsEl.textContent = realCount;
+
+        if (dateEl) {
+            const rawDate = rData.createdAt || uData.createdAt || rData.dateJoined || uData.dateJoined;
+            if (rawDate) {
+                const dateObj = rawDate.toDate ? rawDate.toDate() : new Date(rawDate);
+                if (!isNaN(dateObj.getTime())) {
+                    const formatted = dateObj.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                    dateEl.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+                }
+            }
+        }
+
+        let rawRank = uData.rank ?? uData.rang ?? rData.rank ?? rData.rang ?? 0;
+        let sponsorRank = parseInt(rawRank, 10);
+        if (isNaN(sponsorRank) || sponsorRank < 0) sponsorRank = 0;
+
+        if (verifiedBadge) {
+            verifiedBadge.style.display = (uData.isVerified || sponsorRank > 0) ? "inline-block" : "none";
+        }
+
+        if (rankEl) {
+            const rankMeta = (window.SPONSOR_RANKS_METADATA && window.SPONSOR_RANKS_METADATA[sponsorRank]) || { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" };
+            rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> Rang ${sponsorRank} : ${rankMeta.name}`;
+        }
+
+        if (typeof calculerReputationEtEtoiles === "function") {
+            const sponsorHistory = rData.history || uData.history || {};
+            await calculerReputationEtEtoiles(
+                sponsorHistory, 
+                realCount, 
+                'sponsor-modal-reputation', 
+                'sponsor-modal-stars',
+                true
+            );
+        }
+
+        // Affichage du lien personnel
+        const lUrl = rData.linkUrl || uData.linkUrl || rData.url || uData.url;
+        const lTitle = rData.linkTitle || uData.linkTitle || rData.titleLink || uData.titleLink;
+
+        if (linkContainer && linkEl && lUrl && String(lUrl).trim() !== "") {
+            const cleanUrl = String(lUrl).trim();
+            const formattedUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+
+            linkEl.href = formattedUrl;
+            linkEl.textContent = (lTitle && String(lTitle).trim() !== "") ? String(lTitle).trim() : cleanUrl;
+            linkEl.setAttribute('target', '_blank');
+            linkEl.setAttribute('rel', 'noopener noreferrer');
+
+            linkContainer.style.setProperty('display', 'flex', 'important');
+            linkContainer.style.setProperty('pointer-events', 'auto', 'important');
+            linkEl.style.setProperty('pointer-events', 'auto', 'important');
+            linkEl.style.setProperty('cursor', 'pointer', 'important');
+        } else if (linkContainer) {
+            linkContainer.style.display = "none";
+        }
+
+    } catch (e) {
+        console.error("Erreur chargement profil membre :", e);
+    }
 };
 
 // Fermeture
