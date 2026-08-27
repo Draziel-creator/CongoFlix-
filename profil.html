@@ -1808,6 +1808,12 @@ async function calculerReputationEtEtoiles(
 
     return scoreArrondi;
 }
+    // À la fin de la fonction calculerReputationEtEtoiles :
+if (auth.currentUser && !isViewingOtherUser) {
+    updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
+        reputationScore: scoreArrondi
+    }).catch(() => {}); // Sauvegarde silencieuse
+}
 window.calculerReputationEtEtoiles = calculerReputationEtEtoiles;
 
     // Fonction d'affichage du rang accessible globalement
@@ -3647,17 +3653,11 @@ window.openSponsorModal = async function(event) {
     if (event && event.stopPropagation) event.stopPropagation();
 
     const modal = document.getElementById('sponsor-info-modal');
-    if (!modal) {
-        console.error("Erreur : La modale 'sponsor-info-modal' est introuvable.");
-        return;
-    }
+    if (!modal) return;
 
-    // 1. Téléportation directe dans la racine document.body
-    if (modal.parentNode !== document.body) {
-        document.body.appendChild(modal);
-    }
-
-    // 2. Application stricte des styles d'affichage plein écran
+    // 1. Téléportation & Styles
+    if (modal.parentNode !== document.body) document.body.appendChild(modal);
+    
     modal.style.setProperty('display', 'flex', 'important');
     modal.style.setProperty('position', 'fixed', 'important');
     modal.style.setProperty('top', '0', 'important');
@@ -3666,25 +3666,9 @@ window.openSponsorModal = async function(event) {
     modal.style.setProperty('height', '100vh', 'important');
     modal.style.setProperty('background', 'rgba(0, 0, 0, 0.85)', 'important');
     modal.style.setProperty('backdrop-filter', 'blur(8px)', 'important');
-    modal.style.setProperty('-webkit-backdrop-filter', 'blur(8px)', 'important');
-    modal.style.setProperty('justify-content', 'center', 'important');
-    modal.style.setProperty('align-items', 'center', 'important');
     modal.style.setProperty('z-index', '99999999', 'important');
     modal.style.setProperty('opacity', '1', 'important');
     modal.style.setProperty('visibility', 'visible', 'important');
-    modal.style.setProperty('pointer-events', 'auto', 'important');
-
-    // 3. Réactivation du bouton de fermeture
-    const closeBtn = modal.querySelector('.close-modal, .btn-close, .modal-close, [onclick*="closeSponsorModal"]');
-    if (closeBtn) {
-        closeBtn.style.setProperty('z-index', '100000000', 'important');
-        closeBtn.style.setProperty('pointer-events', 'auto', 'important');
-        closeBtn.style.setProperty('cursor', 'pointer', 'important');
-        closeBtn.onclick = (e) => {
-            e.stopPropagation();
-            window.closeSponsorModal();
-        };
-    }
 
     // Elements DOM
     const nameEl = document.getElementById('sponsor-modal-name');
@@ -3705,10 +3689,12 @@ window.openSponsorModal = async function(event) {
         const firebaseAuth = typeof auth !== 'undefined' ? auth : (window.auth || null);
         if (!firebaseAuth || !firebaseAuth.currentUser) {
             if (nameEl) nameEl.textContent = "Non connecté";
-            if (bioEl) bioEl.textContent = "Veuillez vous connecter.";
             return;
         }
 
+        // =========================================================
+        // 🎯 ÉTAPE A : FIREBASE - Récupérer l'ID de ton Parrain
+        // =========================================================
         const uid = firebaseAuth.currentUser.uid;
         const myRewardsSnap = await getDoc(doc(db, "rewards_users", uid));
         if (!myRewardsSnap.exists()) return;
@@ -3724,6 +3710,9 @@ window.openSponsorModal = async function(event) {
             return;
         }
 
+        // =========================================================
+        // 🎯 ÉTAPE B : FIREBASE - Charger les données du Parrain
+        // =========================================================
         const cleanSponsorId = String(sponsorId).trim();
 
         const [sponsorRewardsSnap, sponsorUsersSnap] = await Promise.all([
@@ -3734,6 +3723,9 @@ window.openSponsorModal = async function(event) {
         const rData = sponsorRewardsSnap.exists() ? sponsorRewardsSnap.data() : {};
         const uData = sponsorUsersSnap.exists() ? sponsorUsersSnap.data() : {};
 
+        // =========================================================
+        // 🎯 ÉTAPE C : Affichage des données de profil
+        // =========================================================
         if (nameEl) nameEl.textContent = rData.name || uData.name || uData.displayName || "Membre Parrain";
         if (bioEl) bioEl.textContent = rData.bio || uData.bio || "Ce membre n'a pas rédigé de bio.";
 
@@ -3748,6 +3740,7 @@ window.openSponsorModal = async function(event) {
         const realCount = Math.max(countR, countU);
         if (referralsEl) referralsEl.textContent = realCount;
 
+        // Date d'inscription
         if (dateEl) {
             const rawDate = rData.createdAt || uData.createdAt || rData.dateJoined || uData.dateJoined;
             if (rawDate) {
@@ -3759,6 +3752,7 @@ window.openSponsorModal = async function(event) {
             }
         }
 
+        // Rang
         let rawRank = uData.rank ?? uData.rang ?? rData.rank ?? rData.rang ?? 0;
         let sponsorRank = parseInt(rawRank, 10);
         if (isNaN(sponsorRank) || sponsorRank < 0) sponsorRank = 0;
@@ -3772,15 +3766,40 @@ window.openSponsorModal = async function(event) {
             rankEl.innerHTML = `<i class="${rankMeta.medal}" style="color:${rankMeta.color};"></i> Rang ${sponsorRank} : ${rankMeta.name}`;
         }
 
-        const sponsorHistory = rData.history || uData.history || rData.historique || uData.historique || {};
-        await calculerReputationEtEtoiles(
-            sponsorHistory, 
-            realCount, 
-            'sponsor-modal-reputation', 
-            'sponsor-modal-stars',
-            true
-        );
+        // =========================================================
+        // 🎯 ÉTAPE D : AFFICHAGE DE LA RÉPUTATION (Liaison Directe)
+        // =========================================================
+        const scoreEnregistre = rData.reputationScore ?? uData.reputationScore;
 
+        if (scoreEnregistre !== undefined && scoreEnregistre !== null) {
+            // Option 1: On lit directement le score déjà calculé et stocké dans Firebase
+            const scoreArrondi = Math.round(Number(scoreEnregistre) * 10) / 10;
+            const textElem = document.getElementById('sponsor-modal-reputation');
+            if (textElem) textElem.innerText = `${scoreArrondi.toFixed(1)} / 5`;
+
+            const starsContainer = document.getElementById('sponsor-modal-stars');
+            if (starsContainer) {
+                let starsHTML = '';
+                for (let i = 1; i <= 5; i++) {
+                    if (scoreArrondi >= i) starsHTML += '<i class="fa-solid fa-star star-gold"></i>';
+                    else if (scoreArrondi >= i - 0.5) starsHTML += '<i class="fa-solid fa-star-half-stroke star-gold"></i>';
+                    else starsHTML += '<i class="fa-regular fa-star star-gold"></i>';
+                }
+                starsContainer.innerHTML = starsHTML;
+            }
+        } else {
+            // Option 2 (Secours): Calcul dynamique si le champ n'existe pas encore dans Firebase
+            const sponsorHistory = rData.history || uData.history || rData.historique || uData.historique || {};
+            await calculerReputationEtEtoiles(
+                sponsorHistory, 
+                realCount, 
+                'sponsor-modal-reputation', 
+                'sponsor-modal-stars',
+                true
+            );
+        }
+
+        // Lien du site
         const lTitle = rData.linkTitle || uData.linkTitle || "mon lien site";
         const lUrl = rData.linkUrl || uData.linkUrl;
 
