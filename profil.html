@@ -1658,19 +1658,25 @@ box-sizing: border-box;
         </div>
     </div>
 
-    <!-- MODALE AVERTISSEMENT TAILLE IMAGE -->
-    <div class="custom-modal-overlay" id="imageWarningModal">
-        <div class="custom-modal-card">
-            <div class="modal-title"><i class="fa-solid fa-image" style="color:#ffcc00;"></i> Choix de l'image</div>
-            <p style="font-size: 0.9rem; color: #ccc; line-height: 1.5; margin-bottom: 20px;">
-                Pour un chargement rapide de votre profil, veuillez sélectionner une image <strong>légère</strong> (de préférence moins de 1 Mo).
-            </p>
-            <div class="modal-actions-row">
-                <button class="btn-modal-cancel" onclick="closeImageWarningModal()">Annuler</button>
-                <button class="btn-modal-confirm" onclick="confirmImageSelection()">OK</button>
-            </div>
+   <!-- Input invisible pour sélectionner l'image depuis l'appareil -->
+<input type="file" id="profileFileInput" accept="image/*" style="display: none;" onchange="traiterEtEnregistrerImage(event)">
+
+<!-- TON BOUTON / PETITE CAMÉRA (Exemple de déclencheur) -->
+<!-- <button onclick="triggerFileInput('profileFileInput')"><i class="fa-solid fa-camera"></i></button> -->
+
+<!-- MODALE AVERTISSEMENT TAILLE IMAGE -->
+<div class="custom-modal-overlay" id="imageWarningModal">
+    <div class="custom-modal-card">
+        <div class="modal-title"><i class="fa-solid fa-image" style="color:#ffcc00;"></i> Choix de l'image</div>
+        <p style="font-size: 0.9rem; color: #ccc; line-height: 1.5; margin-bottom: 20px;">
+            Pour un chargement rapide de votre profil, veuillez sélectionner une image <strong>légère</strong> (de préférence moins de 1 Mo).
+        </p>
+        <div class="modal-actions-row">
+            <button class="btn-modal-cancel" onclick="closeImageWarningModal()">Annuler</button>
+            <button class="btn-modal-confirm" onclick="confirmImageSelection()">OK</button>
         </div>
     </div>
+</div>
 
     <!-- MODALE RANGS & RÈGLEMENT ÉCONOMIQUE -->
 <div id="rank-info-modal" class="custom-modal-overlay">
@@ -4089,26 +4095,116 @@ let isBioValid = true;
 let isLinkValid = true;
 let originalUsername = "";
 
-// GESTION DES MODALES D'IMAGE
+// =============================================================================
+// GESTION DES MODALES D'IMAGE ET TÉLÉCHARGEMENT PROFIL
+// =============================================================================
+
+let pendingFileInputId = null;
+
+// 1. Déclencher la modale
 window.triggerFileInput = (inputId) => {
     pendingFileInputId = inputId;
     const modal = document.getElementById('imageWarningModal');
     if (modal) modal.classList.add('active');
 };
 
+// 2. Fermer la modale
 window.closeImageWarningModal = () => {
     const modal = document.getElementById('imageWarningModal');
     if (modal) modal.classList.remove('active');
     pendingFileInputId = null;
 };
 
+// 3. Bouton OK de la modale : Ouvre le gestionnaire de fichiers de l'appareil
 window.confirmImageSelection = () => {
     closeImageWarningModal();
     if (pendingFileInputId) {
         const input = document.getElementById(pendingFileInputId);
-        if (input) input.click();
+        if (input) {
+            input.click(); // Ouvre la galerie / sélecteur de fichier
+        }
     }
 };
+
+// 4. Traitement et Enregistrement de l'image sélectionnée
+async function traiterEtEnregistrerImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Vérification de la taille (ex: max 2 Mo)
+    if (file.size > 2 * 1024 * 1024) {
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("L'image est trop lourde. Veuillez choisir une image de moins de 2 Mo.", "Image Trop Lourde");
+        } else {
+            alert("L'image est trop lourde. Veuillez choisir une image de moins de 2 Mo.");
+        }
+        return;
+    }
+
+    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+
+    if (!currentUserId) {
+        alert("Veuillez vous connecter pour modifier votre photo.");
+        return;
+    }
+
+    // Indication de chargement visuel si besoin
+    if (typeof afficherAlertePersonnalisee === "function") {
+        afficherAlertePersonnalisee("Téléchargement de votre photo en cours...", "Patientez", "OK");
+    }
+
+    try {
+        // Option A : Téléchargement dans Firebase Storage (Recommandé)
+        // Si vous utilisez Firebase Storage :
+        const storageRef = firebase.storage().ref(`profile_photos/${currentUserId}_${Date.now()}`);
+        const uploadTask = await storageRef.put(file);
+        const photoURL = await uploadTask.ref.getDownloadURL();
+
+        /* 
+        // Option B : Si vous n'utilisez pas Firebase Storage mais préférez convertir en Base64 :
+        const photoURL = await convertirFichierEnBase64(file);
+        */
+
+        // Enregistrement de l'URL dans la collection rewards_users, champ photoURL
+        await db.collection("rewards_users").doc(currentUserId).set({
+            photoURL: photoURL
+        }, { merge: true });
+
+        // (Optionnel) Mise à jour également dans la collection users si nécessaire
+        await db.collection("users").doc(currentUserId).set({
+            photoURL: photoURL
+        }, { merge: true }).catch(() => {});
+
+        // Mise à jour immédiate de l'image à l'écran (si vous avez une balise <img> avec l'id user-avatar ou profile-img)
+        const userAvatarImg = document.getElementById("user-avatar") || document.getElementById("profile-img");
+        if (userAvatarImg) {
+            userAvatarImg.src = photoURL;
+        }
+
+        if (typeof afficherAlertePersonnalisee === "function") {
+            afficherAlertePersonnalisee("Votre photo de profil a été mise à jour avec succès !", "Succès", "Super");
+        } else {
+            alert("Votre photo de profil a été mise à jour !");
+        }
+
+    } catch (error) {
+        console.error("Erreur lors de l'enregistrement de l'image :", error);
+        alert("Une erreur est survenue lors du téléchargement de la photo.");
+    } finally {
+        // Réinitialise l'input file pour pouvoir ré-sélectionner la même image si besoin
+        event.target.value = "";
+    }
+}
+
+// Fonction utilitaire (au cas où vous préférez du Base64 sans Firebase Storage)
+function convertirFichierEnBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
 
 // OUVERTURE ET FERMETURE SÉCURISÉES DE LA MODALE PROFIL
 window.openEditProfileModal = () => {
