@@ -1750,17 +1750,17 @@ box-sizing: border-box;
             </div>
         </div>
     </div>
-    
-<script type="module">
+    <script type="module">
     // 1. IMPORTS
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, onSnapshot, limit, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     
+    // 🔥 IMPORT STORAGE AJOUTÉ
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// BASE URL DE TON SITE OU BLOGGER
-const BASE_APP_URL = "https://publiciteplusrdc.blogspot.com"; // Remplace par ton lien Blogger/Site
+    // BASE URL DE TON SITE OU BLOGGER
+    const BASE_APP_URL = "https://publiciteplusrdc.blogspot.com";
 
     // 2. CONFIGURATION & INITIALISATION FIREBASE
     const firebaseConfig = { 
@@ -1775,6 +1775,7 @@ const BASE_APP_URL = "https://publiciteplusrdc.blogspot.com"; // Remplace par to
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const storage = getStorage(app); // 🔥 SERVICE STORAGE INITIALISÉ
 
     // 3. DONNÉES DE RANG (PLACÉES EN HAUT POUR ÊTRE DISPONIBLES DE SUITE)
     const RANKS_METADATA = {
@@ -4120,10 +4121,10 @@ window.confirmImageSelection = () => {
 
 // Rendre la fonction accessible globalement pour l'élément HTML <input onchange="...">
 window.traiterEtEnregistrerImage = async function(event) {
-    const file = event.target.files[0];
+    const file = event.target.files && event.target.files[0];
     if (!file) return;
 
-    // 1. Contrôle de la taille (max 2 Mo)
+    // Contrôle de la taille (max 2 Mo)
     if (file.size > 2 * 1024 * 1024) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("L'image est trop lourde (max 2 Mo).", "Image Trop Lourde");
@@ -4133,49 +4134,44 @@ window.traiterEtEnregistrerImage = async function(event) {
         return;
     }
 
-    // 2. Identification de l'utilisateur connecté
-    const currentUserId = (typeof userId !== "undefined" && userId) 
-        ? userId 
-        : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
-
-    if (!currentUserId) {
+    // Récupération de l'utilisateur connecté via auth.currentUser
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
         alert("Veuillez vous connecter pour modifier votre photo.");
         return;
     }
 
     try {
-        // 3. Téléversement dans Firebase Storage
-        const storageRef = firebase.storage().ref(`profile_photos/${currentUserId}_${Date.now()}`);
-        const uploadTask = await storageRef.put(file);
-        const photoURL = await uploadTask.ref.getDownloadURL();
+        // 1. Envoi dans Firebase Storage (Syntaxe Modulaire v10)
+        const imageRef = ref(storage, `profile_photos/${currentUser.uid}_${Date.now()}`);
+        await uploadBytes(imageRef, file);
+        const photoURL = await getDownloadURL(imageRef);
 
-        // 4. Enregistrement de l'URL dans la collection rewards_users, champ photoURL
-        await db.collection("rewards_users").doc(currentUserId).set({
-            photoURL: photoURL
-        }, { merge: true });
+        // 2. Mise à jour Firestore (Collection rewards_users)
+        const rewardUserRef = doc(db, "rewards_users", currentUser.uid);
+        await setDoc(rewardUserRef, { photoURL: photoURL }, { merge: true });
 
-        // (Mise à jour miroir optionnelle dans la collection users)
-        await db.collection("users").doc(currentUserId).set({
-            photoURL: photoURL
-        }, { merge: true }).catch(() => {});
+        // Synchronisation miroir dans users
+        const mainUserRef = doc(db, "users", currentUser.uid);
+        await setDoc(mainUserRef, { photoURL: photoURL }, { merge: true }).catch(() => {});
 
-        // 5. Mise à jour instantanée de l'image affichée sur la page
+        // 3. Mise à jour visuelle du profil
         const userPhoto = document.getElementById("user-photo") || document.getElementById("user-avatar");
         if (userPhoto) {
             userPhoto.src = photoURL;
         }
 
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Photo de profil mise à jour avec succès !", "Succès", "Super");
+            afficherAlertePersonnalisee("Photo de profil mise à jour !", "Succès", "Super");
         } else {
-            alert("Photo de profil mise à jour avec succès !");
+            alert("Photo de profil mise à jour !");
         }
 
     } catch (error) {
-        console.error("Erreur d'enregistrement :", error);
-        alert("Une erreur est survenue lors de l'envoi de l'image.");
+        console.error("Erreur lors de l'enregistrement de la photo :", error);
+        alert("Une erreur est survenue lors de l'envoi de la photo.");
     } finally {
-        event.target.value = ""; // Réinitialise l'input pour réutilisation
+        event.target.value = ""; // Réinitialise l'input
     }
 };
 
