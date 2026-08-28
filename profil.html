@@ -4119,20 +4119,37 @@ window.confirmImageSelection = () => {
     }
 };
 
-// Rendre la fonction accessible globalement pour l'élément HTML <input onchange="...">
+// 1. Fonction utilitaire de compression via Canvas
+function compresserEtRedimensionnerImage(file, maxWidth = 200, maxHeight = 200, quality = 0.75) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function() {
+                const canvas = document.createElement("canvas");
+                canvas.width = maxWidth;
+                canvas.height = maxHeight;
+                const ctx = canvas.getContext("2d");
+
+                // Redimensionnement propre
+                ctx.drawImage(img, 0, 0, maxWidth, maxHeight);
+                
+                // Export en JPEG léger
+                const base64Light = canvas.toDataURL("image/jpeg", quality);
+                resolve(base64Light);
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
+}
+
+// 2. Traitement et enregistrement dans Firestore
 window.traiterEtEnregistrerImage = async function(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
-
-    // Limite à 800 Ko pour le stockage Firestore
-    if (file.size > 800 * 1024) {
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("L'image est trop lourde pour Firestore (max 800 Ko).", "Image Trop Lourde");
-        } else {
-            alert("L'image est trop lourde (max 800 Ko).");
-        }
-        return;
-    }
 
     const currentUser = auth.currentUser;
     if (!currentUser) {
@@ -4141,26 +4158,21 @@ window.traiterEtEnregistrerImage = async function(event) {
     }
 
     try {
-        // 1. Convertir l'image en chaîne Base64
-        const photoURL = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = (error) => reject(error);
-        });
+        // Compression automatique à 200x200 px (~20-40 Ko seulement)
+        const photoURLBase64 = await compresserEtRedimensionnerImage(file, 200, 200, 0.75);
 
-        // 2. Enregistrer l'image Base64 dans Firestore (Collection rewards_users)
+        // Enregistrement dans rewards_users
         const rewardUserRef = doc(db, "rewards_users", currentUser.uid);
-        await setDoc(rewardUserRef, { photoURL: photoURL }, { merge: true });
+        await setDoc(rewardUserRef, { photoURL: photoURLBase64 }, { merge: true });
 
-        // Synchronisation avec users
+        // Synchronisation miroir dans users
         const mainUserRef = doc(db, "users", currentUser.uid);
-        await setDoc(mainUserRef, { photoURL: photoURL }, { merge: true }).catch(() => {});
+        await setDoc(mainUserRef, { photoURL: photoURLBase64 }, { merge: true }).catch(() => {});
 
-        // 3. Mise à jour de l'image sur l'écran
+        // Mise à jour visuelle sur la page
         const userPhoto = document.getElementById("user-photo") || document.getElementById("user-avatar");
         if (userPhoto) {
-            userPhoto.src = photoURL;
+            userPhoto.src = photoURLBase64;
         }
 
         if (typeof afficherAlertePersonnalisee === "function") {
@@ -4170,8 +4182,8 @@ window.traiterEtEnregistrerImage = async function(event) {
         }
 
     } catch (error) {
-        console.error("Erreur d'enregistrement :", error);
-        alert("Une erreur est survenue lors de l'enregistrement de l'image.");
+        console.error("Erreur lors de la compression/sauvegarde :", error);
+        alert("Une erreur est survenue lors du traitement de la photo.");
     } finally {
         event.target.value = "";
     }
