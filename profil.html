@@ -4119,8 +4119,8 @@ window.confirmImageSelection = () => {
     }
 };
 
-// 1. Fonction utilitaire de compression via Canvas
-function compresserEtRedimensionnerImage(file, maxWidth = 200, maxHeight = 200, quality = 0.75) {
+// Fonction de compression avec recadrage centré anti-déformation
+function compresserEtRedimensionnerImage(file, targetSize = 300, quality = 0.8) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -4129,16 +4129,24 @@ function compresserEtRedimensionnerImage(file, maxWidth = 200, maxHeight = 200, 
             img.src = e.target.result;
             img.onload = function() {
                 const canvas = document.createElement("canvas");
-                canvas.width = maxWidth;
-                canvas.height = maxHeight;
+                canvas.width = targetSize;
+                canvas.height = targetSize;
                 const ctx = canvas.getContext("2d");
 
-                // Redimensionnement propre
-                ctx.drawImage(img, 0, 0, maxWidth, maxHeight);
-                
-                // Export en JPEG léger
-                const base64Light = canvas.toDataURL("image/jpeg", quality);
-                resolve(base64Light);
+                // Calcul pour rognage centré (évite d'écraser/étirer la photo)
+                const minDimension = Math.min(img.width, img.height);
+                const startX = (img.width - minDimension) / 2;
+                const startY = (img.height - minDimension) / 2;
+
+                // Dessiner uniquement le carré central de l'image
+                ctx.drawImage(
+                    img, 
+                    startX, startY, minDimension, minDimension, // Zone source découpée au centre
+                    0, 0, targetSize, targetSize                 // Zone de destination sur le Canvas
+                );
+
+                // Export JPEG haute qualité mais très léger (~30-40 Ko)
+                resolve(canvas.toDataURL("image/jpeg", quality));
             };
             img.onerror = (err) => reject(err);
         };
@@ -4146,7 +4154,7 @@ function compresserEtRedimensionnerImage(file, maxWidth = 200, maxHeight = 200, 
     });
 }
 
-// 2. Traitement et enregistrement dans Firestore
+// Fonction principale d'enregistrement
 window.traiterEtEnregistrerImage = async function(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
@@ -4158,18 +4166,17 @@ window.traiterEtEnregistrerImage = async function(event) {
     }
 
     try {
-        // Compression automatique à 200x200 px (~20-40 Ko seulement)
-        const photoURLBase64 = await compresserEtRedimensionnerImage(file, 200, 200, 0.75);
+        // Compression nette 300x300px
+        const photoURLBase64 = await compresserEtRedimensionnerImage(file, 300, 0.8);
 
-        // Enregistrement dans rewards_users
+        // L'ancienne valeur de photoURL est automatiquement écrasée dans Firestore
         const rewardUserRef = doc(db, "rewards_users", currentUser.uid);
         await setDoc(rewardUserRef, { photoURL: photoURLBase64 }, { merge: true });
 
-        // Synchronisation miroir dans users
         const mainUserRef = doc(db, "users", currentUser.uid);
         await setDoc(mainUserRef, { photoURL: photoURLBase64 }, { merge: true }).catch(() => {});
 
-        // Mise à jour visuelle sur la page
+        // Mise à jour visuelle instantanée
         const userPhoto = document.getElementById("user-photo") || document.getElementById("user-avatar");
         if (userPhoto) {
             userPhoto.src = photoURLBase64;
@@ -4182,7 +4189,7 @@ window.traiterEtEnregistrerImage = async function(event) {
         }
 
     } catch (error) {
-        console.error("Erreur lors de la compression/sauvegarde :", error);
+        console.error("Erreur d'enregistrement :", error);
         alert("Une erreur est survenue lors du traitement de la photo.");
     } finally {
         event.target.value = "";
