@@ -2368,26 +2368,33 @@ function afficherAlertePersonnalisee(message, titre = "Notification", boutonText
 // =========================================================================
 const LOCAL_STORAGE_GREEN_KEY = 'app_green_days_cache';
 
-function getGreenDaysCache() {
+// Clé dynamique basée sur l'ID de l'utilisateur
+function getGreenDaysCache(uid) {
+    if (!uid) return {};
     try {
-        const raw = localStorage.getItem(LOCAL_STORAGE_GREEN_KEY);
+        const raw = localStorage.getItem(`app_green_days_cache_${uid}`);
         return raw ? JSON.parse(raw) : {};
     } catch (e) {
-        console.warn("Impossible de lire le LocalStorage :", e);
         return {};
     }
 }
 
-function saveGreenDayCache(dateISO, count = 15) {
+function saveGreenDayCache(uid, dateISO, count = 15) {
+    if (!uid) return;
     try {
-        const cache = getGreenDaysCache();
+        const cache = getGreenDaysCache(uid);
         cache[dateISO] = Math.max(Number(cache[dateISO] || 0), Number(count));
-        localStorage.setItem(LOCAL_STORAGE_GREEN_KEY, JSON.stringify(cache));
+        localStorage.setItem(`app_green_days_cache_${uid}`, JSON.stringify(cache));
     } catch (e) {
-        console.warn("Impossible de sauvegarder dans le LocalStorage :", e);
+        console.warn(e);
     }
 }
-
+        function reinitialiserMemoireSurDeconnexion() {
+    window.g_userRank = 0;
+    window.g_userXP = 0;
+    window.g_userHistoryData = {};
+    window.g_currentUserId = null;
+}
 // =========================================================================
 // 4. FONCTIONS UTILITAIRES & SYNTHÈSE VOCALE
 // =========================================================================
