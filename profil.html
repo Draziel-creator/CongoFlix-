@@ -4099,44 +4099,38 @@ let originalUsername = "";
 // GESTION DES MODALES D'IMAGE ET TÉLÉCHARGEMENT PROFIL
 // =============================================================================
 
-let pendingFileInputId = null;
+// Utilisation de window.pendingFileInputId pour éviter tout conflit de re-déclaration
+window.pendingFileInputId = window.pendingFileInputId || null;
 
-// 1. Déclencher la modale
 window.triggerFileInput = (inputId) => {
-    pendingFileInputId = inputId;
+    window.pendingFileInputId = inputId;
     const modal = document.getElementById('imageWarningModal');
     if (modal) modal.classList.add('active');
 };
 
-// 2. Fermer la modale
 window.closeImageWarningModal = () => {
     const modal = document.getElementById('imageWarningModal');
     if (modal) modal.classList.remove('active');
-    pendingFileInputId = null;
+    window.pendingFileInputId = null;
 };
 
-// 3. Bouton OK de la modale : Ouvre le gestionnaire de fichiers de l'appareil
 window.confirmImageSelection = () => {
     closeImageWarningModal();
-    if (pendingFileInputId) {
-        const input = document.getElementById(pendingFileInputId);
-        if (input) {
-            input.click(); // Ouvre la galerie / sélecteur de fichier
-        }
+    if (window.pendingFileInputId) {
+        const input = document.getElementById(window.pendingFileInputId);
+        if (input) input.click();
     }
 };
 
-// 4. Traitement et Enregistrement de l'image sélectionnée
 async function traiterEtEnregistrerImage(event) {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Vérification de la taille (ex: max 2 Mo)
     if (file.size > 2 * 1024 * 1024) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("L'image est trop lourde. Veuillez choisir une image de moins de 2 Mo.", "Image Trop Lourde");
         } else {
-            alert("L'image est trop lourde. Veuillez choisir une image de moins de 2 Mo.");
+            alert("L'image est trop lourde (max 2 Mo).");
         }
         return;
     }
@@ -4148,34 +4142,23 @@ async function traiterEtEnregistrerImage(event) {
         return;
     }
 
-    // Indication de chargement visuel si besoin
-    if (typeof afficherAlertePersonnalisee === "function") {
-        afficherAlertePersonnalisee("Téléchargement de votre photo en cours...", "Patientez", "OK");
-    }
-
     try {
-        // Option A : Téléchargement dans Firebase Storage (Recommandé)
-        // Si vous utilisez Firebase Storage :
+        // Envoi sur Firebase Storage
         const storageRef = firebase.storage().ref(`profile_photos/${currentUserId}_${Date.now()}`);
         const uploadTask = await storageRef.put(file);
         const photoURL = await uploadTask.ref.getDownloadURL();
 
-        /* 
-        // Option B : Si vous n'utilisez pas Firebase Storage mais préférez convertir en Base64 :
-        const photoURL = await convertirFichierEnBase64(file);
-        */
-
-        // Enregistrement de l'URL dans la collection rewards_users, champ photoURL
+        // Mise à jour Firestore (rewards_users)
         await db.collection("rewards_users").doc(currentUserId).set({
             photoURL: photoURL
         }, { merge: true });
 
-        // (Optionnel) Mise à jour également dans la collection users si nécessaire
+        // Mise à jour optionnelle dans users
         await db.collection("users").doc(currentUserId).set({
             photoURL: photoURL
         }, { merge: true }).catch(() => {});
 
-        // Mise à jour immédiate de l'image à l'écran (si vous avez une balise <img> avec l'id user-avatar ou profile-img)
+        // Mise à jour visuelle immédiate de la photo sur la page
         const userAvatarImg = document.getElementById("user-avatar") || document.getElementById("profile-img");
         if (userAvatarImg) {
             userAvatarImg.src = photoURL;
@@ -4191,7 +4174,6 @@ async function traiterEtEnregistrerImage(event) {
         console.error("Erreur lors de l'enregistrement de l'image :", error);
         alert("Une erreur est survenue lors du téléchargement de la photo.");
     } finally {
-        // Réinitialise l'input file pour pouvoir ré-sélectionner la même image si besoin
         event.target.value = "";
     }
 }
