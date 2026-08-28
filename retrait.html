@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Paiement / Retrait</title>
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #060812;
+            --card-bg: #0e1322;
+            --card-border: #1a233a;
+            --input-bg: #080c18;
+            --accent-green: #00ffaa;
+            --accent-blue: #38bdf8;
+            --text-main: #ffffff;
+            --text-muted: #6b7a90;
+            --btn-gradient: linear-gradient(90deg, #00e5ff 0%, #00ffaa 50%, #6366f1 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            justify-content: space-between;
+        }
+
+        /* --- CONTENEUR PRINCIPAL --- */
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px 16px 100px 16px;
+            flex: 1;
+        }
+
+        /* --- EN-TÊTE --- */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .btn-back-link {
+            color: #fff;
+            font-size: 1.2rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .header h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+        .header p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* --- CARTE STYLES --- */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #8fa0b5;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+        }
+        .card-header i {
+            color: #a78bfa;
+            font-size: 0.9rem;
+        }
+
+        /* --- SECTION MONTANT --- */
+        .field-sublabel {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
+        }
+        .amount-input-box {
+            display: flex;
+            align-items: center;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 6px 14px;
+        }
+        .amount-input-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 1.6rem;
+            font-weight: 700;
+            width: 100%;
+        }
+        .currency-badge {
+            background: #1e1b4b;
+            color: #c084fc;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+        .limits-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        /* --- ONGLETS MÉTHODE DE RETRAIT --- */
+        .method-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            background: var(--input-bg);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 14px;
+        }
+        .tab-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-item.active {
+            background: var(--card-bg);
+            color: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+
+        /* --- BOÎTE DU MOYEN SÉLECTIONNÉ --- */
+        .selected-method-card {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 14px;
+        }
+        .method-header-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .icon-crypto {
+            width: 40px;
+            height: 40px;
+            background: #f7931a;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.3rem;
+        }
+        .method-titles {
+            flex: 1;
+        }
+        .method-titles strong {
+            font-size: 0.95rem;
+            display: block;
+        }
+        .method-titles small {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .badge-recommended {
+            background: rgba(0, 255, 170, 0.1);
+            color: var(--accent-green);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .input-group label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 6px;
+        }
+        .input-with-icon {
+            display: flex;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .input-with-icon input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 0.85rem;
+            width: 100%;
+        }
+        .input-with-icon i {
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .alert-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(56, 189, 248, 0.05);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 14px;
+            color: var(--accent-blue);
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+        .alert-banner p {
+            color: #94a3b8;
+        }
+
+        /* --- RÉSUMÉ DU RETRAIT --- */
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+        .summary-line.total {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--card-border);
+            color: #fff;
+            font-weight: 700;
+        }
+        .val-green {
+            color: var(--accent-green);
+            font-weight: 700;
+        }
+
+        /* --- BOUTON DE CONFIRMATION --- */
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            background: var(--btn-gradient);
+            color: #040813;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 255, 170, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.2s;
+        }
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+        .security-note {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* --- NAV BAR DU BAS (LIENS DIRECTS HTML) --- */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #03040b;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 12px 20px 20px 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: #555875;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-item.active {
+            color: #00ffcc;
+        }
+        .nav-icon {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- EN-TÊTE -->
+        <div class="header">
+            <a href="javascript:history.back()" class="btn-back-link"><i class="fa-solid fa-chevron-left"></i></a>
+            <div>
+                <h1>Paiement / Retrait</h1>
+                <p>Choisissez votre moyen de retrait</p>
+            </div>
+        </div>
+
+        <!-- 1. MONTANT À RETIRER -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fa-solid fa-wallet"></i> MONTANT À RETIRER
+            </div>
+            <span class="field-sublabel">Entrez le montant à retirer</span>
+            <div class="amount-input-box">
+                <input type="number" id="input-amount" value="500" min="10" max="500">
+                <span class="currency-badge">USD</span>
+            </div>
+            <div class="limits-row">
+                <span>Minimum : $10.00</span>
+                <span>Maximum : $500.00</span>
+            </div>
+        </div>
+
+        <!-- 2. CHOISIR LE MOYEN DE RETRAIT -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fa-solid fa-wallet"></i> CHOISIR LE MOYEN DE RETRAIT
+            </div>
+            
+            <div class="method-tabs">
+                <button type="button" class="tab-item active" id="tab-crypto"><i class="fa-solid fa-coins"></i> Crypto</button>
+                <button type="button" class="tab-item" id="tab-paypal"><i class="fa-brands fa-paypal"></i> PayPal</button>
+                <button type="button" class="tab-item" id="tab-autre"><i class="fa-solid fa-ellipsis"></i> Autre</button>
+            </div>
+
+            <div class="selected-method-card">
+                <div class="method-header-info">
+                    <div class="icon-crypto" id="method-icon-box">₿</div>
+                    <div class="method-titles">
+                        <strong id="method-title-text">Bitcoin (BTC)</strong>
+                        <small id="method-subtitle-text">Réseau : Bitcoin</small>
+                    </div>
+                    <span class="badge-recommended" id="method-badge">Recommandé <i class="fa-solid fa-chevron-down"></i></span>
+                </div>
+
+                <div class="input-group">
+                    <label id="input-address-label">Adresse Bitcoin</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="withdraw-address" placeholder="Entrez votre adresse Bitcoin">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                </div>
+
+                <div class="alert-banner">
+                    <i class="fa-solid fa-shield-halved" style="font-size: 1.2rem;"></i>
+                    <p id="alert-text">Assurez-vous que l'adresse est correcte.<br>Les transactions crypto sont irréversibles.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. RÉSUMÉ DU RETRAIT -->
+        <div class="card">
+            <div class="card-header">
+                RÉSUMÉ DU RETRAIT
+            </div>
+            <div class="summary-line">
+                <span>Montant à retirer</span>
+                <span class="val-green" id="summary-amount">$500.00</span>
+            </div>
+            <div class="summary-line">
+                <span>Frais de transaction</span>
+                <span>$0.00</span>
+            </div>
+            <div class="summary-line total">
+                <span>Vous recevrez</span>
+                <span class="val-green" id="summary-total" style="font-size: 1.1rem;">$500.00</span>
+            </div>
+        </div>
+
+        <!-- BOUTON D'ACTION -->
+        <button id="btn-confirm-withdraw" class="btn-submit">
+            <i class="fa-solid fa-paper-plane"></i> CONFIRMER LE RETRAIT
+        </button>
+
+        <div class="security-note">
+            <i class="fa-solid fa-lock"></i> Vos informations sont sécurisées
+        </div>
+
+    </div>
+
+    <!-- NAV BAR DU BAS (RÉFÉRENCES DE LIENS HTML) -->
+    <nav class="nav-bar">
+        <a href="index.html" class="nav-item">
+            <i class="fa-solid fa-house nav-icon"></i>
+            <span>Accueil</span>
+        </a>
+        <a href="messages.html" class="nav-item">
+            <i class="fa-regular fa-comment-dots nav-icon"></i>
+            <span>Messages</span>
+        </a>
+        <a href="stats.html" class="nav-item">
+            <i class="fa-solid fa-chart-simple nav-icon"></i>
+            <span>Stats</span>
+        </a>
+        <a href="activite.html" class="nav-item active">
+            <i class="fa-solid fa-bolt nav-icon"></i>
+            <span>Activités</span>
+        </a>
+    </nav>
+
+    <!-- FIREBASE MODULE SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+        // BASE URL
+        const BASE_APP_URL = "https://publiciteplusrdc.blogspot.com";
+
+        // CONFIGURATION FIREBASE
+        const firebaseConfig = { 
+            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+            authDomain: "publicite-6445c.firebaseapp.com",
+            projectId: "publicite-6445c",
+            storageBucket: "publicite-6445c.firebasestorage.app",
+            messagingSenderId: "663385244466",
+            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b", 
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let currentUserUID = null;
+        let selectedMethod = "Crypto (BTC)";
+
+        // VÉRIFICATION AUTHENTIFICATION
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserUID = user.uid;
+            } else {
+                console.log("Utilisateur non connecté");
+            }
+        });
+
+        // GESTION DU MONTANT DYNAMIQUE
+        const inputAmount = document.getElementById('input-amount');
+        const summaryAmount = document.getElementById('summary-amount');
+        const summaryTotal = document.getElementById('summary-total');
+
+        inputAmount.addEventListener('input', () => {
+            let val = parseFloat(inputAmount.value) || 0;
+            summaryAmount.textContent = `$${val.toFixed(2)}`;
+            summaryTotal.textContent = `$${val.toFixed(2)}`;
+        });
+
+        // GESTION DES ONGLETS
+        const tabCrypto = document.getElementById('tab-crypto');
+        const tabPaypal = document.getElementById('tab-paypal');
+        const tabAutre = document.getElementById('tab-autre');
+
+        const methodIconBox = document.getElementById('method-icon-box');
+        const methodTitleText = document.getElementById('method-title-text');
+        const methodSubtitleText = document.getElementById('method-subtitle-text');
+        const inputAddressLabel = document.getElementById('input-address-label');
+        const withdrawAddressInput = document.getElementById('withdraw-address');
+        const alertText = document.getElementById('alert-text');
+
+        function setActiveTab(activeBtn, method, iconHtml, title, subtitle, label, placeholder, alertMsg) {
+            [tabCrypto, tabPaypal, tabAutre].forEach(btn => btn.classList.remove('active'));
+            activeBtn.classList.add('active');
+            
+            selectedMethod = method;
+            methodIconBox.innerHTML = iconHtml;
+            methodTitleText.innerText = title;
+            methodSubtitleText.innerText = subtitle;
+            inputAddressLabel.innerText = label;
+            withdrawAddressInput.placeholder = placeholder;
+            withdrawAddressInput.value = "";
+            alertText.innerHTML = alertMsg;
+        }
+
+        tabCrypto.addEventListener('click', () => {
+            setActiveTab(
+                tabCrypto, 
+                "Crypto (BTC)", 
+                "₿", 
+                "Bitcoin (BTC)", 
+                "Réseau : Bitcoin", 
+                "Adresse Bitcoin", 
+                "Entrez votre adresse Bitcoin", 
+                "Assurez-vous que l'adresse est correcte.<br>Les transactions crypto sont irréversibles."
+            );
+            methodIconBox.style.background = "#f7931a";
+        });
+
+        tabPaypal.addEventListener('click', () => {
+            setActiveTab(
+                tabPaypal, 
+                "PayPal", 
+                '<i class="fa-brands fa-paypal"></i>', 
+                "PayPal Direct", 
+                "Transfert de solde", 
+                "Adresse Email PayPal", 
+                "exemple@domaine.com", 
+                "Vérifiez bien l'adresse e-mail associées à votre compte PayPal."
+            );
+            methodIconBox.style.background = "#0070ba";
+        });
+
+        tabAutre.addEventListener('click', () => {
+            setActiveTab(
+                tabAutre, 
+                "Mobile Money / Autre", 
+                '<i class="fa-solid fa-mobile-screen"></i>', 
+                "Mobile Money / Airtel / Orange / M-Pesa", 
+                "Réseau Local", 
+                "Numéro de Téléphone", 
+                "+243...", 
+                "Saisissez le numéro avec le code du pays (ex: +243...)."
+            );
+            methodIconBox.style.background = "#10b981";
+        });
+
+        // SOUMISSION DE LA DEMANDE DANS FIRESTORE
+        const btnConfirm = document.getElementById('btn-confirm-withdraw');
+
+        btnConfirm.addEventListener('click', async () => {
+            const amount = parseFloat(inputAmount.value);
+            const address = withdrawAddressInput.value.trim();
+
+            if (!currentUserUID) {
+                alert("Erreur : Veuillez vous connecter à votre compte.");
+                return;
+            }
+
+            if (!amount || amount < 10 || amount > 500) {
+                alert("Le montant doit être compris entre $10.00 et $500.00.");
+                return;
+            }
+
+            if (!address) {
+                alert("Veuillez saisir les coordonnées de réception (adresse ou numéro).");
+                return;
+            }
+
+            btnConfirm.disabled = true;
+            btnConfirm.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Traitement...`;
+
+            try {
+                // Création du document dans la collection "demandes_retrait"
+                await addDoc(collection(db, "demandes_retrait"), {
+                    userId: currentUserUID,
+                    userEmail: auth.currentUser?.email || "Non renseigné",
+                    montant: amount,
+                    devise: "USD",
+                    methode: selectedMethod,
+                    adresseReception: address,
+                    statut: "en_attente",
+                    dateDemande: serverTimestamp()
+                });
+
+                alert("Votre demande de retrait a été soumise avec succès !");
+                withdrawAddressInput.value = "";
+            } catch (error) {
+                console.error("Erreur lors de la soumission du retrait :", error);
+                alert("Erreur lors de la soumission : " + error.message);
+            } finally {
+                btnConfirm.disabled = false;
+                btnConfirm.innerHTML = `<i class="fa-solid fa-paper-plane"></i> CONFIRMER LE RETRAIT`;
+            }
+        });
+    </script>
+</body>
+</html>
