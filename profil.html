@@ -4612,27 +4612,26 @@ window.handleAuth = async () => {
 };
 
 onAuthStateChanged(auth, async (user) => {
-    if(user) {
+    if (user) {
         const authScreen = document.getElementById('auth-screen');
         const mainApp = document.getElementById('main-app');
         if (authScreen) authScreen.classList.add('hidden');
         if (mainApp) mainApp.classList.remove('hidden');
         
-        // 🔒 SUPPRIMÉ : L'injection automatique du lien a été retirée d'ici
+        // 🔒 L'injection automatique du lien a été retirée d'ici
 
         const snap = await getDoc(doc(db, "rewards_users", user.uid));
-        if(snap.exists()){
+        if (snap.exists()) {
             const d = snap.data();
             const totalCoins = d.coins || 0;
+
             if (typeof calculerReputationEtEtoiles === "function") {
                 calculerReputationEtEtoiles(
                     d.history || {}, 
                     d.invitedCount || 0
                 );
             }
-        }
-    }
-});
+
             const nameEl = document.getElementById('user-name-display') || document.getElementById('user-name');
             if (nameEl) nameEl.innerText = d.name || "Utilisateur";
             
@@ -4657,12 +4656,12 @@ onAuthStateChanged(auth, async (user) => {
             const cashEl = document.getElementById('user-cash-value');
             if (cashEl) cashEl.innerText = `$${(totalCoins * 0.001).toFixed(2)}`;
             
-            if(d.photoURL) {
+            if (d.photoURL) {
                 const photoEl = document.getElementById('user-photo');
                 if (photoEl) photoEl.src = d.photoURL;
             }
 
-            if(d.bannerURL) {
+            if (d.bannerURL) {
                 if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
                 const bannerEl = document.getElementById('user-banner');
                 if (bannerEl) bannerEl.src = d.bannerURL;
@@ -4738,25 +4737,25 @@ onAuthStateChanged(auth, async (user) => {
             
             globalConditionsMet = condInv && condTsk && condDay;
             if (typeof evalWithdrawGateStatus === "function") evalWithdrawGateStatus();
-        }
+        } // Fin de if (snap.exists())
+
         if (user && user.metadata && user.metadata.creationTime) {
-    const creationDate = new Date(user.metadata.creationTime);
-    // Formate la date en français (ex: "Août 2026")
-    const dateFormatted = creationDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-    const capitalizedDate = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
-    
-    const memberSinceEl = document.getElementById('member-since-date');
-    if (memberSinceEl) {
-        memberSinceEl.innerText = capitalizedDate;
-    }
-}
+            const creationDate = new Date(user.metadata.creationTime);
+            const dateFormatted = creationDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+            const capitalizedDate = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1);
+            
+            const memberSinceEl = document.getElementById('member-since-date');
+            if (memberSinceEl) {
+                memberSinceEl.innerText = capitalizedDate;
+            }
+        }
     } else {
         if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
         const authScreen = document.getElementById('auth-screen');
         const mainApp = document.getElementById('main-app');
         if (authScreen) authScreen.classList.remove('hidden');
         if (mainApp) mainApp.classList.add('hidden');
-        if(!isLoginMode && typeof checkLocalStorageDeviceLock === "function") checkLocalStorageDeviceLock();
+        if (!isLoginMode && typeof checkLocalStorageDeviceLock === "function") checkLocalStorageDeviceLock();
     }
 });
 
