@@ -2456,8 +2456,70 @@ window.changerMoisAffiche = function(delta) {
 };
 
 // =========================================================================
-// 5. BOÎTE MODALE DE RANG ET RECLAMATION
+// 5. BOÎTE MODALE DE RANG ET RECLAMATION (AVEC PLUIE D'ÉTOILES / FLEURS)
 // =========================================================================
+
+// Injection automatique du CSS pour garantir le fonctionnement des animations
+(function injecterStylesModale() {
+    if (document.getElementById('rank-modal-animation-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'rank-modal-animation-styles';
+    style.innerHTML = `
+        .rank-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(10, 15, 30, 0.88);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999999;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            overflow: hidden;
+            pointer-events: auto;
+        }
+        .rank-modal-overlay.active {
+            opacity: 1;
+        }
+        .rank-modal-card {
+            position: relative;
+            z-index: 10;
+            background: #12192c;
+            border: 2px solid #00ff88;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+            border-radius: 20px;
+            padding: 30px 24px;
+            text-align: center;
+            max-width: 360px;
+            width: 90%;
+            color: #ffffff;
+        }
+        .confetti-particle {
+            position: absolute;
+            top: -60px;
+            z-index: 2;
+            pointer-events: none;
+            user-select: none;
+            animation: confettiFall linear infinite;
+        }
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            85% {
+                opacity: 0.9;
+            }
+            100% {
+                transform: translateY(115vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
 function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     jouerVoixFelicitations();
 
@@ -2477,23 +2539,25 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     modal.className = 'rank-modal-overlay';
     modal.innerHTML = `
         <div class="rank-modal-card">
-            <div class="rank-modal-icon">🌸🎉🏆</div>
-            <div class="rank-modal-title">FÉLICITATIONS !</div>
-            <div class="rank-modal-text">
+            <div class="rank-modal-icon" style="font-size: 2.8rem; margin-bottom: 12px;">🌸🎉🏆</div>
+            <div class="rank-modal-title" style="font-size: 1.5rem; font-weight: 800; color: #00ff88; margin-bottom: 10px;">FÉLICITATIONS !</div>
+            <div class="rank-modal-text" style="font-size: 0.95rem; line-height: 1.5; color: #d0d7e5; margin-bottom: 20px;">
                 Vous avez accumulé <strong>7 jours verts</strong> !<br><br>
                 Cliquez ci-dessous pour valider et passer au <strong>RANG ${nouveauRangFutur}</strong> !
             </div>
-            <button id="btn-obtenir-rang" class="rank-modal-btn">OBTENIR MON RANG (+1)</button>
+            <button id="btn-obtenir-rang" class="rank-modal-btn" style="width: 100%; padding: 14px; background: #00ff88; color: #0a0f1d; font-weight: bold; border: none; border-radius: 12px; font-size: 1rem; cursor: pointer; transition: transform 0.2s;">OBTENIR MON RANG (+1)</button>
         </div>
     `;
     document.body.appendChild(modal);
 
-    const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟"];
-    for (let i = 0; i < 30; i++) {
+    // Rendu dynamique de la pluie de fleurs et d'étoiles tombantes (35 particules)
+    const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟", "⭐", "🍃"];
+    for (let i = 0; i < 35; i++) {
         const p = document.createElement('div');
         p.className = 'confetti-particle';
         p.innerText = symboles[Math.floor(Math.random() * symboles.length)];
         p.style.left = Math.random() * 100 + 'vw';
+        p.style.fontSize = (Math.random() * 16 + 20) + 'px'; // Tailles variées (20px à 36px)
         p.style.animationDuration = (Math.random() * 3 + 2.5) + 's';
         p.style.animationDelay = (Math.random() * 2) + 's';
         modal.appendChild(p);
@@ -2597,7 +2661,6 @@ window.reclamerMonRang = async function(passedUserId) {
         afficherAlertePersonnalisee("Erreur de sauvegarde : " + error.message, "Oups", "Fermer");
     }
 };
-
 // =========================================================================
 // 6. COMPTAGE DES JOURS D'ACTIVITÉ
 // =========================================================================
