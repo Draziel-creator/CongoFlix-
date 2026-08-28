@@ -4783,6 +4783,22 @@ window.uploadImage = (e, type) => {
 
 window.logout = () => {
     if (typeof carouselTimer !== 'undefined' && carouselTimer) clearInterval(carouselTimer);
+    
+    // 1. Réinitialisation complète de la mémoire globale
+    window.g_userRank = 0;
+    window.g_userXP = 0;
+    window.g_userHistoryData = {};
+    window.g_currentUserId = null;
+    if (typeof g_userRank !== 'undefined') g_userRank = 0;
+    if (typeof g_userHistoryData !== 'undefined') g_userHistoryData = {};
+
+    // 2. Réinitialisation visuelle rapide du badge de rang
+    const rankBadgePill = document.getElementById('profile-rank-badge');
+    if (rankBadgePill) {
+        rankBadgePill.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Rang 0 : Débutant`;
+    }
+
+    // 3. Déconnexion Firebase
     signOut(auth);
 };
 
