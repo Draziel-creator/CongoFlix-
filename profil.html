@@ -3750,15 +3750,15 @@ window.checkUserReferralStatus = async function(userId) {
         const userRef = doc(db, "users", userId);
         const userSnap = await getDoc(userRef);
 
+        // Si le lien existe déjà dans la base de données, on le réaffiche directement
         if (userSnap.exists() && userSnap.data().referralLink) {
             const savedLink = userSnap.data().referralLink;
-            // On garde le lien stocké en mémoire
             window.g_myReferralLink = savedLink;
             
-            // ❌ SUPPRIMEZ OU COMMENTEZ CES LIGNES :
-            // const display = document.getElementById('share-link-text');
-            // if (display) display.textContent = savedLink;
-            // setButtonToCopyState();
+            const display = document.getElementById('share-link-text');
+            if (display) display.textContent = savedLink;
+            
+            setButtonToCopyState();
         }
     } catch (e) {
         console.error("Erreur de statut du lien :", e);
@@ -3767,7 +3767,7 @@ window.checkUserReferralStatus = async function(userId) {
 
 window.handleReferralButtonAction = async function() {
     if (window.g_myReferralLink) {
-        // Action COPICATEUR
+        // ACTION : COPIER LE LIEN
         navigator.clipboard.writeText(window.g_myReferralLink).then(() => {
             const btn = document.getElementById('btn-generate-link');
             if (btn) {
@@ -3776,7 +3776,7 @@ window.handleReferralButtonAction = async function() {
             }
         });
     } else {
-        // Action GÉNÉRATION & ENREGISTREMENT
+        // ACTION : GÉNÉRATION DU LIEN (Une seule fois)
         if (!auth.currentUser) return;
         
         const btn = document.getElementById('btn-generate-link');
@@ -3795,6 +3795,7 @@ window.handleReferralButtonAction = async function() {
             const display = document.getElementById('share-link-text');
             if (display) display.textContent = generatedLink;
             
+            // Le bouton passe définitivement en mode "Copier"
             setButtonToCopyState();
         } catch (e) {
             console.error("Erreur de génération :", e);
@@ -3813,7 +3814,6 @@ function setButtonToCopyState() {
     btn.className = "btn-share-act btn-copy-success";
     btn.innerHTML = `<i class="fa-solid fa-copy"></i> Copier le lien`;
 }
-
 // =========================================================
 // 1. CHARGEMENT ET MISE À JOUR DU COMPTEUR DE FILLEULS
 // =========================================================
@@ -4704,8 +4704,9 @@ onAuthStateChanged(auth, async (user) => {
         if (authScreen) authScreen.classList.add('hidden');
         if (mainApp) mainApp.classList.remove('hidden');
         
-        // 🔒 L'injection automatique du lien a été retirée d'ici
-
+        // 🚀 Récupère et réaffiche le lien sauvegardé dans Firestore dès l'ouverture
+        checkUserReferralStatus(user.uid);
+        
         const snap = await getDoc(doc(db, "rewards_users", user.uid));
         if (snap.exists()) {
             const d = snap.data();
