@@ -1529,22 +1529,7 @@ box-sizing: border-box;
                             <td><span class="badge-status status-ok" id="m-cond-age">Vérifié</span></td>
                         </tr>
                         <tr>
-                            <td><strong>2. Équipe active parrainée</strong><br><span style="font-size:11px;color:#8e92bc;">Filleuls ayant validé le Rang 0</span></td>
-                            <td>10 Personnes</td>
-                            <td><span class="badge-status status-warn" id="m-cond-invite">0 / 10</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>3. Quota d'offres complétées</strong><br><span style="font-size:11px;color:#8e92bc;">Publicités visionnées au total</span></td>
-                            <td>50 Tâches</td>
-                            <td><span class="badge-status status-warn" id="m-cond-tasks">0 / 50</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>4. Rétention d'ancienneté</strong><br><span style="font-size:11px;color:#8e92bc;">Jours actifs consécutifs requis</span></td>
-                            <td>14 Jours</td>
-                            <td><span class="badge-status status-warn" id="m-cond-days">0 / 14</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>5. Score Anti-Fraude</strong><br><span style="font-size:11px;color:#8e92bc;">Analyse comportementale (No VPN)</span></td>
+                            <td><strong>2. Score Anti-Fraude</strong><br><span style="font-size:11px;color:#8e92bc;">Analyse comportementale (No VPN)</span></td>
                             <td>100% Intègre</td>
                             <td><span class="badge-status status-ok" id="m-cond-fraud">100% OK</span></td>
                         </tr>
@@ -1553,12 +1538,6 @@ box-sizing: border-box;
             </div>
 
             <!-- 6. BOUTONS D'ACTION ET DÉCONNEXION -->
-            <div class="withdraw-action-container">
-                <button id="withdraw-gate-button" class="btn-withdraw-gate" disabled onclick="openRankModal()">
-                    <i class="fa-solid fa-wallet"></i> Demander un Retrait / Changer de Rang
-                </button>
-            </div>
-
             <div style="padding: 0 20px 80px 20px;">
                 <button onclick="logout()" class="btn-logout">SE DÉCONNECTER DU COMPTE</button>
             </div>
@@ -2478,7 +2457,13 @@ function afficherModalFelicitationsRang1(currentUserId, rangActuel) {
     let ancienneModal = document.getElementById('rank-unlocked-modal');
     if (ancienneModal) ancienneModal.remove();
 
-    const nouveauRangFutur = Number(window.g_userRank || rangActuel || 0) + 1;
+    const rankVerrouille = Math.max(
+        Number(window.g_userRank || 0),
+        Number(rangActuel || 0),
+        Number(localStorage.getItem('app_user_rank_cache') || 0)
+    );
+
+    const nouveauRangFutur = rankVerrouille + 1;
 
     const modal = document.createElement('div');
     modal.id = 'rank-unlocked-modal';
@@ -2528,6 +2513,7 @@ window.reclamerMonRang = async function(passedUserId) {
 
     const uid = passedUserId 
         || (typeof auth !== "undefined" && auth.currentUser ? auth.currentUser.uid : null)
+        || (typeof firebase !== "undefined" && firebase.auth()?.currentUser ? firebase.auth().currentUser.uid : null)
         || g_currentUserId 
         || (typeof userId !== "undefined" ? userId : null);
 
@@ -2550,36 +2536,44 @@ window.reclamerMonRang = async function(passedUserId) {
     }
 
     try {
-        const rangActuel = Number(window.g_userRank || 0);
-        const nouveauRang = rangActuel + 1;
+        const rangActuel = Math.max(
+            Number(window.g_userRank || 0),
+            Number(localStorage.getItem('app_user_rank_cache') || 0)
+        );
+        const nouveauRang = Math.max(1, rangActuel + 1);
 
-        // Modulaire Firestore v10
+        // 1. Sauvegarde dans Firestore (v9/v10 + v8)
         if (typeof doc === "function" && typeof setDoc === "function" && typeof db !== "undefined") {
-            const userDocRef = doc(db, "users", uid);
-            await setDoc(userDocRef, {
+            await setDoc(doc(db, "users", uid), {
+                rank: nouveauRang,
+                rang: nouveauRang,
+                rankNotified: true
+            }, { merge: true });
+        } else if (typeof firebase !== "undefined" && firebase.firestore) {
+            await firebase.firestore().collection('users').doc(uid).set({
                 rank: nouveauRang,
                 rang: nouveauRang,
                 rankNotified: true
             }, { merge: true });
         }
 
-        // 5. Mise à jour locale
-window.g_userRank = nouveauRang;
-localStorage.setItem('app_user_rank_cache', nouveauRang); // Mémorise le rang pour éviter que le bouton ne réapparaisse au F5
+        // 2. Verrouillage local immédiat
+        window.g_userRank = nouveauRang;
+        localStorage.setItem('app_user_rank_cache', nouveauRang);
+        localStorage.setItem('app_last_celebrated_rank', nouveauRang);
 
-        // Fermeture de la modale de félicitations
+        // Fermeture de la modale
         const modal = document.getElementById('rank-unlocked-modal');
         if (modal) {
             modal.classList.remove('active');
             setTimeout(() => modal.remove(), 400);
         }
 
-        // Rafraîchissement de l'UI (La barre XP remplacera automatiquement le bouton !)
+        // Rafraîchissement UI
         if (typeof generateHistoryUI === "function") {
             generateHistoryUI(g_userHistoryData, nouveauRang, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
         }
 
-        // Modale personnalisée sans alert() natif
         afficherAlertePersonnalisee(
             `Félicitations ! Votre compte est désormais au <strong>RANG ${nouveauRang}</strong> !`,
             "Rang Débloqué !",
@@ -2624,7 +2618,7 @@ function compterTousLesJoursVerts(historyData) {
 }
 
 // =========================================================================
-// 7. GENERATION DE L'INTERFACE UTILISATEUR (RELIÉE AU CHAMP XP ET RANG)
+// 7. GENERATION DE L'INTERFACE UTILISATEUR
 // =========================================================================
 function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO = null, dateAujourdhuiObj = new Date(), targetMonthObj = new Date()) {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -2645,21 +2639,14 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
     const moisNomsComplets = ["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"];
     const moisCourantTexte = `${moisNomsComplets[targetMonthObj.getMonth()]} ${targetMonthObj.getFullYear()}`;
 
-    // 1. Récupération stricte du 'xp' en minuscule (depuis la mémoire globale ou les données)
-const xpActuel = Number(window.g_userXP || (userHistoryData && userHistoryData.xp) || 0);
+    // VERROUILLAGE DU RANG ACTUEL (Impossible de revenir à 0 si une source valide le rang > 0)
+    const rangActuel = Math.max(
+        Number(window.g_userRank || 0),
+        Number(userRank || 0),
+        Number(userHistoryData?.rank !== undefined ? userHistoryData.rank : (userHistoryData?.rang || 0)),
+        Number(localStorage.getItem('app_user_rank_cache') || 0)
+    );
 
-// 2. Calcul du pourcentage de la barre de progression (ex: palier de 1000 XP)
-const xpMax = 1000; 
-const progressionPourcentage = Math.min(100, Math.max(5, (xpActuel % xpMax) / (xpMax / 100)));
-    
-    // On vérifie le rang dans la mémoire globale, le paramètre, l'objet Firestore ET le cache local d'urgence
-const rangActuel = Number(
-    window.g_userRank || 
-    userRank || 
-    (userHistoryData && (userHistoryData.rank || userHistoryData.rang)) || 
-    localStorage.getItem('app_user_rank_cache') || 
-    0
-);
     const tableWrapper = container.closest('.history-table-wrapper');
     if (tableWrapper) {
         let counterBar = document.getElementById('history-counter-bar');
@@ -2672,242 +2659,219 @@ const rangActuel = Number(
         const totalJoursActivite = compterTousLesJoursVerts(userHistoryData);
         counterBar.className = "history-counter-bar";
 
-// 🌸 1. DÉCLARATION GLOBALE DE LA MODALE (Accessible partout)
+        // Déclaration globale de la célébration des fleurs
         window.lancerCelebrationFleurs = function(rangAtteint) {
-    // 1. Suppression d'une ancienne modale si elle existe
-    const ancienneModal = document.getElementById('celebration-fleurs-modal');
-    if (ancienneModal) ancienneModal.remove();
+            const ancienneModal = document.getElementById('celebration-fleurs-modal');
+            if (ancienneModal) ancienneModal.remove();
 
-    if (typeof jouerVoixFelicitations === "function") {
-        jouerVoixFelicitations();
-    }
-
-    // Calcul du nouveau rang (+1 basé sur le rang actuel)
-    const rangActuel = Number(window.g_userRank || localStorage.getItem('app_user_rank_cache') || 0);
-    const nouveauRang = Math.max(rangAtteint, rangActuel + 1);
-    const isVIP = nouveauRang === 5;
-
-    // 2. Injection automatique du CSS d'animation des fleurs/confettis
-    if (!document.getElementById('fleurs-animation-style')) {
-        const style = document.createElement('style');
-        style.id = 'fleurs-animation-style';
-        style.innerHTML = `
-            .confetti-particle {
-                position: fixed !important;
-                top: -50px !important;
-                font-size: 28px !important;
-                user-select: none !important;
-                pointer-events: none !important;
-                z-index: 1000000 !important;
-                animation: fallParticle linear infinite !important;
-            }
-            @keyframes fallParticle {
-                0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-                100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    // 3. Création du DOM de la modale
-    const modal = document.createElement('div');
-    modal.id = 'celebration-fleurs-modal';
-    modal.className = 'fleurs-overlay';
-
-    modal.innerHTML = `
-        <div class="fleurs-card">
-            <div class="fleurs-rain">🌸 🌺 🌼 🌻 🌸 🌺 💐</div>
-            <h2>🎉 FÉLICITATIONS ! 🎉</h2>
-            <p>Vous avez franchi un nouveau palier !</p>
-            <div class="badge-debloque ${isVIP ? 'vip' : ''}">
-                ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + nouveauRang + ' DÉBLOQUÉ ! ⭐'}
-            </div>
-            <div class="fleurs-rain">💐 🐆 💫 🌸 🌺</div>
-            
-            <button id="btn-valider-rang" class="btn-fleurs-ok">
-                OBTENIR MON RANG (+1) 🚀
-            </button>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    // 4. Génération de la pluie de fleurs (30 particules)
-    const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟", "💐"];
-    for (let i = 0; i < 30; i++) {
-        const p = document.createElement('div');
-        p.className = 'confetti-particle';
-        p.innerText = symboles[Math.floor(Math.random() * symboles.length)];
-        p.style.left = Math.random() * 100 + 'vw';
-        p.style.animationDuration = (Math.random() * 3 + 2.5) + 's';
-        p.style.animationDelay = (Math.random() * 2) + 's';
-        modal.appendChild(p);
-    }
-
-    // 5. Clic sur le bouton : Écriture Firestore + Fermeture immédiate
-    const btnValider = modal.querySelector('#btn-valider-rang');
-    btnValider.onclick = async function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-        }
-
-        // Récupération de l'UID (compatible toutes configurations Firebase)
-        const uid = (typeof auth !== "undefined" && auth?.currentUser ? auth.currentUser.uid : null)
-            || (typeof firebase !== "undefined" && firebase.auth()?.currentUser ? firebase.auth().currentUser.uid : null)
-            || window.g_currentUserId 
-            || (typeof userId !== "undefined" ? userId : null);
-
-        if (!uid) {
-            console.error("❌ Impossible de trouver l'UID utilisateur.");
-            alert("Erreur de session. Veuillez rafraîchir la page.");
-            return;
-        }
-
-        try {
-            // Écriture Firestore v10 / v8
-            if (typeof doc === "function" && typeof setDoc === "function" && typeof db !== "undefined") {
-                await setDoc(doc(db, "users", uid), {
-                    rank: nouveauRang,
-                    rang: nouveauRang,
-                    rankNotified: true
-                }, { merge: true });
-            } else if (typeof firebase !== "undefined" && firebase.firestore) {
-                await firebase.firestore().collection('users').doc(uid).set({
-                    rank: nouveauRang,
-                    rang: nouveauRang,
-                    rankNotified: true
-                }, { merge: true });
+            if (typeof jouerVoixFelicitations === "function") {
+                jouerVoixFelicitations();
             }
 
-            console.log("✅ Firestore mis à jour avec le rang :", nouveauRang);
+            const rActuel = Math.max(Number(window.g_userRank || 0), Number(localStorage.getItem('app_user_rank_cache') || 0));
+            const nouveauRang = Math.max(rangAtteint, rActuel + 1);
+            const isVIP = nouveauRang === 5;
 
-            // Mise à jour du cache local
-            window.g_userRank = nouveauRang;
-            localStorage.setItem('app_user_rank_cache', nouveauRang);
-            localStorage.setItem('app_last_celebrated_rank', nouveauRang);
-
-            // Fermeture immédiate et suppression de la modale
-            modal.remove();
-
-            // Rafraîchissement UI si disponible
-            if (typeof generateHistoryUI === "function" && typeof g_userHistoryData !== "undefined") {
-                generateHistoryUI(g_userHistoryData, nouveauRang, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+            if (!document.getElementById('fleurs-animation-style')) {
+                const style = document.createElement('style');
+                style.id = 'fleurs-animation-style';
+                style.innerHTML = `
+                    .confetti-particle {
+                        position: fixed !important;
+                        top: -50px !important;
+                        font-size: 28px !important;
+                        user-select: none !important;
+                        pointer-events: none !important;
+                        z-index: 1000000 !important;
+                        animation: fallParticle linear infinite !important;
+                    }
+                    @keyframes fallParticle {
+                        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+                        100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
             }
 
-        } catch (error) {
-            console.error("❌ Erreur d'écriture Firestore :", error);
-            alert("Erreur lors de la mise à jour : " + error.message);
-        }
-    };
-};
-// 🔒 2. LOGIQUE DU CALCUL DU RANG ET DU CHEVAL
-const rangActuel = Math.max(
-    Number(window.g_userRank || 0),
-    Number(userRank || 0),
-    Number(localStorage.getItem('app_user_rank_cache') || 0)
-);
+            const modal = document.createElement('div');
+            modal.id = 'celebration-fleurs-modal';
+            modal.className = 'fleurs-overlay';
 
-if (rangActuel > 0) {
-    const xpActuel = Number(window.g_userXP || localStorage.getItem('app_user_xp_cache') || 0);
-    const xpMaxTotal = 1500;
-    
-    const progressionPourcentage = Math.min(100, Math.max(2, (xpActuel / xpMaxTotal) * 100));
-    const rangXP = Math.min(5, Math.floor(xpActuel / 300) + 1);
-
-    // 🏆 VÉRIFICATION DE LA MONTÉE DE RANG
-    const dernierRangCelebre = Number(localStorage.getItem('app_last_celebrated_rank') || 0);
-
-    if (rangXP > dernierRangCelebre && xpActuel > 0) {
-        // Sauvegarde du rang fêté pour ne pas ré-afficher la modale à chaque rafraîchissement
-        localStorage.setItem('app_last_celebrated_rank', rangXP);
-        
-        setTimeout(() => {
-            if (typeof window.lancerCelebrationFleurs === 'function') {
-                window.lancerCelebrationFleurs(rangXP);
-            }
-        }, 500);
-    }
-
-    // 🔗 URLs Lottie
-    const urlCheval1Marche = "https://lottie.host/c3ddde88-585e-4b6b-a6e9-2c31d7f32e64/JBtsMUhNZy.json";
-    const urlCheval2Course = "https://lottie.host/0de37597-dffe-4971-a7f4-5d1dba50714d/t37vcDyeQY.json";
-
-    let urlChevalActuel = urlCheval1Marche;
-    let classeInversion = "";
-    let vitesseCheval = 1.0;
-
-    if (rangXP >= 2) {
-        urlChevalActuel = urlCheval2Course;
-        classeInversion = "flip-horse";
-        const tableVitesses = { 2: 1.2, 3: 1.6, 4: 2.0, 5: 2.5 };
-        vitesseCheval = tableVitesses[rangXP] || 1.2;
-    }
-
-    counterBar.innerHTML = `
-        <div class="green-days-counter">
-            <span>📅 Jours enregistrés :</span>
-            <span class="green-days-badge">${totalJoursActivite}</span>
-        </div>
-
-        <div class="xp-modern-card">
-            <div class="xp-card-header">
-                <div class="xp-title-group">
-                    <span class="xp-bolt">⚡</span>
-                    <span class="xp-value"><strong>${xpActuel}</strong> / ${xpMaxTotal} XP</span>
+            modal.innerHTML = `
+                <div class="fleurs-card">
+                    <div class="fleurs-rain">🌸 🌺 🌼 🌻 🌸 🌺 💐</div>
+                    <h2>🎉 FÉLICITATIONS ! 🎉</h2>
+                    <p>Vous avez franchi un nouveau palier !</p>
+                    <div class="badge-debloque ${isVIP ? 'vip' : ''}">
+                        ${isVIP ? '👑 RANG 5 VIP ATTEINT ! 👑' : '⭐ RANG ' + nouveauRang + ' DÉBLOQUÉ ! ⭐'}
+                    </div>
+                    <div class="fleurs-rain">💐 🐆 💫 🌸 🌺</div>
+                    
+                    <button id="btn-valider-rang" class="btn-fleurs-ok">
+                        OBTENIR MON RANG (+1) 🚀
+                    </button>
                 </div>
-                <span class="rank-pill-badge ${rangXP === 5 ? 'vip-gold' : ''}">
-                    ${rangXP === 5 ? '👑 RANG 5 VIP' : 'RANG ' + rangXP}
-                </span>
-            </div>
+            `;
 
-            <div class="xp-track-wrapper">
-                <div class="xp-track-bg">
-                    <div class="xp-track-fill" style="width: ${progressionPourcentage}%;">
-                        <div class="light-laser-trail"></div>
-                        <div class="luminous-horse-container">
-                            <lottie-player 
-                                src="${urlChevalActuel}" 
-                                background="transparent" 
-                                speed="${vitesseCheval}" 
-                                class="lottie-horse-element ${classeInversion}"
-                                loop 
-                                autoplay>
-                            </lottie-player>
+            document.body.appendChild(modal);
+
+            const symboles = ["🌸", "🌺", "🌼", "🎉", "✨", "🏆", "🌟", "💐"];
+            for (let i = 0; i < 30; i++) {
+                const p = document.createElement('div');
+                p.className = 'confetti-particle';
+                p.innerText = symboles[Math.floor(Math.random() * symboles.length)];
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.animationDuration = (Math.random() * 3 + 2.5) + 's';
+                p.style.animationDelay = (Math.random() * 2) + 's';
+                modal.appendChild(p);
+            }
+
+            const btnValider = modal.querySelector('#btn-valider-rang');
+            btnValider.onclick = async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+
+                const uid = (typeof auth !== "undefined" && auth?.currentUser ? auth.currentUser.uid : null)
+                    || (typeof firebase !== "undefined" && firebase.auth()?.currentUser ? firebase.auth().currentUser.uid : null)
+                    || window.g_currentUserId 
+                    || (typeof userId !== "undefined" ? userId : null);
+
+                if (!uid) {
+                    console.error("❌ Impossible de trouver l'UID utilisateur.");
+                    alert("Erreur de session. Veuillez rafraîchir la page.");
+                    return;
+                }
+
+                try {
+                    if (typeof doc === "function" && typeof setDoc === "function" && typeof db !== "undefined") {
+                        await setDoc(doc(db, "users", uid), {
+                            rank: nouveauRang,
+                            rang: nouveauRang,
+                            rankNotified: true
+                        }, { merge: true });
+                    } else if (typeof firebase !== "undefined" && firebase.firestore) {
+                        await firebase.firestore().collection('users').doc(uid).set({
+                            rank: nouveauRang,
+                            rang: nouveauRang,
+                            rankNotified: true
+                        }, { merge: true });
+                    }
+
+                    window.g_userRank = nouveauRang;
+                    localStorage.setItem('app_user_rank_cache', nouveauRang);
+                    localStorage.setItem('app_last_celebrated_rank', nouveauRang);
+
+                    modal.remove();
+
+                    if (typeof generateHistoryUI === "function" && typeof g_userHistoryData !== "undefined") {
+                        generateHistoryUI(g_userHistoryData, nouveauRang, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+                    }
+
+                } catch (error) {
+                    console.error("❌ Erreur d'écriture Firestore :", error);
+                    alert("Erreur lors de la mise à jour : " + error.message);
+                }
+            };
+        };
+
+        // SI LE RANG EST SUPÉRIEUR À 0 : APPAREIL DU CHEVAL ET DES XP (VERROUILLÉ)
+        if (rangActuel > 0) {
+            const xpActuel = Number(window.g_userXP || (userHistoryData && userHistoryData.xp) || localStorage.getItem('app_user_xp_cache') || 0);
+            const xpMaxTotal = 1500;
+            
+            const progressionPourcentage = Math.min(100, Math.max(2, (xpActuel / xpMaxTotal) * 100));
+            const rangXP = Math.min(5, Math.floor(xpActuel / 300) + 1);
+
+            const dernierRangCelebre = Number(localStorage.getItem('app_last_celebrated_rank') || 0);
+
+            if (rangXP > dernierRangCelebre && xpActuel > 0) {
+                localStorage.setItem('app_last_celebrated_rank', rangXP);
+                setTimeout(() => {
+                    if (typeof window.lancerCelebrationFleurs === 'function') {
+                        window.lancerCelebrationFleurs(rangXP);
+                    }
+                }, 500);
+            }
+
+            const urlCheval1Marche = "https://lottie.host/c3ddde88-585e-4b6b-a6e9-2c31d7f32e64/JBtsMUhNZy.json";
+            const urlCheval2Course = "https://lottie.host/0de37597-dffe-4971-a7f4-5d1dba50714d/t37vcDyeQY.json";
+
+            let urlChevalActuel = urlCheval1Marche;
+            let classeInversion = "";
+            let vitesseCheval = 1.0;
+
+            if (rangXP >= 2) {
+                urlChevalActuel = urlCheval2Course;
+                classeInversion = "flip-horse";
+                const tableVitesses = { 2: 1.2, 3: 1.6, 4: 2.0, 5: 2.5 };
+                vitesseCheval = tableVitesses[rangXP] || 1.2;
+            }
+
+            counterBar.innerHTML = `
+                <div class="green-days-counter">
+                    <span>📅 Jours enregistrés :</span>
+                    <span class="green-days-badge">${totalJoursActivite}</span>
+                </div>
+
+                <div class="xp-modern-card">
+                    <div class="xp-card-header">
+                        <div class="xp-title-group">
+                            <span class="xp-bolt">⚡</span>
+                            <span class="xp-value"><strong>${xpActuel}</strong> / ${xpMaxTotal} XP</span>
+                        </div>
+                        <span class="rank-pill-badge ${rangXP === 5 ? 'vip-gold' : ''}">
+                            ${rangXP === 5 ? '👑 RANG 5 VIP' : 'RANG ' + rangXP}
+                        </span>
+                    </div>
+
+                    <div class="xp-track-wrapper">
+                        <div class="xp-track-bg">
+                            <div class="xp-track-fill" style="width: ${progressionPourcentage}%;">
+                                <div class="light-laser-trail"></div>
+                                <div class="luminous-horse-container">
+                                    <lottie-player 
+                                        src="${urlChevalActuel}" 
+                                        background="transparent" 
+                                        speed="${vitesseCheval}" 
+                                        class="lottie-horse-element ${classeInversion}"
+                                        loop 
+                                        autoplay>
+                                    </lottie-player>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ranks-milestones-row">
+                        <div class="milestone-item m-r1 ${xpActuel >= 0 ? 'active' : ''}">
+                            <span class="m-dot"></span>
+                            <span class="m-label">R1 (0)</span>
+                        </div>
+                        <div class="milestone-item m-r2 ${xpActuel >= 300 ? 'active' : ''}">
+                            <span class="m-dot"></span>
+                            <span class="m-label">R2 (300)</span>
+                        </div>
+                        <div class="milestone-item m-r3 ${xpActuel >= 600 ? 'active' : ''}">
+                            <span class="m-dot"></span>
+                            <span class="m-label">R3 (600)</span>
+                        </div>
+                        <div class="milestone-item m-r4 ${xpActuel >= 900 ? 'active' : ''}">
+                            <span class="m-dot"></span>
+                            <span class="m-label">R4 (900)</span>
+                        </div>
+                        <div class="milestone-item m-r5 vip ${xpActuel >= 1200 ? 'active' : ''}">
+                            <span class="m-dot"></span>
+                            <span class="m-label">👑 R5 VIP</span>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="ranks-milestones-row">
-                <div class="milestone-item m-r1 ${xpActuel >= 0 ? 'active' : ''}">
-                    <span class="m-dot"></span>
-                    <span class="m-label">R1 (0)</span>
-                </div>
-                <div class="milestone-item m-r2 ${xpActuel >= 300 ? 'active' : ''}">
-                    <span class="m-dot"></span>
-                    <span class="m-label">R2 (300)</span>
-                </div>
-                <div class="milestone-item m-r3 ${xpActuel >= 600 ? 'active' : ''}">
-                    <span class="m-dot"></span>
-                    <span class="m-label">R3 (600)</span>
-                </div>
-                <div class="milestone-item m-r4 ${xpActuel >= 900 ? 'active' : ''}">
-                    <span class="m-dot"></span>
-                    <span class="m-label">R4 (900)</span>
-                </div>
-                <div class="milestone-item m-r5 vip ${xpActuel >= 1200 ? 'active' : ''}">
-                    <span class="m-dot"></span>
-                    <span class="m-label">👑 R5 VIP</span>
-                </div>
-            </div>
-        </div>
-    `;
-} else {
-
-            // RANG 0 : COMPTEUR AVEC OBJECTIF 7 JOURS + BOUTON
+            `;
+        } else {
+            // SI LE RANG EST STRICTEMENT 0 : OBJECTIF 7 JOURS
             const estPretPourModal = totalJoursActivite >= 7;
 
             counterBar.innerHTML = `
@@ -2963,7 +2927,7 @@ if (rangActuel > 0) {
         tableHead.innerHTML = headHTML;
     }
 
-    // REMPLISSAGE DU TABLEAU
+    // REMPLISSAGE DU TABLEAU DE DATES (INTACT)
     days.forEach((dayName, dayIndex) => {
         const tr = document.createElement('tr');
 
@@ -3067,22 +3031,23 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
 
         g_currentUserId = uid;
         g_dateAujourdhuiObj = new Date();
-        const dateAujourdhuiISO = FormaterDateISO(g_dateAujourdhuiObj);
 
         let historyData = {};
         let userRank = 0;
         let userXP = 0;
         let userStartDateISO = null;
 
-        // 1. Lecture Firestore (Compatible v9+ Modulaire ET v8)
+        // 1. Lecture Firestore (v10 Modulaire en priorité, fallback v8)
         if (typeof doc === "function" && typeof getDoc === "function" && typeof db !== "undefined") {
-            // Firebase v9/v10 Modulaire
+            // Firebase v9 / v10 Modulaire
             try {
                 const rewardsSnap = await getDoc(doc(db, "rewards_users", uid));
                 if (rewardsSnap.exists()) {
                     historyData = rewardsSnap.data().history || {};
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.warn("⚠️ Lecture rewards_users (v10) :", e);
+            }
 
             try {
                 const userSnap = await getDoc(doc(db, "users", uid));
@@ -3095,24 +3060,30 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
                     userXP = Number(uData.xp !== undefined ? uData.xp : (uData.XP || 0));
                     userStartDateISO = uData.startDate || null;
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.warn("⚠️ Lecture users (v10) :", e);
+            }
 
         } else if (typeof firebase !== "undefined" && firebase.firestore) {
-            // Firebase v8
+            // Firebase v8 Compat
             const fs = firebase.firestore();
-            const rewardsSnap = await fs.collection("rewards_users").doc(uid).get();
-            if (rewardsSnap.exists) historyData = rewardsSnap.data()?.history || {};
+            try {
+                const rewardsSnap = await fs.collection("rewards_users").doc(uid).get();
+                if (rewardsSnap.exists) historyData = rewardsSnap.data()?.history || {};
+            } catch(e) {}
 
-            const userSnap = await fs.collection("users").doc(uid).get();
-            if (userSnap.exists) {
-                const uData = userSnap.data() || {};
-                if (Object.keys(historyData).length === 0) {
-                    historyData = uData.history || uData.historique || {};
+            try {
+                const userSnap = await fs.collection("users").doc(uid).get();
+                if (userSnap.exists) {
+                    const uData = userSnap.data() || {};
+                    if (Object.keys(historyData).length === 0) {
+                        historyData = uData.history || uData.historique || {};
+                    }
+                    userRank = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
+                    userXP = Number(uData.xp !== undefined ? uData.xp : (uData.XP || 0));
+                    userStartDateISO = uData.startDate || null;
                 }
-                userRank = Number(uData.rank !== undefined ? uData.rank : (uData.rang || 0));
-                userXP = Number(uData.xp !== undefined ? uData.xp : (uData.XP || 0));
-                userStartDateISO = uData.startDate || null;
-            }
+            } catch(e) {}
         }
 
         // 2. Fusion avec le LocalStorage (Jours verts locaux)
@@ -3127,27 +3098,48 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
             }
         });
 
-        // 3. Variables globales
+        // 🔒 3. VERROUILLAGE ANTI-RÉINITIALISATION DU RANG
+        const rankCacheLocal = Number(localStorage.getItem('app_user_rank_cache') || 0);
+        const rankGlobal = Number(window.g_userRank || 0);
+        
+        // Le rang retenu est IMPOSSIBLE à faire baisser (prend la valeur max disponible)
+        const rankVerrouille = Math.max(userRank, rankCacheLocal, rankGlobal);
+
+        // 4. Affectation des variables globales
         g_userHistoryData = historyData;
         window.g_userHistoryData = historyData;
-        g_userRank = userRank;
-        window.g_userRank = userRank;
+        g_userRank = rankVerrouille;
+        window.g_userRank = rankVerrouille;
         g_userXP = userXP;
         window.g_userXP = userXP;
         g_userStartDateISO = userStartDateISO;
 
-        localStorage.setItem('app_user_rank_cache', userRank);
+        // Met à jour le cache local immédiatement
+        if (rankVerrouille > 0) {
+            localStorage.setItem('app_user_rank_cache', rankVerrouille);
+            
+            // Si Firestore indiquait 0 mais que le rang local était > 0, on resynchronise Firestore
+            if (userRank < rankVerrouille) {
+                if (typeof doc === "function" && typeof setDoc === "function" && typeof db !== "undefined") {
+                    await setDoc(doc(db, "users", uid), { rank: rankVerrouille, rang: rankVerrouille, rankNotified: true }, { merge: true });
+                } else if (typeof firebase !== "undefined" && firebase.firestore) {
+                    await firebase.firestore().collection("users").doc(uid).set({ rank: rankVerrouille, rang: rankVerrouille, rankNotified: true }, { merge: true });
+                }
+            }
+        }
         localStorage.setItem('app_user_xp_cache', userXP);
 
-        // 4. Génération UI + Calcul
+        // 5. Génération UI
         if (typeof generateHistoryUI === "function") {
-            generateHistoryUI(g_userHistoryData, g_userRank, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
+            generateHistoryUI(g_userHistoryData, rankVerrouille, g_userStartDateISO, g_dateAujourdhuiObj, g_moisAfficheDate);
         }
 
-       if (typeof calculerReputationEtEtoiles === "function") {
-    const totalFilleuls = window.g_totalParrainages || 0;
-    calculerReputationEtEtoiles(g_userHistoryData, totalFilleuls);
-}
+        // 6. Calcul de réputation
+        if (typeof calculerReputationEtEtoiles === "function") {
+            const totalFilleuls = window.g_totalParrainages || 0;
+            calculerReputationEtEtoiles(g_userHistoryData, totalFilleuls);
+        }
+
     } catch (error) {
         console.error("❌ Erreur lors de la synchronisation :", error);
     } finally {
@@ -3161,14 +3153,16 @@ async function chargerEtSynchroniserHistoriqueProfil(currentUserId) {
 window.generateHistoryUI = generateHistoryUI;
 window.chargerEtSynchroniserHistoriqueProfil = chargerEtSynchroniserHistoriqueProfil;
 
-if (typeof firebase !== 'undefined' && firebase.auth) {
+// Écouteur d'état Auth (Compatible v8 et v10)
+if (typeof auth !== "undefined" && typeof auth.onAuthStateChanged === "function") {
+    auth.onAuthStateChanged((user) => {
+        if (user) chargerEtSynchroniserHistoriqueProfil(user.uid);
+    });
+} else if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged((user) => {
-        if (user) {
-            chargerEtSynchroniserHistoriqueProfil(user.uid);
-        }
+        if (user) chargerEtSynchroniserHistoriqueProfil(user.uid);
     });
 }
-
 // =========================================================================
 // GESTION UNIFIÉE ET SÉCURISÉE DU PROFIL (OUVERTURE, FERMETURE, SAUVEGARDE)
 // =========================================================================
