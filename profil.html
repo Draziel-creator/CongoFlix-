@@ -1351,7 +1351,7 @@ box-sizing: border-box;
                     <div class="hero-left-col">
                         <div class="avatar-header-row">
                             <div class="avatar-container">
-                                <div class="avatar-wrapper" onclick="triggerFileInput('avatarInput')">
+                                 <div class="avatar-wrapper" onclick="triggerFileInput('profileFileInput')">
                                     <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar">
                                     <div class="edit-avatar-badge"><i class="fa-solid fa-camera"></i></div>
                                 </div>
@@ -1576,36 +1576,38 @@ box-sizing: border-box;
 
     </div> <!-- FIN APP-CONTAINER -->
 
-    <!-- POPUPS & MODALES (HORS DU FLUX PRINCIPAL) -->
+      <!-- POPUPS & MODALES (HORS DU FLUX PRINCIPAL) -->
     <input type="file" id="bannerInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'banner')">
-    <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadImage(event, 'avatar')">
+    
+    <!-- INPUT PHOTO PROFIL UNIQUE -->
+    <input type="file" id="profileFileInput" accept="image/*" style="display:none;" onchange="traiterEtEnregistrerImage(event)">
 
-   <!-- MODALE RÉPUTATION -->
-<div id="modal-reputation-info" class="reputation-modal-overlay" style="display: none;">
-    <div class="reputation-modal-card">
-        <button type="button" class="reputation-modal-close" onclick="closeReputationModal()">&times;</button>
-        <div class="reputation-modal-header">
-            <i class="fa-solid fa-star star-icon-header"></i>
-            <h3>À quoi sert la Réputation ?</h3>
-        </div>
-        <div class="reputation-modal-body">
-            <p>Le score de réputation mesure votre <strong>régularité</strong> et votre <strong>engagement</strong> quotidien sur la plateforme.</p>
-            <div class="info-block">
-                <strong>⭐ Pourquoi avoir un score élevé ?</strong>
-                <ul>
-                    <li><strong>Confiance des filleuls :</strong> Un badge de parrain actif et fiable pour inspirer votre réseau.</li>
-                    <li><strong>Statut Privilégié :</strong> Accès prioritaire aux récompenses et avantages exclusifs de la plateforme.</li>
-                </ul>
+    <!-- MODALE RÉPUTATION -->
+    <div id="modal-reputation-info" class="reputation-modal-overlay" style="display: none;">
+        <div class="reputation-modal-card">
+            <button type="button" class="reputation-modal-close" onclick="closeReputationModal()">&times;</button>
+            <div class="reputation-modal-header">
+                <i class="fa-solid fa-star star-icon-header"></i>
+                <h3>À quoi sert la Réputation ?</h3>
             </div>
-            <div class="info-block">
-                <strong>📈 Comment varie le score ?</strong>
-                <ul>
-                    <li><span class="text-green"><strong>+ Gain :</strong></span> Valider au moins 15 points par jour augmente votre note.</li>
-                    <li><span class="text-red"><strong>- Perte :</strong></span> Chaque journée d'inactivité applique un malus (-0.3 pt) et fait baisser vos étoiles.</li>
-                </ul>
+            <div class="reputation-modal-body">
+                <p>Le score de réputation mesure votre <strong>régularité</strong> et votre <strong>engagement</strong> quotidien sur la plateforme.</p>
+                <div class="info-block">
+                    <strong>⭐ Pourquoi avoir un score élevé ?</strong>
+                    <ul>
+                        <li><strong>Confiance des filleuls :</strong> Un badge de parrain actif et fiable pour inspirer votre réseau.</li>
+                        <li><strong>Statut Privilégié :</strong> Accès prioritaire aux récompenses et avantages exclusifs de la plateforme.</li>
+                    </ul>
+                </div>
+                <div class="info-block">
+                    <strong>📈 Comment varie le score ?</strong>
+                    <ul>
+                        <li><span class="text-green"><strong>+ Gain :</strong></span> Valider au moins 15 points par jour augmente votre note.</li>
+                        <li><span class="text-red"><strong>- Perte :</strong></span> Chaque journée d'inactivité applique un malus (-0.3 pt) et fait baisser vos étoiles.</li>
+                    </ul>
+                </div>
             </div>
-        </div>
-        <button type="button" class="btn-reputation-confirm" onclick="closeReputationModal()">J'ai compris</button>
+            <button type="button" class="btn-reputation-confirm" onclick="closeReputationModal()">J'ai compris</button>
         </div>
     </div>
 
@@ -1658,27 +1660,19 @@ box-sizing: border-box;
         </div>
     </div>
 
-  <!-- Input invisible (obligatoire dans la page) -->
-<input type="file" id="profileFileInput" accept="image/*" style="display: none;" onchange="traiterEtEnregistrerImage(event)">
-
-<!-- Bouton caméra (ouvre la modale) -->
-<div class="camera-btn" onclick="openImageWarningModal()" style="cursor: pointer;">
-    <i class="fa-solid fa-camera"></i>
-</div>
-
-<!-- MODALE AVERTISSEMENT TAILLE IMAGE -->
-<div class="custom-modal-overlay" id="imageWarningModal">
-    <div class="custom-modal-card">
-        <div class="modal-title"><i class="fa-solid fa-image" style="color:#ffcc00;"></i> Choix de l'image</div>
-        <p style="font-size: 0.9rem; color: #ccc; line-height: 1.5; margin-bottom: 20px;">
-            Pour un chargement rapide de votre profil, veuillez sélectionner une image <strong>légère</strong> (de préférence moins de 1 Mo).
-        </p>
-        <div class="modal-actions-row">
-            <button class="btn-modal-cancel" onclick="closeImageWarningModal()">Annuler</button>
-            <button class="btn-modal-confirm" onclick="confirmImageSelection()">OK</button>
+    <!-- MODALE AVERTISSEMENT TAILLE IMAGE -->
+    <div class="custom-modal-overlay" id="imageWarningModal">
+        <div class="custom-modal-card">
+            <div class="modal-title"><i class="fa-solid fa-image" style="color:#ffcc00;"></i> Choix de l'image</div>
+            <p style="font-size: 0.9rem; color: #ccc; line-height: 1.5; margin-bottom: 20px;">
+                Pour un chargement rapide de votre profil, veuillez sélectionner une image <strong>légère</strong> (de préférence moins de 1 Mo).
+            </p>
+            <div class="modal-actions-row">
+                <button class="btn-modal-cancel" onclick="closeImageWarningModal()">Annuler</button>
+                <button class="btn-modal-confirm" onclick="confirmImageSelection()">OK</button>
+            </div>
         </div>
     </div>
-</div>
     <!-- MODALE RANGS & RÈGLEMENT ÉCONOMIQUE -->
 <div id="rank-info-modal" class="custom-modal-overlay">
     <div class="custom-modal-card" style="max-width: 440px;">
