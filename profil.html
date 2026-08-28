@@ -2973,36 +2973,58 @@ function generateHistoryUI(userHistoryData = {}, userRank = 0, userStartDateISO 
                 jourMoisTexte = `${String(dateCaseObj.getDate()).padStart(2, '0')}/${String(dateCaseObj.getMonth() + 1).padStart(2, '0')}`;
             }
 
+           // =========================================================================
+            // RENDU DES CASES DE L'HISTORIQUE (Passé / Aujourd'hui / Futur)
+            // =========================================================================
             if (dateCaseISO < dateAujourdhuiISO) {
-                if (val >= 15) {
-                    tdWeek.className += " state-completed";
+                if (rangActuel > 0) {
+                    // MODE COMPTEUR GLOBAL (APRÈS 7 JOURS VERTS / RANG > 0)
+                    // Affichage simple du nombre sans style vert ou rouge
+                    tdWeek.className += " state-simple-day";
                     tdWeek.innerHTML = `
-                        <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
-                        <span class="status-badge">✔ Complété</span>
-                    `;
-                } else if (aDesDonnees) {
-                    tdWeek.className += " state-incomplete";
-                    tdWeek.innerHTML = `
-                        <span class="cell-date" style="color:rgba(255,85,85,0.9);">${jourMoisTexte}</span>
-                        <span class="status-badge">Non accompli</span>
-                        <div style="font-size:0.65rem; margin-top:2px; opacity:0.8;">(${val}/15)</div>
+                        <span class="cell-date" style="color: rgba(255, 255, 255, 0.7);">${jourMoisTexte}</span>
+                        <span class="status-val-simple" style="font-size: 0.95rem; font-weight: bold; color: #ffffff; margin-top: 4px;">
+                            ${val}
+                        </span>
                     `;
                 } else {
-                    tdWeek.className += " state-unregistered";
-                    tdWeek.innerHTML = `
-                        <span class="cell-date">${jourMoisTexte}</span>
-                        <span class="status-badge">Aucune activité</span>
-                    `;
+                    // MODE DEPART (RANG 0) : LOGIQUE DE DÉBLOCAGE AVEC VERTS ET ROUGES
+                    if (val >= 15) {
+                        tdWeek.className += " state-completed";
+                        tdWeek.innerHTML = `
+                            <span class="cell-date" style="color:rgba(0,255,136,0.9);">${jourMoisTexte}</span>
+                            <span class="status-badge">✔ Complété</span>
+                        `;
+                    } else if (aDesDonnees) {
+                        tdWeek.className += " state-incomplete";
+                        tdWeek.innerHTML = `
+                            <span class="cell-date" style="color:rgba(255,85,85,0.9);">${jourMoisTexte}</span>
+                            <span class="status-badge">Non accompli</span>
+                            <div style="font-size:0.65rem; margin-top:2px; opacity:0.8;">(${val}/15)</div>
+                        `;
+                    } else {
+                        tdWeek.className += " state-unregistered";
+                        tdWeek.innerHTML = `
+                            <span class="cell-date">${jourMoisTexte}</span>
+                            <span class="status-badge">Aucune activité</span>
+                        `;
+                    }
                 }
             } else if (dateCaseISO === dateAujourdhuiISO) {
                 tdWeek.className += " state-today";
                 const isDoneToday = val >= 15;
-                if (isDoneToday) {
+                if (isDoneToday && rangActuel === 0) {
                     tdWeek.className += " state-completed";
                 }
+                
+                // Affichage pour le jour présent
+                const texteAujourdhui = rangActuel > 0 
+                    ? `${val}` 
+                    : (isDoneToday ? '✔ Complété' : `${val} / 15`);
+
                 tdWeek.innerHTML = `
                     <span class="cell-date" style="color:#00e5ff;">AUJ. (${jourMoisTexte})</span>
-                    <span class="status-badge">${isDoneToday ? '✔ Complété' : val + ' / 15'}</span>
+                    <span class="status-badge">${texteAujourdhui}</span>
                 `;
             } else {
                 tdWeek.className += " state-future";
