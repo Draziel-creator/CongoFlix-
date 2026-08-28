@@ -4124,17 +4124,16 @@ window.traiterEtEnregistrerImage = async function(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
 
-    // Contrôle de la taille (max 2 Mo)
-    if (file.size > 2 * 1024 * 1024) {
+    // Limite à 800 Ko pour le stockage Firestore
+    if (file.size > 800 * 1024) {
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("L'image est trop lourde (max 2 Mo).", "Image Trop Lourde");
+            afficherAlertePersonnalisee("L'image est trop lourde pour Firestore (max 800 Ko).", "Image Trop Lourde");
         } else {
-            alert("L'image est trop lourde (max 2 Mo).");
+            alert("L'image est trop lourde (max 800 Ko).");
         }
         return;
     }
 
-    // Récupération de l'utilisateur connecté via auth.currentUser
     const currentUser = auth.currentUser;
     if (!currentUser) {
         alert("Veuillez vous connecter pour modifier votre photo.");
@@ -4142,20 +4141,23 @@ window.traiterEtEnregistrerImage = async function(event) {
     }
 
     try {
-        // 1. Envoi dans Firebase Storage (Syntaxe Modulaire v10)
-        const imageRef = ref(storage, `profile_photos/${currentUser.uid}_${Date.now()}`);
-        await uploadBytes(imageRef, file);
-        const photoURL = await getDownloadURL(imageRef);
+        // 1. Convertir l'image en chaîne Base64
+        const photoURL = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (error) => reject(error);
+        });
 
-        // 2. Mise à jour Firestore (Collection rewards_users)
+        // 2. Enregistrer l'image Base64 dans Firestore (Collection rewards_users)
         const rewardUserRef = doc(db, "rewards_users", currentUser.uid);
         await setDoc(rewardUserRef, { photoURL: photoURL }, { merge: true });
 
-        // Synchronisation miroir dans users
+        // Synchronisation avec users
         const mainUserRef = doc(db, "users", currentUser.uid);
         await setDoc(mainUserRef, { photoURL: photoURL }, { merge: true }).catch(() => {});
 
-        // 3. Mise à jour visuelle du profil
+        // 3. Mise à jour de l'image sur l'écran
         const userPhoto = document.getElementById("user-photo") || document.getElementById("user-avatar");
         if (userPhoto) {
             userPhoto.src = photoURL;
@@ -4168,10 +4170,10 @@ window.traiterEtEnregistrerImage = async function(event) {
         }
 
     } catch (error) {
-        console.error("Erreur lors de l'enregistrement de la photo :", error);
-        alert("Une erreur est survenue lors de l'envoi de la photo.");
+        console.error("Erreur d'enregistrement :", error);
+        alert("Une erreur est survenue lors de l'enregistrement de l'image.");
     } finally {
-        event.target.value = ""; // Réinitialise l'input
+        event.target.value = "";
     }
 };
 
