@@ -1658,11 +1658,13 @@ box-sizing: border-box;
         </div>
     </div>
 
-   <!-- Input invisible pour sélectionner l'image depuis l'appareil -->
+  <!-- Input invisible (obligatoire dans la page) -->
 <input type="file" id="profileFileInput" accept="image/*" style="display: none;" onchange="traiterEtEnregistrerImage(event)">
 
-<!-- TON BOUTON / PETITE CAMÉRA (Exemple de déclencheur) -->
-<!-- <button onclick="triggerFileInput('profileFileInput')"><i class="fa-solid fa-camera"></i></button> -->
+<!-- Bouton caméra (ouvre la modale) -->
+<div class="camera-btn" onclick="openImageWarningModal()" style="cursor: pointer;">
+    <i class="fa-solid fa-camera"></i>
+</div>
 
 <!-- MODALE AVERTISSEMENT TAILLE IMAGE -->
 <div class="custom-modal-overlay" id="imageWarningModal">
@@ -1677,7 +1679,6 @@ box-sizing: border-box;
         </div>
     </div>
 </div>
-
     <!-- MODALE RANGS & RÈGLEMENT ÉCONOMIQUE -->
 <div id="rank-info-modal" class="custom-modal-overlay">
     <div class="custom-modal-card" style="max-width: 440px;">
@@ -4099,36 +4100,38 @@ let originalUsername = "";
 // GESTION DES MODALES D'IMAGE ET TÉLÉCHARGEMENT PROFIL
 // =============================================================================
 
-// Utilisation de window.pendingFileInputId pour éviter tout conflit de re-déclaration
-window.pendingFileInputId = window.pendingFileInputId || null;
-
-window.triggerFileInput = (inputId) => {
-    window.pendingFileInputId = inputId;
+// Ouverture de la modale depuis la caméra
+window.openImageWarningModal = () => {
     const modal = document.getElementById('imageWarningModal');
     if (modal) modal.classList.add('active');
 };
 
+// Fermeture de la modale
 window.closeImageWarningModal = () => {
     const modal = document.getElementById('imageWarningModal');
     if (modal) modal.classList.remove('active');
-    window.pendingFileInputId = null;
 };
 
+// Clic sur OK : Ferme la modale ET ouvre immédiatement le sélecteur de fichier
 window.confirmImageSelection = () => {
     closeImageWarningModal();
-    if (window.pendingFileInputId) {
-        const input = document.getElementById(window.pendingFileInputId);
-        if (input) input.click();
+    
+    const fileInput = document.getElementById('profileFileInput');
+    if (fileInput) {
+        fileInput.click(); // Ouvre la galerie / le gestionnaire de fichier
+    } else {
+        alert("Erreur : L'élément <input type='file' id='profileFileInput'> est introuvable sur la page.");
     }
 };
 
+// Traitement du fichier choisi et envoi vers Firebase
 async function traiterEtEnregistrerImage(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("L'image est trop lourde. Veuillez choisir une image de moins de 2 Mo.", "Image Trop Lourde");
+            afficherAlertePersonnalisee("L'image est trop lourde (max 2 Mo).", "Image Trop Lourde");
         } else {
             alert("L'image est trop lourde (max 2 Mo).");
         }
@@ -4143,36 +4146,31 @@ async function traiterEtEnregistrerImage(event) {
     }
 
     try {
-        // Envoi sur Firebase Storage
+        // Envoi de la photo sur Firebase Storage
         const storageRef = firebase.storage().ref(`profile_photos/${currentUserId}_${Date.now()}`);
         const uploadTask = await storageRef.put(file);
         const photoURL = await uploadTask.ref.getDownloadURL();
 
-        // Mise à jour Firestore (rewards_users)
+        // Enregistrement de l'URL dans Firestore (rewards_users -> photoURL)
         await db.collection("rewards_users").doc(currentUserId).set({
             photoURL: photoURL
         }, { merge: true });
 
-        // Mise à jour optionnelle dans users
-        await db.collection("users").doc(currentUserId).set({
-            photoURL: photoURL
-        }, { merge: true }).catch(() => {});
-
-        // Mise à jour visuelle immédiate de la photo sur la page
+        // Mise à jour de l'affichage à l'écran
         const userAvatarImg = document.getElementById("user-avatar") || document.getElementById("profile-img");
         if (userAvatarImg) {
             userAvatarImg.src = photoURL;
         }
 
         if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee("Votre photo de profil a été mise à jour avec succès !", "Succès", "Super");
+            afficherAlertePersonnalisee("Photo de profil mise à jour avec succès !", "Succès", "Super");
         } else {
-            alert("Votre photo de profil a été mise à jour !");
+            alert("Photo de profil mise à jour !");
         }
 
     } catch (error) {
         console.error("Erreur lors de l'enregistrement de l'image :", error);
-        alert("Une erreur est survenue lors du téléchargement de la photo.");
+        alert("Une erreur est survenue lors de l'envoi de la photo.");
     } finally {
         event.target.value = "";
     }
