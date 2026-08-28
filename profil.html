@@ -4618,20 +4618,21 @@ onAuthStateChanged(auth, async (user) => {
         if (authScreen) authScreen.classList.add('hidden');
         if (mainApp) mainApp.classList.remove('hidden');
         
-        const domain = window.location.origin + window.location.pathname;
-        const shareEl = document.getElementById('share-link-text');
-        if(shareEl) shareEl.innerText = `${domain}?ref=${user.uid}`;
+        // 🔒 SUPPRIMÉ : L'injection automatique du lien a été retirée d'ici
 
         const snap = await getDoc(doc(db, "rewards_users", user.uid));
         if(snap.exists()){
             const d = snap.data();
             const totalCoins = d.coins || 0;
             if (typeof calculerReputationEtEtoiles === "function") {
-            calculerReputationEtEtoiles(
-                d.history || {}, 
-                d.invitedCount || 0
-            );
+                calculerReputationEtEtoiles(
+                    d.history || {}, 
+                    d.invitedCount || 0
+                );
+            }
         }
+    }
+});
             const nameEl = document.getElementById('user-name-display') || document.getElementById('user-name');
             if (nameEl) nameEl.innerText = d.name || "Utilisateur";
             
