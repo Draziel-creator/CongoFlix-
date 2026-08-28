@@ -4118,11 +4118,12 @@ window.confirmImageSelection = () => {
     }
 };
 
-// Traitement du fichier choisi et envoi vers Firebase
-async function traiterEtEnregistrerImage(event) {
+// Rendre la fonction accessible globalement pour l'élément HTML <input onchange="...">
+window.traiterEtEnregistrerImage = async function(event) {
     const file = event.target.files[0];
     if (!file) return;
 
+    // 1. Contrôle de la taille (max 2 Mo)
     if (file.size > 2 * 1024 * 1024) {
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("L'image est trop lourde (max 2 Mo).", "Image Trop Lourde");
@@ -4132,7 +4133,10 @@ async function traiterEtEnregistrerImage(event) {
         return;
     }
 
-    const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    // 2. Identification de l'utilisateur connecté
+    const currentUserId = (typeof userId !== "undefined" && userId) 
+        ? userId 
+        : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
 
     if (!currentUserId) {
         alert("Veuillez vous connecter pour modifier votre photo.");
@@ -4140,38 +4144,43 @@ async function traiterEtEnregistrerImage(event) {
     }
 
     try {
-        // Envoi de la photo sur Firebase Storage
+        // 3. Téléversement dans Firebase Storage
         const storageRef = firebase.storage().ref(`profile_photos/${currentUserId}_${Date.now()}`);
         const uploadTask = await storageRef.put(file);
         const photoURL = await uploadTask.ref.getDownloadURL();
 
-        // Enregistrement de l'URL dans Firestore (rewards_users -> photoURL)
+        // 4. Enregistrement de l'URL dans la collection rewards_users, champ photoURL
         await db.collection("rewards_users").doc(currentUserId).set({
             photoURL: photoURL
         }, { merge: true });
 
-        // Mise à jour de l'affichage à l'écran
-        const userAvatarImg = document.getElementById("user-avatar") || document.getElementById("profile-img");
-        if (userAvatarImg) {
-            userAvatarImg.src = photoURL;
+        // (Mise à jour miroir optionnelle dans la collection users)
+        await db.collection("users").doc(currentUserId).set({
+            photoURL: photoURL
+        }, { merge: true }).catch(() => {});
+
+        // 5. Mise à jour instantanée de l'image affichée sur la page
+        const userPhoto = document.getElementById("user-photo") || document.getElementById("user-avatar");
+        if (userPhoto) {
+            userPhoto.src = photoURL;
         }
 
         if (typeof afficherAlertePersonnalisee === "function") {
             afficherAlertePersonnalisee("Photo de profil mise à jour avec succès !", "Succès", "Super");
         } else {
-            alert("Photo de profil mise à jour !");
+            alert("Photo de profil mise à jour avec succès !");
         }
 
     } catch (error) {
-        console.error("Erreur lors de l'enregistrement de l'image :", error);
-        alert("Une erreur est survenue lors de l'envoi de la photo.");
+        console.error("Erreur d'enregistrement :", error);
+        alert("Une erreur est survenue lors de l'envoi de l'image.");
     } finally {
-        event.target.value = "";
+        event.target.value = ""; // Réinitialise l'input pour réutilisation
     }
-}
+};
 
 // Fonction utilitaire (au cas où vous préférez du Base64 sans Firebase Storage)
-function convertirFichierEnBase64(file) {
+window.convertirFichierEnBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
