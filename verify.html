@@ -41,7 +41,6 @@
             animation: fadeIn 0.5s ease-out;
         }
 
-        /* ANIMATION BOUNCE POUR LE STICKER */
         .sticker-box {
             font-size: 4rem;
             margin-bottom: 20px;
@@ -116,37 +115,41 @@
         const urlParams = new URLSearchParams(window.location.search);
         const oobCode = urlParams.get('oobCode');
 
+        function afficherSucces() {
+            card.innerHTML = `
+                <div class="sticker-box">🥳🎉</div>
+                <div class="badge-success">
+                    <i class="fa-solid fa-check-circle"></i> VÉRIFICATION RÉUSSIE
+                </div>
+                <h1>Félicitations !</h1>
+                <p>Votre adresse e-mail a été confirmée avec succès.</p>
+                <div class="info-box">
+                    <i class="fa-solid fa-mobile-screen-button" style="color:var(--accent-green);"></i><br><br>
+                    Vous pouvez maintenant <strong>fermer cet onglet</strong> et retourner sur votre application pour poursuivre votre retrait.
+                </div>
+            `;
+        }
+
+        function afficherErreur() {
+            card.innerHTML = `
+                <div class="sticker-box">⚠️</div>
+                <h1 style="color:#ff4d4d;">Lien invalide ou expiré</h1>
+                <p>Ce lien de vérification a déjà été utilisé ou est expiré.</p>
+                <div class="info-box">Fermez cet onglet et demandez un nouvel e-mail depuis l'application.</div>
+            `;
+        }
+
         if (oobCode) {
             applyActionCode(auth, oobCode)
                 .then(() => {
-                    // ÉCRAN DE SUCCÈS ANIME (SANS AUCUN BOUTON DE REDIRECTION)
-                    card.innerHTML = `
-                        <div class="sticker-box">🥳🎉</div>
-                        <div class="badge-success">
-                            <i class="fa-solid fa-check-circle"></i> VÉRIFICATION RÉUSSIE
-                        </div>
-                        <h1>Félicitations !</h1>
-                        <p>Votre adresse e-mail a été confirmée avec succès.</p>
-                        <div class="info-box">
-                            <i class="fa-solid fa-mobile-screen-button" style="color:var(--accent-green);"></i><br><br>
-                            Vous pouvez maintenant <strong>fermer cet onglet</strong> et retourner sur votre application pour poursuivre votre retrait.
-                        </div>
-                    `;
+                    afficherSucces();
                 })
-                .catch((error) => {
-                    card.innerHTML = `
-                        <div class="sticker-box">⚠️</div>
-                        <h1 style="color:#ff4d4d;">Lien invalide ou expiré</h1>
-                        <p>Ce lien de vérification a déjà été utilisé ou est expiré.</p>
-                        <div class="info-box">Fermez cet onglet et demandez un nouvel e-mail depuis l'application.</div>
-                    `;
+                .catch(() => {
+                    afficherErreur();
                 });
         } else {
-            card.innerHTML = `
-                <div class="sticker-box">❓</div>
-                <h1>Code manquant</h1>
-                <p>Aucun code de vérification n'a été détecté.</p>
-            `;
+            // Si la page est chargée suite à la redirection Firebase post-validation
+            afficherSucces();
         }
     </script>
 </body>
