@@ -55,13 +55,12 @@
         .kpi-icon { position: absolute; top: 16px; right: 16px; font-size: 16px; color: #555875; }
         .kpi-icon.coins { color: #ffcc00; }
         .kpi-label { font-size: 12px; color: #8e92bc; margin: 0 0 6px 0; }
-        .kpi-value { font-size: 19px; font-weight: 700; margin: 0 0 6px 0; color: #ffffff; }
+        .kpi-value { font-size: 18px; font-weight: 700; margin: 0 0 6px 0; color: #ffffff; }
         .kpi-value.neon { color: #00ffcc; }
         .kpi-value.gold { color: #ffcc00; }
         .kpi-trend { font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
         .trend-up { color: #00ff66; }
         .trend-neutral { color: #b3b6d4; }
-        .trend-down { color: #ff3b30; }
 
         /* SECTION GRAPHIQUE */
         .chart-section {
@@ -70,7 +69,7 @@
             border-radius: 20px; padding: 20px; margin-bottom: 25px;
         }
         .section-heading {
-            font-size: 14px; font-weight: 600; text-transform: uppercase;
+            font-size: 13px; font-weight: 600; text-transform: uppercase;
             letter-spacing: 0.5px; color: #9b51e0; margin: 0 0 15px 0;
             display: flex; justify-content: space-between; align-items: center;
         }
@@ -129,28 +128,28 @@
             <div class="stats-grid">
                 <div class="kpi-card">
                     <i class="fa-solid fa-coins kpi-icon coins"></i>
-                    <p class="kpi-label">Pièces du jour</p>
-                    <p class="kpi-value gold" id="kpi-today-coins">0 Coins</p>
+                    <p class="kpi-label">Points du jour</p>
+                    <p class="kpi-value gold" id="kpi-today-coins">0 Pts</p>
                     <div class="kpi-trend trend-up">
-                        <i class="fa-solid fa-plus"></i> Aujourd'hui
+                        <i class="fa-solid fa-bolt"></i> Aujourd'hui
                     </div>
                 </div>
 
                 <div class="kpi-card">
                     <i class="fa-solid fa-calculator kpi-icon"></i>
                     <p class="kpi-label">Valeur Taux</p>
-                    <p class="kpi-value">100 = 0,50 €</p>
+                    <p class="kpi-value" style="font-size:15px;">50 000 = 50 $</p>
                     <div class="kpi-trend trend-neutral">
-                        <i class="fa-solid fa-bolt" style="color: #ffcc00;"></i> Stable
+                        <i class="fa-solid fa-dollar-sign" style="color: #00ffcc;"></i> Taux USD
                     </div>
                 </div>
 
                 <div class="kpi-card">
                     <i class="fa-solid fa-wallet kpi-icon"></i>
                     <p class="kpi-label">Gains Totaux</p>
-                    <p class="kpi-value neon" id="kpi-total-earnings">0,00 €</p>
+                    <p class="kpi-value neon" id="kpi-total-earnings">0,00 $</p>
                     <div class="kpi-trend trend-up" id="kpi-coins-count">
-                        <i class="fa-solid fa-coins"></i> 0 Coins
+                        <i class="fa-solid fa-coins"></i> 0 Pts
                     </div>
                 </div>
 
@@ -165,14 +164,14 @@
             </div>
 
             <div class="chart-section">
-                <h3 class="section-heading">Évolution de la semaine <span class="time-filter">7 derniers jours</span></h3>
-                <div style="position: relative; height: 160px; width: 100%;">
+                <h3 class="section-heading">Activité Hebdomadaire <span class="time-filter">7 jours</span></h3>
+                <div style="position: relative; height: 180px; width: 100%;">
                     <canvas id="earningsChart"></canvas>
                 </div>
             </div>
 
             <div class="chart-section" style="padding-bottom: 10px;">
-                <h3 class="section-heading">Flux récents</h3>
+                <h3 class="section-heading">Flux Récents</h3>
                 <div class="history-list" id="history-container">
                     <div style="text-align:center; padding: 15px; color:#555875; font-size:12px;">Chargement des données...</div>
                 </div>
@@ -201,7 +200,7 @@
 
     </div>
 
-    <!-- SCRIPT FIREBASE & CHART SYNCHRONISATION -->
+    <!-- SCRIPT FIREBASE & SYNCHRONISATION -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -220,56 +219,72 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // TAUX DE CONVERSION (100 coins = 0.50 € => 1 coin = 0.005 €)
-        const RATE_PER_COIN = 0.005;
+        // TAUX DE CONVERSION : 50 000 Pts = 50 $  ==> 1 Pt = 0.001 $
+        const RATE_PER_POINT = 50 / 50000; // 0.001 $
 
-        // 1. INITIALISATION DU GRAPHIQUE CHART.JS
+        // Stockage des états combinés des collections
+        let stateData = {
+            coins: 0,
+            pointsDuJour: 0,
+            tasksCompleted: 0,
+            history: {}
+        };
+
+        // 1. INITIALISATION DU GRAPHIQUE CHART.JS DE DESIGN MODERNE
         const ctx = document.getElementById('earningsChart').getContext('2d');
+        
+        let gradientFill = ctx.createLinearGradient(0, 0, 0, 180);
+        gradientFill.addColorStop(0, 'rgba(0, 255, 204, 0.35)');
+        gradientFill.addColorStop(1, 'rgba(0, 255, 204, 0.0)');
+
         let earningsChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: ['...', '...', '...', '...', '...', '...', '...'],
                 datasets: [{
-                    label: 'Tâches / Pubs',
+                    label: 'Points gagnés',
                     data: [0, 0, 0, 0, 0, 0, 0],
                     borderColor: '#00ffcc',
                     borderWidth: 3,
                     pointBackgroundColor: '#9b51e0',
                     pointBorderColor: '#ffffff',
-                    pointHoverRadius: 6,
-                    tension: 0.35,
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 7,
+                    tension: 0.35, // Courbe fluide et moderne
                     fill: true,
-                    backgroundColor: function(context) {
-                        const chart = context.chart;
-                        const {ctx, chartArea} = chart;
-                        if (!chartArea) return null;
-                        const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                        gradient.addColorStop(0, 'rgba(0, 255, 204, 0.25)');
-                        gradient.addColorStop(1, 'rgba(0, 255, 204, 0.0)');
-                        return gradient;
-                    }
+                    backgroundColor: gradientFill
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animation: { duration: 800, easing: 'easeOutQuart' },
-                plugins: { legend: { display: false } },
+                animation: { duration: 900, easing: 'easeOutQuart' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw + ' Pts';
+                            }
+                        }
+                    }
+                },
                 scales: {
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#8e92bc', font: { size: 10 } }
+                        ticks: { color: '#8e92bc', font: { size: 10, family: 'Inter' } }
                     },
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#8e92bc', font: { size: 10 }, precision: 0 }
+                        grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                        ticks: { color: '#8e92bc', font: { size: 10, family: 'Inter' }, precision: 0 }
                     }
                 }
             }
         });
 
-        // 2. OUTIL POUR GÉNÉRER LES 7 DERNIERS JOURS AU FORMAT YYYY-MM-DD ET LABELS LUN/MAR...
+        // 2. OBTENIR LE CALENDRIER DES 7 DERNIERS JOURS (De j-6 jusqu'à aujourd'hui)
         function getRolling7Days() {
             const keys = [];
             const labels = [];
@@ -283,7 +298,7 @@
                 const month = String(d.getMonth() + 1).padStart(2, '0');
                 const day = String(d.getDate()).padStart(2, '0');
 
-                const dateKey = `${year}-${month}-${day}`;
+                const dateKey = `${year}-${month}-${day}`; // Format YYYY-MM-DD pour Firebase
                 const labelName = i === 0 ? "Auj." : `${daysMap[d.getDay()]} ${day}/${month}`;
 
                 keys.push(dateKey);
@@ -292,54 +307,83 @@
             return { keys, labels };
         }
 
-        // 3. ÉCOUTE DE L'AUTHENTIFICATION & SYNCHRONISATION EN TEMPS RÉEL
+        // 3. AUTHENTIFICATION ET ÉCOUTEURS DUAL-COLLECTION (users & rewards_users)
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Écouter les modifications en direct sur rewards_users
-                onSnapshot(doc(db, "rewards_users", user.uid), (docSnap) => {
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        updateDashboardUI(data);
+                // A. Écouter la collection "rewards_users"
+                onSnapshot(doc(db, "rewards_users", user.uid), (rewardsSnap) => {
+                    if (rewardsSnap.exists()) {
+                        const rData = rewardsSnap.data();
+                        stateData.coins = rData.coins ?? stateData.coins;
+                        stateData.tasksCompleted = rData.tasksCompleted ?? stateData.tasksCompleted;
+                        stateData.history = rData.history ?? stateData.history;
+                        
+                        // Fallback pour pointsDuJour si présent dans rewards_users
+                        if (rData.pointsDuJour !== undefined || rData.pointsDuJours !== undefined) {
+                            stateData.pointsDuJour = rData.pointsDuJour ?? rData.pointsDuJours;
+                        }
+
+                        renderDashboardUI();
                     }
                 });
+
+                // B. Écouter la collection "users" pour intercepter `pointsDuJour` / `pointsDuJours`
+                onSnapshot(doc(db, "users", user.uid), (userSnap) => {
+                    if (userSnap.exists()) {
+                        const uData = userSnap.data();
+                        
+                        // Vérifier si le champ est nommé pointsDuJour ou pointsDuJours
+                        const valDuJour = uData.pointsDuJour ?? uData.pointsDuJours;
+                        if (valDuJour !== undefined) {
+                            stateData.pointsDuJour = valDuJour;
+                            renderDashboardUI();
+                        }
+                    }
+                });
+
             } else {
-                console.log("Utilisateur non connecté");
                 document.getElementById('history-container').innerHTML = `
                     <div style="text-align:center; padding: 15px; color:#ff4d4d; font-size:12px;">Veuillez vous connecter pour voir vos statistiques.</div>
                 `;
             }
         });
 
-        // 4. MISE À JOUR DYNAMIQUE DE L'INTERFACE & DU GRAPHIQUE
-        function updateDashboardUI(data) {
-            // A. Données KPIs
-            const totalCoins = data.coins || 0;
-            const pointsDuJour = data.pointsDuJour || 0;
-            const tasksCompleted = data.tasksCompleted || 0;
-            const totalEuros = (totalCoins * RATE_PER_COIN).toFixed(2);
+        // 4. METTRE À JOUR LE TABLEAU DE BORD & LE GRAPHIQUE
+        function renderDashboardUI() {
+            const totalCoins = stateData.coins || 0;
+            const todayCoins = stateData.pointsDuJour || 0;
+            const tasksCount = stateData.tasksCompleted || 0;
+            
+            // Calcul en DOLLARS : (Points * (50 / 50000))
+            const totalDollars = (totalCoins * RATE_PER_POINT).toFixed(2);
 
-            document.getElementById('kpi-today-coins').innerText = `${pointsDuJour} Coins`;
-            document.getElementById('kpi-total-earnings').innerText = `${totalEuros} €`;
-            document.getElementById('kpi-coins-count').innerHTML = `<i class="fa-solid fa-coins"></i> ${totalCoins.toLocaleString()} Coins`;
-            document.getElementById('kpi-tasks-completed').innerText = tasksCompleted;
+            // Mise à jour des cartes KPI
+            document.getElementById('kpi-today-coins').innerText = `${todayCoins.toLocaleString()} Pts`;
+            document.getElementById('kpi-total-earnings').innerText = `${totalDollars} $`;
+            document.getElementById('kpi-coins-count').innerHTML = `<i class="fa-solid fa-coins"></i> ${totalCoins.toLocaleString()} Pts`;
+            document.getElementById('kpi-tasks-completed').innerText = tasksCount;
 
-            // B. Mise à jour du Graphique selon `history` (map YYYY-MM-DD)
-            const historyMap = data.history || {};
-            const rollingDays = getRolling7Days();
-            const chartValues = rollingDays.keys.map(dateKey => historyMap[dateKey] || 0);
+            // Mise à jour du graphique dynamique basé sur les 7 jours réels
+            const rollingCalendar = getRolling7Days();
+            const historyMap = stateData.history || {};
 
-            earningsChart.data.labels = rollingDays.labels;
-            earningsChart.data.datasets[0].data = chartValues;
+            // Si pour une date de la semaine il n'y a pas d'activité dans Firebase, la valeur est 0 (la courbe descend)
+            const chartDataValues = rollingCalendar.keys.map(dateKey => {
+                return historyMap[dateKey] || 0; 
+            });
+
+            earningsChart.data.labels = rollingCalendar.labels;
+            earningsChart.data.datasets[0].data = chartDataValues;
             earningsChart.update();
 
-            // C. Génération automatique du flux récents (Historique des dates de `history`)
+            // Générer la liste du flux récent
             renderHistoryList(historyMap);
         }
 
-        // 5. AFFICHAGE DES ACTIVITÉS RÉCENTES DEPUIS LE MAP `history`
+        // 5. AFFICHAGE DES ACTIVITÉS RÉCENTES (PAR DATES FIREBASE)
         function renderHistoryList(historyMap) {
             const container = document.getElementById('history-container');
-            const dates = Object.keys(historyMap).sort().reverse(); // Tri du plus récent au plus ancien
+            const dates = Object.keys(historyMap).sort().reverse();
 
             if (dates.length === 0) {
                 container.innerHTML = `<div style="text-align:center; padding: 15px; color:#6e729a; font-size:12px;">Aucune activité enregistrée.</div>`;
@@ -347,27 +391,25 @@
             }
 
             let html = '';
-            // Prendre les 5 plus récents
             dates.slice(0, 5).forEach((dateStr) => {
-                const count = historyMap[dateStr];
-                const estimatedEarnings = (count * 10 * RATE_PER_COIN).toFixed(2); // Estimation
+                const points = historyMap[dateStr];
+                const dollarsEarned = (points * RATE_PER_POINT).toFixed(2);
                 
-                // Formater la date en style lisible
                 const parts = dateStr.split('-');
                 const formattedDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
 
                 html += `
                     <div class="history-item">
                         <div class="history-left">
-                            <div class="icon-wrapper success"><i class="fa-solid fa-play"></i></div>
+                            <div class="icon-wrapper success"><i class="fa-solid fa-chart-line"></i></div>
                             <div class="history-meta">
-                                <h4>Session Pubs / Tâches</h4>
+                                <h4>Activité quotidienne</h4>
                                 <span>${formattedDate}</span>
                             </div>
                         </div>
                         <div class="history-right">
-                            <div class="history-amount">+${count} Tâche(s)</div>
-                            <div class="history-coins">${count * 10} Coins estimés</div>
+                            <div class="history-amount">+${points.toLocaleString()} Pts</div>
+                            <div class="history-coins">~ ${dollarsEarned} $</div>
                         </div>
                     </div>
                 `;
