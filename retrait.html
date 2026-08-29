@@ -16,6 +16,7 @@
             --accent-green: #00ffaa;
             --accent-red: #ff4d4d;
             --accent-blue: #38bdf8;
+            --accent-purple: #9b51e0;
             --text-main: #ffffff;
             --text-muted: #6b7a90;
             --btn-gradient: linear-gradient(90deg, #00e5ff 0%, #00ffaa 50%, #6366f1 100%);
@@ -180,6 +181,32 @@
             border-radius: 8px; font-weight: 600; font-size: 0.75rem; cursor: pointer;
         }
 
+        /* BLOC BLOCAGE PREUVE DE RETRAIT (2ème retrait) */
+        .proof-required-box {
+            background: linear-gradient(135deg, rgba(155, 81, 224, 0.12) 0%, rgba(0, 229, 255, 0.05) 100%);
+            border: 1.5px solid rgba(155, 81, 224, 0.4);
+            border-radius: 16px; padding: 16px; margin-bottom: 16px; display: none;
+        }
+        .proof-title { font-size: 0.9rem; font-weight: 800; color: #00ffaa; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+        .proof-desc { font-size: 0.78rem; color: #d0d2eb; margin-bottom: 12px; line-height: 1.4; }
+        .proof-textarea {
+            width: 100%; background: var(--input-bg); border: 1px solid var(--card-border);
+            border-radius: 10px; padding: 10px; color: #fff; font-size: 0.8rem; outline: none;
+            resize: none; height: 65px; margin-bottom: 10px;
+        }
+        .proof-file-label {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2);
+            border-radius: 10px; padding: 12px; font-size: 0.78rem; color: #38bdf8;
+            cursor: pointer; margin-bottom: 12px; transition: all 0.2s;
+        }
+        .proof-file-label:hover { background: rgba(56, 189, 248, 0.1); }
+        .btn-send-proof {
+            width: 100%; padding: 12px; background: linear-gradient(90deg, #9b51e0, #0055ff);
+            border: none; border-radius: 10px; color: #fff; font-size: 0.85rem; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
         .summary-line { display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; }
         .summary-line.total { border-top: 1px solid var(--card-border); padding-top: 10px; margin-top: 8px; color: #fff; font-weight: 700; }
 
@@ -288,6 +315,27 @@
             </div>
         </div>
 
+        <!-- 3.5. FORMULAIRE OBLIGATOIRE DE PREUVE POUR 2ÈME RETRAIT -->
+        <div class="proof-required-box" id="proof-required-box">
+            <div class="proof-title">
+                <i class="fa-solid fa-video"></i> Preuve du 1er retrait requise !
+            </div>
+            <p class="proof-desc">
+                Félicitations pour votre premier paiement ! Pour effectuer votre 2ème retrait, merci d'envoyer un témoignage rapide (vidéo selfie + message d'avis).
+            </p>
+            <textarea id="proof-text-input" class="proof-textarea" placeholder="Rédigez votre témoignage (ex: Retrait bien reçu en 10min, merci !)..."></textarea>
+            
+            <label for="proof-video-input" class="proof-file-label" id="proof-file-label">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size:1.2rem;"></i>
+                <span id="file-selected-name">Sélectionner votre vidéo selfie (.mp4, .mov)</span>
+            </label>
+            <input type="file" id="proof-video-input" accept="video/*" style="display:none;">
+
+            <button type="button" class="btn-send-proof" id="btn-submit-proof-file">
+                <i class="fa-solid fa-paper-plane"></i> Publier la preuve & Débloquer
+            </button>
+        </div>
+
         <!-- 4. RÉSUMÉ -->
         <div class="card">
             <div class="card-header">RÉSUMÉ DU RETRAIT</div>
@@ -334,7 +382,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, addDoc, collection, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, addDoc, collection, updateDoc, increment, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
@@ -349,6 +397,10 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    // PARAMÈTRES CLOUDINARY
+    const CLOUDINARY_CLOUD_NAME = "demo"; // Remplacez par votre Cloud Name Cloudinary
+    const CLOUDINARY_UPLOAD_PRESET = "docs_upload_example_usertarget"; // Remplacez par votre Preset Unsigned
+
     const COINS_PER_DOLLAR = 1000;
     const MIN_WITHDRAW_USD = 50;
 
@@ -357,14 +409,17 @@
     let userCashValue = 0;
     let currentMethod = "Crypto (BTC)";
     let isEmailVerified = false;
+    let requiresProof = false;
 
     const withdrawInput = document.getElementById('withdraw-amount');
     const amountBox = document.getElementById('amount-box');
     const errorText = document.getElementById('amount-error-text');
     const btnSubmit = document.getElementById('btn-confirm-withdraw');
     const addressInput = document.getElementById('withdraw-address');
+    const proofBox = document.getElementById('proof-required-box');
+    const videoFileInput = document.getElementById('proof-video-input');
 
-    // FONCTION CUSTOM MODALE (REMPLACE LES ALERTS NATIVES)
+    // FONCTION CUSTOM MODALE
     function showModal(title, message, type = 'info', callback = null) {
         const overlay = document.getElementById('custom-modal-overlay');
         const iconBox = document.getElementById('modal-icon-box');
@@ -394,7 +449,7 @@
         btnClose.addEventListener('click', handleClose);
     }
 
-    // 1. AUTHENTIFICATION & LECTURE FIRESTORE
+    // 1. AUTHENTIFICATION & VÉRIFICATION DES RETRAITS PRÉCÉDENTS
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
@@ -403,20 +458,119 @@
             mettreAJourIHMVerificationEmail();
 
             try {
-                const snap = await getDoc(doc(db, "rewards_users", user.uid));
-                if (snap.exists()) {
-                    userCoins = snap.data().coins || 0;
+                // Lecture solde utilisateur
+                const userSnap = await getDoc(doc(db, "rewards_users", user.uid));
+                if (userSnap.exists()) {
+                    const uData = userSnap.data();
+                    userCoins = uData.coins || 0;
                     userCashValue = userCoins / COINS_PER_DOLLAR;
                     
                     document.getElementById('user-coins-display').innerText = userCoins.toLocaleString();
                     document.getElementById('user-cash-display').innerText = `$${userCashValue.toFixed(2)}`;
                     document.getElementById('max-limit-text').innerText = `$${userCashValue.toFixed(2)}`;
                 }
+
+                // Vérification du nombre de retraits effectués
+                const qRetraits = query(collection(db, "demandes_retrait"), where("userId", "==", user.uid));
+                const snapRetraits = await getDocs(qRetraits);
+                const countRetraits = snapRetraits.size;
+
+                // Vérification si la preuve a été fournie
+                const proofSnap = await getDoc(doc(db, "user_proof_status", user.uid));
+                const hasSubmittedProof = proofSnap.exists() && proofSnap.data().submitted === true;
+
+                // Condition : Si au moins 1 retrait existe et pas de preuve -> Exiger la preuve
+                if (countRetraits >= 1 && !hasSubmittedProof) {
+                    requiresProof = true;
+                    proofBox.style.display = "block";
+                } else {
+                    requiresProof = false;
+                    proofBox.style.display = "none";
+                }
+
             } catch (e) {
-                console.error("Erreur de chargement du solde :", e);
+                console.error("Erreur de chargement utilisateur :", e);
             }
 
             validerFormulaire();
+        }
+    });
+
+    // NOM FICHIER VIDÉO SÉLECTIONNÉ
+    videoFileInput.addEventListener('change', () => {
+        const file = videoFileInput.files[0];
+        if (file) {
+            document.getElementById('file-selected-name').innerText = file.name;
+        }
+    });
+
+    // UPLOAD DE LA VIDÉO SUR CLOUDINARY ET ENREGISTREMENT DANS FIRESTORE
+    document.getElementById('btn-submit-proof-file').addEventListener('click', async () => {
+        const textVal = document.getElementById('proof-text-input').value.trim();
+        const file = videoFileInput.files[0];
+
+        if (!textVal) {
+            showModal("Champ requis", "Veuillez écrire un court texte de témoignage.", "error");
+            return;
+        }
+        if (!file) {
+            showModal("Vidéo requise", "Veuillez choisir un fichier vidéo.", "error");
+            return;
+        }
+
+        const btnProof = document.getElementById('btn-submit-proof-file');
+        btnProof.disabled = true;
+        btnProof.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Envoi de la vidéo vers le cloud...`;
+
+        try {
+            // 1. Upload vers Cloudinary via API REST Directe
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+            const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const uploadData = await uploadRes.json();
+
+            if (!uploadRes.ok) {
+                throw new Error(uploadData.error?.message || "Échec du téléchargement vidéo");
+            }
+
+            const videoUrl = uploadData.secure_url;
+
+            // 2. Enregistrement dans payment_proofs (Firestore)
+            await addDoc(collection(db, "payment_proofs"), {
+                userId: currentUser.uid,
+                userEmail: currentUser.email,
+                name: currentUser.displayName || currentUser.email.split('@')[0],
+                message: textVal,
+                videoUrl: videoUrl,
+                avatar: currentUser.photoURL || '',
+                timestamp: serverTimestamp()
+            });
+
+            // 3. Mise à jour du statut de l'utilisateur
+            await updateDoc(doc(db, "user_proof_status", currentUser.uid), {
+                submitted: true,
+                updatedAt: serverTimestamp()
+            }).catch(async () => {
+                // Si le document n'existait pas encore
+                const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+                await setDoc(doc(db, "user_proof_status", currentUser.uid), { submitted: true });
+            });
+
+            showModal("Témoignage publié !", "Votre vidéo a bien été reçue. Votre 2ème retrait est désormais débloqué !", "success", () => {
+                location.reload();
+            });
+
+        } catch (err) {
+            console.error("Erreur Upload :", err);
+            showModal("Erreur d'envoi", "Impossible de mettre en ligne la vidéo : " + err.message, "error");
+            btnProof.disabled = false;
+            btnProof.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Publier la preuve & Débloquer`;
         }
     });
 
@@ -462,7 +616,7 @@
 
         try {
             await sendEmailVerification(currentUser, actionCodeSettings);
-            showModal("E-mail envoyé !", `Lien envoyé à : ${currentUser.email}\n\nOuvrez votre e-mail, cliquez sur le lien de confirmation, si vous ne trouver pas votre email dans Inbox, allez vérifier dans vos spams, puis revenez dans l'application et cliquer sur  revérifier ou actualiser la page.`, "success");
+            showModal("E-mail envoyé !", `Lien envoyé à : ${currentUser.email}\n\nOuvrez votre e-mail, cliquez sur le lien de confirmation, si vous ne trouver pas votre email dans Inbox, allez vérifier dans vos spams, puis revenez dans l'application et cliquer sur revérifier ou actualiser la page.`, "success");
         } catch (err) {
             console.error("Erreur Firebase Email :", err.code, err.message);
 
@@ -518,7 +672,7 @@
         }
 
         const address = addressInput.value.trim();
-        if (currentMethod === "Autre" || !address || !isEmailVerified) {
+        if (currentMethod === "Autre" || !address || !isEmailVerified || requiresProof) {
             estValide = false;
         }
 
@@ -581,7 +735,7 @@
         const address = addressInput.value.trim();
         const coinsToDeduct = amountUsd * COINS_PER_DOLLAR;
 
-        if (!currentUser || !isEmailVerified) return;
+        if (!currentUser || !isEmailVerified || requiresProof) return;
 
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Traitement...`;
@@ -614,6 +768,7 @@
         }
     });
 </script>
+
     <!-- MODALE DE NOTIFICATION PERSONNALISÉE -->
 <div id="custom-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
     <div style="background: #0e1322; border: 1px solid #1a233a; border-radius: 20px; padding: 28px 24px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
