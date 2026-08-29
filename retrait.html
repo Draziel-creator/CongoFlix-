@@ -364,16 +364,44 @@
     const btnSubmit = document.getElementById('btn-confirm-withdraw');
     const addressInput = document.getElementById('withdraw-address');
 
+    // FONCTION CUSTOM MODALE (REMPLACE LES ALERTS NATIVES)
+    function showModal(title, message, type = 'info', callback = null) {
+        const overlay = document.getElementById('custom-modal-overlay');
+        const iconBox = document.getElementById('modal-icon-box');
+        const titleEl = document.getElementById('modal-title');
+        const msgEl = document.getElementById('modal-message');
+        const btnClose = document.getElementById('btn-close-modal');
+
+        titleEl.innerText = title;
+        msgEl.innerText = message;
+
+        if (type === 'success') {
+            iconBox.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#00ffaa;"></i>';
+        } else if (type === 'error') {
+            iconBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#ff4d4d;"></i>';
+        } else {
+            iconBox.innerHTML = '<i class="fa-solid fa-circle-info" style="color:#38bdf8;"></i>';
+        }
+
+        overlay.style.display = "flex";
+
+        const handleClose = () => {
+            overlay.style.display = "none";
+            btnClose.removeEventListener('click', handleClose);
+            if (callback) callback();
+        };
+
+        btnClose.addEventListener('click', handleClose);
+    }
+
     // 1. AUTHENTIFICATION & LECTURE FIRESTORE
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
             isEmailVerified = user.emailVerified;
             
-            // Met à jour l'IHM et affiche l'e-mail du compte connecté
             mettreAJourIHMVerificationEmail();
 
-            // Chargement des coins dans rewards_users
             try {
                 const snap = await getDoc(doc(db, "rewards_users", user.uid));
                 if (snap.exists()) {
@@ -410,55 +438,57 @@
             vTitle.style.color = "#ffc107";
             vTitle.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Vérification du compte requise`;
             
-            // Affiche directement l'email du compte Firebase connecté
             const userEmail = currentUser && currentUser.email ? currentUser.email : "votre adresse email";
             vBody.innerHTML = `Un lien de confirmation sera envoyé à votre adresse : <strong style="color: #fff;">${userEmail}</strong>.`;
             vActions.style.display = "block";
         }
     }
 
-    // BOUTON UNIQUE D'ENVOI D'EMAIL (REDIRIGE VERS TA PAGE ANIME GITHUB)
-document.getElementById('btn-send-email-verify').addEventListener('click', async () => {
-    if (!currentUser || !currentUser.email) {
-        alert("Erreur : Aucun compte utilisateur identifié.");
-        return;
-    }
-
-    const btnVerify = document.getElementById('btn-send-email-verify');
-    btnVerify.disabled = true;
-    btnVerify.innerText = "Envoi en cours...";
-
-    // Définition de la page de destination personnalisée sur GitHub Pages
-    const actionCodeSettings = {
-        url: 'https://draziel-creator.github.io/CongoFlix-/verify.html',
-        handleCodeInApp: false
-    };
-
-    try {
-        await sendEmailVerification(currentUser, actionCodeSettings);
-        alert(`Lien envoyé à : ${currentUser.email}\n\nOuvrez votre e-mail, cliquez sur le lien de confirmation, puis revenez appuyer sur "J'ai déjà vérifié".`);
-    } catch (err) {
-        console.error("Erreur Firebase Email :", err.code, err.message);
-
-        if (err.code === 'auth/too-many-requests') {
-            alert("Trop de demandes. Patientez 5 minutes avant de réessayer.");
-        } else if (err.code === 'auth/unauthorized-domain') {
-            alert("N'oubliez pas d'ajouter draziel-creator.github.io dans Firebase Console > Authentication > Authorized domains.");
-        } else {
-            alert("Erreur lors de l'envoi : " + err.message);
+    // BOUTON UNIQUE D'ENVOI D'EMAIL
+    document.getElementById('btn-send-email-verify').addEventListener('click', async () => {
+        if (!currentUser || !currentUser.email) {
+            showModal("Session expirée", "Aucun compte utilisateur identifié.", "error");
+            return;
         }
-    } finally {
-        btnVerify.disabled = false;
-        btnVerify.innerText = "Envoyer l'email de vérification";
-    }
-});
-    // BOUTON POUR RAFRAÎCHIR ET VÉRIFIER SI L'UTILISATEUR A CLIQUÉ SUR LE LIEN
+
+        const btnVerify = document.getElementById('btn-send-email-verify');
+        btnVerify.disabled = true;
+        btnVerify.innerText = "Envoi en cours...";
+
+        const actionCodeSettings = {
+            url: 'https://draziel-creator.github.io/CongoFlix-/verify.html',
+            handleCodeInApp: false
+        };
+
+        try {
+            await sendEmailVerification(currentUser, actionCodeSettings);
+            showModal("E-mail envoyé !", `Lien envoyé à : ${currentUser.email}\n\nOuvrez votre e-mail, cliquez sur le lien de confirmation, puis appuyez sur "J'ai déjà vérifié".`, "success");
+        } catch (err) {
+            console.error("Erreur Firebase Email :", err.code, err.message);
+
+            if (err.code === 'auth/too-many-requests') {
+                showModal("Patientez un instant", "Trop de demandes en peu de temps. Attendez 5 minutes avant de réessayer.", "error");
+            } else if (err.code === 'auth/unauthorized-domain') {
+                showModal("Configuration requise", "N'oubliez pas d'ajouter draziel-creator.github.io dans Firebase Console > Authentication > Authorized domains.", "error");
+            } else {
+                showModal("Erreur d'envoi", "Impossible d'envoyer l'e-mail : " + err.message, "error");
+            }
+        } finally {
+            btnVerify.disabled = false;
+            btnVerify.innerText = "Envoyer l'email de vérification";
+        }
+    });
+
+    // BOUTON POUR RAFRAÎCHIR ET VÉRIFIER LE STATUT
     document.getElementById('btn-recheck-email').addEventListener('click', async () => {
         if (!currentUser) return;
         await currentUser.reload();
         isEmailVerified = currentUser.emailVerified;
         mettreAJourIHMVerificationEmail();
         validerFormulaire();
+        if (isEmailVerified) {
+            showModal("Compte Vérifié !", "Félicitations, votre adresse e-mail est confirmée.", "success");
+        }
     });
 
     // 3. VALIDATION DU MONTANT ET DES FORMULAIRES
@@ -573,15 +603,25 @@ document.getElementById('btn-send-email-verify').addEventListener('click', async
                 coins: increment(-coinsToDeduct)
             });
 
-            alert("Votre demande de retrait de $" + amountUsd.toFixed(2) + " a été soumise avec succès !");
-            location.reload();
+            showModal("Demande enregistrée !", "Votre demande de retrait de $" + amountUsd.toFixed(2) + " a été soumise avec succès.", "success", () => {
+                location.reload();
+            });
         } catch (err) {
             console.error("Erreur de retrait :", err);
-            alert("Erreur lors de la soumission : " + err.message);
+            showModal("Erreur de traitement", "Erreur lors de la soumission : " + err.message, "error");
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = `<i class="fa-solid fa-paper-plane"></i> CONFIRMER LE RETRAIT`;
         }
     });
 </script>
+    <!-- MODALE DE NOTIFICATION PERSONNALISÉE -->
+<div id="custom-modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #0e1322; border: 1px solid #1a233a; border-radius: 20px; padding: 28px 24px; max-width: 400px; width: 100%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+        <div id="modal-icon-box" style="font-size: 2.5rem; margin-bottom: 12px;"></div>
+        <h3 id="modal-title" style="color: #fff; font-size: 1.25rem; font-weight: 700; margin-bottom: 10px;"></h3>
+        <p id="modal-message" style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px;"></p>
+        <button id="btn-close-modal" style="background: linear-gradient(135deg, #00ffaa, #00b8d4); color: #0b0f19; font-weight: 700; border: none; padding: 12px 28px; border-radius: 25px; cursor: pointer; font-size: 0.9rem; width: 100%;">D'accord</button>
+    </div>
+</div>
 </body>
 </html>
