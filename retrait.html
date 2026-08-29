@@ -284,7 +284,7 @@
             </div>
             <div id="v-actions">
                 <button class="btn-verify-action" id="btn-send-email-verify">Envoyer l'email de vérification</button>
-                <button class="btn-check-action" id="btn-recheck-email">J'ai déjà vérifié</button>
+                <button class="btn-check-action" id="btn-recheck-email">revérifier</button>
             </div>
         </div>
 
@@ -417,42 +417,41 @@
         }
     }
 
-    // BOUTON UNIQUE D'ENVOI D'EMAIL (UTILISE L'EMAIL DU COMPTE CONNECTÉ)
-    document.getElementById('btn-send-email-verify').addEventListener('click', async () => {
-        if (!currentUser || !currentUser.email) {
-            alert("Erreur : Aucun compte utilisateur identifié.");
-            return;
+    // BOUTON UNIQUE D'ENVOI D'EMAIL (REDIRIGE VERS TA PAGE ANIME GITHUB)
+document.getElementById('btn-send-email-verify').addEventListener('click', async () => {
+    if (!currentUser || !currentUser.email) {
+        alert("Erreur : Aucun compte utilisateur identifié.");
+        return;
+    }
+
+    const btnVerify = document.getElementById('btn-send-email-verify');
+    btnVerify.disabled = true;
+    btnVerify.innerText = "Envoi en cours...";
+
+    // Définition de la page de destination personnalisée sur GitHub Pages
+    const actionCodeSettings = {
+        url: 'https://draziel-creator.github.io/CongoFlix-/verify.html',
+        handleCodeInApp: false
+    };
+
+    try {
+        await sendEmailVerification(currentUser, actionCodeSettings);
+        alert(`Lien envoyé à : ${currentUser.email}\n\nOuvrez votre e-mail, cliquez sur le lien de confirmation, puis revenez appuyer sur "J'ai déjà vérifié".`);
+    } catch (err) {
+        console.error("Erreur Firebase Email :", err.code, err.message);
+
+        if (err.code === 'auth/too-many-requests') {
+            alert("Trop de demandes. Patientez 5 minutes avant de réessayer.");
+        } else if (err.code === 'auth/unauthorized-domain') {
+            alert("N'oubliez pas d'ajouter draziel-creator.github.io dans Firebase Console > Authentication > Authorized domains.");
+        } else {
+            alert("Erreur lors de l'envoi : " + err.message);
         }
-
-        const btnVerify = document.getElementById('btn-send-email-verify');
-        btnVerify.disabled = true;
-        btnVerify.innerText = "Envoi en cours...";
-
-        // Conserve l'utilisateur sur la page GitHub sans faire de redirection complexe
-        const actionCodeSettings = {
-            url: window.location.href,
-            handleCodeInApp: true
-        };
-
-        try {
-            await sendEmailVerification(currentUser, actionCodeSettings);
-            alert(`Lien de vérification envoyé à : ${currentUser.email}\n\nVérifiez votre boîte de réception ainsi que votre dossier SPAMS / Courriers indésirables.`);
-        } catch (err) {
-            console.error("Erreur Firebase Email :", err.code, err.message);
-
-            if (err.code === 'auth/too-many-requests') {
-                alert("Trop de demandes. Veuillez patienter quelques minutes avant de réespayer.");
-            } else if (err.code === 'auth/unauthorized-domain') {
-                alert("Erreur : Le domaine du site doit être ajouté dans Firebase Console (Authentication > Settings > Authorized domains).");
-            } else {
-                alert("Impossible d'envoyer l'e-mail : " + err.message);
-            }
-        } finally {
-            btnVerify.disabled = false;
-            btnVerify.innerText = "Envoyer l'email de vérification";
-        }
-    });
-
+    } finally {
+        btnVerify.disabled = false;
+        btnVerify.innerText = "Envoyer l'email de vérification";
+    }
+});
     // BOUTON POUR RAFRAÎCHIR ET VÉRIFIER SI L'UTILISATEUR A CLIQUÉ SUR LE LIEN
     document.getElementById('btn-recheck-email').addEventListener('click', async () => {
         if (!currentUser) return;
