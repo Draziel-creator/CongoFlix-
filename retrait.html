@@ -331,233 +331,258 @@
         </a>
     </nav>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, collection, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, addDoc, collection, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const firebaseConfig = { 
-            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
-            authDomain: "publicite-6445c.firebaseapp.com",
-            projectId: "publicite-6445c",
-            storageBucket: "publicite-6445c.firebasestorage.app",
-            messagingSenderId: "663385244466",
-            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b", 
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+        authDomain: "publicite-6445c.firebaseapp.com",
+        projectId: "publicite-6445c",
+        storageBucket: "publicite-6445c.firebasestorage.app",
+        messagingSenderId: "663385244466",
+        appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b", 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const COINS_PER_DOLLAR = 1000;
+    const MIN_WITHDRAW_USD = 50;
+
+    let currentUser = null;
+    let userCoins = 0;
+    let userCashValue = 0;
+    let currentMethod = "Crypto (BTC)";
+    let isEmailVerified = false;
+
+    const withdrawInput = document.getElementById('withdraw-amount');
+    const amountBox = document.getElementById('amount-box');
+    const errorText = document.getElementById('amount-error-text');
+    const btnSubmit = document.getElementById('btn-confirm-withdraw');
+    const addressInput = document.getElementById('withdraw-address');
+
+    // 1. AUTHENTIFICATION & LECTURE FIRESTORE
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            isEmailVerified = user.emailVerified;
+            
+            // Met à jour l'IHM et affiche l'e-mail du compte connecté
+            mettreAJourIHMVerificationEmail();
+
+            // Chargement des coins dans rewards_users
+            try {
+                const snap = await getDoc(doc(db, "rewards_users", user.uid));
+                if (snap.exists()) {
+                    userCoins = snap.data().coins || 0;
+                    userCashValue = userCoins / COINS_PER_DOLLAR;
+                    
+                    document.getElementById('user-coins-display').innerText = userCoins.toLocaleString();
+                    document.getElementById('user-cash-display').innerText = `$${userCashValue.toFixed(2)}`;
+                    document.getElementById('max-limit-text').innerText = `$${userCashValue.toFixed(2)}`;
+                }
+            } catch (e) {
+                console.error("Erreur de chargement du solde :", e);
+            }
+
+            validerFormulaire();
+        }
+    });
+
+    // 2. GESTION DU BLOC DE VÉRIFICATION E-MAIL
+    function mettreAJourIHMVerificationEmail() {
+        const vBox = document.getElementById('verification-box');
+        const vTitle = document.getElementById('v-title-text');
+        const vBody = document.getElementById('v-body-text');
+        const vActions = document.getElementById('v-actions');
+
+        if (isEmailVerified) {
+            vBox.classList.add('verified');
+            vTitle.style.color = "#00ffaa";
+            vTitle.innerHTML = `<i class="fa-solid fa-circle-check"></i> Compte vérifié`;
+            vBody.innerText = "Votre adresse email est confirmée. Vous pouvez effectuer vos retraits.";
+            vActions.style.display = "none";
+        } else {
+            vBox.classList.remove('verified');
+            vTitle.style.color = "#ffc107";
+            vTitle.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Vérification du compte requise`;
+            
+            // Affiche directement l'email du compte Firebase connecté
+            const userEmail = currentUser && currentUser.email ? currentUser.email : "votre adresse email";
+            vBody.innerHTML = `Un lien de confirmation sera envoyé à votre adresse : <strong style="color: #fff;">${userEmail}</strong>.`;
+            vActions.style.display = "block";
+        }
+    }
+
+    // BOUTON UNIQUE D'ENVOI D'EMAIL (UTILISE L'EMAIL DU COMPTE CONNECTÉ)
+    document.getElementById('btn-send-email-verify').addEventListener('click', async () => {
+        if (!currentUser || !currentUser.email) {
+            alert("Erreur : Aucun compte utilisateur identifié.");
+            return;
+        }
+
+        const btnVerify = document.getElementById('btn-send-email-verify');
+        btnVerify.disabled = true;
+        btnVerify.innerText = "Envoi en cours...";
+
+        // Conserve l'utilisateur sur la page GitHub sans faire de redirection complexe
+        const actionCodeSettings = {
+            url: window.location.href,
+            handleCodeInApp: true
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        try {
+            await sendEmailVerification(currentUser, actionCodeSettings);
+            alert(`Lien de vérification envoyé à : ${currentUser.email}\n\nVérifiez votre boîte de réception ainsi que votre dossier SPAMS / Courriers indésirables.`);
+        } catch (err) {
+            console.error("Erreur Firebase Email :", err.code, err.message);
 
-        const COINS_PER_DOLLAR = 1000;
-        const MIN_WITHDRAW_USD = 50;
-
-        let currentUser = null;
-        let userCoins = 0;
-        let userCashValue = 0;
-        let currentMethod = "Crypto (BTC)";
-        let isEmailVerified = false;
-
-        const withdrawInput = document.getElementById('withdraw-amount');
-        const amountBox = document.getElementById('amount-box');
-        const errorText = document.getElementById('amount-error-text');
-        const btnSubmit = document.getElementById('btn-confirm-withdraw');
-        const addressInput = document.getElementById('withdraw-address');
-
-        // 1. AUTHENTIFICATION & LECTURE FIRESTORE
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                isEmailVerified = user.emailVerified;
-                
-                // Vérifier le statut e-mail dans l'IHM
-                mettreAJourIHMVerificationEmail();
-
-                // Chargement des coins dans rewards_users
-                try {
-                    const snap = await getDoc(doc(db, "rewards_users", user.uid));
-                    if (snap.exists()) {
-                        userCoins = snap.data().coins || 0;
-                        userCashValue = userCoins / COINS_PER_DOLLAR;
-                        
-                        document.getElementById('user-coins-display').innerText = userCoins.toLocaleString();
-                        document.getElementById('user-cash-display').innerText = `$${userCashValue.toFixed(2)}`;
-                        document.getElementById('max-limit-text').innerText = `$${userCashValue.toFixed(2)}`;
-                    }
-                } catch (e) {
-                    console.error("Erreur de chargement du solde :", e);
-                }
-
-                validerFormulaire();
-            }
-        });
-
-        // 2. VÉRIFICATION E-MAIL SANS REDIRECTION
-        function mettreAJourIHMVerificationEmail() {
-            const vBox = document.getElementById('verification-box');
-            const vTitle = document.getElementById('v-title-text');
-            const vBody = document.getElementById('v-body-text');
-            const vActions = document.getElementById('v-actions');
-
-            if (isEmailVerified) {
-                vBox.classList.add('verified');
-                vTitle.style.color = "#00ffaa";
-                vTitle.innerHTML = `<i class="fa-solid fa-circle-check"></i> Compte vérifié`;
-                vBody.innerText = "Votre adresse email est confirmée. Vous pouvez effectuer vos retraits.";
-                vActions.style.display = "none";
+            if (err.code === 'auth/too-many-requests') {
+                alert("Trop de demandes. Veuillez patienter quelques minutes avant de réespayer.");
+            } else if (err.code === 'auth/unauthorized-domain') {
+                alert("Erreur : Le domaine du site doit être ajouté dans Firebase Console (Authentication > Settings > Authorized domains).");
             } else {
-                vBox.classList.remove('verified');
-                vTitle.style.color = "#ffc107";
-                vTitle.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Vérification du compte requise`;
-                vBody.innerText = "Veuillez vérifier votre adresse e-mail pour débloquer les retraits.";
-                vActions.style.display = "block";
+                alert("Impossible d'envoyer l'e-mail : " + err.message);
             }
+        } finally {
+            btnVerify.disabled = false;
+            btnVerify.innerText = "Envoyer l'email de vérification";
+        }
+    });
+
+    // BOUTON POUR RAFRAÎCHIR ET VÉRIFIER SI L'UTILISATEUR A CLIQUÉ SUR LE LIEN
+    document.getElementById('btn-recheck-email').addEventListener('click', async () => {
+        if (!currentUser) return;
+        await currentUser.reload();
+        isEmailVerified = currentUser.emailVerified;
+        mettreAJourIHMVerificationEmail();
+        validerFormulaire();
+    });
+
+    // 3. VALIDATION DU MONTANT ET DES FORMULAIRES
+    function validerFormulaire() {
+        const val = parseFloat(withdrawInput.value) || 0;
+        let estValide = true;
+
+        document.getElementById('summary-amount').innerText = `$${val.toFixed(2)}`;
+        document.getElementById('summary-total').innerText = `$${val.toFixed(2)}`;
+
+        if (val < MIN_WITHDRAW_USD) {
+            estValide = false;
+            errorText.innerText = `Le montant minimum de retrait est de $50.00.`;
+            errorText.style.display = "block";
+            amountBox.classList.add('error-border');
+            withdrawInput.classList.add('error-text');
+        } else if (val > userCashValue) {
+            estValide = false;
+            errorText.innerText = `Solde insuffisant (Disponible : $${userCashValue.toFixed(2)}).`;
+            errorText.style.display = "block";
+            amountBox.classList.add('error-border');
+            withdrawInput.classList.add('error-text');
+        } else {
+            errorText.style.display = "none";
+            amountBox.classList.remove('error-border');
+            withdrawInput.classList.remove('error-text');
         }
 
-        document.getElementById('btn-send-email-verify').addEventListener('click', async () => {
-            if (!currentUser) return;
-            try {
-                await sendEmailVerification(currentUser);
-                alert("Un lien de vérification a été envoyé sur votre adresse e-mail.");
-            } catch (err) {
-                alert("Erreur lors de l'envoi de l'email : " + err.message);
-            }
-        });
-
-        document.getElementById('btn-recheck-email').addEventListener('click', async () => {
-            if (!currentUser) return;
-            await currentUser.reload();
-            isEmailVerified = currentUser.emailVerified;
-            mettreAJourIHMVerificationEmail();
-            validerFormulaire();
-        });
-
-        // 3. VALIDATION DU MONTANT ET BOUTONS
-        function validerFormulaire() {
-            const val = parseFloat(withdrawInput.value) || 0;
-            let estValide = true;
-
-            // Mise à jour résumé
-            document.getElementById('summary-amount').innerText = `$${val.toFixed(2)}`;
-            document.getElementById('summary-total').innerText = `$${val.toFixed(2)}`;
-
-            // Contrôle du montant minimum et solde
-            if (val < MIN_WITHDRAW_USD) {
-                estValide = false;
-                errorText.innerText = `Le montant minimum de retrait est de $50.00.`;
-                errorText.style.display = "block";
-                amountBox.classList.add('error-border');
-                withdrawInput.classList.add('error-text');
-            } else if (val > userCashValue) {
-                estValide = false;
-                errorText.innerText = `Solde insuffisant (Disponible : $${userCashValue.toFixed(2)}).`;
-                errorText.style.display = "block";
-                amountBox.classList.add('error-border');
-                withdrawInput.classList.add('error-text');
-            } else {
-                errorText.style.display = "none";
-                amountBox.classList.remove('error-border');
-                withdrawInput.classList.remove('error-text');
-            }
-
-            // Vérification adresse et mode
-            const address = addressInput.value.trim();
-            if (currentMethod === "Autre" || !address || !isEmailVerified) {
-                estValide = false;
-            }
-
-            btnSubmit.disabled = !estValide;
+        const address = addressInput.value.trim();
+        if (currentMethod === "Autre" || !address || !isEmailVerified) {
+            estValide = false;
         }
 
-        withdrawInput.addEventListener('input', validerFormulaire);
-        addressInput.addEventListener('input', validerFormulaire);
+        btnSubmit.disabled = !estValide;
+    }
 
-        // 4. GESTION DES ONGLETS (DONT "AUTRE" - BIENTÔT DISPONIBLE)
-        const tabCrypto = document.getElementById('tab-crypto');
-        const tabPaypal = document.getElementById('tab-paypal');
-        const tabAutre = document.getElementById('tab-autre');
+    withdrawInput.addEventListener('input', validerFormulaire);
+    addressInput.addEventListener('input', validerFormulaire);
 
-        tabCrypto.addEventListener('click', () => {
-            setTabActive(tabCrypto, "Crypto (BTC)", "₿", "#f7931a", "Bitcoin (BTC)", "Réseau : Bitcoin", "Adresse Bitcoin", "Entrez votre adresse Bitcoin", false);
-        });
+    // 4. ONGLETS DE PAIEMENT
+    const tabCrypto = document.getElementById('tab-crypto');
+    const tabPaypal = document.getElementById('tab-paypal');
+    const tabAutre = document.getElementById('tab-autre');
 
-        tabPaypal.addEventListener('click', () => {
-            setTabActive(tabPaypal, "PayPal", '<i class="fa-brands fa-paypal"></i>', "#0070ba", "PayPal Direct", "Transfert de solde", "Adresse Email PayPal", "exemple@domaine.com", false);
-        });
+    tabCrypto.addEventListener('click', () => {
+        setTabActive(tabCrypto, "Crypto (BTC)", "₿", "#f7931a", "Bitcoin (BTC)", "Réseau : Bitcoin", "Adresse Bitcoin", "Entrez votre adresse Bitcoin", false);
+    });
 
-        tabAutre.addEventListener('click', () => {
-            setTabActive(tabAutre, "Autre", '<i class="fa-solid fa-mobile-screen"></i>', "#64748b", "Mobile Money (Airtel / Orange / M-Pesa)", "Réseaux locaux", "Numéro de téléphone", "Arrive bientôt...", true);
-        });
+    tabPaypal.addEventListener('click', () => {
+        setTabActive(tabPaypal, "PayPal", '<i class="fa-brands fa-paypal"></i>', "#0070ba", "PayPal Direct", "Transfert de solde", "Adresse Email PayPal", "exemple@domaine.com", false);
+    });
 
-        function setTabActive(btn, method, iconHtml, iconBg, title, sub, label, placeholder, isBientot) {
-            [tabCrypto, tabPaypal, tabAutre].forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+    tabAutre.addEventListener('click', () => {
+        setTabActive(tabAutre, "Autre", '<i class="fa-solid fa-mobile-screen"></i>', "#64748b", "Mobile Money (Airtel / Orange / M-Pesa)", "Réseaux locaux", "Numéro de téléphone", "Arrive bientôt...", true);
+    });
 
-            currentMethod = method;
-            document.getElementById('method-icon-box').innerHTML = iconHtml;
-            document.getElementById('method-icon-box').style.background = iconBg;
-            document.getElementById('method-title').innerText = title;
-            document.getElementById('method-sub').innerText = sub;
-            document.getElementById('address-label').innerText = label;
+    function setTabActive(btn, method, iconHtml, iconBg, title, sub, label, placeholder, isBientot) {
+        [tabCrypto, tabPaypal, tabAutre].forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
 
-            addressInput.disabled = isBientot;
-            addressInput.placeholder = placeholder;
-            addressInput.value = isBientot ? "Bientôt disponible" : "";
+        currentMethod = method;
+        document.getElementById('method-icon-box').innerHTML = iconHtml;
+        document.getElementById('method-icon-box').style.background = iconBg;
+        document.getElementById('method-title').innerText = title;
+        document.getElementById('method-sub').innerText = sub;
+        document.getElementById('address-label').innerText = label;
 
-            if (isBientot) {
-                document.getElementById('method-badge').innerText = "Indisponible";
-                document.getElementById('method-badge').style.background = "rgba(255, 77, 77, 0.1)";
-                document.getElementById('method-badge').style.color = "#ff4d4d";
-                document.getElementById('alert-text').innerText = "Le retrait par Mobile Money sera ouvert très prochainement.";
-            } else {
-                document.getElementById('method-badge').innerText = "Recommandé";
-                document.getElementById('method-badge').style.background = "rgba(0, 255, 170, 0.1)";
-                document.getElementById('method-badge').style.color = "#00ffaa";
-                document.getElementById('alert-text').innerText = "Assurez-vous que vos coordonnées sont exactes.";
-            }
+        addressInput.disabled = isBientot;
+        addressInput.placeholder = placeholder;
+        addressInput.value = isBientot ? "Bientôt disponible" : "";
 
-            validerFormulaire();
+        if (isBientot) {
+            document.getElementById('method-badge').innerText = "Indisponible";
+            document.getElementById('method-badge').style.background = "rgba(255, 77, 77, 0.1)";
+            document.getElementById('method-badge').style.color = "#ff4d4d";
+            document.getElementById('alert-text').innerText = "Le retrait par Mobile Money sera ouvert très prochainement.";
+        } else {
+            document.getElementById('method-badge').innerText = "Recommandé";
+            document.getElementById('method-badge').style.background = "rgba(0, 255, 170, 0.1)";
+            document.getElementById('method-badge').style.color = "#00ffaa";
+            document.getElementById('alert-text').innerText = "Assurez-vous que vos coordonnées sont exactes.";
         }
 
-        // 5. ENVOI DE LA DEMANDE DANS FIRESTORE
-        btnSubmit.addEventListener('click', async () => {
-            const amountUsd = parseFloat(withdrawInput.value);
-            const address = addressInput.value.trim();
-            const coinsToDeduct = amountUsd * COINS_PER_DOLLAR;
+        validerFormulaire();
+    }
 
-            if (!currentUser || !isEmailVerified) return;
+    // 5. SOUMISSION DE LA DEMANDE ET DÉDUCTION DES COINS
+    btnSubmit.addEventListener('click', async () => {
+        const amountUsd = parseFloat(withdrawInput.value);
+        const address = addressInput.value.trim();
+        const coinsToDeduct = amountUsd * COINS_PER_DOLLAR;
 
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Traitement...`;
+        if (!currentUser || !isEmailVerified) return;
 
-            try {
-                // Enregistrement de la demande
-                await addDoc(collection(db, "demandes_retrait"), {
-                    userId: currentUser.uid,
-                    userEmail: currentUser.email,
-                    montantUSD: amountUsd,
-                    coinsDeduits: coinsToDeduct,
-                    methode: currentMethod,
-                    adresseReception: address,
-                    statut: "en_attente",
-                    dateDemande: serverTimestamp()
-                });
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Traitement...`;
 
-                // Déduction des pièces dans rewards_users
-                const userRewardsRef = doc(db, "rewards_users", currentUser.uid);
-                await updateDoc(userRewardsRef, {
-                    coins: increment(-coinsToDeduct)
-                });
+        try {
+            await addDoc(collection(db, "demandes_retrait"), {
+                userId: currentUser.uid,
+                userEmail: currentUser.email,
+                montantUSD: amountUsd,
+                coinsDeduits: coinsToDeduct,
+                methode: currentMethod,
+                adresseReception: address,
+                statut: "en_attente",
+                dateDemande: serverTimestamp()
+            });
 
-                alert("Votre demande de retrait de $" + amountUsd.toFixed(2) + " a été soumise avec succès !");
-                location.reload();
-            } catch (err) {
-                console.error("Erreur de retrait :", err);
-                alert("Erreur lors de la soumission : " + err.message);
-                btnSubmit.disabled = false;
-                btnSubmit.innerHTML = `<i class="fa-solid fa-paper-plane"></i> CONFIRMER LE RETRAIT`;
-            }
-        });
-    </script>
+            const userRewardsRef = doc(db, "rewards_users", currentUser.uid);
+            await updateDoc(userRewardsRef, {
+                coins: increment(-coinsToDeduct)
+            });
+
+            alert("Votre demande de retrait de $" + amountUsd.toFixed(2) + " a été soumise avec succès !");
+            location.reload();
+        } catch (err) {
+            console.error("Erreur de retrait :", err);
+            alert("Erreur lors de la soumission : " + err.message);
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = `<i class="fa-solid fa-paper-plane"></i> CONFIRMER LE RETRAIT`;
+        }
+    });
+</script>
 </body>
 </html>
