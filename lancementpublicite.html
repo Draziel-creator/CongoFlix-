@@ -380,282 +380,450 @@
 
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
-            authDomain: "publicite-6445c.firebaseapp.com",
-            projectId: "publicite-6445c",
-            storageBucket: "publicite-6445c.firebasestorage.app",
-            messagingSenderId: "663385244466",
-            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
-            measurementId: "G-T37TGB3SR0"
+    const firebaseConfig = {
+        apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+        authDomain: "publicite-6445c.firebaseapp.com",
+        projectId: "publicite-6445c",
+        storageBucket: "publicite-6445c.firebasestorage.app",
+        messagingSenderId: "663385244466",
+        appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
+        measurementId: "G-T37TGB3SR0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentCoins = 0;
+    let tasks = 0;
+    let userConnected = false;
+    let userRank = 0;
+    let currentUserData = null;
+
+    const balanceText = document.getElementById('balanceText');
+    const taskCount = document.getElementById('taskCount');
+    const watchAdBtn = document.getElementById('watchAdBtn');
+    const welcomeText = document.getElementById('welcomeText');
+    const navUserPhoto = document.getElementById('nav-user-photo');
+
+    // ==========================================
+    // SYSTÈME DE MODALE SUR MESURE (Remplace alert)
+    // ==========================================
+    function showCustomModal(title, message, icon = '🎉', callback = null) {
+        const modal = document.getElementById('customModal');
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('modalMessage').innerHTML = message;
+        document.getElementById('modalIcon').innerText = icon;
+        modal.style.display = 'flex';
+
+        const closeBtn = document.getElementById('modalCloseBtn');
+        closeBtn.onclick = () => {
+            modal.style.display = 'none';
+            if (callback) callback();
         };
+    }
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+    // PLIAGE DU HEADER
+    document.getElementById('toggleHeaderBtn').addEventListener('click', () => {
+        const appHeader = document.getElementById('appHeader');
+        const icon = document.getElementById('toggleHeaderIcon');
+        appHeader.classList.toggle('collapsed');
+        icon.className = appHeader.classList.contains('collapsed') ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
+    });
 
-        let currentCoins = 0;
-        let tasks = 0;
-        let userConnected = false;
-        let userRank = 1;
+    // ==========================================
+    // RÉCUPÉRATION DE LA VRAIE GÉOLOCALISATION
+    // ==========================================
+    async function getUserLocation() {
+        return new Promise((resolve) => {
+            // 1. Essai via GPS / Géolocalisation navigateur
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    async (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        try {
+                            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                            const data = await res.json();
+                            const country = data.address?.country || "Pays inconnu";
+                            resolve({ lat, lng, country });
+                        } catch (e) {
+                            resolve({ lat, lng, country: "Localisation réelle" });
+                        }
+                    },
+                    async () => { resolve(await getIpLocation()); },
+                    { timeout: 4000 }
+                );
+            } else {
+                getIpLocation().then(resolve);
+            }
+        });
+    }
 
-        const balanceText = document.getElementById('balanceText');
-        const taskCount = document.getElementById('taskCount');
-        const watchAdBtn = document.getElementById('watchAdBtn');
-        const welcomeText = document.getElementById('welcomeText');
-        const navUserPhoto = document.getElementById('nav-user-photo');
+    // Localisation de secours automatique basée sur l'adresse IP (Pays réel)
+    async function getIpLocation() {
+        try {
+            const res = await fetch("https://ipapi.co/json/");
+            const data = await res.json();
+            return {
+                lat: data.latitude || -1.6585,
+                lng: data.longitude || 29.2205,
+                country: data.country_name || "RDC"
+            };
+        } catch (e) {
+            return { lat: -1.6585, lng: 29.2205, country: "RDC" };
+        }
+    }
 
-        // PLIAGE DU HEADER
-        document.getElementById('toggleHeaderBtn').addEventListener('click', () => {
-            const appHeader = document.getElementById('appHeader');
-            const icon = document.getElementById('toggleHeaderIcon');
-            appHeader.classList.toggle('collapsed');
-            icon.className = appHeader.classList.contains('collapsed') ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
+    // ==========================================
+    // GLOBE 3D SATELLITE HD ET POPUP AUTOMATIQUE
+    // ==========================================
+    const elem = document.getElementById('globeViz');
+    const myGlobe = Globe()(elem)
+        .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+        .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+        .backgroundColor('rgba(0,0,0,0)')
+        .showAtmosphere(true)
+        .atmosphereColor('#00f0ff')
+        .atmosphereAltitude(0.22)
+        .arcColor(() => ['#9b51e0', '#00ffcc'])
+        .arcDashLength(0.4)
+        .arcDashGap(0.2)
+        .arcDashAnimateTime(3000)
+        .arcStroke(1.4)
+        .htmlElement(d => {
+            const el = document.createElement('div');
+            el.className = 'globe-pin-popup';
+            el.innerHTML = `
+                <div style="background: rgba(18, 18, 28, 0.9); border: 1px solid #00f0ff; padding: 10px 14px; border-radius: 12px; color: #fff; text-align: center; box-shadow: 0 0 15px rgba(0,240,255,0.4);">
+                    <i class="fa-solid fa-location-dot" style="color: #00f0ff; font-size: 18px;"></i> 
+                    <div><strong>${d.country}</strong></div>
+                    <div style="color: #00ffcc; font-size: 13px; font-weight: bold;">🎉 Félicitations à ${d.userName} !</div>
+                    <small style="color: #ccc;">${d.taskName}</small>
+                    <div style="font-size:16px; margin-top:2px;">⬇️</div>
+                </div>`;
+            return el;
         });
 
-        // ==========================================
-        // LOCALISATIONS ET GLOBE 3D SATELLITE HD
-        // ==========================================
-        const locations = [
-            { name: "RDC (Goma)", lat: -1.6585, lng: 29.2205 },
-            { name: "RDC (Kinshasa)", lat: -4.3224, lng: 15.3070 },
-            { name: "Cameroun (Douala)", lat: 4.0511, lng: 9.7679 },
-            { name: "Côte d'Ivoire (Abidjan)", lat: 5.3600, lng: -4.0083 },
-            { name: "Sénégal (Dakar)", lat: 14.6928, lng: -17.4467 },
-            { name: "France (Paris)", lat: 48.8566, lng: 2.3522 },
-            { name: "Belgique (Bruxelles)", lat: 50.8503, lng: 4.3517 }
-        ];
+    myGlobe.controls().autoRotate = true;
+    myGlobe.controls().autoRotateSpeed = 1.0;
+    myGlobe.controls().enableZoom = false;
+    myGlobe.pointOfView({ lat: 2, lng: 18, altitude: 2.1 });
 
-        const elem = document.getElementById('globeViz');
-        const myGlobe = Globe()(elem)
-            .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-            .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
-            .backgroundColor('rgba(0,0,0,0)')
-            .showAtmosphere(true)
-            .atmosphereColor('#00f0ff')
-            .atmosphereAltitude(0.22)
-            .arcColor(() => ['#9b51e0', '#00ffcc'])
-            .arcDashLength(0.4)
-            .arcDashGap(0.2)
-            .arcDashAnimateTime(3000)
-            .arcStroke(1.2)
-            .htmlElement(d => {
-                const el = document.createElement('div');
-                el.className = 'globe-pin-popup';
-                el.innerHTML = `<i class="fa-solid fa-location-dot"></i> <div>🎉 Félicitations à <strong>${d.userName}</strong> !<br><small style="color:#aaa;">${d.taskName} (${d.reward})</small></div>`;
-                return el;
+    const resizeGlobe = () => {
+        if (elem) myGlobe.width(elem.clientWidth).height(elem.clientHeight);
+    };
+    resizeGlobe();
+    window.addEventListener('resize', resizeGlobe);
+
+    // OBSERVEUR DE DÉFILEMENT DE LA TERRE
+    let isGlobeVisible = false;
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => { isGlobeVisible = e.isIntersecting; });
+    }, { threshold: 0.35 });
+    observer.observe(document.getElementById('globeCard'));
+
+    // ==========================================
+    // ACTION AUTOMATIQUE SUR LE GLOBE (TÂCHES / PARRAINAGE)
+    // ==========================================
+    function processActivityEvent(data) {
+        const { userName, taskName, country, lat, lng, isParrainage, sponsorLat, sponsorLng } = data;
+
+        if (isGlobeVisible) {
+            myGlobe.controls().autoRotateSpeed = 0.2;
+            myGlobe.pointOfView({ lat: lat, lng: lng, altitude: 1.25 }, 3500);
+
+            // Marqueur précis sur le vrai pays avec flèche vers le bas
+            myGlobe.htmlElementsData([{
+                lat: lat,
+                lng: lng,
+                userName: userName,
+                taskName: taskName,
+                country: country
+            }]);
+
+            // Arc courbe de parrainage depuis le parrain
+            if (isParrainage && sponsorLat && sponsorLng) {
+                myGlobe.arcsData([{
+                    startLat: sponsorLat,
+                    startLng: sponsorLng,
+                    endLat: lat,
+                    endLng: lng
+                }]);
+            }
+
+            setTimeout(() => {
+                myGlobe.controls().autoRotateSpeed = 1.0;
+                myGlobe.htmlElementsData([]);
+                myGlobe.arcsData([]);
+            }, 7000);
+
+        } else {
+            showToastMessage(userName, taskName, country);
+        }
+    }
+
+    function showToastMessage(userName, taskName, country) {
+        const toast = document.getElementById('liveToast');
+        document.getElementById('toastLetter').innerText = userName.charAt(0);
+        document.getElementById('toastMessage').innerHTML = `<span>${userName}</span> (${country}) a <span>${taskName}</span> !`;
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 3500);
+    }
+
+    // ==========================================
+    // EFFET PLUIE DE FLEURS (RANG DÉBLOQUÉ)
+    // ==========================================
+    function triggerFlowerShower() {
+        const canvas = document.getElementById('flowerCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.style.display = 'block';
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const flowers = Array.from({ length: 50 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * -canvas.height,
+            size: Math.random() * 14 + 10,
+            speedY: Math.random() * 3 + 2,
+            spin: Math.random() * 0.1,
+            angle: 0
+        }));
+
+        let duration = 0;
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            flowers.forEach(f => {
+                f.y += f.speedY;
+                f.angle += f.spin;
+                ctx.save();
+                ctx.translate(f.x, f.y);
+                ctx.rotate(f.angle);
+                ctx.font = `${f.size}px serif`;
+                ctx.fillText('🌸', 0, 0);
+                ctx.restore();
             });
 
-        myGlobe.controls().autoRotate = true;
-        myGlobe.controls().autoRotateSpeed = 1.0;
-        myGlobe.controls().enableZoom = false;
-        myGlobe.pointOfView({ lat: 2, lng: 18, altitude: 2.1 });
+            duration++;
+            if (duration < 220) {
+                requestAnimationFrame(animate);
+            } else {
+                canvas.style.display = 'none';
+            }
+        }
+        animate();
+    }
 
-        const resizeGlobe = () => {
-            if (elem) myGlobe.width(elem.clientWidth).height(elem.clientHeight);
-        };
-        resizeGlobe();
-        window.addEventListener('resize', resizeGlobe);
+    // ==========================================
+    // AUTOMATISATION COMPLETE AVEC FIREBASE TEMPS REEL
+    // ==========================================
+    let isFirstLoad = true;
 
-        // OBSERVEUR DE DÉFILEMENT POUR SAVOIR SI LA TERRE EST VISIBLE
-        let isGlobeVisible = false;
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(e => { isGlobeVisible = e.isIntersecting; });
-        }, { threshold: 0.35 });
-        observer.observe(document.getElementById('globeCard'));
+    // Écouteur global en temps réel sur la collection "rewards_users"
+    onSnapshot(collection(db, "rewards_users"), (snapshot) => {
+        if (isFirstLoad) {
+            isFirstLoad = false;
+            return; // Ignore l'état initial pour ne pas déclencher toutes les anciennes actions d'un coup
+        }
 
-        // ==========================================
-        // DÉCLENCHEMENT DE L'ANIMATION DE TÂCHE / PARRAINAGE
-        // ==========================================
-        function processActivityEvent(userName, taskName, reward, isParrainage = false) {
-            const loc = locations[Math.floor(Math.random() * locations.length)];
+        snapshot.docChanges().forEach(change => {
+            if (change.type === "modified" || change.type === "added") {
+                const uData = change.doc.data();
+                const uName = uData.name || "Membre";
+                const uLat = uData.lat || -1.6585;
+                const uLng = uData.lng || 29.2205;
+                const uCountry = uData.country || "Son pays";
 
-            if (isGlobeVisible) {
-                // Ralentit la rotation, tourne rapidement et zoome en 3-4 secondes
-                myGlobe.controls().autoRotateSpeed = 0.2;
-                myGlobe.pointOfView({ lat: loc.lat, lng: loc.lng, altitude: 1.25 }, 3500);
+                // Si c'est un parrainage validé
+                if (uData.statutParrainage === "valide" && (uData.sponsorId || uData.parrainePar)) {
+                    processActivityEvent({
+                        userName: uName,
+                        taskName: "a rejoint via Parrainage 🎉",
+                        country: uCountry,
+                        lat: uLat,
+                        lng: uLng,
+                        isParrainage: true,
+                        sponsorLat: uData.sponsorLat || -4.3224,
+                        sponsorLng: uData.sponsorLng || 15.3070
+                    });
+                } 
+                // Si l'utilisateur a accompli des tâches
+                else if (uData.tasksCompleted > 0) {
+                    processActivityEvent({
+                        userName: uName,
+                        taskName: "accompli une tâche avec succès",
+                        country: uCountry,
+                        lat: uLat,
+                        lng: uLng,
+                        isParrainage: false
+                    });
+                }
+            }
+        });
+    });
 
-                // Affiche la marque 📍 sur la Terre
-                myGlobe.htmlElementsData([{
+    // Authentification & Écouteur Utilisateur
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            userConnected = true;
+
+            // 1. Écouteur en direct sur rewards_users de l'utilisateur connecté
+            onSnapshot(doc(db, "rewards_users", user.uid), (snap) => {
+                if (snap.exists()) {
+                    currentUserData = snap.data();
+                    currentCoins = currentUserData.coins || 0;
+                    tasks = currentUserData.tasksCompleted || 0;
+                    balanceText.innerText = currentCoins.toLocaleString();
+                    taskCount.innerText = `${tasks} / 5`;
+                    welcomeText.innerText = `Bienvenue, ${currentUserData.name || "Joker"}`;
+                    if (currentUserData.photoURL) navUserPhoto.src = currentUserData.photoURL;
+
+                    if (tasks >= 5) {
+                        watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
+                        watchAdBtn.disabled = true;
+                    }
+                }
+            });
+
+            // 2. Écouteur en direct sur la collection "users" (Détection du Rang & Pluie de Fleurs)
+            onSnapshot(doc(db, "users", user.uid), (snap) => {
+                if (snap.exists()) {
+                    const uData = snap.data();
+                    const newRank = uData.rank || uData.rang || 0;
+                    
+                    // Déclenchement automatique de la pluie de fleurs et de la modale lors de la montée de rang
+                    if (userRank > 0 && newRank > userRank) {
+                        triggerFlowerShower();
+                        showCustomModal(
+                            "Nouveau Rang Débloqué !",
+                            `🎉 Félicitations <strong>${uData.name || user.displayName || 'Champion'}</strong> ! Vous avez atteint le <strong>Rang ${newRank}</strong> ! 🌸`,
+                            "🏆"
+                        );
+                    }
+                    userRank = newRank;
+                }
+            });
+
+        } else {
+            userConnected = false;
+            balanceText.innerText = "0";
+            welcomeText.innerText = "Bienvenue sur votre espace";
+        }
+    });
+
+    function checkAuthOrRedirect() {
+        if (!userConnected) {
+            showCustomModal(
+                "Connexion Requise",
+                "Veuillez vous connecter pour effectuer vos missions et accumuler vos gains !",
+                "🔒",
+                () => { window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html"; }
+            );
+            return false;
+        }
+        return true;
+    }
+
+    window.redirectToPage = (page) => {
+        if (checkAuthOrRedirect()) window.location.href = page;
+    };
+
+    document.getElementById('addCoinsBtn').addEventListener('click', () => redirectToPage('activite.html'));
+
+    // BASSIN D'ACCOMPLISSEMENT DES TÂCHES PAR L'UTILISATEUR
+    watchAdBtn.addEventListener('click', async () => {
+        if (!checkAuthOrRedirect()) return;
+
+        if (tasks < 5 && auth.currentUser) {
+            // Récupère la vraie géolocalisation de la personne qui fait la tâche
+            const loc = await getUserLocation();
+
+            tasks += 1;
+            currentCoins += 10;
+            balanceText.innerText = currentCoins.toLocaleString();
+            taskCount.innerText = `${tasks} / 5`;
+
+            // Enregistrement automatique dans Firebase avec la localisation exacte du pays
+            try {
+                await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
+                    coins: currentCoins,
+                    tasksCompleted: tasks,
                     lat: loc.lat,
                     lng: loc.lng,
-                    userName: userName,
-                    taskName: taskName,
-                    reward: reward
-                }]);
-
-                // Ligne courbe de Parrainage
-                if (isParrainage) {
-                    const originLoc = locations[Math.floor(Math.random() * locations.length)];
-                    myGlobe.arcsData([{
-                        startLat: originLoc.lat,
-                        startLng: originLoc.lng,
-                        endLat: loc.lat,
-                        endLng: loc.lng
-                    }]);
-                }
-
-                // Réinitialise la rotation fluide après 6 secondes
-                setTimeout(() => {
-                    myGlobe.controls().autoRotateSpeed = 1.0;
-                    myGlobe.htmlElementsData([]);
-                    myGlobe.arcsData([]);
-                }, 6500);
-
-            } else {
-                // Affiche sous forme de Toast si l'utilisateur est en haut
-                showToastMessage(userName, taskName, reward);
-            }
-        }
-
-        function showToastMessage(userName, taskName, reward) {
-            const toast = document.getElementById('liveToast');
-            document.getElementById('toastLetter').innerText = userName.charAt(0);
-            document.getElementById('toastMessage').innerHTML = `<span>${userName}</span> a ${taskName} (<span>${reward}</span>)`;
-            
-            toast.classList.add('show');
-            setTimeout(() => { toast.classList.remove('show'); }, 3000);
-        }
-
-        // ==========================================
-        // EFFET PLUIE DE FLEURS (DÉBLOCAGE DE RANG)
-        // ==========================================
-        function triggerFlowerShower() {
-            const canvas = document.getElementById('flowerCanvas');
-            const ctx = canvas.getContext('2d');
-            canvas.style.display = 'block';
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-
-            const flowers = Array.from({ length: 40 }, () => ({
-                x: Math.random() * canvas.width,
-                y: Math.random() * -canvas.height,
-                size: Math.random() * 12 + 8,
-                speedY: Math.random() * 3 + 2,
-                spin: Math.random() * 0.1,
-                angle: 0
-            }));
-
-            let duration = 0;
-            function animate() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                flowers.forEach(f => {
-                    f.y += f.speedY;
-                    f.angle += f.spin;
-                    ctx.save();
-                    ctx.translate(f.x, f.y);
-                    ctx.rotate(f.angle);
-                    ctx.font = `${f.size}px serif`;
-                    ctx.fillText('🌸', 0, 0);
-                    ctx.restore();
+                    country: loc.country
                 });
-
-                duration++;
-                if (duration < 180) {
-                    requestAnimationFrame(animate);
-                } else {
-                    canvas.style.display = 'none';
-                }
+            } catch (e) { 
+                console.error("Erreur de mise à jour :", e); 
             }
-            animate();
+
+            if (tasks === 5) {
+                watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
+                watchAdBtn.disabled = true;
+            }
         }
+    });
 
-        // ==========================================
-        // FIREBASE ECOUTEURS EN TEMPS RÉEL
-        // ==========================================
-        const mockActivities = [
-            { name: "Idrissa", action: "regardé une pub flash", reward: "5 Coins", isP: false },
-            { name: "Grâce", action: "complété l'Offre Nike", reward: "10 Coins", isP: false },
-            { name: "Prince", action: "atteint le Niveau 2", reward: "Félicitations !", isP: false },
-            { name: "Anuarite", action: "parrainé un ami", reward: "100 Coins", isP: true },
-            { name: "Mercia", action: "regardé une vidéo", reward: "10 Coins", isP: false },
-            { name: "Dieudonné", action: "retiré ses gains", reward: "Succès ✔️", isP: false }
-        ];
+    document.getElementById('goToProfil').addEventListener('click', () => {
+        window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
+    });
+</script>
+    <div id="customModal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+        <div class="modal-icon" id="modalIcon">🎉</div>
+        <h3 id="modalTitle">Félicitations !</h3>
+        <p id="modalMessage">Message de notification</p>
+        <button id="modalCloseBtn">D'accord</button>
+    </div>
+</div>
 
-        setInterval(() => {
-            const act = mockActivities[Math.floor(Math.random() * mockActivities.length)];
-            processActivityEvent(act.name, act.action, act.reward, act.isP);
-        }, 7000);
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userConnected = true;
-
-                // 1. Écouteur en direct sur rewards_users
-                onSnapshot(doc(db, "rewards_users", user.uid), (snap) => {
-                    if (snap.exists()) {
-                        const data = snap.data();
-                        currentCoins = data.coins || 0;
-                        balanceText.innerText = currentCoins.toLocaleString();
-                        welcomeText.innerText = `Bienvenue, ${data.name || "Joker"}`;
-                        if (data.photoURL) navUserPhoto.src = data.photoURL;
-                    }
-                });
-
-                // 2. Écouteur en direct sur la collection users (Détection de rang)
-                onSnapshot(doc(db, "users", user.uid), (snap) => {
-                    if (snap.exists()) {
-                        const uData = snap.data();
-                        const newRank = uData.rank || uData.rang || 1;
-                        if (newRank > userRank) {
-                            userRank = newRank;
-                            triggerFlowerShower();
-                            alert(`🎉 Félicitations ${user.displayName || 'Joker'} ! Vous avez débloqué le Rang ${userRank} !`);
-                        }
-                    }
-                });
-            } else {
-                userConnected = false;
-                balanceText.innerText = "0";
-                welcomeText.innerText = "Bienvenue sur votre espace";
-            }
-        });
-
-        function checkAuthOrRedirect() {
-            if (!userConnected) {
-                alert("Connectez-vous pour effectuer des missions !");
-                window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
-                return false;
-            }
-            return true;
-        }
-
-        window.redirectToPage = (page) => {
-            if (checkAuthOrRedirect()) window.location.href = page;
-        };
-
-        document.getElementById('addCoinsBtn').addEventListener('click', () => redirectToPage('activite.html'));
-
-        watchAdBtn.addEventListener('click', async () => {
-            if (!checkAuthOrRedirect()) return;
-
-            if (tasks < 5 && auth.currentUser) {
-                tasks += 1;
-                currentCoins += 10;
-                balanceText.innerText = currentCoins.toLocaleString();
-                taskCount.innerText = `${tasks} / 5`;
-                
-                processActivityEvent("Vous", "complété la Pub Flash", "+10 Coins");
-
-                try {
-                    await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), { coins: currentCoins });
-                } catch (e) { console.error(e); }
-                
-                if (tasks === 5) {
-                    watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
-                    watchAdBtn.disabled = true;
-                }
-            }
-        });
-
-        document.getElementById('goToProfil').addEventListener('click', () => {
-            window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
-        });
-    </script>
+<style>
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.3s ease;
+}
+.modal-card {
+    background: linear-gradient(135deg, #1e1e2f, #12121c);
+    border: 1px solid rgba(0, 240, 255, 0.4);
+    border-radius: 18px;
+    padding: 26px 32px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    color: #fff;
+    box-shadow: 0 10px 35px rgba(0, 240, 255, 0.25);
+}
+.modal-icon { font-size: 45px; margin-bottom: 10px; }
+.modal-card h3 { font-size: 22px; margin-bottom: 10px; color: #00f0ff; font-weight: bold; }
+.modal-card p { font-size: 15px; color: #e0e0e0; margin-bottom: 22px; line-height: 1.5; }
+.modal-card button {
+    background: linear-gradient(90deg, #9b51e0, #00f0ff);
+    border: none;
+    color: #fff;
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: bold;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.modal-card button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+</style>
 </body>
 </html>
