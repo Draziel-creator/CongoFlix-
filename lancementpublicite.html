@@ -387,7 +387,6 @@
                 <button class="btn-action" id="watchAdBtn">
                     Regarder et gagner <i class="fa-solid fa-play" style="font-size: 11px;"></i>
                 </button>
-                <p class="daily-limit">Tâches du jour accomplies : <strong id="taskCount">0 / 5</strong></p>
 
                 <h2 class="section-title">🔥 Tendances du jour</h2>
                 <div class="trends-container">
@@ -427,7 +426,7 @@
 
         <div class="ticker-container">
             <div class="ticker-text" style="animation-duration: 25s;">
-                ⚠️ <strong>Rappel :</strong> Multi-comptes interdits. 🎉 <strong>Événement :</strong> Gains doublés ce week-end sur toutes les tâches !
+                ⚠️ <strong>Rappel :</strong> Multi-comptes interdits. 🎉 <strong>
             </div>
         </div>
 
@@ -822,37 +821,12 @@
         if (checkAuthOrRedirect()) window.location.href = page;
     };
 
-    document.getElementById('addCoinsBtn').addEventListener('click', () => redirectToPage('activite.html'));
+    document.getElementById('addCoinsBtn').addEventListener('click', () => redirectToPage('https://draziel-creator.github.io/CongoFlix-/activite.html'));
 
-    // BASSIN D'ACCOMPLISSEMENT DES TÂCHES PAR L'UTILISATEUR
-    watchAdBtn.addEventListener('click', async () => {
+    // REDIRECTION DIRECTE VERS LA PAGE ACTIVITÉ (SANS INCRÉMENTATION NI COMPTEUR)
+    watchAdBtn.addEventListener('click', () => {
         if (!checkAuthOrRedirect()) return;
-
-        if (tasks < 5 && auth.currentUser) {
-            const loc = await getUserLocation();
-
-            tasks += 1;
-            currentCoins += 10;
-            balanceText.innerText = currentCoins.toLocaleString();
-            taskCount.innerText = `${tasks} / 5`;
-
-            try {
-                await updateDoc(doc(db, "rewards_users", auth.currentUser.uid), {
-                    coins: currentCoins,
-                    tasksCompleted: tasks,
-                    lat: loc.lat,
-                    lng: loc.lng,
-                    country: loc.country
-                });
-            } catch (e) { 
-                console.error("Erreur de mise à jour :", e); 
-            }
-
-            if (tasks === 5) {
-                watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
-                watchAdBtn.disabled = true;
-            }
-        }
+        window.location.href = "https://draziel-creator.github.io/CongoFlix-/activite.html";
     });
 
     document.getElementById('goToProfil').addEventListener('click', () => {
