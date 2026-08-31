@@ -759,10 +759,25 @@ onAuthStateChanged(auth, async (user) => {
     const navUserPhotoEl = document.getElementById('nav-user-photo');
     const watchAdBtnEl = document.getElementById('watchAdBtn');
 
-    if (user) {
+   if (user) {
         userConnected = true;
 
-        // 1. Écouteur sur rewards_users
+        // DÉTECTION ET SAUVEGARDE AUTOMATIQUE DU PAYS REEL
+        try {
+            const loc = await getUserLocation(); // Récupère la position/pays réel via navigateur/IP
+            if (loc && loc.country) {
+                // Met à jour rewards_users avec le vrai pays détecté
+                await updateDoc(doc(db, "rewards_users", user.uid), {
+                    country: loc.country,
+                    lat: loc.lat,
+                    lng: loc.lng
+                }, { merge: true });
+            }
+        } catch (err) {
+            console.log("Impossible de récupérer la localisation automatique :", err);
+        }
+
+        // 1. Écouteur en direct sur rewards_users
         onSnapshot(doc(db, "rewards_users", user.uid), (snap) => {
             if (snap.exists()) {
                 currentUserData = snap.data();
@@ -775,8 +790,8 @@ onAuthStateChanged(auth, async (user) => {
                 if (navUserPhotoEl && currentUserData.photoURL) navUserPhotoEl.src = currentUserData.photoURL;
 
                 if (watchAdBtnEl && tasks >= 5) {
-                    watchAdBtnEl.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
-                    watchAdBtnEl.disabled = true;
+                    watch.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
+                    watch.disabled = true;
                 }
             }
         });
@@ -789,7 +804,9 @@ onAuthStateChanged(auth, async (user) => {
                 
                 if (userRank > 0 && newRank > userRank) {
                     triggerFlowerShower();
-                    const uCountry = uData.country || currentUserData?.country || "Non spécifié";
+                    
+                    // Récupération dynamique du VRAI pays enregistré
+                    const uCountry = uData.country || currentUserData?.country || "Pays inconnu";
                     const uLat = uData.lat || currentUserData?.lat || -1.6585;
                     const uLng = uData.lng || currentUserData?.lng || 29.2205;
 
