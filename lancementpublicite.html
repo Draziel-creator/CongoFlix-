@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://unpkg.com/three"></script>
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
     <script src="https://unpkg.com/globe.gl"></script>
 
     <style>
@@ -748,33 +748,32 @@
         });
     });
 
- // Authentification & Écouteur Utilisateur
+// 1. Déclaration UNIQUE de tous les éléments DOM au sommet du script
+const balanceText = document.getElementById('balanceText');
+const taskCount = document.getElementById('taskCount');
+const welcomeText = document.getElementById('welcomeText');
+const navUserPhoto = document.getElementById('nav-user-photo');
+const watchAdBtn = document.getElementById('watchAdBtn');
+const addCoinsBtn = document.getElementById('addCoinsBtn');
+const goToProfil = document.getElementById('goToProfil');
+
+// 2. Authentification & Écouteurs Firestore
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         userConnected = true;
 
-        // 1. Écouteur en direct sur rewards_users de l'utilisateur connecté
+        // Écouteur sur rewards_users
         onSnapshot(doc(db, "rewards_users", user.uid), (snap) => {
             if (snap.exists()) {
                 currentUserData = snap.data();
                 currentCoins = currentUserData.coins || 0;
                 tasks = currentUserData.tasksCompleted || 0;
                 
-                // CORRECTION : Vérification que l'élément existe avant de changer le texte
-                const balanceText = document.getElementById('balanceText');
                 if (balanceText) balanceText.innerText = currentCoins.toLocaleString();
-                
-                const taskCount = document.getElementById('taskCount');
                 if (taskCount) taskCount.innerText = `${tasks} / 5`;
-                
-                const welcomeText = document.getElementById('welcomeText');
-                if (welcomeText) welcomeText.innerText = `Bienvenue, ${currentUserData.name || "Joker"}`;
-                
-                // CORRECTION : Cible le bon ID HTML (avec tirets) pour la photo
-                const navUserPhoto = document.getElementById('nav-user-photo');
+                if (welcomeText && currentUserData.name) welcomeText.innerText = `Bienvenue, ${currentUserData.name}`;
                 if (navUserPhoto && currentUserData.photoURL) navUserPhoto.src = currentUserData.photoURL;
 
-                const watchAdBtn = document.getElementById('watchAdBtn');
                 if (watchAdBtn && tasks >= 5) {
                     watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
                     watchAdBtn.disabled = true;
@@ -782,21 +781,20 @@ onAuthStateChanged(auth, async (user) => {
             }
         });
 
-        // 2. Écouteur sur "users" (Rang : FLEURS + GLOBE SANS MODALE)
+        // Écouteur sur users (Rang)
         onSnapshot(doc(db, "users", user.uid), (snap) => {
             if (snap.exists()) {
                 const uData = snap.data();
                 const newRank = uData.rank || uData.rang || 0;
                 
-                // Si montée de rang : Pluie de fleurs + Message stylé sur le globe pour TOUS
                 if (userRank > 0 && newRank > userRank) {
                     triggerFlowerShower();
-                    const uCountry = (uData.country && uData.country !== "Son pays") ? uData.country : (currentUserData?.country || "RDC");
+                    const uCountry = uData.country || currentUserData?.country || "Non spécifié";
                     const uLat = uData.lat || currentUserData?.lat || -1.6585;
                     const uLng = uData.lng || currentUserData?.lng || 29.2205;
 
                     processActivityEvent({
-                        userName: uData.name || user.displayName || 'Champion',
+                        userName: uData.name || currentUserData?.name || 'Champion',
                         taskName: `vient de passer au Rang ${newRank} ! 🏆`,
                         country: uCountry,
                         lat: uLat,
@@ -810,14 +808,12 @@ onAuthStateChanged(auth, async (user) => {
 
     } else {
         userConnected = false;
-        const balanceText = document.getElementById('balanceText');
         if (balanceText) balanceText.innerText = "0";
-        
-        const welcomeText = document.getElementById('welcomeText');
         if (welcomeText) welcomeText.innerText = "Bienvenue sur votre espace";
     }
 });
 
+// 3. Fonctions et événements de redirection
 function checkAuthOrRedirect() {
     if (!userConnected) {
         showCustomModal(
@@ -835,23 +831,18 @@ window.redirectToPage = (page) => {
     if (checkAuthOrRedirect()) window.location.href = page;
 };
 
-const addCoinsBtn = document.getElementById('addCoinsBtn');
 if (addCoinsBtn) {
     addCoinsBtn.addEventListener('click', () => redirectToPage('https://draziel-creator.github.io/CongoFlix-/activite.html'));
 }
 
-// BASSIN D'ACCOMPLISSEMENT DES TÂCHES : MODIFIÉ POUR JUSTE REDIRIGER
-const watchAdBtn = document.getElementById('watchAdBtn');
+// Redirection directe sans incrémenter le compteur
 if (watchAdBtn) {
     watchAdBtn.addEventListener('click', () => {
         if (!checkAuthOrRedirect()) return;
-        
-        // Redirection directe vers la page d'activité (aucun incrément, aucune base de données touchée)
         window.location.href = "https://draziel-creator.github.io/CongoFlix-/activite.html";
     });
 }
 
-const goToProfil = document.getElementById('goToProfil');
 if (goToProfil) {
     goToProfil.addEventListener('click', () => {
         window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
