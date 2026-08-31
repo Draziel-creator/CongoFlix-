@@ -748,92 +748,113 @@
         });
     });
 
-// Récupération sécurisée des éléments HTML
-const navUserPhoto = document.getElementById('nav-user-photo');
-const welcomeText = document.getElementById('welcomeText');
-const balanceText = document.getElementById('balanceText');
-const watchAdBtn = document.getElementById('watchAdBtn'); // Assure-toi que cet ID existe sur ton bouton
-const taskCount = document.getElementById('taskCount'); // Assure-toi que cet ID existe sur ton compteur
+ // Authentification & Écouteur Utilisateur
 
-// Authentification & Écouteur Utilisateur
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        userConnected = true;
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            userConnected = true;
+            // 1. Écouteur en direct sur rewards_users de l'utilisateur connecté
 
-        // 1. Écouteur en direct sur rewards_users de l'utilisateur connecté
-        onSnapshot(doc(db, "rewards_users", user.uid), (snap) => {
-            if (snap.exists()) {
-                currentUserData = snap.data();
-                currentCoins = currentUserData.coins || 0;
-                tasks = currentUserData.tasksCompleted || 0;
-                
-                // Mise à jour du solde et des tâches
-                if (balanceText) balanceText.innerText = currentCoins.toLocaleString();
-                if (taskCount) taskCount.innerText = `${tasks} / 5`;
-                
-                // Mise à jour du nom (champ "name" en minuscule dans Firestore)
-                if (welcomeText && currentUserData.name) {
-                    welcomeText.innerText = `Bienvenue, ${currentUserData.name}`;
+            onSnapshot(doc(db, "rewards_users", user.uid), (snap) => {
+
+                if (snap.exists()) {
+
+                    currentUserData = snap.data();
+
+                    currentCoins = currentUserData.coins || 0;
+
+                    tasks = currentUserData.tasksCompleted || 0;
+
+                    balanceText.innerText = currentCoins.toLocaleString();
+
+                    taskCount.innerText = `${tasks} / 5`;
+
+                    welcomeText.innerText = `Bienvenue, ${currentUserData.name || "Joker"}`;
+
+                    if (currentUserData.photoURL) navUserPhoto.src = currentUserData.photoURL;
+                    if (tasks >= 5) {
+                        watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
+                     watchAdBtn.disabled = true;
+                    }
+                }
+            });
+            // 2. Écouteur sur "users" (Rang : FLEURS + GLOBE SANS MODALE)
+
+            onSnapshot(doc(db, "users", user.uid), (snap) => {
+
+                if (snap.exists()) {
+
+                    const uData = snap.data();
+
+                    const newRank = uData.rank || uData.rang || 0;
+
+                    
+
+                    // Si montée de rang : Pluie de fleurs + Message stylé sur le globe pour TOUS
+
+                    if (userRank > 0 && newRank > userRank) {
+
+                        triggerFlowerShower();
+
+                        const uCountry = (uData.country && uData.country !== "Son pays") ? uData.country : (currentUserData?.country || "RDC");
+
+                        const uLat = uData.lat || currentUserData?.lat || -1.6585;
+
+                        const uLng = uData.lng || currentUserData?.lng || 29.2205;
+
+
+
+                        processActivityEvent({
+
+                            userName: uData.name || user.displayName || 'Champion',
+
+                            taskName: `vient de passer au Rang ${newRank} ! 🏆`,
+
+                            country: uCountry,
+
+                            lat: uLat,
+
+                            lng: uLng,
+
+                            isParrainage: false
+
+                        });
+
+                    }
+
+                    userRank = newRank;
+
                 }
 
-                // Mise à jour de la photo de profil (champ "photoURL" en Base64 ou URL)
-                if (navUserPhoto && currentUserData.photoURL) {
-                    navUserPhoto.src = currentUserData.photoURL;
-                }
+            });
 
-                // Verrouillage si la limite est atteinte
-                if (watchAdBtn && tasks >= 5) {
-                    watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
-                    watchAdBtn.disabled = true;
-                }
-            }
-        });
 
-        // 2. Écouteur sur "users" (Rang & Événements Globe)
-        onSnapshot(doc(db, "users", user.uid), (snap) => {
-            if (snap.exists()) {
-                const uData = snap.data();
-                const newRank = uData.rank || uData.rang || 0;
-                
-                if (userRank > 0 && newRank > userRank) {
-                    triggerFlowerShower();
-                    const uCountry = uData.country || currentUserData?.country || "Non spécifié";
-                    const uLat = uData.lat || currentUserData?.lat || -1.6585;
-                    const uLng = uData.lng || currentUserData?.lng || 29.2205;
 
-                    processActivityEvent({
-                        userName: uData.name || currentUserData?.name || 'Champion',
-                        taskName: `vient de passer au Rang ${newRank} ! 🏆`,
-                        country: uCountry,
-                        lat: uLat,
-                        lng: uLng,
-                        isParrainage: false
-                    });
-                }
-                userRank = newRank;
-            }
-        });
+        } else {
 
-    } else {
-        userConnected = false;
-        if (balanceText) balanceText.innerText = "0";
-        if (welcomeText) welcomeText.innerText = "Bienvenue sur votre espace";
-    }
-});
+            userConnected = false;*
+            balanceText.innerText = "0";
+            welcomeText.innerText = "Bienvenue sur votre espace";
+        }
+    });
+    function checkAuthOrRedirect() {
 
-function checkAuthOrRedirect() {
-    if (!userConnected) {
-        showCustomModal(
-            "Connexion Requise",
-            "Veuillez vous connecter pour effectuer vos missions et accumuler vos gains !",
-            "🔒",
-            () => { window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html"; }
-        );
-        return false;
-    }
-    return true;
+        if (!userConnected) {
+
+            showCustomModal(
+
+                "Connexion Requise",
+
+                "Veuillez vous connecter pour effectuer vos missions et accumuler vos gains !",
+
+                "🔒",
+
+                () => { window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html"; }
+);
+  return false;
+ }
+return true;
 }
-
 window.redirectToPage = (page) => {
     if (checkAuthOrRedirect()) window.location.href = page;
 };
