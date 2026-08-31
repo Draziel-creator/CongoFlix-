@@ -907,19 +907,30 @@ onAuthStateChanged(auth, async (user) => {
 });
     // Écoute de l'état d'authentification
 onAuthStateChanged(auth, (user) => {
-    if (user) {
-        // Écoute en temps réel de la collection "users" pour cet utilisateur
-        const userRef = doc(db, "users", user.uid);
-
-        onSnapshot(userRef, (snapshot) => {
-            if (snapshot.exists()) {
-                const userData = snapshot.data();
-                const xp = Number(userData.xp || 0); // Récupère le champ 'xp' de Firebase
-                
-                actualiserJaugeHTML(xp);
-            }
-        });
+    if (!user) {
+        console.error("Aucun utilisateur connecté !");
+        return;
     }
+
+    console.log("Utilisateur connecté ID :", user.uid);
+    const userRef = doc(db, "users", user.uid);
+
+    onSnapshot(userRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const userData = snapshot.data();
+            console.log("Données utilisateur Firestore :", userData);
+            
+            // Vérifiez ici le nom exact du champ dans la console
+            const xp = Number(userData.xp || 0);
+            console.log("XP extraite :", xp);
+
+            actualiserJaugeHTML(xp);
+        } else {
+            console.error("Le document utilisateur n'existe pas dans la collection 'users'.");
+        }
+    }, (error) => {
+        console.error("Erreur d'accès à Firestore :", error.message);
+    });
 });
 
 // Contrôle d'accès et redirections
