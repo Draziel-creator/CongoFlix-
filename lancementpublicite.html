@@ -748,90 +748,90 @@
         });
     });
 
-    // Authentification & Écouteur Utilisateur
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            userConnected = true;
+// Authentification & Écouteur Utilisateur
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        userConnected = true;
 
-            // 1. Écouteur en direct sur rewards_users de l'utilisateur connecté
-            onSnapshot(doc(db, "rewards_users", user.uid), (snap) => {
-                if (snap.exists()) {
-                    currentUserData = snap.data();
-                    currentCoins = currentUserData.coins || 0;
-                    tasks = currentUserData.tasksCompleted || 0;
-                    balanceText.innerText = currentCoins.toLocaleString();
-                    taskCount.innerText = `${tasks} / 5`;
-                    welcomeText.innerText = `Bienvenue, ${currentUserData.name || "Joker"}`;
-                    if (currentUserData.photoURL) navUserPhoto.src = currentUserData.photoURL;
+        // 1. Écouteur en direct sur rewards_users de l'utilisateur connecté
+        onSnapshot(doc(db, "rewards_users", user.uid), (snap) => {
+            if (snap.exists()) {
+                currentUserData = snap.data();
+                currentCoins = currentUserData.coins || 0;
+                tasks = currentUserData.tasksCompleted || 0;
+                balanceText.innerText = currentCoins.toLocaleString();
+                taskCount.innerText = `${tasks} / 5`;
+                welcomeText.innerText = `Bienvenue, ${currentUserData.name || "Joker"}`;
+                if (currentUserData.photoURL) navUserPhoto.src = currentUserData.photoURL;
 
-                    if (tasks >= 5) {
-                        watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
-                        watchAdBtn.disabled = true;
-                    }
+                if (tasks >= 5) {
+                    watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
+                    watchAdBtn.disabled = true;
                 }
-            });
+            }
+        });
 
-            // 2. Écouteur sur "users" (Rang : FLEURS + GLOBE SANS MODALE)
-            onSnapshot(doc(db, "users", user.uid), (snap) => {
-                if (snap.exists()) {
-                    const uData = snap.data();
-                    const newRank = uData.rank || uData.rang || 0;
-                    
-                    // Si montée de rang : Pluie de fleurs + Message stylé sur le globe pour TOUS
-                    if (userRank > 0 && newRank > userRank) {
-                        triggerFlowerShower();
-                        const uCountry = (uData.country && uData.country !== "Son pays") ? uData.country : (currentUserData?.country || "RDC");
-                        const uLat = uData.lat || currentUserData?.lat || -1.6585;
-                        const uLng = uData.lng || currentUserData?.lng || 29.2205;
+        // 2. Écouteur sur "users" (Rang : FLEURS + GLOBE SANS MODALE)
+        onSnapshot(doc(db, "users", user.uid), (snap) => {
+            if (snap.exists()) {
+                const uData = snap.data();
+                const newRank = uData.rank || uData.rang || 0;
+                
+                // Si montée de rang : Pluie de fleurs + Message stylé sur le globe pour TOUS
+                if (userRank > 0 && newRank > userRank) {
+                    triggerFlowerShower();
+                    const uCountry = (uData.country && uData.country !== "Son pays") ? uData.country : (currentUserData?.country || "Non spécifié");
+                    const uLat = uData.lat || currentUserData?.lat || -1.6585;
+                    const uLng = uData.lng || currentUserData?.lng || 29.2205;
 
-                        processActivityEvent({
-                            userName: uData.name || user.displayName || 'Champion',
-                            taskName: `vient de passer au Rang ${newRank} ! 🏆`,
-                            country: uCountry,
-                            lat: uLat,
-                            lng: uLng,
-                            isParrainage: false
-                        });
-                    }
-                    userRank = newRank;
+                    processActivityEvent({
+                        userName: uData.name || user.displayName || 'Champion',
+                        taskName: `vient de passer au Rang ${newRank} ! 🏆`,
+                        country: uCountry,
+                        lat: uLat,
+                        lng: uLng,
+                        isParrainage: false
+                    });
                 }
-            });
+                userRank = newRank;
+            }
+        });
 
-        } else {
-            userConnected = false;
-            balanceText.innerText = "0";
-            welcomeText.innerText = "Bienvenue sur votre espace";
-        }
-    });
-
-    function checkAuthOrRedirect() {
-        if (!userConnected) {
-            showCustomModal(
-                "Connexion Requise",
-                "Veuillez vous connecter pour effectuer vos missions et accumuler vos gains !",
-                "🔒",
-                () => { window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html"; }
-            );
-            return false;
-        }
-        return true;
+    } else {
+        userConnected = false;
+        balanceText.innerText = "0";
+        welcomeText.innerText = "Bienvenue sur votre espace";
     }
+});
 
-    window.redirectToPage = (page) => {
-        if (checkAuthOrRedirect()) window.location.href = page;
-    };
+function checkAuthOrRedirect() {
+    if (!userConnected) {
+        showCustomModal(
+            "Connexion Requise",
+            "Veuillez vous connecter pour effectuer vos missions et accumuler vos gains !",
+            "🔒",
+            () => { window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html"; }
+        );
+        return false;
+    }
+    return true;
+}
 
-    document.getElementById('addCoinsBtn').addEventListener('click', () => redirectToPage('https://draziel-creator.github.io/CongoFlix-/activite.html'));
+window.redirectToPage = (page) => {
+    if (checkAuthOrRedirect()) window.location.href = page;
+};
 
-    // REDIRECTION DIRECTE VERS LA PAGE ACTIVITÉ (SANS INCRÉMENTATION NI COMPTEUR)
-    watchAdBtn.addEventListener('click', () => {
-        if (!checkAuthOrRedirect()) return;
-        window.location.href = "https://draziel-creator.github.io/CongoFlix-/activite.html";
-    });
+document.getElementById('addCoinsBtn').addEventListener('click', () => redirectToPage('https://draziel-creator.github.io/CongoFlix-/activite.html'));
 
-    document.getElementById('goToProfil').addEventListener('click', () => {
-        window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
-    });
+// REDIRECTION SIMPLE SANS MODIFIER LES DONNÉES NI COMPTER
+watchAdBtn.addEventListener('click', () => {
+    if (!checkAuthOrRedirect()) return;
+    window.location.href = "https://draziel-creator.github.io/CongoFlix-/activite.html";
+});
+
+document.getElementById('goToProfil').addEventListener('click', () => {
+    window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
+});
 </script>
 
 <div id="customModal" class="modal-overlay" style="display:none;">
