@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
     <script src="https://unpkg.com/globe.gl"></script>
 
     <style>
@@ -748,40 +747,41 @@
         });
     });
 
-// 1. Déclaration UNIQUE de tous les éléments DOM au sommet du script
-const balanceText = document.getElementById('balanceText');
-const taskCount = document.getElementById('taskCount');
-const welcomeText = document.getElementById('welcomeText');
-const navUserPhoto = document.getElementById('nav-user-photo');
-const watchAdBtn = document.getElementById('watchAdBtn');
-const addCoinsBtn = document.getElementById('addCoinsBtn');
-const goToProfil = document.getElementById('goToProfil');
+// Variable d'état
+userConnected = typeof userConnected !== 'undefined' ? userConnected : false;
 
-// 2. Authentification & Écouteurs Firestore
+// Authentification & Écouteurs Firestore
 onAuthStateChanged(auth, async (user) => {
+    // Récupération directe des éléments DOM
+    const balanceTextEl = document.getElementById('balanceText');
+    const taskCountEl = document.getElementById('taskCount');
+    const welcomeTextEl = document.getElementById('welcomeText');
+    const navUserPhotoEl = document.getElementById('nav-user-photo');
+    const watchAdBtnEl = document.getElementById('watchAdBtn');
+
     if (user) {
         userConnected = true;
 
-        // Écouteur sur rewards_users
+        // 1. Écouteur sur rewards_users
         onSnapshot(doc(db, "rewards_users", user.uid), (snap) => {
             if (snap.exists()) {
                 currentUserData = snap.data();
                 currentCoins = currentUserData.coins || 0;
                 tasks = currentUserData.tasksCompleted || 0;
                 
-                if (balanceText) balanceText.innerText = currentCoins.toLocaleString();
-                if (taskCount) taskCount.innerText = `${tasks} / 5`;
-                if (welcomeText && currentUserData.name) welcomeText.innerText = `Bienvenue, ${currentUserData.name}`;
-                if (navUserPhoto && currentUserData.photoURL) navUserPhoto.src = currentUserData.photoURL;
+                if (balanceTextEl) balanceTextEl.innerText = currentCoins.toLocaleString();
+                if (taskCountEl) taskCountEl.innerText = `${tasks} / 5`;
+                if (welcomeTextEl && currentUserData.name) welcomeTextEl.innerText = `Bienvenue, ${currentUserData.name}`;
+                if (navUserPhotoEl && currentUserData.photoURL) navUserPhotoEl.src = currentUserData.photoURL;
 
-                if (watchAdBtn && tasks >= 5) {
-                    watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
-                    watchAdBtn.disabled = true;
+                if (watchAdBtnEl && tasks >= 5) {
+                    watchAdBtnEl.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
+                    watchAdBtnEl.disabled = true;
                 }
             }
         });
 
-        // Écouteur sur users (Rang)
+        // 2. Écouteur sur users (Rang)
         onSnapshot(doc(db, "users", user.uid), (snap) => {
             if (snap.exists()) {
                 const uData = snap.data();
@@ -808,12 +808,12 @@ onAuthStateChanged(auth, async (user) => {
 
     } else {
         userConnected = false;
-        if (balanceText) balanceText.innerText = "0";
-        if (welcomeText) welcomeText.innerText = "Bienvenue sur votre espace";
+        if (balanceTextEl) balanceTextEl.innerText = "0";
+        if (welcomeTextEl) welcomeTextEl.innerText = "Bienvenue sur votre espace";
     }
 });
 
-// 3. Fonctions et événements de redirection
+// Contrôle d'accès et redirections
 function checkAuthOrRedirect() {
     if (!userConnected) {
         showCustomModal(
@@ -827,24 +827,25 @@ function checkAuthOrRedirect() {
     return true;
 }
 
-window.redirectToPage = (page) => {
-    if (checkAuthOrRedirect()) window.location.href = page;
-};
-
-if (addCoinsBtn) {
-    addCoinsBtn.addEventListener('click', () => redirectToPage('https://draziel-creator.github.io/CongoFlix-/activite.html'));
+// Événements de clic sécurisés
+const addCoinsBtnEl = document.getElementById('addCoinsBtn');
+if (addCoinsBtnEl) {
+    addCoinsBtnEl.addEventListener('click', () => {
+        if (checkAuthOrRedirect()) window.location.href = "https://draziel-creator.github.io/CongoFlix-/activite.html";
+    });
 }
 
-// Redirection directe sans incrémenter le compteur
-if (watchAdBtn) {
-    watchAdBtn.addEventListener('click', () => {
+const watchAdBtnEl = document.getElementById('watchAdBtn');
+if (watchAdBtnEl) {
+    watchAdBtnEl.addEventListener('click', () => {
         if (!checkAuthOrRedirect()) return;
         window.location.href = "https://draziel-creator.github.io/CongoFlix-/activite.html";
     });
 }
 
-if (goToProfil) {
-    goToProfil.addEventListener('click', () => {
+const goToProfilEl = document.getElementById('goToProfil');
+if (goToProfilEl) {
+    goToProfilEl.addEventListener('click', () => {
         window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
     });
 }
