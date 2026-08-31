@@ -749,131 +749,108 @@
     });
 
  // Authentification & Écouteur Utilisateur
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        userConnected = true;
 
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            userConnected = true;
-            // 1. Écouteur en direct sur rewards_users de l'utilisateur connecté
+        // 1. Écouteur en direct sur rewards_users de l'utilisateur connecté
+        onSnapshot(doc(db, "rewards_users", user.uid), (snap) => {
+            if (snap.exists()) {
+                currentUserData = snap.data();
+                currentCoins = currentUserData.coins || 0;
+                tasks = currentUserData.tasksCompleted || 0;
+                
+                // CORRECTION : Vérification que l'élément existe avant de changer le texte
+                const balanceText = document.getElementById('balanceText');
+                if (balanceText) balanceText.innerText = currentCoins.toLocaleString();
+                
+                const taskCount = document.getElementById('taskCount');
+                if (taskCount) taskCount.innerText = `${tasks} / 5`;
+                
+                const welcomeText = document.getElementById('welcomeText');
+                if (welcomeText) welcomeText.innerText = `Bienvenue, ${currentUserData.name || "Joker"}`;
+                
+                // CORRECTION : Cible le bon ID HTML (avec tirets) pour la photo
+                const navUserPhoto = document.getElementById('nav-user-photo');
+                if (navUserPhoto && currentUserData.photoURL) navUserPhoto.src = currentUserData.photoURL;
 
-            onSnapshot(doc(db, "rewards_users", user.uid), (snap) => {
-
-                if (snap.exists()) {
-
-                    currentUserData = snap.data();
-
-                    currentCoins = currentUserData.coins || 0;
-
-                    tasks = currentUserData.tasksCompleted || 0;
-
-                    balanceText.innerText = currentCoins.toLocaleString();
-
-                    taskCount.innerText = `${tasks} / 5`;
-
-                    welcomeText.innerText = `Bienvenue, ${currentUserData.name || "Joker"}`;
-
-                    if (currentUserData.photoURL) navUserPhoto.src = currentUserData.photoURL;
-                    if (tasks >= 5) {
-                        watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
-                     watchAdBtn.disabled = true;
-                    }
+                const watchAdBtn = document.getElementById('watchAdBtn');
+                if (watchAdBtn && tasks >= 5) {
+                    watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
+                    watchAdBtn.disabled = true;
                 }
-            });
-            // 2. Écouteur sur "users" (Rang : FLEURS + GLOBE SANS MODALE)
+            }
+        });
 
-            onSnapshot(doc(db, "users", user.uid), (snap) => {
+        // 2. Écouteur sur "users" (Rang : FLEURS + GLOBE SANS MODALE)
+        onSnapshot(doc(db, "users", user.uid), (snap) => {
+            if (snap.exists()) {
+                const uData = snap.data();
+                const newRank = uData.rank || uData.rang || 0;
+                
+                // Si montée de rang : Pluie de fleurs + Message stylé sur le globe pour TOUS
+                if (userRank > 0 && newRank > userRank) {
+                    triggerFlowerShower();
+                    const uCountry = (uData.country && uData.country !== "Son pays") ? uData.country : (currentUserData?.country || "RDC");
+                    const uLat = uData.lat || currentUserData?.lat || -1.6585;
+                    const uLng = uData.lng || currentUserData?.lng || 29.2205;
 
-                if (snap.exists()) {
-
-                    const uData = snap.data();
-
-                    const newRank = uData.rank || uData.rang || 0;
-
-                    
-
-                    // Si montée de rang : Pluie de fleurs + Message stylé sur le globe pour TOUS
-
-                    if (userRank > 0 && newRank > userRank) {
-
-                        triggerFlowerShower();
-
-                        const uCountry = (uData.country && uData.country !== "Son pays") ? uData.country : (currentUserData?.country || "RDC");
-
-                        const uLat = uData.lat || currentUserData?.lat || -1.6585;
-
-                        const uLng = uData.lng || currentUserData?.lng || 29.2205;
-
-
-
-                        processActivityEvent({
-
-                            userName: uData.name || user.displayName || 'Champion',
-
-                            taskName: `vient de passer au Rang ${newRank} ! 🏆`,
-
-                            country: uCountry,
-
-                            lat: uLat,
-
-                            lng: uLng,
-
-                            isParrainage: false
-
-                        });
-
-                    }
-
-                    userRank = newRank;
-
+                    processActivityEvent({
+                        userName: uData.name || user.displayName || 'Champion',
+                        taskName: `vient de passer au Rang ${newRank} ! 🏆`,
+                        country: uCountry,
+                        lat: uLat,
+                        lng: uLng,
+                        isParrainage: false
+                    });
                 }
+                userRank = newRank;
+            }
+        });
 
-            });
+    } else {
+        userConnected = false;
+        const balanceText = document.getElementById('balanceText');
+        if (balanceText) balanceText.innerText = "0";
+        
+        const welcomeText = document.getElementById('welcomeText');
+        if (welcomeText) welcomeText.innerText = "Bienvenue sur votre espace";
+    }
+});
 
-
-
-        } else {
-
-            userConnected = false;
-            balanceText.innerText = "0";
-            welcomeText.innerText = "Bienvenue sur votre espace";
-        }
-    });
-    function checkAuthOrRedirect() {
-
-        if (!userConnected) {
-
-            showCustomModal(
-
-                "Connexion Requise",
-
-                "Veuillez vous connecter pour effectuer vos missions et accumuler vos gains !",
-
-                "🔒",
-
-                () => { window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html"; }
-);
-  return false;
- }
-return true;
+function checkAuthOrRedirect() {
+    if (!userConnected) {
+        showCustomModal(
+            "Connexion Requise",
+            "Veuillez vous connecter pour effectuer vos missions et accumuler vos gains !",
+            "🔒",
+            () => { window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html"; }
+        );
+        return false;
+    }
+    return true;
 }
+
 window.redirectToPage = (page) => {
     if (checkAuthOrRedirect()) window.location.href = page;
 };
 
-// Redirection vers la page d'activité au clic sur le solde
 const addCoinsBtn = document.getElementById('addCoinsBtn');
 if (addCoinsBtn) {
     addCoinsBtn.addEventListener('click', () => redirectToPage('https://draziel-creator.github.io/CongoFlix-/activite.html'));
 }
 
-// Redirection simple pour le bouton publicitaire (SANS compter ni modifier Firestore)
+// BASSIN D'ACCOMPLISSEMENT DES TÂCHES : MODIFIÉ POUR JUSTE REDIRIGER
+const watchAdBtn = document.getElementById('watchAdBtn');
 if (watchAdBtn) {
     watchAdBtn.addEventListener('click', () => {
         if (!checkAuthOrRedirect()) return;
+        
+        // Redirection directe vers la page d'activité (aucun incrément, aucune base de données touchée)
         window.location.href = "https://draziel-creator.github.io/CongoFlix-/activite.html";
     });
 }
 
-// Redirection vers le profil
 const goToProfil = document.getElementById('goToProfil');
 if (goToProfil) {
     goToProfil.addEventListener('click', () => {
