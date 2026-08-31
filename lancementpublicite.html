@@ -748,6 +748,13 @@
         });
     });
 
+// Récupération sécurisée des éléments HTML
+const navUserPhoto = document.getElementById('nav-user-photo');
+const welcomeText = document.getElementById('welcomeText');
+const balanceText = document.getElementById('balanceText');
+const watchAdBtn = document.getElementById('watchAdBtn'); // Assure-toi que cet ID existe sur ton bouton
+const taskCount = document.getElementById('taskCount'); // Assure-toi que cet ID existe sur ton compteur
+
 // Authentification & Écouteur Utilisateur
 onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -760,24 +767,24 @@ onAuthStateChanged(auth, async (user) => {
                 currentCoins = currentUserData.coins || 0;
                 tasks = currentUserData.tasksCompleted || 0;
                 
-                // Mises à jour du texte
-                balanceText.innerText = currentCoins.toLocaleString();
-                taskCount.innerText = `${tasks} / 5`;
+                // Mise à jour du solde et des tâches
+                if (balanceText) balanceText.innerText = currentCoins.toLocaleString();
+                if (taskCount) taskCount.innerText = `${tasks} / 5`;
                 
-                // Récupération du champ "name" exact (ex: "joker")
-                if (currentUserData.name) {
+                // Mise à jour du nom (champ "name" en minuscule dans Firestore)
+                if (welcomeText && currentUserData.name) {
                     welcomeText.innerText = `Bienvenue, ${currentUserData.name}`;
                 }
 
-                // Récupération de l'image Base64 du champ "photoURL"
-                if (currentUserData.photoURL && navUserPhoto) {
+                // Mise à jour de la photo de profil (champ "photoURL" en Base64 ou URL)
+                if (navUserPhoto && currentUserData.photoURL) {
                     navUserPhoto.src = currentUserData.photoURL;
                 }
 
-                // Blocage si la limite est atteinte
-                if (tasks >= 5) {
-                    watch.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
-                    watch.disabled = true;
+                // Verrouillage si la limite est atteinte
+                if (watchAdBtn && tasks >= 5) {
+                    watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
+                    watchAdBtn.disabled = true;
                 }
             }
         });
@@ -809,8 +816,8 @@ onAuthStateChanged(auth, async (user) => {
 
     } else {
         userConnected = false;
-        balanceText.innerText = "0";
-        welcomeText.innerText = "Bienvenue sur votre espace";
+        if (balanceText) balanceText.innerText = "0";
+        if (welcomeText) welcomeText.innerText = "Bienvenue sur votre espace";
     }
 });
 
@@ -831,17 +838,27 @@ window.redirectToPage = (page) => {
     if (checkAuthOrRedirect()) window.location.href = page;
 };
 
-document.getElementById('addCoinsBtn').addEventListener('click', () => redirectToPage('https://draziel-creator.github.io/CongoFlix-/activite.html'));
+// Redirection vers la page d'activité au clic sur le solde
+const addCoinsBtn = document.getElementById('addCoinsBtn');
+if (addCoinsBtn) {
+    addCoinsBtn.addEventListener('click', () => redirectToPage('https://draziel-creator.github.io/CongoFlix-/activite.html'));
+}
 
-// REDIRECTION SIMPLE SANS INCRÉMENTER NI ALTÉRER LES TÂCHES
-watchAdBtn.addEventListener('click', () => {
-    if (!checkAuthOrRedirect()) return;
-    window.location.href = "https://draziel-creator.github.io/CongoFlix-/activite.html";
-});
+// Redirection simple pour le bouton publicitaire (SANS compter ni modifier Firestore)
+if (watchAdBtn) {
+    watchAdBtn.addEventListener('click', () => {
+        if (!checkAuthOrRedirect()) return;
+        window.location.href = "https://draziel-creator.github.io/CongoFlix-/activite.html";
+    });
+}
 
-document.getElementById('goToProfil').addEventListener('click', () => {
-    window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
-});
+// Redirection vers le profil
+const goToProfil = document.getElementById('goToProfil');
+if (goToProfil) {
+    goToProfil.addEventListener('click', () => {
+        window.location.href = "https://draziel-creator.github.io/CongoFlix-/profil.html";
+    });
+}
 </script>
 
 <div id="customModal" class="modal-overlay" style="display:none;">
