@@ -759,33 +759,43 @@ onAuthStateChanged(auth, async (user) => {
                 currentUserData = snap.data();
                 currentCoins = currentUserData.coins || 0;
                 tasks = currentUserData.tasksCompleted || 0;
+                
+                // Mises à jour du texte
                 balanceText.innerText = currentCoins.toLocaleString();
                 taskCount.innerText = `${tasks} / 5`;
-                welcomeText.innerText = `Bienvenue, ${currentUserData.name || "Joker"}`;
-                if (currentUserData.photoURL) navUserPhoto.src = currentUserData.photoURL;
+                
+                // Récupération du champ "name" exact (ex: "joker")
+                if (currentUserData.name) {
+                    welcomeText.innerText = `Bienvenue, ${currentUserData.name}`;
+                }
 
+                // Récupération de l'image Base64 du champ "photoURL"
+                if (currentUserData.photoURL && navUserPhoto) {
+                    navUserPhoto.src = currentUserData.photoURL;
+                }
+
+                // Blocage si la limite est atteinte
                 if (tasks >= 5) {
-                    watchAdBtn.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
-                    watchAdBtn.disabled = true;
+                    watch.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
+                    watch.disabled = true;
                 }
             }
         });
 
-        // 2. Écouteur sur "users" (Rang : FLEURS + GLOBE SANS MODALE)
+        // 2. Écouteur sur "users" (Rang & Événements Globe)
         onSnapshot(doc(db, "users", user.uid), (snap) => {
             if (snap.exists()) {
                 const uData = snap.data();
                 const newRank = uData.rank || uData.rang || 0;
                 
-                // Si montée de rang : Pluie de fleurs + Message stylé sur le globe pour TOUS
                 if (userRank > 0 && newRank > userRank) {
                     triggerFlowerShower();
-                    const uCountry = (uData.country && uData.country !== "Son pays") ? uData.country : (currentUserData?.country || "Non spécifié");
+                    const uCountry = uData.country || currentUserData?.country || "Non spécifié";
                     const uLat = uData.lat || currentUserData?.lat || -1.6585;
                     const uLng = uData.lng || currentUserData?.lng || 29.2205;
 
                     processActivityEvent({
-                        userName: uData.name || user.displayName || 'Champion',
+                        userName: uData.name || currentUserData?.name || 'Champion',
                         taskName: `vient de passer au Rang ${newRank} ! 🏆`,
                         country: uCountry,
                         lat: uLat,
@@ -823,7 +833,7 @@ window.redirectToPage = (page) => {
 
 document.getElementById('addCoinsBtn').addEventListener('click', () => redirectToPage('https://draziel-creator.github.io/CongoFlix-/activite.html'));
 
-// REDIRECTION SIMPLE SANS MODIFIER LES DONNÉES NI COMPTER
+// REDIRECTION SIMPLE SANS INCRÉMENTER NI ALTÉRER LES TÂCHES
 watchAdBtn.addEventListener('click', () => {
     if (!checkAuthOrRedirect()) return;
     window.location.href = "https://draziel-creator.github.io/CongoFlix-/activite.html";
