@@ -518,45 +518,6 @@
     const welcomeText = document.getElementById('welcomeText');
     const navUserPhoto = document.getElementById('nav-user-photo');
     
-    function mettreAJourJaugeAccueil(userHistoryData = {}) {
-    // 1. Récupération et calcul de l'XP / Rang
-    const xpActuel = Number(
-        window.g_userXP || 
-        (userHistoryData && userHistoryData.xp) || 
-        localStorage.getItem('app_user_xp_cache') || 
-        0
-    );
-    const xpMaxTotal = 1500;
-    
-    // Calcul du pourcentage et du rang actuel (Niveau 1 à 5)
-    const pourcentage = Math.min(100, Math.max(0, Math.round((xpActuel / xpMaxTotal) * 100)));
-    const rangActuel = Math.min(5, Math.floor(xpActuel / 300) + 1);
-
-    // Intitulés des rangs
-    const nomsRangs = ["Débutant", "Intermédiaire", "Avancé", "Expert", "VIP"];
-    const nomRang = nomsRangs[rangActuel - 1] || "Débutant";
-
-    // 2. Ciblage et mise à jour des éléments HTML
-    const levelInfo = document.querySelector('.level-info');
-    const progressBar = document.querySelector('.level-progress-bar');
-
-    if (levelInfo) {
-        levelInfo.innerHTML = `
-            <span>Niveau ${rangActuel} (${nomRang})</span>
-            <span>Seuil de retrait : ${pourcentage}%</span>
-        `;
-    }
-
-    if (progressBar) {
-        progressBar.style.width = `${pourcentage}%`;
-    }
-}
-
-// Exemple d'exécution au chargement de la page
-document.addEventListener("DOMContentLoaded", () => {
-    mettreAJourJaugeAccueil();
-});
-
     // ==========================================
     // SYSTÈME DE MODALE SUR MESURE (Seulement pour Connexion)
     // ==========================================
@@ -864,11 +825,6 @@ onAuthStateChanged(auth, async (user) => {
                 if (taskCountEl) taskCountEl.innerText = `${tasks} / 5`;
                 if (welcomeTextEl && currentUserData.name) welcomeTextEl.innerText = `Bienvenue, ${currentUserData.name}`;
                 if (navUserPhotoEl && currentUserData.photoURL) navUserPhotoEl.src = currentUserData.photoURL;
-
-                if (watchAdBtnEl && tasks >= 5) {
-                    watch.innerHTML = "Limite atteinte <i class='fa-solid fa-lock'></i>";
-                    watch.disabled = true;
-                }
             }
         });
 
@@ -905,32 +861,42 @@ onAuthStateChanged(auth, async (user) => {
         if (welcomeTextEl) welcomeTextEl.innerText = "Bienvenue sur votre espace";
     }
 });
-    // Écoute de l'état d'authentification
+   // 1. Déclaration de la fonction de mise à jour du DOM
+function actualiserJaugeHTML(xpActuel) {
+    const xpMaxTotal = 1500;
+    
+    // Calcul de la progression
+    const pourcentage = Math.min(100, Math.max(0, Math.round((xpActuel / xpMaxTotal) * 100)));
+    const rangActuel = Math.min(5, Math.floor(xpActuel / 300) + 1);
+
+    const nomsRangs = ["Débutant", "Intermédiaire", "Avancé", "Expert", "VIP"];
+    const nomRang = nomsRangs[rangActuel - 1] || "Débutant";
+
+    // Ciblage des éléments HTML
+    const elTitle = document.getElementById('level-title');
+    const elPercent = document.getElementById('level-percent');
+    const elBar = document.getElementById('level-bar');
+
+    if (elTitle) elTitle.textContent = `Niveau ${rangActuel} (${nomRang})`;
+    if (elPercent) elPercent.textContent = `Seuil de retrait : ${pourcentage}%`;
+    if (elBar) elBar.style.width = `${pourcentage}%`;
+}
+
+// 2. Écouteur Firebase Firestore en temps réel
 onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        console.error("Aucun utilisateur connecté !");
-        return;
+    if (user) {
+        const userRef = doc(db, "users", user.uid);
+
+        onSnapshot(userRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const userData = snapshot.data();
+                const xp = Number(userData.xp || 0);
+                
+                // Appel de la fonction définie ci-dessus
+                actualiserJaugeHTML(xp);
+            }
+        });
     }
-
-    console.log("Utilisateur connecté ID :", user.uid);
-    const userRef = doc(db, "users", user.uid);
-
-    onSnapshot(userRef, (snapshot) => {
-        if (snapshot.exists()) {
-            const userData = snapshot.data();
-            console.log("Données utilisateur Firestore :", userData);
-            
-            // Vérifiez ici le nom exact du champ dans la console
-            const xp = Number(userData.xp || 0);
-            console.log("XP extraite :", xp);
-
-            actualiserJaugeHTML(xp);
-        } else {
-            console.error("Le document utilisateur n'existe pas dans la collection 'users'.");
-        }
-    }, (error) => {
-        console.error("Erreur d'accès à Firestore :", error.message);
-    });
 });
 
 // Contrôle d'accès et redirections
