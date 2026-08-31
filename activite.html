@@ -228,17 +228,86 @@ body, html {
 .vip-zone-card { background: linear-gradient(135deg, #0e122b 0%, #050714 100%); border: 1px solid rgba(255,215,0,0.15); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .container-iframe-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020306; z-index: 3000; display: none; flex-direction: column; }
 
-        .nav-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%; background: #03040b;
-            border-top: 1px solid rgba(255, 255, 255, 0.06); padding: 12px 20px 20px 20px;
-            display: flex; justify-content: space-around; align-items: center; z-index: 1000;
-        }
-        .nav-item {
-            display: flex; flex-direction: column; align-items: center; gap: 5px;
-            color: #555875; text-decoration: none; font-size: 11px; font-weight: 500;
-        }
-        .nav-item.active { color: #00ffcc; }
-        .nav-icon { font-size: 20px; }
+/* CONTAINER TRANSPARENT (AUCUN FOND RELIÉ) */
+.nav-bar {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 440px;
+    background: transparent !important;
+    border: none !important;
+    padding: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: none; /* Rend la zone entre les boutons transparente aux clics */
+}
+
+/* BOUTONS CAPSULES FUTURISTES INDÉPENDANTS */
+.nav-item {
+    pointer-events: auto; /* Active le clic sur chaque bouton */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex: 1;
+    margin: 0 4px;
+    padding: 10px 4px;
+    color: #6e7293;
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 16px; /* Forme rectangulaire arrondie / capsule */
+    background: rgba(12, 16, 28, 0.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.nav-icon {
+    font-size: 18px;
+    transition: transform 0.3s ease;
+}
+
+/* EFFET HOVER (SURVOL) */
+.nav-item:hover {
+    transform: translateY(-3px);
+    color: #ffffff;
+    border-color: rgba(0, 255, 204, 0.3);
+    box-shadow: 0 10px 20px rgba(0, 255, 204, 0.15);
+}
+
+/* BOUTON ACTIF AVEC PULSATION FUTURISTE */
+.nav-item.active {
+    color: #00ffcc;
+    background: rgba(0, 255, 204, 0.08);
+    border: 1px solid rgba(0, 255, 204, 0.6);
+    animation: pulseFuturistic 2.2s infinite ease-in-out;
+}
+
+.nav-item.active .nav-icon {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 6px #00ffcc);
+}
+
+/* ANIMATION DE PULSATION NÉON */
+@keyframes pulseFuturistic {
+    0%, 100% {
+        box-shadow: 0 0 12px rgba(0, 255, 204, 0.25), inset 0 0 8px rgba(0, 255, 204, 0.1);
+        border-color: rgba(0, 255, 204, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 22px rgba(0, 255, 204, 0.55), inset 0 0 14px rgba(0, 255, 204, 0.25);
+        border-color: rgba(0, 255, 204, 0.9);
+        transform: translateY(-2px);
+    }
+}
 
 /* ======================================================
    4. MODALE 1 : FLUX & VIDÉO
@@ -843,24 +912,24 @@ body, html {
         </div>
         
             <!-- NAV BAR -->
-    <nav class="nav-bar">
-        <a href="lancementpublicite.html" class="nav-item">
-            <i class="fa-solid fa-house nav-icon"></i>
-            <span>Accueil</span>
-        </a>
-        <a href="messages.html" class="nav-item">
-            <i class="fa-regular fa-comment-dots nav-icon"></i>
-            <span>Messages</span>
-        </a>
-        <a href="stats.html" class="nav-item">
-            <i class="fa-solid fa-chart-simple nav-icon"></i>
-            <span>Stats</span>
-        </a>
-        <a href="activite.html" class="nav-item active">
-            <i class="fa-solid fa-bolt nav-icon"></i>
-            <span>Activités</span>
-        </a>
-    </nav>
+<nav class="nav-bar">
+    <a href="lancementpublicite.html" class="nav-item">
+        <i class="fa-solid fa-house nav-icon"></i>
+        <span>Accueil</span>
+    </a>
+    <a href="messages.html" class="nav-item">
+        <i class="fa-regular fa-comment-dots nav-icon"></i>
+        <span>Messages</span>
+    </a>
+    <a href="statpub.html" class="nav-item">
+        <i class="fa-solid fa-chart-simple nav-icon"></i>
+        <span>Stats</span>
+    </a>
+    <a href="activite.html" class="nav-item">
+        <i class="fa-solid fa-bolt nav-icon"></i>
+        <span>Activités</span>
+    </a>
+</nav>
 
     </div>
 
@@ -2990,5 +3059,23 @@ function fermerIframeVIP() {
 ">
     <i class="fa-solid fa-dice" style="color: #ffffff !important; font-size: 28px !important;"></i>
 </div>
+ <script>
+document.addEventListener("DOMContentLoaded", () => {
+    // Récupère le nom du fichier actuel (ex: "lancementpublicite.html")
+    const currentPage = window.location.pathname.split("/").pop() || "lancementpublicite.html";
+    const navItems = document.querySelectorAll('.nav-bar .nav-item');
+
+    navItems.forEach(item => {
+        const itemHref = item.getAttribute('href');
+
+        // Compare le href du bouton avec la page actuelle
+        if (itemHref === currentPage) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+});
+</script>   
 </body>
 </html>
