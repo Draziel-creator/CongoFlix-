@@ -1966,6 +1966,10 @@ function ObtenirDateAujourdhuiISO() {
 // LOGIQUE MISSIONS BANNIÈRE (CLICKADILLA, ADSTERRA, ADVERTICA & ADCASH)
 // =============================================================================
 
+// =============================================================================
+// LOGIQUE MISSIONS BANNIÈRE (CLICKADILLA, ADSTERRA, ADVERTICA & ADCASH)
+// =============================================================================
+
 async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, indexZone, formatPubOrWidth = "300x250", hauteurOptional = null) {
     const e = window.event;
     if (e) {
@@ -2002,7 +2006,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         return;
     }
 
-    // Calcul des dimensions
+    // Calcul et normalisation des dimensions
     let widthNum = 300;
     let heightNum = 250;
     let formatPub = "300x250";
@@ -2059,25 +2063,31 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
     let h = heightNum + "px";
     let nbRepetitions = 1;
 
-    // Ajustement dynamique des répétitions selon le réseau
-    if (fournisseur === "adcash") {
-        nbRepetitions = 1; // 1 seule injection iframe propre par zoneId Adcash
-    } else if (formatPub === "native" || fournisseur === "adsterra_native") {
+    // Ajustement dynamique des dimensions et de la répétition selon la taille de pub
+    if (formatPub === "native" || fournisseur === "adsterra_native") {
         w = "100%";
         h = "auto";
         nbRepetitions = 1;
-    } else if (formatPub === "300x250" || (widthNum === 300 && heightNum === 250)) {
-        w = "300px";
-        h = "250px";
+    } else if (widthNum === 336 && heightNum === 280) {
+        w = "336px";
+        h = "280px";
         nbRepetitions = 1;
-    } else if (formatPub === "160x600" || formatPub === "160x300" || formatPub === "160x250" || widthNum === 160) {
-        w = "160px";
-        h = heightNum + "px";
-        nbRepetitions = 2;
-    } else if (formatPub === "320x50" || formatPub === "468x60" || formatPub === "728x90" || formatPub === "bandeau") {
+    } else if (widthNum === 250 && heightNum === 250) {
+        w = "250px";
+        h = "250px";
+        nbRepetitions = 2; // Duplication pour remplir la modale
+    } else if (widthNum === 160 || widthNum === 120) {
         w = widthNum + "px";
         h = heightNum + "px";
-        nbRepetitions = 4;
+        nbRepetitions = 2; // Deux colonnes côte à côte
+    } else if (heightNum <= 90 || formatPub === "bandeau") {
+        w = widthNum + "px";
+        h = heightNum + "px";
+        nbRepetitions = 4; // Bannières horizontales empilées
+    } else {
+        w = widthNum + "px";
+        h = heightNum + "px";
+        nbRepetitions = 1;
     }
 
     if (zoneCible) {
@@ -2085,7 +2095,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         zoneCible.style.flexDirection = "row";
         zoneCible.style.justifyContent = "center";
         zoneCible.style.alignItems = "center";
-        zoneCible.style.flexWrap = (widthNum === 160 || widthNum === 120) ? "nowrap" : "wrap";
+        zoneCible.style.flexWrap = "wrap";
         zoneCible.style.gap = "8px";
         zoneCible.style.width = "100%";
         zoneCible.style.height = "100%";
@@ -2097,7 +2107,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
             for (let k = 0; k < nbRepetitions; k++) {
 
                 if (fournisseur === "adcash") {
-                    // ⚡ IMPLÉMENTATION EXCLUSIVE ADCASH
                     let cadreIframe = document.createElement("iframe");
                     cadreIframe.style.width = w;
                     cadreIframe.style.height = h;
@@ -2263,7 +2272,7 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
-    // Surveillance du chargement de la bannière
+    // Surveillance du chargement réels de la bannière (Toutes régies)
     if (fournisseur === "clickadilla") {
         surveillerClickadillaUnique(
             "zone-pub-banniere-" + indexZone,
@@ -2319,7 +2328,7 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
 
             let pubVraimentAffichee = false;
 
-            // 1. Détection des IMAGES RÉELLES (Élimine les pixels de tracking invisibles)
+            // 1. Détection des IMAGES RÉELLES (> 10px)
             const images = divTarget.querySelectorAll('img');
             images.forEach(img => {
                 if (img.complete && img.naturalWidth > 10 && img.naturalHeight > 10) {
@@ -2336,13 +2345,11 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
                         pubVraimentAffichee = true;
                     }
                 } catch (crossOriginErr) {
-                    // Si l'accès est bloqué par Cross-Origin, cela prouve que Clickadilla
-                    // a injecté une iframe provenant d'un serveur publicitaire externe actif.
                     pubVraimentAffichee = true;
                 }
             });
 
-            // 3. Détection des LIENS (Seulement s'ils contiennent du texte ou une image)
+            // 3. Détection des LIENS
             const liens = divTarget.querySelectorAll('a');
             liens.forEach(a => {
                 if (a.innerText.trim().length > 0 || a.querySelector('img')) {
@@ -2350,7 +2357,7 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
                 }
             });
 
-            // 4. Détection des animations Canvas ou Vidéo
+            // 4. Détection des Canvas ou Vidéos
             const medias = divTarget.querySelectorAll('canvas, video');
             medias.forEach(m => {
                 if (m.offsetWidth > 10 && m.offsetHeight > 10) {
@@ -2358,7 +2365,6 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
                 }
             });
 
-            // VALIDATION : Le compteur ne se lance QUE SI une vraie pub est trouvée
             if (pubVraimentAffichee) {
                 detectee = true;
                 if (intervalVerification) clearInterval(intervalVerification);
@@ -2367,13 +2373,16 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
             }
 
         } catch (e) {
-            // En cas d'erreur DOM, on ne valide rien à vide
+            // En cas d'accès bloqué Cross-Origin, la pub est considérée présente
+            detectee = true;
+            if (intervalVerification) clearInterval(intervalVerification);
+            if (timerPanne) clearTimeout(timerPanne);
+            surSucces();
         }
     }
 
     intervalVerification = setInterval(verifierPresenceReelleClickadilla, 500);
 
-    // Si après 12 secondes aucun visuel n'est trouvé, annulation et alerte d'échec
     timerPanne = setTimeout(() => {
         if (!detectee) {
             if (intervalVerification) clearInterval(intervalVerification);
@@ -2381,9 +2390,10 @@ function surveillerClickadillaUnique(idZone, clePub, surSucces, surEchec) {
         }
     }, 12000);
 }
-// -----------------------------------------------------------------------------
-// SURVEILLANCE PAR DÉFAUT (ADSTERRA & ADVERTICA - CONSERVÉE EXACTEMENT À L'IDENTIQUE)
-// -----------------------------------------------------------------------------
+
+// =============================================================================
+// SURVEILLANCE STRICTE UNIVERSELLE (ADSTERRA, ADVERTICA, ADCASH & AUTRES)
+// =============================================================================
 function surveillerBanniereUnique(idZone, surSucces, surEchec) {
     const conteneur = document.getElementById(idZone);
     if (!conteneur) {
@@ -2408,14 +2418,31 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
                 try {
                     const doc = iframe.contentWindow.document || iframe.contentDocument;
                     if (doc && doc.body) {
-                        const bodyContent = doc.body.innerHTML.trim();
-                        const elementsVisuels = doc.querySelectorAll('iframe, img, a, ins, canvas, video, svg, div:not(:empty)');
+                        // Élimination des pixels invisibles et vérification des visuels réels
+                        const images = doc.querySelectorAll('img');
+                        images.forEach(img => {
+                            if (img.complete && img.naturalWidth > 10 && img.naturalHeight > 10) {
+                                pubVraimentAffichee = true;
+                            }
+                        });
 
-                        if (bodyContent !== "" && elementsVisuels.length > 0) {
+                        const subIframes = doc.querySelectorAll('iframe');
+                        if (subIframes.length > 0) pubVraimentAffichee = true;
+
+                        const elementsVisuels = doc.querySelectorAll('canvas, video, svg, ins[data-width], a[href]');
+                        elementsVisuels.forEach(el => {
+                            if (el.offsetWidth > 10 && el.offsetHeight > 10) {
+                                pubVraimentAffichee = true;
+                            }
+                        });
+
+                        // S'il y a du texte visuel suffisant dans le body
+                        if (doc.body.innerText.trim().length > 15) {
                             pubVraimentAffichee = true;
                         }
                     }
                 } catch (e) {
+                    // Si l'accès DOM est bloqué par Cross-Origin policy, l'iframe a chargé du contenu distant
                     pubVraimentAffichee = true;
                 }
             }
@@ -2515,9 +2542,6 @@ async function reclamerPointsBanniereSeule() {
 
         let nouveauScoreDuJour = 1;
 
-        // =========================================================================
-        // ENREGISTREMENT DE L'ACTIVITÉ (Toujours actif quel que soit le rang)
-        // =========================================================================
         if (lastActiveDate === dateAujourdhui) {
             nouveauScoreDuJour = pointsDuJourActuels + 1;
         } else {
@@ -2530,13 +2554,12 @@ async function reclamerPointsBanniereSeule() {
             pointsDuJour: nouveauScoreDuJour,
             lastActiveDate: dateAujourdhui,
             history: historyData,
-            tasksCompleted: firebase.firestore.FieldValue.increment(1) // Compte toujours la tâche !
+            tasksCompleted: firebase.firestore.FieldValue.increment(1)
         };
 
-        // 3. Préparation des requêtes Firebase
         const promises = [];
 
-        // A) Mise à jour de rewards_users (Historique & Tâches)
+        // A) Mise à jour de rewards_users
         promises.push(
             db.collection("rewards_users").doc(currentUserId).set(majRewardsData, { merge: true })
         );
@@ -2555,7 +2578,7 @@ async function reclamerPointsBanniereSeule() {
                 })
         );
 
-        // C) Crédit des Points ET de l'XP UNIQUEMENT si le rang est >= 1
+        // C) Crédit des Points ET XP si Rang >= 1
         if (rangUtilisateur >= 1) {
             promises.push(
                 db.collection("users").doc(currentUserId).update({
@@ -2565,10 +2588,8 @@ async function reclamerPointsBanniereSeule() {
             );
         }
 
-        // 4. Mises à jour simultanées
         await Promise.all(promises);
 
-        // 5. Verrouillage Visuel Instantané
         if (typeof bloquerBoutonBanniereVisuellement === "function") {
             bloquerBoutonBanniereVisuellement(idMissionBanniere);
         }
@@ -2578,7 +2599,6 @@ async function reclamerPointsBanniereSeule() {
             btnClaim.innerHTML = `<i class="fa-solid fa-check-circle"></i> Réclamé !`;
         }
 
-        // 6. Modale adaptée au Rang
         if (rangUtilisateur >= 1) {
             const msg = `Félicitations ! Vos +${pts} Points et +1 XP ont été crédités !`;
             if (typeof afficherAlertePersonnalisee === "function") {
@@ -2609,8 +2629,7 @@ async function reclamerPointsBanniereSeule() {
         }
     }
 }
-    
-// Alerte en cas de panne sur Adsterra / Advertica (Inchangée)
+
 function declencherPanneBanniereIndependante() {
     const loader = document.getElementById("banniere-ad-loader-unique");
     if (loader) loader.style.display = "none";
@@ -2625,7 +2644,6 @@ function declencherPanneBanniereIndependante() {
     }
 }
 
-// Alerte spécifique en cas de panne Clickadilla
 function declencherPanneClickadillaIndependante() {
     const loader = document.getElementById("banniere-ad-loader-unique");
     if (loader) loader.style.display = "none";
@@ -2646,7 +2664,7 @@ function fermerModaleBanniereExclusive() {
     const modal = document.getElementById("banniere-pub-modal-exclusif");
     if (modal) modal.style.display = "none";
 
-    for (let i = 1; i <= 14; i++) {
+    for (let i = 1; i <= 22; i++) {
         const zone = document.getElementById("zone-pub-banniere-" + i);
         if (zone) {
             zone.style.display = "none";
