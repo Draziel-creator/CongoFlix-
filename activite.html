@@ -1522,12 +1522,9 @@ function enregistrerTacheDansFirebase(taskId) {
 }
 
 // =============================================================================
-// 3. LOGIQUE MISSIONS VIDÉO (MODALE VIDÉO UNIFIÉE)
+// 3. LOGIQUE MISSIONS VIDÉO (MODALE VIDÉO UNIFIÉE & DÉTECTION ADCASH / CLICKADILLA)
 // =============================================================================
 
-// =============================================================================
-// SURVEILLANCE STRICTE VIDÉO CLICKADILLA / VAST (ANTI-POINTS GRATUITS)
-// =============================================================================
 function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
     const conteneur = document.getElementById(idZone);
     if (!conteneur) {
@@ -1544,15 +1541,20 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
 
         let pubVraimentAffichee = false;
 
-        // 1. Recherche d'une balise <video> réelle qui s'exécute dans le DOM
+        // 1. Recherche d'une balise <video> réelle (Clickadilla ou Adcash/FluidPlayer)
         const videos = conteneur.querySelectorAll('video');
         videos.forEach(v => {
-            if (v.offsetWidth > 10 && v.offsetHeight > 10 && (v.readyState > 0 || v.currentTime > 0 || v.videoWidth > 0)) {
+            if (v.offsetWidth > 10 || v.offsetHeight > 10 || v.readyState > 0 || v.currentTime > 0 || v.videoWidth > 0) {
                 pubVraimentAffichee = true;
             }
         });
 
-        // 2. Recherche d'une iframe injectée par le lecteur VAST
+        // 2. Recherche spécifique aux conteneurs FluidPlayer (Adcash VAST)
+        if (conteneur.querySelector('.fluid_video_wrapper, .fluid_controls_container, .fluid_initial_play_button')) {
+            pubVraimentAffichee = true;
+        }
+
+        // 3. Recherche d'une iframe injectée (Clickadilla / Lecteur VAST externe)
         const iframes = conteneur.querySelectorAll('iframe');
         iframes.forEach(iframe => {
             try {
@@ -1567,12 +1569,12 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
                     }
                 }
             } catch (crossOriginErr) {
-                // Si l'accès est bloqué par Cross-Origin, cela confirme qu'un lecteur vidéo externe actif est injecté !
+                // L'accès cross-origin confirme qu'une iframe externe active est injectée
                 pubVraimentAffichee = true;
             }
         });
 
-        // VALIDATION : Si une vraie vidéo est en cours
+        // VALIDATION : Si une vraie vidéo est détectée
         if (pubVraimentAffichee) {
             detectee = true;
             if (intervalVerification) clearInterval(intervalVerification);
@@ -1583,13 +1585,13 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
 
     intervalVerification = setInterval(verifierLecteurVideoActif, 500);
 
-    // Si après 9 secondes aucun visuel n'est trouvé, annulation et alerte d'échec
+    // Temps de tolérance de 10 secondes pour le chargement du flux publicitaire
     timerPanne = setTimeout(() => {
         if (!detectee) {
             if (intervalVerification) clearInterval(intervalVerification);
             surEchec();
         }
-    }, 9000);
+    }, 10000);
 }
 
 // =============================================================================
@@ -1677,14 +1679,27 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     try {
         // CAS 1 : C'est un lien VAST Adcash (commence par http)
         if (zoneId.startsWith("http")) {
-            conteneurVideo.innerHTML = `<video id="player-adcash-${indexVideo}" style="width:100%; height:100%;"></video>`;
+            const idPlayerAdcash = `player-adcash-${indexVideo}`;
+            conteneurVideo.innerHTML = `<video id="${idPlayerAdcash}" style="width:100%; height:100%;"></video>`;
             
-            fluidPlayer(`player-adcash-${indexVideo}`, {
-                layoutControls: { fillToContainer: true, autoPlay: true, mute: true },
-                vastOptions: { adList: [{ roll: 'preRoll', vastTag: zoneId }] }
-            });
+            if (typeof fluidPlayer === "function") {
+                fluidPlayer(idPlayerAdcash, {
+                    layoutControls: { fillToContainer: true, autoPlay: true, mute: true },
+                    vastOptions: { adList: [{ roll: 'preRoll', vastTag: zoneId }] }
+                });
+            }
 
-            // Utilise ton propre détecteur existant
+            // Écouteurs directs sur l'élément vidéo Adcash pour déclenchement immédiat
+            const elVideoAdcash = document.getElementById(idPlayerAdcash);
+            if (elVideoAdcash) {
+                const triggerDirect = () => afficherDoigtImmediatement();
+                elVideoAdcash.addEventListener("play", triggerDirect);
+                elVideoAdcash.addEventListener("playing", triggerDirect);
+                elVideoAdcash.addEventListener("timeupdate", triggerDirect);
+                elVideoAdcash.addEventListener("loadedmetadata", triggerDirect);
+            }
+
+            // Surveillance globale en parallèle
             surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
         } 
         // CAS 2 : C'est Clickadilla (ID numérique classique)
@@ -1702,6 +1717,7 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
         afficherErreurPanne();
     }
 }
+
 function declencherPlayFlux(event) {
     if (event) {
         event.preventDefault();
@@ -1763,7 +1779,7 @@ function demarrerDecompte10Sec() {
 }
 
 // =============================================================================
-// RÉCLAMATION VIDÉO (ÉCRITURE DIRECTE PAR DATE YYYY-MM-DD)
+// RÉCLAMATION VIDÉO (ÉCRITURE SÉCURISÉE DES POINTS & XP)
 // =============================================================================
 async function reclamerPointsBouton1(pts) {
     const currentUserId = (typeof userId !== "undefined" && userId) ? userId : (typeof recupererIdentifiantUtilisateur === "function" ? recupererIdentifiantUtilisateur() : (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null));
@@ -1805,9 +1821,6 @@ async function reclamerPointsBouton1(pts) {
 
         let nouveauScoreDuJour = 1;
 
-        // =========================================================================
-        // ENREGISTREMENT DE L'ACTIVITÉ (Toujours actif quel que soit le rang)
-        // =========================================================================
         if (lastActiveDate === dateAujourdhui) {
             nouveauScoreDuJour = pointsDuJourActuels + 1;
         } else {
@@ -1820,13 +1833,13 @@ async function reclamerPointsBouton1(pts) {
             pointsDuJour: nouveauScoreDuJour,
             lastActiveDate: dateAujourdhui,
             history: historyData,
-            tasksCompleted: firebase.firestore.FieldValue.increment(1) // Compte toujours la tâche !
+            tasksCompleted: firebase.firestore.FieldValue.increment(1)
         };
 
         // 3. Préparation des requêtes Firebase
         const promises = [];
 
-        // A) Mise à jour de la collection rewards_users (Historique & Tâches)
+        // A) Mise à jour de la collection rewards_users
         promises.push(
             db.collection("rewards_users").doc(currentUserId).set(majRewardsData, { merge: true })
         );
@@ -1845,13 +1858,16 @@ async function reclamerPointsBouton1(pts) {
                 })
         );
 
-        // C) Crédit des Points et de l'XP UNIQUEMENT si le rang est >= 1
+        // C) Crédit des Points et de l'XP si le rang est >= 1
+        // (Écrit dans pointsDuJour, pointsDuJours et points pour une compatibilité totale sans erreur)
         if (rangUtilisateur >= 1) {
             promises.push(
-                db.collection("users").doc(currentUserId).update({
+                db.collection("users").doc(currentUserId).set({
                     xp: firebase.firestore.FieldValue.increment(1),
-                    pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter)
-                })
+                    pointsDuJour: firebase.firestore.FieldValue.increment(pointsAAjouter),
+                    pointsDuJours: firebase.firestore.FieldValue.increment(pointsAAjouter),
+                    points: firebase.firestore.FieldValue.increment(pointsAAjouter)
+                }, { merge: true })
             );
         }
 
@@ -1917,12 +1933,12 @@ function fermerModaleActive() {
     if (finger) finger.style.display = "none";
 
     for (let i = 1; i <= 20; i++) {
-    const zoneTemp = document.getElementById("zone-pub-video" + i);
-    if (zoneTemp) {
-        zoneTemp.style.display = "none";
-        zoneTemp.innerHTML = "";
+        const zoneTemp = document.getElementById("zone-pub-video" + i);
+        if (zoneTemp) {
+            zoneTemp.style.display = "none";
+            zoneTemp.innerHTML = "";
+        }
     }
-}
 
     const zoneAlt = document.getElementById("zone-pub-alternative");
     if (zoneAlt) {
