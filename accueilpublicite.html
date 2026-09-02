@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>PUBLICITÉ</title>
+    
+    <!-- ÉTAPE 1 ADCASH : Bibliothèque officielle dans le <head> -->
+    <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body, html {
@@ -21,7 +25,7 @@
         }
 
         /* ==========================================================================
-           1. ÉCRAN DE DÉMARRAGE (SPLASH) - 100% VIDE, UNIQUEMENT TON IMAGE
+           1. ÉCRAN DE DÉMARRAGE (SPLASH)
            ========================================================================== */
         #custom-splash { 
             position: fixed; 
@@ -35,7 +39,7 @@
         }
 
         /* ==========================================================================
-           2. PAGE TRANSITOIRE : TRIPLE PUBLICITÉ ADSTERRA (STYLE CORRIGÉ)
+           2. PAGE TRANSITOIRE : ADCASH INTERSTITIEL
            ========================================================================== */
         #pub-page { 
             position: fixed; 
@@ -49,15 +53,13 @@
             z-index: 20000; 
         }
 
-        /* Nouveau conteneur épuré et stylisé (sans les pointillés bleus de Congoflix) */
         .pub-box {
             border: 1px solid #1a1a1a; 
-            padding: 25px 20px; 
+            padding: 30px 25px; 
             border-radius: 20px; 
             text-align: center;
-            max-height: 92vh;
-            max-width: 95%;
-            overflow-y: auto;
+            max-width: 90%;
+            width: 320px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -65,42 +67,18 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
         }
 
-        /* Ligne de séparation supérieure moderne */
         .pub-header-line {
             width: 80%;
             height: 1px;
             background: linear-gradient(to right, transparent, #333, transparent);
-            margin: 12px 0;
+            margin: 15px 0;
         }
 
-        /* Ligne de séparation inférieure moderne */
         .pub-footer-line {
             width: 60%;
             height: 1px;
             background: linear-gradient(to right, transparent, #222, transparent);
-            margin: 12px 0 15px 0;
-        }
-
-        .ad-triple-wrapper {
-            display: flex;
-            flex-direction: row; 
-            justify-content: center;
-            align-items: center;
-            gap: 0px; 
-            margin-top: 5px;
-            margin-bottom: 5px;
-            background-color: #0b0b0b;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid #111;
-        }
-
-        .ad-zone-160x600 {
-            width: 160px;
-            height: 600px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 15px 0;
         }
 
         #skip-container {
@@ -138,7 +116,7 @@
         }
 
         /* ==========================================================================
-           3. APPLICATION PRINCIPALE (L'ACCUEIL APRÈS LA PUB)
+           3. APPLICATION PRINCIPALE
            ========================================================================== */
         .app-container {
             width: 100%;
@@ -230,46 +208,7 @@
             
             <div class="pub-header-line"></div>
             
-            <div class="ad-triple-wrapper">
-                <div class="ad-zone-160x600">
-                    <script type="text/javascript">
-                        atOptions = {
-                            'key' : '355c9d0ee6ac5ec71d84d7f879fdc153',
-                            'format' : 'iframe',
-                            'height' : 600,
-                            'width' : 160,
-                            'params' : {}
-                        };
-                    </script>
-                    <script type="text/javascript" src="https://www.highperformanceformat.com/355c9d0ee6ac5ec71d84d7f879fdc153/invoke.js"></script>
-                </div>
-
-                <div class="ad-zone-160x600">
-                    <script type="text/javascript">
-                        atOptions = {
-                            'key' : '355c9d0ee6ac5ec71d84d7f879fdc153',
-                            'format' : 'iframe',
-                            'height' : 600,
-                            'width' : 160,
-                            'params' : {}
-                        };
-                    </script>
-                    <script type="text/javascript" src="https://www.highperformanceformat.com/355c9d0ee6ac5ec71d84d7f879fdc153/invoke.js"></script>
-                </div>
-
-                <div class="ad-zone-160x600">
-                    <script type="text/javascript">
-                        atOptions = {
-                            'key' : '355c9d0ee6ac5ec71d84d7f879fdc153',
-                            'format' : 'iframe',
-                            'height' : 600,
-                            'width' : 160,
-                            'params' : {}
-                        };
-                    </script>
-                    <script type="text/javascript" src="https://www.highperformanceformat.com/355c9d0ee6ac5ec71d84d7f879fdc153/invoke.js"></script>
-                </div>
-            </div>
+            <p style="color: #888; font-size: 12px; margin: 15px 0;">Annonce en cours d'affichage...</p>
 
             <div class="pub-footer-line"></div>
 
@@ -326,14 +265,22 @@
         const mainApp = document.getElementById('main-app');
         const btnSkip = document.getElementById('btn-skip');
 
-        // 1. Fermeture du Splash Screen après exactement 5 secondes (5000ms) et apparition des Pubs
+        // 1. Fermeture du Splash Screen après 5 secondes, affichage de pub-page & déclenchement de l'interstitiel Adcash
         setTimeout(() => {
             splash.style.display = 'none';
             pubPage.style.display = 'flex';
+            
+            // ÉTAPE 2 ADCASH : Lancement de l'interstitiel Zone 12091866
+            if (typeof aclib !== "undefined" && aclib.runInterstitial) {
+                aclib.runInterstitial({
+                    zoneId: '12091866',
+                });
+            }
+
             demarrerCompteur();
         }, 5000);
 
-        // 2. Lancement du compte à rebours de 5 secondes
+        // 2. Compte à rebours du bouton de redirection
         function demarrerCompteur() {
             let temps = 5;
             const interval = setInterval(() => {
@@ -348,7 +295,7 @@
             }, 1000);
         }
 
-        // 3. Gestion du comportement au clic sur le lien "✕"
+        // 3. Redirection vers go:w1 ou fermeture de l'écran pub
         btnSkip.addEventListener('click', (e) => {
             if (!btnSkip.classList.contains('ready')) {
                 e.preventDefault();
@@ -372,7 +319,7 @@
         });
 
         document.getElementById('adClick').addEventListener('click', function() {
-            console.log("Redirection AdSterra activée.");
+            console.log("Action de clic effectuée.");
         });
     </script>
 </body>
