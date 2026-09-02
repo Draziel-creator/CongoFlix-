@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrateur - Publicité RDC</title>
+    <!-- Tailwind CSS pour un design moderne -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b',
+                        bordercolor: '#334155'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: bold; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- BARRE DE NAVIGATION SUPÉRIEURE -->
+    <header class="bg-cardbg border-b border-bordercolor p-4 sticky top-0 z-50 flex justify-between items-center shadow-lg">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid => fa-shield-halved text-blue-500 text-2xl"></i>
+            <h1 class="text-xl font-bold tracking-wide">PANNEAU ADMIN - LECTURE</h1>
+        </div>
+        <div id="connection-status" class="flex items-center gap-2 text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-3 py-1.5 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Connecté à Firebase
+        </div>
+    </header>
+
+    <!-- NAVIGATION PAR ONGLETS -->
+    <nav class="bg-cardbg/50 border-b border-bordercolor px-6 flex gap-6 overflow-x-auto">
+        <button onclick="switchTab('retraits')" id="tab-retraits" class="py-4 text-sm font-medium transition-all flex items-center gap-2 tab-active">
+            <i class="fa-solid fa-hand-holding-dollar"></i> Demandes de Retrait
+        </button>
+        <button onclick="switchTab('users')" id="tab-users" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200">
+            <i class="fa-solid fa-users"></i> Utilisateurs (Rewards)
+        </button>
+        <button onclick="switchTab('proofs')" id="tab-proofs" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Preuves de Paiement
+        </button>
+        <button onclick="switchTab('installs')" id="tab-installs" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200">
+            <i class="fa-solid fa-download"></i> Installations Pending
+        </button>
+    </nav>
+
+    <!-- CONTENU PRINCIPAL -->
+    <main class="flex-1 p-6 max-w-7xl w-full mx-auto">
+
+        <!-- 1. SECTION DEMANDES DE RETRAIT -->
+        <section id="sec-retraits" class="space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-slate-200">Historique & Demandes de Retrait</h2>
+                <span id="count-retraits" class="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-slate-400 border border-bordercolor">0 demande(s)</span>
+            </div>
+            
+            <div class="overflow-x-auto bg-cardbg rounded-xl border border-bordercolor shadow-sm">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-900/80 text-xs uppercase text-slate-400 border-b border-bordercolor">
+                        <tr>
+                            <th class="p-3.5">Utilisateur</th>
+                            <th class="p-3.5">Montant USD</th>
+                            <th class="p-3.5">Coins Déduits</th>
+                            <th class="p-3.5">Méthode</th>
+                            <th class="p-3.5">Adresse de Réception</th>
+                            <th class="p-3.5">Statut</th>
+                            <th class="p-3.5">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-retraits-body" class="divide-y divide-bordercolor">
+                        <tr><td colspan="7" class="p-4 text-center text-slate-500">Chargement des données...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 2. SECTION REWARDS USERS -->
+        <section id="sec-users" class="space-y-4 hidden">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-slate-200">Utilisateurs & Parrainages (Rewards)</h2>
+                <span id="count-users" class="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-slate-400 border border-bordercolor">0 utilisateur(s)</span>
+            </div>
+
+            <div class="overflow-x-auto bg-cardbg rounded-xl border border-bordercolor shadow-sm">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-900/80 text-xs uppercase text-slate-400 border-b border-bordercolor">
+                        <tr>
+                            <th class="p-3.5">Utilisateur</th>
+                            <th class="p-3.5">Coins</th>
+                            <th class="p-3.5">XP / Tâches</th>
+                            <th class="p-3.5">Parrain (Sponsor ID)</th>
+                            <th class="p-3.5">Filleuls Inscrits</th>
+                            <th class="p-3.5">Pays / Âge</th>
+                            <th class="p-3.5">Dernière Activité</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-users-body" class="divide-y divide-bordercolor">
+                        <tr><td colspan="7" class="p-4 text-center text-slate-500">Chargement des données...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. SECTION PREUVES DE PAIEMENT -->
+        <section id="sec-proofs" class="space-y-4 hidden">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-slate-200">Preuves de Paiement Soumises</h2>
+                <span id="count-proofs" class="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-slate-400 border border-bordercolor">0 preuve(s)</span>
+            </div>
+
+            <div id="grid-proofs" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 text-center text-slate-500 col-span-2">Chargement des données...</div>
+            </div>
+        </section>
+
+        <!-- 4. SECTION PENDING INSTALLS -->
+        <section id="sec-installs" class="space-y-4 hidden">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-slate-200">Installations en Attente (Referrals)</h2>
+                <span id="count-installs" class="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-slate-400 border border-bordercolor">0 installation(s)</span>
+            </div>
+
+            <div class="overflow-x-auto bg-cardbg rounded-xl border border-bordercolor shadow-sm">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-900/80 text-xs uppercase text-slate-400 border-b border-bordercolor">
+                        <tr>
+                            <th class="p-3.5">ID Parrain (RefID)</th>
+                            <th class="p-3.5">Adresse IP</th>
+                            <th class="p-3.5">Navigateur / System (UserAgent)</th>
+                            <th class="p-3.5">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-installs-body" class="divide-y divide-bordercolor">
+                        <tr><td colspan="4" class="p-4 text-center text-slate-500">Chargement des données...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODULE FIREBASE V10 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Configuration Firebase officielle de ton projet
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+            authDomain: "publicite-6445c.firebaseapp.com",
+            projectId: "publicite-6445c",
+            storageBucket: "publicite-6445c.firebasestorage.app",
+            messagingSenderId: "663385244466",
+            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
+            measurementId: "G-T37TGB3SR0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Helper: Formatage des dates/timestamps
+        function formatDate(value) {
+            if (!value) return "N/A";
+            if (value.seconds) {
+                return new Date(value.seconds * 1000).toLocaleString('fr-FR');
+            }
+            if (typeof value === 'string' || typeof value === 'number') {
+                const parsedDate = new Date(value);
+                return !isNaN(parsedDate) ? parsedDate.toLocaleString('fr-FR') : value;
+            }
+            return "N/A";
+        }
+
+        // 1. ÉCOUTE DE LA COLLECTION "demandes_retrait"
+        onSnapshot(collection(db, "demandes_retrait"), (snapshot) => {
+            const container = document.getElementById("table-retraits-body");
+            document.getElementById("count-retraits").innerText = `${snapshot.size} demande(s)`;
+            
+            if (snapshot.empty) {
+                container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Aucune demande de retrait enregistrée.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const statusBadge = data.statut === 'en_attente' 
+                    ? '<span class="bg-amber-950 text-amber-400 border border-amber-800 text-xs px-2 py-0.5 rounded">En attente</span>'
+                    : '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-2 py-0.5 rounded">'+(data.statut || 'N/A')+'</span>';
+
+                html += `
+                    <tr class="hover:bg-slate-800/50">
+                        <td class="p-3.5">
+                            <div class="font-medium text-slate-100">${data.userEmail || 'Inconnu'}</div>
+                            <div class="text-xs text-slate-500 font-mono">${data.userId || doc.id}</div>
+                        </td>
+                        <td class="p-3.5 font-bold text-emerald-400">$${data.montantUSD ?? 0}</td>
+                        <td class="p-3.5 text-amber-400 font-medium">${data.coinsDeduits ?? 0} coins</td>
+                        <td class="p-3.5"><span class="bg-slate-800 px-2 py-1 rounded text-xs">${data.methode || 'N/A'}</span></td>
+                        <td class="p-3.5 font-mono text-xs text-blue-300 break-all select-all">${data.adresseReception || 'N/A'}</td>
+                        <td class="p-3.5">${statusBadge}</td>
+                        <td class="p-3.5 text-xs text-slate-400">${formatDate(data.dateDemande)}</td>
+                    </tr>
+                `;
+            });
+            container.innerHTML = html;
+        });
+
+        // 2. ÉCOUTE DE LA COLLECTION "rewards_users"
+        onSnapshot(collection(db, "rewards_users"), (snapshot) => {
+            const container = document.getElementById("table-users-body");
+            document.getElementById("count-users").innerText = `${snapshot.size} utilisateur(s)`;
+
+            if (snapshot.empty) {
+                container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Aucun utilisateur trouvé.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const sponsor = data.parrainePar || data.sponsorId || null;
+
+                html += `
+                    <tr class="hover:bg-slate-800/50">
+                        <td class="p-3.5">
+                            <div class="flex items-center gap-3">
+                                ${data.photoURL ? `<img src="${data.photoURL}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">${(data.name || 'U')[0].toUpperCase()}</div>`}
+                                <div>
+                                    <div class="font-medium text-slate-100">${data.name || 'Sans Nom'}</div>
+                                    <div class="text-xs text-slate-500 font-mono">${doc.id}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-3.5 font-bold text-amber-400">${data.coins ?? 0}</td>
+                        <td class="p-3.5 text-xs">
+                            <span class="text-blue-400 font-bold">${data.xp ?? 0} XP</span> | 
+                            <span class="text-slate-400">${data.tasksCompleted ?? 0} tâches</span>
+                        </td>
+                        <td class="p-3.5 font-mono text-xs">
+                            ${sponsor ? `<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded">${sponsor}</span>` : '<span class="text-slate-600">Aucun</span>'}
+                        </td>
+                        <td class="p-3.5 text-slate-300 font-medium">${data.invitedCount ?? 0} filleul(s)</td>
+                        <td class="p-3.5 text-xs text-slate-400">
+                            ${data.country || 'N/A'} ${data.age ? `(${data.age} ans)` : ''}
+                        </td>
+                        <td class="p-3.5 text-xs text-slate-400">${data.lastActiveDate || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+            container.innerHTML = html;
+        });
+
+        // 3. ÉCOUTE DE LA COLLECTION "payment_proofs"
+        onSnapshot(collection(db, "payment_proofs"), (snapshot) => {
+            const container = document.getElementById("grid-proofs");
+            document.getElementById("count-proofs").innerText = `${snapshot.size} preuve(s)`;
+
+            if (snapshot.empty) {
+                container.innerHTML = `<div class="p-4 text-center text-slate-500 col-span-2">Aucune preuve de paiement envoyée.</div>`;
+                return;
+            }
+
+            let html = "";
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                html += `
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor flex flex-col justify-between gap-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-slate-100">${data.name || 'Anonyme'}</h3>
+                                <p class="text-xs text-slate-400">${data.userEmail || 'Sans email'}</p>
+                            </div>
+                            <span class="text-xs text-slate-500">${formatDate(data.timestamp)}</span>
+                        </div>
+                        <p class="text-sm italic bg-slate-900/60 p-2.5 rounded border border-bordercolor/50 text-slate-300 font-sans">
+                            "${data.message || 'Aucun message'}"
+                        </p>
+                        ${data.videoUrl ? `
+                            <a href="${data.videoUrl}" target="_blank" class="text-xs bg-blue-600 hover:bg-blue-500 text-white p-2 rounded text-center font-medium transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play"></i> Visionner la preuve vidéo (Cloudinary)
+                            </a>
+                        ` : '<span class="text-xs text-slate-600">Aucune vidéo attachée</span>'}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        });
+
+        // 4. ÉCOUTE DE LA COLLECTION "pending_installs"
+        onSnapshot(collection(db, "pending_installs"), (snapshot) => {
+            const container = document.getElementById("table-installs-body");
+            document.getElementById("count-installs").innerText = `${snapshot.size} installation(s)`;
+
+            if (snapshot.empty) {
+                container.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Aucune installation en attente.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                html += `
+                    <tr class="hover:bg-slate-800/50">
+                        <td class="p-3.5 font-mono text-xs text-indigo-400">${data.refId || 'N/A'}</td>
+                        <td class="p-3.5 font-mono text-xs text-emerald-400">${data.ip || 'N/A'}</td>
+                        <td class="p-3.5 text-xs text-slate-400 max-w-xs truncate" title="${data.userAgent}">${data.userAgent || 'N/A'}</td>
+                        <td class="p-3.5 text-xs text-slate-400">${formatDate(data.createdAt)}</td>
+                    </tr>
+                `;
+            });
+            container.innerHTML = html;
+        });
+    </script>
+
+    <!-- LOGIQUE D'ONGLETS SCRIPT -->
+    <script>
+        function switchTab(tabName) {
+            const tabs = ['retraits', 'users', 'proofs', 'installs'];
+            tabs.forEach(t => {
+                document.getElementById(`sec-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('tab-active');
+                document.getElementById(`tab-${t}`).classList.add('text-slate-400');
+            });
+
+            document.getElementById(`sec-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('tab-active');
+            document.getElementById(`tab-${tabName}`).classList.remove('text-slate-400');
+        }
+    </script>
+</body>
+</html>
