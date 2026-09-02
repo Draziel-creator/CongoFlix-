@@ -2418,7 +2418,7 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
                 try {
                     const doc = iframe.contentWindow.document || iframe.contentDocument;
                     if (doc && doc.body) {
-                        // 1. Vérification des images réelles
+                        // Élimination des pixels invisibles et vérification des visuels réels
                         const images = doc.querySelectorAll('img');
                         images.forEach(img => {
                             if (img.complete && img.naturalWidth > 10 && img.naturalHeight > 10) {
@@ -2426,11 +2426,9 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
                             }
                         });
 
-                        // 2. Sub-iframes (ex: Adsterra / Advertica)
                         const subIframes = doc.querySelectorAll('iframe');
                         if (subIframes.length > 0) pubVraimentAffichee = true;
 
-                        // 3. Éléments interactifs / visuels
                         const elementsVisuels = doc.querySelectorAll('canvas, video, svg, ins[data-width], a[href]');
                         elementsVisuels.forEach(el => {
                             if (el.offsetWidth > 10 && el.offsetHeight > 10) {
@@ -2438,24 +2436,14 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
                             }
                         });
 
-                        // 4. Texte visible
+                        // S'il y a du texte visuel suffisant dans le body
                         if (doc.body.innerText.trim().length > 15) {
                             pubVraimentAffichee = true;
                         }
                     }
                 } catch (e) {
-                    // SÉCURITÉ ADCASH / CROSS-ORIGIN :
-                    // On ne valide QUE si l'iframe sous-jacente possède un contenu avec une hauteur/largeur réelle non vide
-                    try {
-                        if (iframe.contentWindow && iframe.contentWindow.length > 0) {
-                            pubVraimentAffichee = true;
-                        }
-                    } catch (errSub) {
-                        // Si bloqué totalement mais que la taille calculée est valide
-                        if (iframe.getBoundingClientRect().height > 20) {
-                            pubVraimentAffichee = true;
-                        }
-                    }
+                    // Si l'accès DOM est bloqué par Cross-Origin policy, l'iframe a chargé du contenu distant
+                    pubVraimentAffichee = true;
                 }
             }
         });
@@ -2475,7 +2463,7 @@ function surveillerBanniereUnique(idZone, surSucces, surEchec) {
             if (intervalVerification) clearInterval(intervalVerification);
             surEchec();
         }
-    }, 10000); // 10 secondes de tolérance max
+    }, 12000);
 }
 function demarrerDecompteBanniere30Sec() {
     let secs = 30;
