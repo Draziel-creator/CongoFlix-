@@ -160,6 +160,20 @@
         transform: translateY(-2px);
     }
 }
+        /* RETRAITS EN ATTENTE */
+.pending-item { background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+.pending-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+.pending-info { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); }
+.btn-cancel-req { background: rgba(255, 77, 77, 0.15); border: 1px solid rgba(255, 77, 77, 0.4); color: var(--accent-red); padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; align-self: flex-end; }
+
+/* REÇU STYLISÉ ENTREPRISE (PUBLICITÉ+) */
+.receipt-card { background: #0b101d; border: 1px dashed #00ffaa; border-radius: 16px; padding: 18px; margin-bottom: 14px; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(0,255,170,0.05); }
+.receipt-card::before { content: "PUBLICITÉ+"; position: absolute; right: -20px; bottom: -10px; font-size: 2.5rem; font-weight: 900; color: rgba(255,255,255,0.03); letter-spacing: 2px; transform: rotate(-15deg); pointer-events: none; }
+.receipt-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px border-box rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 12px; }
+.receipt-logo { font-weight: 800; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 6px; }
+.receipt-status-badge { background: rgba(0, 255, 170, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); font-size: 0.65rem; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 800; }
+.receipt-row { display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px; color: #cbd5e1; }
+.receipt-total { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px; font-weight: 800; font-size: 0.95rem; color: var(--accent-green); display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
@@ -243,7 +257,7 @@
             </div>
         </div>
 
-        <!-- MODULE DE PREUVE (S'AICHE SEULEMENT POUR LE 2ÈME RETRAIT) -->
+        <!-- MODULE DE PREUVE -->
         <div class="proof-required-box" id="proof-required-box">
             <div class="proof-title">
                 <i class="fa-solid fa-video"></i> Preuve du 1er retrait requise !
@@ -285,26 +299,42 @@
             <i class="fa-solid fa-paper-plane"></i> CONFIRMER LE RETRAIT
         </button>
 
+        <!-- SECTION 2 : DEMANDES EN ATTENTE -->
+        <div class="card" style="margin-top:24px;">
+            <div class="card-header"><i class="fa-solid fa-clock-rotate-left" style="color:#ffc107;"></i> RETRAITS EN ATTENTE D'APPROBATION</div>
+            <div id="pending-withdrawals-list">
+                <p style="font-size:0.78rem; color:var(--text-muted);">Aucune demande en attente.</p>
+            </div>
+        </div>
+
+        <!-- SECTION 3 : REÇUS DE PAIEMENT (APPROUVÉS) -->
+        <div class="card">
+            <div class="card-header"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--accent-green);"></i> REÇUS DE PAIEMENT (Publicité+)</div>
+            <div id="receipts-list">
+                <p style="font-size:0.78rem; color:var(--text-muted);">Aucun reçu de paiement disponible.</p>
+            </div>
+        </div>
+
     </div>
 
-   <nav class="nav-bar">
-    <a href="lancementpublicite.html" class="nav-item">
-        <i class="fa-solid fa-house nav-icon"></i>
-        <span>Accueil</span>
-    </a>
-    <a href="messages.html" class="nav-item">
-        <i class="fa-regular fa-comment-dots nav-icon"></i>
-        <span>Messages</span>
-    </a>
-    <a href="statpub.html" class="nav-item">
-        <i class="fa-solid fa-chart-simple nav-icon"></i>
-        <span>Stats</span>
-    </a>
-    <a href="activite.html" class="nav-item">
-        <i class="fa-solid fa-bolt nav-icon"></i>
-        <span>Activités</span>
-    </a>
-</nav>
+    <nav class="nav-bar">
+        <a href="lancementpublicite.html" class="nav-item">
+            <i class="fa-solid fa-house nav-icon"></i>
+            <span>Accueil</span>
+        </a>
+        <a href="messages.html" class="nav-item">
+            <i class="fa-regular fa-comment-dots nav-icon"></i>
+            <span>Messages</span>
+        </a>
+        <a href="statpub.html" class="nav-item">
+            <i class="fa-solid fa-chart-simple nav-icon"></i>
+            <span>Stats</span>
+        </a>
+        <a href="activite.html" class="nav-item">
+            <i class="fa-solid fa-bolt nav-icon"></i>
+            <span>Activités</span>
+        </a>
+    </nav>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -324,12 +354,12 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // VOS IDENTIFIANTS CLOUDINARY (À REMPLACER PAR LES VOTRES)
     const CLOUDINARY_CLOUD_NAME = "drmvvvtfi"; 
     const CLOUDINARY_UPLOAD_PRESET = "mon claud";
 
     const COINS_PER_DOLLAR = 1000;
     const MIN_WITHDRAW_USD = 50;
+    const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours en millisecondes
 
     let currentUser = null;
     let userCoins = 0;
@@ -368,7 +398,7 @@
         btnClose.addEventListener('click', handleClose);
     }
 
-    // AUTHENTIFICATION & COMPTAGE DES RETRAITS
+    // AUTHENTIFICATION & CHARGEMENT
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUser = user;
@@ -376,26 +406,18 @@
             mettreAJourIHMVerificationEmail();
 
             try {
-                // Solde utilisateur
-                const userSnap = await getDoc(doc(db, "rewards_users", user.uid));
-                if (userSnap.exists()) {
-                    userCoins = userSnap.data().coins || 0;
-                    userCashValue = userCoins / COINS_PER_DOLLAR;
-                    document.getElementById('user-coins-display').innerText = userCoins.toLocaleString();
-                    document.getElementById('user-cash-display').innerText = `$${userCashValue.toFixed(2)}`;
-                    document.getElementById('max-limit-text').innerText = `$${userCashValue.toFixed(2)}`;
-                }
+                // Chargement Solde
+                await rechargerSoldeUtilisateur();
 
-                // 1. Nombre de retraits déjà enregistrés dans la collection demandes_retrait
+                // 1. Nombre total de demandes
                 const qRetraits = query(collection(db, "demandes_retrait"), where("userId", "==", user.uid));
                 const snapRetraits = await getDocs(qRetraits);
                 const countRetraits = snapRetraits.size;
 
-                // 2. Vérification si la preuve a été soumise
+                // 2. Preuve soumise
                 const proofSnap = await getDoc(doc(db, "user_proof_status", user.uid));
                 const hasSubmittedProof = proofSnap.exists() && proofSnap.data().submitted === true;
 
-                // RÈGLE : Seul le 2ème retrait (1 retrait déjà fait + pas de preuve) exige la vidéo
                 if (countRetraits === 1 && !hasSubmittedProof) {
                     requiresProof = true;
                     proofBox.style.display = "block";
@@ -403,6 +425,9 @@
                     requiresProof = false;
                     proofBox.style.display = "none";
                 }
+
+                // 3. Traiter les demandes (Attente, Auto-Remboursement après 7j, Reçus)
+                await chargerDemandesEtRecus(snapRetraits);
 
             } catch (e) {
                 console.error("Erreur de chargement :", e);
@@ -412,12 +437,136 @@
         }
     });
 
+    async function rechargerSoldeUtilisateur() {
+        const userSnap = await getDoc(doc(db, "rewards_users", currentUser.uid));
+        if (userSnap.exists()) {
+            userCoins = userSnap.data().coins || 0;
+            userCashValue = userCoins / COINS_PER_DOLLAR;
+            document.getElementById('user-coins-display').innerText = userCoins.toLocaleString();
+            document.getElementById('user-cash-display').innerText = `$${userCashValue.toFixed(2)}`;
+            document.getElementById('max-limit-text').innerText = `$${userCashValue.toFixed(2)}`;
+        }
+    }
+
+    // GESTION DES ATTENTES, EXPIRATION (7 jours) ET REÇUS
+    async function chargerDemandesEtRecus(snapshot) {
+        const pendingContainer = document.getElementById('pending-withdrawals-list');
+        const receiptsContainer = document.getElementById('receipts-list');
+
+        let pendingHTML = '';
+        let receiptsHTML = '';
+        let refundedCoinsTotal = 0;
+        const now = Date.now();
+
+        for (const docSnap of snapshot.docs) {
+            const data = docSnap.data();
+            const docId = docSnap.id;
+            const dateDemande = data.dateDemande ? data.dateDemande.toDate() : new Date();
+
+            // A. RÈGLE : Auto-Remboursement si > 7 jours sans approbation
+            if (data.statut === "en_attente") {
+                const diffTime = now - dateDemande.getTime();
+
+                if (diffTime >= ONE_WEEK_MS) {
+                    // Expiré : Restituer les pièces au solde
+                    await updateDoc(doc(db, "demandes_retrait", docId), { statut: "expire" });
+                    refundedCoinsTotal += (data.coinsDeduits || 0);
+                    continue;
+                }
+
+                // Affichage dans Retraits en attente
+                const joursRestants = Math.ceil((ONE_WEEK_MS - diffTime) / (1000 * 60 * 60 * 24));
+                pendingHTML += `
+                    <div class="pending-item">
+                        <div class="pending-header">
+                            <strong style="color: #fff;">$${parseFloat(data.montantUSD).toFixed(2)} (${data.methode})</strong>
+                            <span style="color:#ffc107; font-size:0.75rem; font-weight:700;"><i class="fa-solid fa-hourglass-half"></i> En attente</span>
+                        </div>
+                        <div class="pending-info">
+                            <span>Adresse : ${data.adresseReception}</span>
+                            <span>Expire dans : ~${joursRestants}j</span>
+                        </div>
+                        <button class="btn-cancel-req" onclick="annulerDemande('${docId}', ${data.coinsDeduits})">
+                            <i class="fa-solid fa-xmark"></i> Annuler le retrait
+                        </button>
+                    </div>
+                `;
+            }
+
+            // B. RÈGLE : Génération automatique du REÇU DE PAIEMENT si approuvé
+            if (data.statut === "approuve" || data.statut === "approved") {
+                const dateFormatted = dateDemande.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+                receiptsHTML += `
+                    <div class="receipt-card">
+                        <div class="receipt-header">
+                            <div class="receipt-logo">
+                                <i class="fa-solid fa-circle-check" style="color:var(--accent-green);"></i> PUBLICITÉ+
+                            </div>
+                            <span class="receipt-status-badge">REÇU D'APPROBATION</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span>ID Transaction :</span>
+                            <strong style="color:#fff;">#${docId.substring(0, 10).toUpperCase()}</strong>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Date :</span>
+                            <span>${dateFormatted}</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Bénéficiaire :</span>
+                            <span>${currentUser.email}</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Moyen de paiement :</span>
+                            <span>${data.methode}</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span>Adresse de destination :</span>
+                            <span style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${data.adresseReception}</span>
+                        </div>
+                        <div class="receipt-total">
+                            <span>Montant versé :</span>
+                            <span>$${parseFloat(data.montantUSD).toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Si des demandes ont expiré après 7 jours, mettre à jour les pièces de l'utilisateur
+        if (refundedCoinsTotal > 0) {
+            await updateDoc(doc(db, "rewards_users", currentUser.uid), {
+                coins: increment(refundedCoinsTotal)
+            });
+            await rechargerSoldeUtilisateur();
+            showModal("Demande expirée", "Une demande non approuvée après 7 jours a été annulée. Vos pièces ont été restituées à votre solde.", "info");
+        }
+
+        if (pendingHTML) pendingContainer.innerHTML = pendingHTML;
+        if (receiptsHTML) receiptsContainer.innerHTML = receiptsHTML;
+    }
+
+    // FONCTION D'ANNULATION MANUELLE PAR L'UTILISATEUR
+    window.annulerDemande = async (docId, coinsDeduits) => {
+        if (!confirm("Voulez-vous vraiment annuler cette demande de retrait ? Les pièces seront directement réintégrées dans votre solde.")) return;
+
+        try {
+            await updateDoc(doc(db, "demandes_retrait", docId), { statut: "annule" });
+            await updateDoc(doc(db, "rewards_users", currentUser.uid), {
+                coins: increment(coinsDeduits)
+            });
+            showModal("Retrait Annulé", "Votre demande a été annulée. Vos pièces sont de nouveau disponibles.", "success", () => location.reload());
+        } catch (err) {
+            showModal("Erreur", err.message, "error");
+        }
+    };
+
     videoFileInput.addEventListener('change', () => {
         const file = videoFileInput.files[0];
         if (file) document.getElementById('file-selected-name').innerText = file.name;
     });
 
-    // ENVOI CLOUDINARY + FIRESTORE
+    // ENVOI CLOUDINARY + FIRESTORE PREUVE
     document.getElementById('btn-submit-proof-file').addEventListener('click', async () => {
         const textVal = document.getElementById('proof-text-input').value.trim();
         const file = videoFileInput.files[0];
@@ -442,7 +591,6 @@
             const uploadData = await uploadRes.json();
             if (!uploadRes.ok) throw new Error(uploadData.error?.message || "Erreur de téléversement Cloudinary.");
 
-            // Enregistrement de la preuve
             await addDoc(collection(db, "payment_proofs"), {
                 userId: currentUser.uid,
                 userEmail: currentUser.email,
@@ -453,7 +601,6 @@
                 timestamp: serverTimestamp()
             });
 
-            // Mise à jour du statut
             await setDoc(doc(db, "user_proof_status", currentUser.uid), { submitted: true }, { merge: true });
 
             showModal("Preuve envoyée !", "Votre 2ème retrait est débloqué.", "success", () => location.reload());
@@ -579,7 +726,7 @@
                 coins: increment(-coinsToDeduct)
             });
 
-            showModal("Demande enregistrée !", "Retrait de $" + amountUsd.toFixed(2) + " soumis avec succès.", "success", () => location.reload());
+            showModal("Demande enregistrée !", "Votre retrait de $" + amountUsd.toFixed(2) + " est maintenant en attente d'approbation.", "success", () => location.reload());
         } catch (err) {
             showModal("Erreur", err.message, "error");
             btnSubmit.disabled = false;
@@ -595,16 +742,14 @@
         <button id="btn-close-modal" style="background: linear-gradient(135deg, #00ffaa, #00b8d4); color: #0b0f19; font-weight: 700; border: none; padding: 12px 28px; border-radius: 25px; cursor: pointer; font-size: 0.9rem; width: 100%;">D'accord</button>
     </div>
 </div>
-    <script>
+
+<script>
 document.addEventListener("DOMContentLoaded", () => {
-    // Récupère le nom du fichier actuel (ex: "lancementpublicite.html")
     const currentPage = window.location.pathname.split("/").pop() || "lancementpublicite.html";
     const navItems = document.querySelectorAll('.nav-bar .nav-item');
 
     navItems.forEach(item => {
         const itemHref = item.getAttribute('href');
-
-        // Compare le href du bouton avec la page actuelle
         if (itemHref === currentPage) {
             item.classList.add('active');
         } else {
