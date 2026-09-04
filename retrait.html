@@ -174,7 +174,66 @@
 .receipt-status-badge { background: rgba(0, 255, 170, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); font-size: 0.65rem; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 800; }
 .receipt-row { display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 6px; color: #cbd5e1; }
 .receipt-total { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; margin-top: 8px; font-weight: 800; font-size: 0.95rem; color: var(--accent-green); display: flex; justify-content: space-between; }
-    </style>
+/* ONGLET DE NAVIGATION ENTRE LES PAGES (HAUT) */
+.swipe-tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--input-bg);
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
+    margin-bottom: 16px;
+}
+.page-tab {
+    flex: 1;
+    padding: 10px 4px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.page-tab.active {
+    background: var(--card-bg);
+    color: var(--accent-green);
+    border-color: var(--accent-green);
+}
+
+/* CONTENEUR DE GLISSEMENT PAR SWIPE */
+.swipe-viewport {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Cache la barre de défilement Firefox */
+    margin: 0 -16px;
+    padding: 0 16px;
+}
+.swipe-viewport::-webkit-scrollbar {
+    display: none; /* Cache la barre de défilement Chrome/Safari */
+}
+
+/* CHAQUE PAGE SLIDE (100% DE LARGEUR) */
+.page-slide {
+    flex: 0 0 100%;
+    width: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    padding-right: 16px;
+}
+.page-slide:last-child {
+    padding-right: 0;
+}
+    
+</style>
 </head>
 <body>
 
@@ -193,126 +252,147 @@
             <strong id="user-cash-display">$0.00</strong>
         </div>
 
-        <!-- MONTANT -->
-        <div class="card">
-            <div class="card-header"><i class="fa-solid fa-wallet"></i> MONTANT À RETIRER</div>
-            <span style="font-size: 0.78rem; color: var(--text-muted); display:block; margin-bottom:6px;">Entrez le montant à retirer</span>
-            <div class="amount-input-box" id="amount-box">
-                <input type="number" id="withdraw-amount" value="50">
-                <span class="currency-badge">USD</span>
-            </div>
-            <div class="error-msg" id="amount-error-text">Le montant minimum de retrait est de $50.00.</div>
-            <div class="limits-row">
-                <span>Minimum : $50.00</span>
-                <span>Maximum : <span id="max-limit-text">$0.00</span></span>
-            </div>
+        <!-- ONGLETS DE NAVIGATION D'ENGAGEMENT DES PAGES -->
+        <div class="swipe-tabs">
+            <button type="button" class="page-tab active" onclick="goToPage(0)"><i class="fa-solid fa-paper-plane"></i> Demande</button>
+            <button type="button" class="page-tab" onclick="goToPage(1)"><i class="fa-solid fa-clock"></i> En attente</button>
+            <button type="button" class="page-tab" onclick="goToPage(2)"><i class="fa-solid fa-receipt"></i> Reçus</button>
         </div>
 
-        <!-- MÉTHODES -->
-        <div class="card">
-            <div class="card-header"><i class="fa-solid fa-wallet"></i> CHOISIR LE MOYEN DE RETRAIT</div>
-            
-            <div class="method-tabs">
-                <button type="button" class="tab-item active" id="tab-crypto"><i class="fa-solid fa-coins"></i> Crypto</button>
-                <button type="button" class="tab-item" id="tab-paypal"><i class="fa-brands fa-paypal"></i> PayPal</button>
-                <button type="button" class="tab-item" id="tab-autre"><i class="fa-solid fa-ellipsis"></i> Autre</button>
-            </div>
+        <!-- CONTENEUR GLOBAL POUR LE SWIPE GAUCHE / DROITE -->
+        <div class="swipe-viewport" id="swipe-viewport">
 
-            <div class="selected-method-card">
-                <div class="method-header-info">
-                    <div class="icon-box" id="method-icon-box" style="background:#f7931a;">₿</div>
-                    <div style="flex: 1;">
-                        <strong id="method-title">Bitcoin (BTC)</strong><br>
-                        <small id="method-sub" style="color: var(--text-muted); font-size:0.75rem;">Réseau : Bitcoin</small>
+            <!-- PAGE 1 : FORMULAIRE DE DEMANDE DE RETRAIT -->
+            <div class="page-slide">
+                
+                <!-- MONTANT -->
+                <div class="card">
+                    <div class="card-header"><i class="fa-solid fa-wallet"></i> MONTANT À RETIRER</div>
+                    <span style="font-size: 0.78rem; color: var(--text-muted); display:block; margin-bottom:6px;">Entrez le montant à retirer</span>
+                    <div class="amount-input-box" id="amount-box">
+                        <input type="number" id="withdraw-amount" value="50">
+                        <span class="currency-badge">USD</span>
                     </div>
-                    <span id="method-badge" style="background: rgba(0, 255, 170, 0.1); color: var(--accent-green); font-size: 0.7rem; padding: 4px 8px; border-radius: 6px;">Recommandé</span>
-                </div>
-
-                <div class="input-group">
-                    <label id="address-label" style="font-size:0.75rem; color: var(--text-muted); display:block; margin-bottom:6px;">Adresse Bitcoin</label>
-                    <div class="input-with-icon">
-                        <input type="text" id="withdraw-address" placeholder="Entrez votre adresse Bitcoin">
-                        <i class="fa-solid fa-qrcode" id="scan-btn" style="color: var(--text-muted);"></i>
+                    <div class="error-msg" id="amount-error-text">Le montant minimum de retrait est de $50.00.</div>
+                    <div class="limits-row">
+                        <span>Minimum : $50.00</span>
+                        <span>Maximum : <span id="max-limit-text">$0.00</span></span>
                     </div>
                 </div>
 
-                <div class="alert-banner" id="alert-banner-box">
-                    <i class="fa-solid fa-shield-halved" style="font-size: 1.1rem;"></i>
-                    <p id="alert-text">Assurez-vous que l'adresse est correcte.<br>Les transactions crypto sont irréversibles.</p>
+                <!-- MÉTHODES -->
+                <div class="card">
+                    <div class="card-header"><i class="fa-solid fa-wallet"></i> CHOISIR LE MOYEN DE RETRAIT</div>
+                    
+                    <div class="method-tabs">
+                        <button type="button" class="tab-item active" id="tab-crypto"><i class="fa-solid fa-coins"></i> Crypto</button>
+                        <button type="button" class="tab-item" id="tab-paypal"><i class="fa-brands fa-paypal"></i> PayPal</button>
+                        <button type="button" class="tab-item" id="tab-autre"><i class="fa-solid fa-ellipsis"></i> Autre</button>
+                    </div>
+
+                    <div class="selected-method-card">
+                        <div class="method-header-info">
+                            <div class="icon-box" id="method-icon-box" style="background:#f7931a;">₿</div>
+                            <div style="flex: 1;">
+                                <strong id="method-title">Bitcoin (BTC)</strong><br>
+                                <small id="method-sub" style="color: var(--text-muted); font-size:0.75rem;">Réseau : Bitcoin</small>
+                            </div>
+                            <span id="method-badge" style="background: rgba(0, 255, 170, 0.1); color: var(--accent-green); font-size: 0.7rem; padding: 4px 8px; border-radius: 6px;">Recommandé</span>
+                        </div>
+
+                        <div class="input-group">
+                            <label id="address-label" style="font-size:0.75rem; color: var(--text-muted); display:block; margin-bottom:6px;">Adresse Bitcoin</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="withdraw-address" placeholder="Entrez votre adresse Bitcoin">
+                                <i class="fa-solid fa-qrcode" id="scan-btn" style="color: var(--text-muted);"></i>
+                            </div>
+                        </div>
+
+                        <div class="alert-banner" id="alert-banner-box">
+                            <i class="fa-solid fa-shield-halved" style="font-size: 1.1rem;"></i>
+                            <p id="alert-text">Assurez-vous que l'adresse est correcte.<br>Les transactions crypto sont irréversibles.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VÉRIFICATION EMAIL -->
+                <div class="verification-box" id="verification-box">
+                    <div class="v-title" id="v-title-text" style="color: #ffc107;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Vérification du compte requise
+                    </div>
+                    <div class="v-text" id="v-body-text">
+                        Vous devez vérifier votre adresse e-mail pour autoriser les retraits de fonds.
+                    </div>
+                    <div id="v-actions">
+                        <button class="btn-verify-action" id="btn-send-email-verify">Envoyer l'email de vérification</button>
+                        <button class="btn-check-action" id="btn-recheck-email">revérifier</button>
+                    </div>
+                </div>
+
+                <!-- MODULE DE PREUVE -->
+                <div class="proof-required-box" id="proof-required-box">
+                    <div class="proof-title">
+                        <i class="fa-solid fa-video"></i> Preuve du 1er retrait requise !
+                    </div>
+                    <p class="proof-desc">
+                        Vous avez déjà effectué 1 retrait. Pour débloquer votre 2ème retrait, merci d'envoyer votre témoignage vidéo.
+                    </p>
+                    <textarea id="proof-text-input" class="proof-textarea" placeholder="Rédigez votre témoignage (ex: Retrait bien reçu, merci !)..."></textarea>
+                    
+                    <label for="proof-video-input" class="proof-file-label">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size:1.2rem;"></i>
+                        <span id="file-selected-name">Sélectionner votre vidéo selfie (.mp4)</span>
+                    </label>
+                    <input type="file" id="proof-video-input" accept="video/*" style="display:none;">
+
+                    <button type="button" class="btn-send-proof" id="btn-submit-proof-file">
+                        <i class="fa-solid fa-paper-plane"></i> Publier la preuve & Débloquer
+                    </button>
+                </div>
+
+                <!-- RÉSUMÉ -->
+                <div class="card">
+                    <div class="card-header">RÉSUMÉ DU RETRAIT</div>
+                    <div class="summary-line">
+                        <span>Montant à retirer</span>
+                        <span id="summary-amount" style="color: var(--accent-green); font-weight:700;">$50.00</span>
+                    </div>
+                    <div class="summary-line">
+                        <span>Frais de transaction</span>
+                        <span>$0.00</span>
+                    </div>
+                    <div class="summary-line total">
+                        <span>Vous recevrez</span>
+                        <span id="summary-total" style="color: var(--accent-green); font-size:1.1rem;">$50.00</span>
+                    </div>
+                </div>
+
+                <button id="btn-confirm-withdraw" class="btn-submit" disabled>
+                    <i class="fa-solid fa-paper-plane"></i> CONFIRMER LE RETRAIT
+                </button>
+
+            </div>
+
+            <!-- PAGE 2 : RETRAITS EN ATTENTE -->
+            <div class="page-slide">
+                <div class="card">
+                    <div class="card-header"><i class="fa-solid fa-clock-rotate-left" style="color:#ffc107;"></i> RETRAITS EN ATTENTE D'APPROBATION</div>
+                    <div id="pending-withdrawals-list">
+                        <p style="font-size:0.78rem; color:var(--text-muted);">Aucune demande en attente.</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- VÉRIFICATION EMAIL -->
-        <div class="verification-box" id="verification-box">
-            <div class="v-title" id="v-title-text" style="color: #ffc107;">
-                <i class="fa-solid fa-triangle-exclamation"></i> Vérification du compte requise
+            <!-- PAGE 3 : REÇUS DE PAIEMENT -->
+            <div class="page-slide">
+                <div class="card">
+                    <div class="card-header"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--accent-green);"></i> REÇUS DE PAIEMENT (Publicité+)</div>
+                    <div id="receipts-list">
+                        <p style="font-size:0.78rem; color:var(--text-muted);">Aucun reçu de paiement disponible.</p>
+                    </div>
+                </div>
             </div>
-            <div class="v-text" id="v-body-text">
-                Vous devez vérifier votre adresse e-mail pour autoriser les retraits de fonds.
-            </div>
-            <div id="v-actions">
-                <button class="btn-verify-action" id="btn-send-email-verify">Envoyer l'email de vérification</button>
-                <button class="btn-check-action" id="btn-recheck-email">revérifier</button>
-            </div>
-        </div>
 
-        <!-- MODULE DE PREUVE -->
-        <div class="proof-required-box" id="proof-required-box">
-            <div class="proof-title">
-                <i class="fa-solid fa-video"></i> Preuve du 1er retrait requise !
-            </div>
-            <p class="proof-desc">
-                Vous avez déjà effectué 1 retrait. Pour débloquer votre 2ème retrait, merci d'envoyer votre témoignage vidéo.
-            </p>
-            <textarea id="proof-text-input" class="proof-textarea" placeholder="Rédigez votre témoignage (ex: Retrait bien reçu, merci !)..."></textarea>
-            
-            <label for="proof-video-input" class="proof-file-label">
-                <i class="fa-solid fa-cloud-arrow-up" style="font-size:1.2rem;"></i>
-                <span id="file-selected-name">Sélectionner votre vidéo selfie (.mp4)</span>
-            </label>
-            <input type="file" id="proof-video-input" accept="video/*" style="display:none;">
-
-            <button type="button" class="btn-send-proof" id="btn-submit-proof-file">
-                <i class="fa-solid fa-paper-plane"></i> Publier la preuve & Débloquer
-            </button>
-        </div>
-
-        <!-- RÉSUMÉ -->
-        <div class="card">
-            <div class="card-header">RÉSUMÉ DU RETRAIT</div>
-            <div class="summary-line">
-                <span>Montant à retirer</span>
-                <span id="summary-amount" style="color: var(--accent-green); font-weight:700;">$50.00</span>
-            </div>
-            <div class="summary-line">
-                <span>Frais de transaction</span>
-                <span>$0.00</span>
-            </div>
-            <div class="summary-line total">
-                <span>Vous recevrez</span>
-                <span id="summary-total" style="color: var(--accent-green); font-size:1.1rem;">$50.00</span>
-            </div>
-        </div>
-
-        <button id="btn-confirm-withdraw" class="btn-submit" disabled>
-            <i class="fa-solid fa-paper-plane"></i> CONFIRMER LE RETRAIT
-        </button>
-
-        <!-- SECTION 2 : DEMANDES EN ATTENTE -->
-        <div class="card" style="margin-top:24px;">
-            <div class="card-header"><i class="fa-solid fa-clock-rotate-left" style="color:#ffc107;"></i> RETRAITS EN ATTENTE D'APPROBATION</div>
-            <div id="pending-withdrawals-list">
-                <p style="font-size:0.78rem; color:var(--text-muted);">Aucune demande en attente.</p>
-            </div>
-        </div>
-
-        <!-- SECTION 3 : REÇUS DE PAIEMENT (APPROUVÉS) -->
-        <div class="card">
-            <div class="card-header"><i class="fa-solid fa-file-invoice-dollar" style="color:var(--accent-green);"></i> REÇUS DE PAIEMENT (Publicité+)</div>
-            <div id="receipts-list">
-                <p style="font-size:0.78rem; color:var(--text-muted);">Aucun reçu de paiement disponible.</p>
-            </div>
         </div>
 
     </div>
@@ -335,6 +415,26 @@
             <span>Activités</span>
         </a>
     </nav>
+
+    <!-- PETIT SCRIPT POUR SYNCHRONISER LE SWIPE AVEC LES ONGLETS -->
+    <script>
+        const viewport = document.getElementById('swipe-viewport');
+        const pageTabs = document.querySelectorAll('.page-tab');
+
+        viewport.addEventListener('scroll', () => {
+            const pageIndex = Math.round(viewport.scrollLeft / viewport.clientWidth);
+            pageTabs.forEach((tab, index) => {
+                tab.classList.toggle('active', index === pageIndex);
+            });
+        });
+
+        function goToPage(index) {
+            viewport.scrollTo({
+                left: index * viewport.clientWidth,
+                behavior: 'smooth'
+            });
+        }
+    </script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
