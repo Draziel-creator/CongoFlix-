@@ -35,9 +35,9 @@
             <i class="fa-solid fa-shield-halved text-blue-500 text-2xl"></i>
             <h1 class="text-xl font-bold tracking-wide">PANNEAU ADMIN - GESTION</h1>
         </div>
-        <div id="connection-status" class="flex items-center gap-2 text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-3 py-1.5 rounded-full">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            Connecté à Firebase
+        <div id="connection-status" class="flex items-center gap-2 text-xs bg-amber-950 text-amber-400 border border-amber-800 px-3 py-1.5 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+            Connexion Auth Admin en cours...
         </div>
     </header>
 
@@ -195,6 +195,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
@@ -208,17 +209,49 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        // Variables de stockage en mémoire pour la recherche instantanée
+        // Connexion automatique Admin au chargement
+        async function connecterAdmin() {
+            try {
+                await signInWithEmailAndPassword(auth, "admin@publicite.com", "adminvotredomaine1");
+            } catch (error) {
+                console.error("Erreur d'authentification Admin :", error.message);
+                const badge = document.getElementById("connection-status");
+                badge.className = "flex items-center gap-2 text-xs bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1.5 rounded-full";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Erreur d'authentification Admin`;
+            }
+        }
+
+        // Ecouter l'état d'authentification
+        onAuthStateChanged(auth, (user) => {
+            const badge = document.getElementById("connection-status");
+            if (user && user.uid === "KJCbYLLsL8Wvw64ivXLWKRvrale2") {
+                badge.className = "flex items-center gap-2 text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-3 py-1.5 rounded-full";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Admin Sécurisé (${user.email})`;
+            } else {
+                badge.className = "flex items-center gap-2 text-xs bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1.5 rounded-full";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Non Autorisings`;
+            }
+        });
+
+        connecterAdmin();
+
+        // Variables de stockage local pour la recherche instantanée
         let cacheRetraits = [];
         let cacheUsers = {};
         let cacheRewards = {};
         let cacheProofs = [];
         let cacheInstalls = [];
 
-        // Fonction pour approuver un retrait
+        // Fonction pour approuver un retrait (Réservée à l'Admin connecté)
         window.approuverRetrait = async function(docId) {
-            if (!confirm("Voulez-vous vraiment approuver ce retrait ? La demande sera marquée comme traitée et le reçu sera généré pour l'utilisateur.")) {
+            if (!auth.currentUser || auth.currentUser.uid !== "KJCbYLLsL8Wvw64ivXLWKRvrale2") {
+                alert("Erreur : Vous devez être connecté avec le compte Admin pour effectuer cette action.");
+                return;
+            }
+
+            if (!confirm("Voulez-vous vraiment approuver ce retrait ? Le statut passera à 'approuve' et l'utilisateur aura son reçu.")) {
                 return;
             }
 
@@ -230,11 +263,11 @@
                 alert("Retrait approuvé avec succès !");
             } catch (error) {
                 console.error("Erreur lors de l'approbation :", error);
-                alert("Erreur lors de l'approbation : " + error.message);
+                alert("Erreur d'autorisation ou de connexion : " + error.message);
             }
         };
 
-        // Fonctions pour la Modal vidéo
+        // Modale Vidéo
         window.openVideoModal = function(url) {
             const modal = document.getElementById('video-modal');
             const player = document.getElementById('modal-video-player');
@@ -250,7 +283,6 @@
             modal.classList.add('hidden');
         };
 
-        // Fermer la modale au clic à l'extérieur
         document.getElementById('video-modal').addEventListener('click', (e) => {
             if (e.target.id === 'video-modal') window.closeVideoModal();
         });
@@ -267,7 +299,7 @@
             return "N/A";
         }
 
-        // 1. GESTION DES RETRAITS ET RECHERCHE
+        // 1. RETRAITS
         onSnapshot(collection(db, "demandes_retrait"), (snapshot) => {
             cacheRetraits = [];
             snapshot.forEach(doc => cacheRetraits.push({ id: doc.id, ...doc.data() }));
@@ -335,7 +367,7 @@
 
         document.getElementById("search-retraits").addEventListener("input", renderRetraits);
 
-        // 2. GESTION DES UTILISATEURS ET RECHERCHE
+        // 2. UTILISATEURS
         function listenUsersAndRewards() {
             onSnapshot(collection(db, "users"), (snapshot) => {
                 cacheUsers = {};
@@ -426,7 +458,7 @@
         document.getElementById("search-users").addEventListener("input", renderCombinedUsersTable);
         listenUsersAndRewards();
 
-        // 3. GESTION DES PREUVES ET RECHERCHE
+        // 3. PREUVES DE PAIEMENT
         onSnapshot(collection(db, "payment_proofs"), (snapshot) => {
             cacheProofs = [];
             snapshot.forEach(doc => cacheProofs.push({ id: doc.id, ...doc.data() }));
@@ -478,7 +510,7 @@
 
         document.getElementById("search-proofs").addEventListener("input", renderProofs);
 
-        // 4. GESTION DES INSTALLATIONS ET RECHERCHE
+        // 4. INSTALLATIONS
         onSnapshot(collection(db, "pending_installs"), (snapshot) => {
             cacheInstalls = [];
             snapshot.forEach(doc => cacheInstalls.push({ id: doc.id, ...doc.data() }));
