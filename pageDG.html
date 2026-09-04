@@ -58,6 +58,41 @@
 
     <main class="flex-1 p-6 max-w-7xl w-full mx-auto">
 
+        <!-- CARTES DE STATISTIQUES ET CALCULS EN TEMPS RÉEL -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+                <span class="text-xs text-slate-400 font-medium">Montant Payé</span>
+                <div id="stat-montant-paye" class="text-lg font-extrabold text-emerald-400 mt-1">$0.00</div>
+            </div>
+            
+            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+                <span class="text-xs text-slate-400 font-medium">En Attente (USD)</span>
+                <div id="stat-montant-attente" class="text-lg font-extrabold text-amber-400 mt-1">$0.00</div>
+            </div>
+
+            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+                <span class="text-xs text-slate-400 font-medium">Utilisateurs Totaux</span>
+                <div id="stat-total-users" class="text-lg font-extrabold text-blue-400 mt-1">0</div>
+            </div>
+
+            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+                <span class="text-xs text-slate-400 font-medium">Coins Globaux</span>
+                <div id="stat-coins-global" class="text-lg font-extrabold text-yellow-400 mt-1">0</div>
+            </div>
+
+            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+                <span class="text-xs text-slate-400 font-medium">Filleuls Totaux</span>
+                <div id="stat-filleuls-global" class="text-lg font-extrabold text-indigo-400 mt-1">0</div>
+            </div>
+
+            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
+                <span class="text-xs text-slate-400 font-medium">Preuves / Installs</span>
+                <div class="text-base font-bold text-slate-200 mt-1">
+                    <span id="stat-total-preuves" class="text-purple-400">0</span> / <span id="stat-total-installs" class="text-cyan-400">0</span>
+                </div>
+            </div>
+        </div>
+
         <!-- SECTION 1 : RETRAITS -->
         <section id="sec-retraits" class="space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -222,97 +257,156 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
-            authDomain: "publicite-6445c.firebaseapp.com",
-            projectId: "publicite-6445c",
-            storageBucket: "publicite-6445c.firebasestorage.app",
-            messagingSenderId: "663385244466",
-            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
-            measurementId: "G-T37TGB3SR0"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+        authDomain: "publicite-6445c.firebaseapp.com",
+        projectId: "publicite-6445c",
+        storageBucket: "publicite-6445c.firebasestorage.app",
+        messagingSenderId: "663385244466",
+        appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
+        measurementId: "G-T37TGB3SR0"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-        // Connexion automatique Admin au chargement
-        async function connecterAdmin() {
-            try {
-                await signInWithEmailAndPassword(auth, "admin@publicite.com", "adminvotredomaine1");
-            } catch (error) {
-                console.error("Erreur d'authentification Admin :", error.message);
-                const badge = document.getElementById("connection-status");
+    // Connexion automatique Admin au chargement
+    async function connecterAdmin() {
+        try {
+            await signInWithEmailAndPassword(auth, "admin@publicite.com", "adminvotredomaine1");
+        } catch (error) {
+            console.error("Erreur d'authentification Admin :", error.message);
+            const badge = document.getElementById("connection-status");
+            if (badge) {
                 badge.className = "flex items-center gap-2 text-xs bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1.5 rounded-full";
                 badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Erreur d'authentification Admin`;
             }
         }
+    }
 
-        // Ecouter l'état d'authentification
-        onAuthStateChanged(auth, (user) => {
-            const badge = document.getElementById("connection-status");
-            if (user && user.uid === "KJCbYLLsL8Wvw64ivXLWKRvrale2") {
-                badge.className = "flex items-center gap-2 text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-3 py-1.5 rounded-full";
-                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Admin Sécurisé (${user.email})`;
-            } else {
-                badge.className = "flex items-center gap-2 text-xs bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1.5 rounded-full";
-                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Non Autorisé`;
-            }
+    // Ecouter l'état d'authentification
+    onAuthStateChanged(auth, (user) => {
+        const badge = document.getElementById("connection-status");
+        if (!badge) return;
+        if (user && user.uid === "KJCbYLLsL8Wvw64ivXLWKRvrale2") {
+            badge.className = "flex items-center gap-2 text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-3 py-1.5 rounded-full";
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Admin Sécurisé (${user.email})`;
+        } else {
+            badge.className = "flex items-center gap-2 text-xs bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1.5 rounded-full";
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Non Autorisé`;
+        }
+    });
+
+    connecterAdmin();
+
+    // Variables de stockage local pour la recherche et les calculs
+    let cacheRetraits = [];
+    let cacheUsers = {};
+    let cacheRewards = {};
+    let cacheProofs = [];
+    let cacheInstalls = [];
+
+    // Variable stockant l'ID du document sélectionné pour l'approbation
+    let currentDocIdToApprove = null;
+
+    // FONCTION DE CALCULS GLOBAL
+    function calculerStatistiques() {
+        // 1. Calculs des retraits
+        const totalDemandes = cacheRetraits.length;
+        const demandesAttente = cacheRetraits.filter(r => r.statut === 'en_attente').length;
+        const totalPayeUSD = cacheRetraits
+            .filter(r => r.statut === 'approuve')
+            .reduce((sum, r) => sum + (Number(r.montantUSD) || 0), 0);
+        const totalEnAttenteUSD = cacheRetraits
+            .filter(r => r.statut === 'en_attente')
+            .reduce((sum, r) => sum + (Number(r.montantUSD) || 0), 0);
+        const totalCoinsDeduits = cacheRetraits
+            .reduce((sum, r) => sum + (Number(r.coinsDeduits) || 0), 0);
+
+        // 2. Calculs des utilisateurs
+        const allUserIds = Array.from(new Set([...Object.keys(cacheUsers), ...Object.keys(cacheRewards)]));
+        const totalUsers = allUserIds.length;
+        
+        let totalCoinsGlobal = 0;
+        let totalFilleulsGlobal = 0;
+        let totalXpGlobal = 0;
+
+        allUserIds.forEach(id => {
+            const u = cacheUsers[id] || {};
+            const r = cacheRewards[id] || {};
+            totalCoinsGlobal += Number(r.coins ?? r.coin ?? r.Coins ?? u.coins ?? u.coin ?? 0);
+            totalFilleulsGlobal += Number(u.invitedCount ?? r.invitedCount ?? 0);
+            totalXpGlobal += Number(u.xp ?? u.XP ?? r.xp ?? 0);
         });
 
-        connecterAdmin();
+        // 3. Calculs des preuves & installations
+        const totalPreuves = cacheProofs.length;
+        const totalInstalls = cacheInstalls.length;
 
-        // Variables de stockage local pour la recherche instantanée
-        let cacheRetraits = [];
-        let cacheUsers = {};
-        let cacheRewards = {};
-        let cacheProofs = [];
-        let cacheInstalls = [];
+        // Mettre à jour les éléments HTML correspondants s'ils existent
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = val;
+        };
 
-        // Variable stockant l'ID du document sélectionné pour l'approbation
-        let currentDocIdToApprove = null;
+        setVal("stat-total-retraits", totalDemandes);
+        setVal("stat-retraits-attente", demandesAttente);
+        setVal("stat-montant-paye", `$${totalPayeUSD.toFixed(2)}`);
+        setVal("stat-montant-attente", `$${totalEnAttenteUSD.toFixed(2)}`);
+        setVal("stat-coins-deduits", totalCoinsDeduits.toLocaleString());
+        setVal("stat-total-users", totalUsers);
+        setVal("stat-coins-global", totalCoinsGlobal.toLocaleString());
+        setVal("stat-filleuls-global", totalFilleulsGlobal);
+        setVal("stat-xp-global", totalXpGlobal.toLocaleString());
+        setVal("stat-total-preuves", totalPreuves);
+        setVal("stat-total-installs", totalInstalls);
+    }
 
-        // Fonction pour ouvrir la modale d'approbation
-        window.approuverRetrait = function(docId) {
-            if (!auth.currentUser || auth.currentUser.uid !== "KJCbYLLsL8Wvw64ivXLWKRvrale2") {
-                showConfirmError("Erreur : Vous devez être connecté avec le compte Admin.");
-                return;
-            }
+    // Modal Approbation Retrait
+    window.approuverRetrait = function(docId) {
+        if (!auth.currentUser || auth.currentUser.uid !== "KJCbYLLsL8Wvw64ivXLWKRvrale2") {
+            showConfirmError("Erreur : Vous devez être connecté avec le compte Admin.");
+            return;
+        }
 
-            currentDocIdToApprove = docId;
-            const modal = document.getElementById("confirm-modal");
-            const errDiv = document.getElementById("confirm-modal-error");
+        currentDocIdToApprove = docId;
+        const modal = document.getElementById("confirm-modal");
+        const errDiv = document.getElementById("confirm-modal-error");
+        if (errDiv) {
             errDiv.classList.add("hidden");
             errDiv.innerText = "";
-            modal.classList.remove("hidden");
-        };
+        }
+        if (modal) modal.classList.remove("hidden");
+    };
 
-        // Fermer la modale d'approbation
-        window.closeConfirmModal = function() {
-            const modal = document.getElementById("confirm-modal");
-            modal.classList.add("hidden");
-            currentDocIdToApprove = null;
-        };
+    window.closeConfirmModal = function() {
+        const modal = document.getElementById("confirm-modal");
+        if (modal) modal.classList.add("hidden");
+        currentDocIdToApprove = null;
+    };
 
-        function showConfirmError(msg) {
-            const errDiv = document.getElementById("confirm-modal-error");
+    function showConfirmError(msg) {
+        const errDiv = document.getElementById("confirm-modal-error");
+        if (errDiv) {
             errDiv.innerText = msg;
             errDiv.classList.remove("hidden");
         }
+    }
 
-        // Actionneur du bouton 'Approuver' dans la modale
-        document.getElementById("btn-confirm-action").addEventListener("click", async () => {
+    const btnConfirm = document.getElementById("btn-confirm-action");
+    if (btnConfirm) {
+        btnConfirm.addEventListener("click", async () => {
             if (!currentDocIdToApprove) return;
 
-            const btn = document.getElementById("btn-confirm-action");
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Traitement...`;
+            const originalText = btnConfirm.innerHTML;
+            btnConfirm.disabled = true;
+            btnConfirm.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Traitement...`;
 
             try {
                 await updateDoc(doc(db, "demandes_retrait", currentDocIdToApprove), {
@@ -324,314 +418,355 @@
                 console.error("Erreur lors de l'approbation :", error);
                 showConfirmError("Erreur : " + error.message);
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
+                btnConfirm.disabled = false;
+                btnConfirm.innerHTML = originalText;
             }
         });
+    }
 
-        // Fermeture de la modale en cliquant sur l'arrière-plan
-        document.getElementById("confirm-modal").addEventListener("click", (e) => {
+    const confirmModal = document.getElementById("confirm-modal");
+    if (confirmModal) {
+        confirmModal.addEventListener("click", (e) => {
             if (e.target.id === "confirm-modal") window.closeConfirmModal();
         });
+    }
 
-        // Modale Vidéo
-        window.openVideoModal = function(url) {
-            const modal = document.getElementById('video-modal');
-            const player = document.getElementById('modal-video-player');
-            player.src = url;
-            modal.classList.remove('hidden');
-        };
+    // Modal Vidéo
+    window.openVideoModal = function(url) {
+        const modal = document.getElementById('video-modal');
+        const player = document.getElementById('modal-video-player');
+        if (player) player.src = url;
+        if (modal) modal.classList.remove('hidden');
+    };
 
-        window.closeVideoModal = function() {
-            const modal = document.getElementById('video-modal');
-            const player = document.getElementById('modal-video-player');
+    window.closeVideoModal = function() {
+        const modal = document.getElementById('video-modal');
+        const player = document.getElementById('modal-video-player');
+        if (player) {
             player.pause();
             player.src = '';
-            modal.classList.add('hidden');
-        };
+        }
+        if (modal) modal.classList.add('hidden');
+    };
 
-        document.getElementById('video-modal').addEventListener('click', (e) => {
+    const videoModal = document.getElementById('video-modal');
+    if (videoModal) {
+        videoModal.addEventListener('click', (e) => {
             if (e.target.id === 'video-modal') window.closeVideoModal();
         });
+    }
 
-        function formatDate(value) {
-            if (!value) return "N/A";
-            if (value.seconds) {
-                return new Date(value.seconds * 1000).toLocaleString('fr-FR');
-            }
-            if (typeof value === 'string' || typeof value === 'number') {
-                const parsedDate = new Date(value);
-                return !isNaN(parsedDate) ? parsedDate.toLocaleString('fr-FR') : value;
-            }
-            return "N/A";
+    function formatDate(value) {
+        if (!value) return "N/A";
+        if (value.seconds) {
+            return new Date(value.seconds * 1000).toLocaleString('fr-FR');
+        }
+        if (typeof value === 'string' || typeof value === 'number') {
+            const parsedDate = new Date(value);
+            return !isNaN(parsedDate) ? parsedDate.toLocaleString('fr-FR') : value;
+        }
+        return "N/A";
+    }
+
+    // 1. ECUTEUR RETRAITS
+    onSnapshot(collection(db, "demandes_retrait"), (snapshot) => {
+        cacheRetraits = [];
+        snapshot.forEach(doc => cacheRetraits.push({ id: doc.id, ...doc.data() }));
+        renderRetraits();
+        calculerStatistiques();
+    }, (error) => console.error("Erreur retraits:", error));
+
+    function renderRetraits() {
+        const container = document.getElementById("table-retraits-body");
+        if (!container) return;
+
+        const searchInput = document.getElementById("search-retraits");
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+        const filtered = cacheRetraits.filter(item => {
+            const email = (item.userEmail || '').toLowerCase();
+            const id = (item.userId || item.id || '').toLowerCase();
+            const methode = (item.methode || '').toLowerCase();
+            const adresse = (item.adresseReception || '').toLowerCase();
+            return email.includes(query) || id.includes(query) || methode.includes(query) || adresse.includes(query);
+        });
+
+        const countElem = document.getElementById("count-retraits");
+        if (countElem) countElem.innerText = `${filtered.length} demande(s)`;
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">Aucune demande trouvée.</td></tr>`;
+            return;
         }
 
-        // 1. RETRAITS
-        onSnapshot(collection(db, "demandes_retrait"), (snapshot) => {
-            cacheRetraits = [];
-            snapshot.forEach(doc => cacheRetraits.push({ id: doc.id, ...doc.data() }));
-            renderRetraits();
-        }, (error) => console.error("Erreur retraits:", error));
+        let html = "";
+        filtered.forEach(data => {
+            const statusBadge = data.statut === 'en_attente' 
+                ? '<span class="bg-amber-950 text-amber-400 border border-amber-800 text-xs px-2 py-0.5 rounded">En attente</span>'
+                : data.statut === 'approuve'
+                ? '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-2 py-0.5 rounded">Approuvé</span>'
+                : `<span class="bg-rose-950 text-rose-400 border border-rose-800 text-xs px-2 py-0.5 rounded">${data.statut || 'N/A'}</span>`;
 
-        function renderRetraits() {
-            const container = document.getElementById("table-retraits-body");
-            const query = (document.getElementById("search-retraits").value || "").toLowerCase().trim();
-
-            const filtered = cacheRetraits.filter(item => {
-                const email = (item.userEmail || '').toLowerCase();
-                const id = (item.userId || item.id || '').toLowerCase();
-                const methode = (item.methode || '').toLowerCase();
-                const adresse = (item.adresseReception || '').toLowerCase();
-                return email.includes(query) || id.includes(query) || methode.includes(query) || adresse.includes(query);
-            });
-
-            document.getElementById("count-retraits").innerText = `${filtered.length} demande(s)`;
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">Aucune demande trouvée.</td></tr>`;
-                return;
-            }
-
-            let html = "";
-            filtered.forEach(data => {
-                const statusBadge = data.statut === 'en_attente' 
-                    ? '<span class="bg-amber-950 text-amber-400 border border-amber-800 text-xs px-2 py-0.5 rounded">En attente</span>'
-                    : data.statut === 'approuve'
-                    ? '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-2 py-0.5 rounded">Approuvé</span>'
-                    : `<span class="bg-rose-950 text-rose-400 border border-rose-800 text-xs px-2 py-0.5 rounded">${data.statut || 'N/A'}</span>`;
-
-                let actionBtn = "";
-                if (data.statut === 'en_attente') {
-                    actionBtn = `
-                        <button onclick="approuverRetrait('${data.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm mx-auto">
-                            <i class="fa-solid fa-check"></i> Approuver
-                        </button>
-                    `;
-                } else if (data.statut === 'approuve') {
-                    actionBtn = `<span class="text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1"><i class="fa-solid fa-circle-check"></i> Payé</span>`;
-                } else {
-                    actionBtn = `<span class="text-xs text-slate-500">-</span>`;
-                }
-
-                html += `
-                    <tr class="hover:bg-slate-800/50">
-                        <td class="p-3.5">
-                            <div class="font-medium text-slate-100">${data.userEmail || 'Inconnu'}</div>
-                            <div class="text-xs text-slate-500 font-mono">${data.userId || data.id}</div>
-                        </td>
-                        <td class="p-3.5 font-bold text-emerald-400">$${data.montantUSD ?? 0}</td>
-                        <td class="p-3.5 text-amber-400 font-medium">${data.coinsDeduits ?? 0} coins</td>
-                        <td class="p-3.5"><span class="bg-slate-800 px-2 py-1 rounded text-xs">${data.methode || 'N/A'}</span></td>
-                        <td class="p-3.5 font-mono text-xs text-blue-300 break-all select-all">${data.adresseReception || 'N/A'}</td>
-                        <td class="p-3.5">${statusBadge}</td>
-                        <td class="p-3.5 text-xs text-slate-400">${formatDate(data.dateDemande)}</td>
-                        <td class="p-3.5 text-center">${actionBtn}</td>
-                    </tr>
+            let actionBtn = "";
+            if (data.statut === 'en_attente') {
+                actionBtn = `
+                    <button onclick="approuverRetrait('${data.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm mx-auto">
+                        <i class="fa-solid fa-check"></i> Approuver
+                    </button>
                 `;
-            });
-            container.innerHTML = html;
-        }
-
-        document.getElementById("search-retraits").addEventListener("input", renderRetraits);
-
-        // 2. UTILISATEURS
-        function listenUsersAndRewards() {
-            onSnapshot(collection(db, "users"), (snapshot) => {
-                cacheUsers = {};
-                snapshot.forEach(doc => cacheUsers[doc.id] = doc.data());
-                renderCombinedUsersTable();
-            });
-
-            onSnapshot(collection(db, "rewards_users"), (snapshot) => {
-                cacheRewards = {};
-                snapshot.forEach(doc => cacheRewards[doc.id] = doc.data());
-                renderCombinedUsersTable();
-            });
-        }
-
-        function renderCombinedUsersTable() {
-            const container = document.getElementById("table-users-body");
-            const query = (document.getElementById("search-users").value || "").toLowerCase().trim();
-            
-            const allUserIds = Array.from(new Set([...Object.keys(cacheUsers), ...Object.keys(cacheRewards)]));
-
-            const filteredIds = allUserIds.filter(id => {
-                const u = cacheUsers[id] || {};
-                const r = cacheRewards[id] || {};
-                const name = (u.name || r.name || '').toLowerCase();
-                const sponsor = (u.parrainePar || u.sponsorId || r.parrainePar || r.sponsorId || '').toLowerCase();
-                const country = (u.country || r.country || '').toLowerCase();
-                const uid = id.toLowerCase();
-                return name.includes(query) || uid.includes(query) || sponsor.includes(query) || country.includes(query);
-            });
-
-            document.getElementById("count-users").innerText = `${filteredIds.length} utilisateur(s)`;
-
-            if (filteredIds.length === 0) {
-                container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Aucun utilisateur trouvé.</td></tr>`;
-                return;
+            } else if (data.statut === 'approuve') {
+                actionBtn = `<span class="text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1"><i class="fa-solid fa-circle-check"></i> Payé</span>`;
+            } else {
+                actionBtn = `<span class="text-xs text-slate-500">-</span>`;
             }
 
-            let html = "";
-            filteredIds.forEach(id => {
-                const userData = cacheUsers[id] || {};
-                const rewardData = cacheRewards[id] || {};
+            html += `
+                <tr class="hover:bg-slate-800/50">
+                    <td class="p-3.5">
+                        <div class="font-medium text-slate-100">${data.userEmail || 'Inconnu'}</div>
+                        <div class="text-xs text-slate-500 font-mono">${data.userId || data.id}</div>
+                    </td>
+                    <td class="p-3.5 font-bold text-emerald-400">$${data.montantUSD ?? 0}</td>
+                    <td class="p-3.5 text-amber-400 font-medium">${data.coinsDeduits ?? 0} coins</td>
+                    <td class="p-3.5"><span class="bg-slate-800 px-2 py-1 rounded text-xs">${data.methode || 'N/A'}</span></td>
+                    <td class="p-3.5 font-mono text-xs text-blue-300 break-all select-all">${data.adresseReception || 'N/A'}</td>
+                    <td class="p-3.5">${statusBadge}</td>
+                    <td class="p-3.5 text-xs text-slate-400">${formatDate(data.dateDemande)}</td>
+                    <td class="p-3.5 text-center">${actionBtn}</td>
+                </tr>
+            `;
+        });
+        container.innerHTML = html;
+    }
 
-                const userName = userData.name || rewardData.name || 'Sans Nom';
-                const photoURL = userData.photoURL || rewardData.photoURL || null;
-                const sponsor = userData.parrainePar || userData.sponsorId || rewardData.parrainePar || rewardData.sponsorId || null;
+    const searchRetraits = document.getElementById("search-retraits");
+    if (searchRetraits) searchRetraits.addEventListener("input", renderRetraits);
 
-                const userXp = userData.xp ?? userData.XP ?? userData.Xp ?? rewardData.xp ?? 0;
-                const userRank = userData.rank ?? userData.rang ?? userData.Rank ?? userData.Rang ?? rewardData.rank ?? 0;
-                const userCoins = rewardData.coins ?? rewardData.coin ?? rewardData.Coins ?? userData.coins ?? userData.coin ?? 0;
-                const userTasks = rewardData.tasksCompleted ?? rewardData.toursfaits ?? rewardData.taches ?? userData.tasksCompleted ?? 0;
+    // 2. ECUTEURS UTILISATEURS ET REWARDS
+    function listenUsersAndRewards() {
+        onSnapshot(collection(db, "users"), (snapshot) => {
+            cacheUsers = {};
+            snapshot.forEach(doc => cacheUsers[doc.id] = doc.data());
+            renderCombinedUsersTable();
+        });
 
-                const userLastActive = userData.lastActiveDate || userData.dateDerniersPoints || rewardData.lastActiveDate || 'N/A';
-                const country = userData.country || rewardData.country || 'N/A';
-                const age = userData.age || rewardData.age || null;
-                const invitedCount = userData.invitedCount ?? rewardData.invitedCount ?? 0;
+        onSnapshot(collection(db, "rewards_users"), (snapshot) => {
+            cacheRewards = {};
+            snapshot.forEach(doc => cacheRewards[doc.id] = doc.data());
+            renderCombinedUsersTable();
+        });
+    }
 
-                html += `
-                    <tr class="hover:bg-slate-800/50">
-                        <td class="p-3.5">
-                            <div class="flex items-center gap-3">
-                                ${photoURL ? `<img src="${photoURL}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">${userName[0].toUpperCase()}</div>`}
-                                <div>
-                                    <div class="font-medium text-slate-100">${userName}</div>
-                                    <div class="text-xs text-slate-500 font-mono">${id}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="p-3.5 font-bold text-amber-400">${userCoins}</td>
-                        <td class="p-3.5 text-xs">
-                            <span class="text-blue-400 font-bold">${userXp} XP</span> | 
-                            <span class="text-purple-400 font-semibold">Rang #${userRank}</span> | 
-                            <span class="text-slate-400">${userTasks} tâches</span>
-                        </td>
-                        <td class="p-3.5 font-mono text-xs">
-                            ${sponsor ? `<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded">${sponsor}</span>` : '<span class="text-slate-600">Aucun</span>'}
-                        </td>
-                        <td class="p-3.5 text-slate-300 font-medium">${invitedCount} filleul(s)</td>
-                        <td class="p-3.5 text-xs text-slate-400">
-                            ${country} ${age ? `(${age} ans)` : ''}
-                        </td>
-                        <td class="p-3.5 text-xs text-slate-400">${userLastActive}</td>
-                    </tr>
-                `;
-            });
-            container.innerHTML = html;
+    function renderCombinedUsersTable() {
+        const container = document.getElementById("table-users-body");
+        if (!container) return;
+
+        const searchInput = document.getElementById("search-users");
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+        
+        const allUserIds = Array.from(new Set([...Object.keys(cacheUsers), ...Object.keys(cacheRewards)]));
+
+        const filteredIds = allUserIds.filter(id => {
+            const u = cacheUsers[id] || {};
+            const r = cacheRewards[id] || {};
+            const name = (u.name || r.name || '').toLowerCase();
+            const sponsor = (u.parrainePar || u.sponsorId || r.parrainePar || r.sponsorId || '').toLowerCase();
+            const country = (u.country || r.country || '').toLowerCase();
+            const uid = id.toLowerCase();
+            return name.includes(query) || uid.includes(query) || sponsor.includes(query) || country.includes(query);
+        });
+
+        const countElem = document.getElementById("count-users");
+        if (countElem) countElem.innerText = `${filteredIds.length} utilisateur(s)`;
+
+        if (filteredIds.length === 0) {
+            container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Aucun utilisateur trouvé.</td></tr>`;
+            calculerStatistiques();
+            return;
         }
 
-        document.getElementById("search-users").addEventListener("input", renderCombinedUsersTable);
-        listenUsersAndRewards();
+        let html = "";
+        filteredIds.forEach(id => {
+            const userData = cacheUsers[id] || {};
+            const rewardData = cacheRewards[id] || {};
 
-        // 3. PREUVES DE PAIEMENT
-        onSnapshot(collection(db, "payment_proofs"), (snapshot) => {
-            cacheProofs = [];
-            snapshot.forEach(doc => cacheProofs.push({ id: doc.id, ...doc.data() }));
-            renderProofs();
-        }, (error) => console.error("Erreur payment_proofs:", error));
+            const userName = userData.name || rewardData.name || 'Sans Nom';
+            const photoURL = userData.photoURL || rewardData.photoURL || null;
+            const sponsor = userData.parrainePar || userData.sponsorId || rewardData.parrainePar || rewardData.sponsorId || null;
 
-        function renderProofs() {
-            const container = document.getElementById("grid-proofs");
-            const query = (document.getElementById("search-proofs").value || "").toLowerCase().trim();
+            const userXp = userData.xp ?? userData.XP ?? userData.Xp ?? rewardData.xp ?? 0;
+            const userRank = userData.rank ?? userData.rang ?? userData.Rank ?? userData.Rang ?? rewardData.rank ?? 0;
+            const userCoins = rewardData.coins ?? rewardData.coin ?? rewardData.Coins ?? userData.coins ?? userData.coin ?? 0;
+            const userTasks = rewardData.tasksCompleted ?? rewardData.toursfaits ?? rewardData.taches ?? userData.tasksCompleted ?? 0;
 
-            const filtered = cacheProofs.filter(item => {
-                const name = (item.name || '').toLowerCase();
-                const email = (item.userEmail || '').toLowerCase();
-                const msg = (item.message || '').toLowerCase();
-                return name.includes(query) || email.includes(query) || msg.includes(query);
-            });
+            const userLastActive = userData.lastActiveDate || userData.dateDerniersPoints || rewardData.lastActiveDate || 'N/A';
+            const country = userData.country || rewardData.country || 'N/A';
+            const age = userData.age || rewardData.age || null;
+            const invitedCount = userData.invitedCount ?? rewardData.invitedCount ?? 0;
 
-            document.getElementById("count-proofs").innerText = `${filtered.length} preuve(s)`;
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<div class="p-4 text-center text-slate-500 col-span-2">Aucune preuve trouvée.</div>`;
-                return;
-            }
-
-            let html = "";
-            filtered.forEach(data => {
-                html += `
-                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor flex flex-col justify-between gap-3 shadow-sm">
-                        <div class="flex justify-between items-start">
+            html += `
+                <tr class="hover:bg-slate-800/50">
+                    <td class="p-3.5">
+                        <div class="flex items-center gap-3">
+                            ${photoURL ? `<img src="${photoURL}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">${userName[0].toUpperCase()}</div>`}
                             <div>
-                                <h3 class="font-bold text-slate-100">${data.name || 'Anonyme'}</h3>
-                                <p class="text-xs text-slate-400">${data.userEmail || 'Sans email'}</p>
+                                <div class="font-medium text-slate-100">${userName}</div>
+                                <div class="text-xs text-slate-500 font-mono">${id}</div>
                             </div>
-                            <span class="text-xs text-slate-500">${formatDate(data.timestamp)}</span>
                         </div>
-                        <p class="text-sm italic bg-slate-900/60 p-2.5 rounded border border-bordercolor/50 text-slate-300 font-sans">
-                            "${data.message || 'Aucun message'}"
-                        </p>
-                        ${data.videoUrl ? `
-                            <button onclick="openVideoModal('${data.videoUrl}')" class="text-xs bg-blue-600 hover:bg-blue-500 text-white p-2 rounded text-center font-medium transition-all flex items-center justify-center gap-2 w-full">
-                                <i class="fa-solid fa-play"></i> Visionner la preuve vidéo
-                            </button>
-                        ` : '<span class="text-xs text-slate-600">Aucune vidéo attachée</span>'}
+                    </td>
+                    <td class="p-3.5 font-bold text-amber-400">${userCoins}</td>
+                    <td class="p-3.5 text-xs">
+                        <span class="text-blue-400 font-bold">${userXp} XP</span> | 
+                        <span class="text-purple-400 font-semibold">Rang #${userRank}</span> | 
+                        <span class="text-slate-400">${userTasks} tâches</span>
+                    </td>
+                    <td class="p-3.5 font-mono text-xs">
+                        ${sponsor ? `<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded">${sponsor}</span>` : '<span class="text-slate-600">Aucun</span>'}
+                    </td>
+                    <td class="p-3.5 text-slate-300 font-medium">${invitedCount} filleul(s)</td>
+                    <td class="p-3.5 text-xs text-slate-400">
+                        ${country} ${age ? `(${age} ans)` : ''}
+                    </td>
+                    <td class="p-3.5 text-xs text-slate-400">${userLastActive}</td>
+                </tr>
+            `;
+        });
+        container.innerHTML = html;
+        calculerStatistiques();
+    }
+
+    const searchUsers = document.getElementById("search-users");
+    if (searchUsers) searchUsers.addEventListener("input", renderCombinedUsersTable);
+    listenUsersAndRewards();
+
+    // 3. ECUTEUR PREUVES DE PAIEMENT
+    onSnapshot(collection(db, "payment_proofs"), (snapshot) => {
+        cacheProofs = [];
+        snapshot.forEach(doc => cacheProofs.push({ id: doc.id, ...doc.data() }));
+        renderProofs();
+        calculerStatistiques();
+    }, (error) => console.error("Erreur payment_proofs:", error));
+
+    function renderProofs() {
+        const container = document.getElementById("grid-proofs");
+        if (!container) return;
+
+        const searchInput = document.getElementById("search-proofs");
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+        const filtered = cacheProofs.filter(item => {
+            const name = (item.name || '').toLowerCase();
+            const email = (item.userEmail || '').toLowerCase();
+            const msg = (item.message || '').toLowerCase();
+            return name.includes(query) || email.includes(query) || msg.includes(query);
+        });
+
+        const countElem = document.getElementById("count-proofs");
+        if (countElem) countElem.innerText = `${filtered.length} preuve(s)`;
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="p-4 text-center text-slate-500 col-span-2">Aucune preuve trouvée.</div>`;
+            return;
+        }
+
+        let html = "";
+        filtered.forEach(data => {
+            html += `
+                <div class="bg-cardbg p-4 rounded-xl border border-bordercolor flex flex-col justify-between gap-3 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-slate-100">${data.name || 'Anonyme'}</h3>
+                            <p class="text-xs text-slate-400">${data.userEmail || 'Sans email'}</p>
+                        </div>
+                        <span class="text-xs text-slate-500">${formatDate(data.timestamp)}</span>
                     </div>
-                `;
-            });
-            container.innerHTML = html;
+                    <p class="text-sm italic bg-slate-900/60 p-2.5 rounded border border-bordercolor/50 text-slate-300 font-sans">
+                        "${data.message || 'Aucun message'}"
+                    </p>
+                    ${data.videoUrl ? `
+                        <button onclick="openVideoModal('${data.videoUrl}')" class="text-xs bg-blue-600 hover:bg-blue-500 text-white p-2 rounded text-center font-medium transition-all flex items-center justify-center gap-2 w-full">
+                            <i class="fa-solid fa-play"></i> Visionner la preuve vidéo
+                        </button>
+                    ` : '<span class="text-xs text-slate-600">Aucune vidéo attachée</span>'}
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    const searchProofs = document.getElementById("search-proofs");
+    if (searchProofs) searchProofs.addEventListener("input", renderProofs);
+
+    // 4. ECUTEUR INSTALLATIONS
+    onSnapshot(collection(db, "pending_installs"), (snapshot) => {
+        cacheInstalls = [];
+        snapshot.forEach(doc => cacheInstalls.push({ id: doc.id, ...doc.data() }));
+        renderInstalls();
+        calculerStatistiques();
+    }, (error) => console.error("Erreur pending_installs:", error));
+
+    function renderInstalls() {
+        const container = document.getElementById("table-installs-body");
+        if (!container) return;
+
+        const searchInput = document.getElementById("search-installs");
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+        const filtered = cacheInstalls.filter(item => {
+            const ref = (item.refId || '').toLowerCase();
+            const ip = (item.ip || '').toLowerCase();
+            const ua = (item.userAgent || '').toLowerCase();
+            return ref.includes(query) || ip.includes(query) || ua.includes(query);
+        });
+
+        const countElem = document.getElementById("count-installs");
+        if (countElem) countElem.innerText = `${filtered.length} installation(s)`;
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Aucune installation trouvée.</td></tr>`;
+            return;
         }
 
-        document.getElementById("search-proofs").addEventListener("input", renderProofs);
+        let html = "";
+        filtered.forEach(data => {
+            html += `
+                <tr class="hover:bg-slate-800/50">
+                    <td class="p-3.5 font-mono text-xs text-indigo-400">${data.refId || 'N/A'}</td>
+                    <td class="p-3.5 font-mono text-xs text-emerald-400">${data.ip || 'N/A'}</td>
+                    <td class="p-3.5 text-xs text-slate-400 max-w-xs truncate" title="${data.userAgent}">${data.userAgent || 'N/A'}</td>
+                    <td class="p-3.5 text-xs text-slate-400">${formatDate(data.createdAt)}</td>
+                </tr>
+            `;
+        });
+        container.innerHTML = html;
+    }
 
-        // 4. INSTALLATIONS
-        onSnapshot(collection(db, "pending_installs"), (snapshot) => {
-            cacheInstalls = [];
-            snapshot.forEach(doc => cacheInstalls.push({ id: doc.id, ...doc.data() }));
-            renderInstalls();
-        }, (error) => console.error("Erreur pending_installs:", error));
+    const searchInstalls = document.getElementById("search-installs");
+    if (searchInstalls) searchInstalls.addEventListener("input", renderInstalls);
+</script>
 
-        function renderInstalls() {
-            const container = document.getElementById("table-installs-body");
-            const query = (document.getElementById("search-installs").value || "").toLowerCase().trim();
-
-            const filtered = cacheInstalls.filter(item => {
-                const ref = (item.refId || '').toLowerCase();
-                const ip = (item.ip || '').toLowerCase();
-                const ua = (item.userAgent || '').toLowerCase();
-                return ref.includes(query) || ip.includes(query) || ua.includes(query);
-            });
-
-            document.getElementById("count-installs").innerText = `${filtered.length} installation(s)`;
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Aucune installation trouvée.</td></tr>`;
-                return;
+<script>
+    function switchTab(tabName) {
+        const tabs = ['retraits', 'users', 'proofs', 'installs'];
+        tabs.forEach(t => {
+            const sec = document.getElementById(`sec-${t}`);
+            const tab = document.getElementById(`tab-${t}`);
+            if (sec) sec.classList.add('hidden');
+            if (tab) {
+                tab.classList.remove('tab-active');
+                tab.classList.add('text-slate-400');
             }
+        });
 
-            let html = "";
-            filtered.forEach(data => {
-                html += `
-                    <tr class="hover:bg-slate-800/50">
-                        <td class="p-3.5 font-mono text-xs text-indigo-400">${data.refId || 'N/A'}</td>
-                        <td class="p-3.5 font-mono text-xs text-emerald-400">${data.ip || 'N/A'}</td>
-                        <td class="p-3.5 text-xs text-slate-400 max-w-xs truncate" title="${data.userAgent}">${data.userAgent || 'N/A'}</td>
-                        <td class="p-3.5 text-xs text-slate-400">${formatDate(data.createdAt)}</td>
-                    </tr>
-                `;
-            });
-            container.innerHTML = html;
+        const activeSec = document.getElementById(`sec-${tabName}`);
+        const activeTab = document.getElementById(`tab-${tabName}`);
+        if (activeSec) activeSec.classList.remove('hidden');
+        if (activeTab) {
+            activeTab.classList.add('tab-active');
+            activeTab.classList.remove('text-slate-400');
         }
-
-        document.getElementById("search-installs").addEventListener("input", renderInstalls);
-    </script>
-
-    <script>
-        function switchTab(tabName) {
-            const tabs = ['retraits', 'users', 'proofs', 'installs'];
-            tabs.forEach(t => {
-                document.getElementById(`sec-${t}`).classList.add('hidden');
-                document.getElementById(`tab-${t}`).classList.remove('tab-active');
-                document.getElementById(`tab-${t}`).classList.add('text-slate-400');
-            });
-
-            document.getElementById(`sec-${tabName}`).classList.remove('hidden');
-            document.getElementById(`tab-${tabName}`).classList.add('tab-active');
-            document.getElementById(`tab-${tabName}`).classList.remove('text-slate-400');
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
