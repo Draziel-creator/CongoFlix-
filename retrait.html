@@ -476,28 +476,57 @@
     const proofBox = document.getElementById('proof-required-box');
     const videoFileInput = document.getElementById('proof-video-input');
 
-    function showModal(title, message, type = 'info', callback = null) {
-        const overlay = document.getElementById('custom-modal-overlay');
-        const iconBox = document.getElementById('modal-icon-box');
-        const titleEl = document.getElementById('modal-title');
-        const msgEl = document.getElementById('modal-message');
-        const btnClose = document.getElementById('btn-close-modal');
+   function showModal(title, message, type = 'info', callback = null, confirmCallback = null) {
+    const overlay = document.getElementById('custom-modal-overlay');
+    const iconBox = document.getElementById('modal-icon-box');
+    const titleEl = document.getElementById('modal-title');
+    const msgEl = document.getElementById('modal-message');
+    const btnClose = document.getElementById('btn-close-modal');
+    const btnCancel = document.getElementById('btn-cancel-modal');
 
-        titleEl.innerText = title;
-        msgEl.innerText = message;
-        iconBox.innerHTML = type === 'success' ? '<i class="fa-solid fa-circle-check" style="color:#00ffaa;"></i>' : 
-                            type === 'error' ? '<i class="fa-solid fa-triangle-exclamation" style="color:#ff4d4d;"></i>' : 
-                            '<i class="fa-solid fa-circle-info" style="color:#38bdf8;"></i>';
+    titleEl.innerText = title;
+    msgEl.innerText = message;
+    
+    iconBox.innerHTML = type === 'success' ? '<i class="fa-solid fa-circle-check" style="color:#00ffaa;"></i>' : 
+                        type === 'error' ? '<i class="fa-solid fa-triangle-exclamation" style="color:#ff4d4d;"></i>' : 
+                        type === 'confirm' ? '<i class="fa-solid fa-circle-question" style="color:#ffc107;"></i>' : 
+                        '<i class="fa-solid fa-circle-info" style="color:#38bdf8;"></i>';
 
-        overlay.style.display = "flex";
-        const handleClose = () => {
-            overlay.style.display = "none";
-            btnClose.removeEventListener('click', handleClose);
-            if (callback) callback();
-        };
-        btnClose.addEventListener('click', handleClose);
+    // Gestion de l'affichage des boutons selon le type
+    if (type === 'confirm') {
+        btnCancel.style.display = "block";
+        btnClose.innerText = "Oui, annuler";
+    } else {
+        btnCancel.style.display = "none";
+        btnClose.innerText = "D'accord";
     }
 
+    overlay.style.display = "flex";
+
+    const cleanListeners = () => {
+        overlay.style.display = "none";
+        btnClose.removeEventListener('click', handleConfirm);
+        btnClose.removeEventListener('click', handleClose);
+        btnCancel.removeEventListener('click', handleClose);
+    };
+
+    const handleClose = () => {
+        cleanListeners();
+        if (callback && type !== 'confirm') callback();
+    };
+
+    const handleConfirm = () => {
+        cleanListeners();
+        if (confirmCallback) confirmCallback();
+    };
+
+    if (type === 'confirm') {
+        btnClose.addEventListener('click', handleConfirm);
+        btnCancel.addEventListener('click', handleClose);
+    } else {
+        btnClose.addEventListener('click', handleClose);
+    }
+}
     // AUTHENTIFICATION & CHARGEMENT
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -647,20 +676,25 @@
     }
 
     // FONCTION D'ANNULATION MANUELLE PAR L'UTILISATEUR
-    window.annulerDemande = async (docId, coinsDeduits) => {
-        if (!confirm("Voulez-vous vraiment annuler cette demande de retrait ? Les pièces seront directement réintégrées dans votre solde.")) return;
-
-        try {
-            await updateDoc(doc(db, "demandes_retrait", docId), { statut: "annule" });
-            await updateDoc(doc(db, "rewards_users", currentUser.uid), {
-                coins: increment(coinsDeduits)
-            });
-            showModal("Retrait Annulé", "Votre demande a été annulée. Vos pièces sont de nouveau disponibles.", "success", () => location.reload());
-        } catch (err) {
-            showModal("Erreur", err.message, "error");
+    window.annulerDemande = (docId, coinsDeduits) => {
+    showModal(
+        "Confirmer l'annulation",
+        "Voulez-vous vraiment annuler cette demande de retrait ? Les pièces seront directement réintégrées dans votre solde.",
+        "confirm",
+        null,
+        async () => {
+            try {
+                await updateDoc(doc(db, "demandes_retrait", docId), { statut: "annule" });
+                await updateDoc(doc(db, "rewards_users", currentUser.uid), {
+                    coins: increment(coinsDeduits)
+                });
+                showModal("Retrait Annulé", "Votre demande a été annulée. Vos pièces sont de nouveau disponibles.", "success", () => location.reload());
+            } catch (err) {
+                showModal("Erreur", err.message, "error");
+            }
         }
-    };
-
+    );
+};
     videoFileInput.addEventListener('change', () => {
         const file = videoFileInput.files[0];
         if (file) document.getElementById('file-selected-name').innerText = file.name;
@@ -839,10 +873,14 @@
         <div id="modal-icon-box" style="font-size: 2.5rem; margin-bottom: 12px;"></div>
         <h3 id="modal-title" style="color: #fff; font-size: 1.25rem; font-weight: 700; margin-bottom: 10px;"></h3>
         <p id="modal-message" style="color: #94a3b8; font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px;"></p>
-        <button id="btn-close-modal" style="background: linear-gradient(135deg, #00ffaa, #00b8d4); color: #0b0f19; font-weight: 700; border: none; padding: 12px 28px; border-radius: 25px; cursor: pointer; font-size: 0.9rem; width: 100%;">D'accord</button>
+        
+        <div style="display: flex; gap: 10px;">
+            <button id="btn-cancel-modal" style="display: none; flex: 1; background: #1e293b; color: #94a3b8; font-weight: 700; border: 1px solid #334155; padding: 12px; border-radius: 25px; cursor: pointer; font-size: 0.9rem;">Non</button>
+            <button id="btn-close-modal" style="flex: 1; background: linear-gradient(135deg, #00ffaa, #00b8d4); color: #0b0f19; font-weight: 700; border: none; padding: 12px; border-radius: 25px; cursor: pointer; font-size: 0.9rem;">D'accord</button>
+        </div>
     </div>
 </div>
-
+    
 <script>
 document.addEventListener("DOMContentLoaded", () => {
     const currentPage = window.location.pathname.split("/").pop() || "lancementpublicite.html";
