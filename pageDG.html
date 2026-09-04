@@ -148,9 +148,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, collectionGroup, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Configuration Firebase officielle de ton projet
         const firebaseConfig = {
             apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
             authDomain: "publicite-6445c.firebaseapp.com",
@@ -164,7 +163,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Helper: Formatage des dates/timestamps
         function formatDate(value) {
             if (!value) return "N/A";
             if (value.seconds) {
@@ -177,8 +175,8 @@
             return "N/A";
         }
 
-        // 1. ÉCOUTE DE LA COLLECTION "demandes_retrait" (avec collectionGroup pour sous-dossiers)
-        onSnapshot(collectionGroup(db, "demandes_retrait"), (snapshot) => {
+        // 1. ÉCOUTE DE LA COLLECTION "demandes_retrait"
+        onSnapshot(collection(db, "demandes_retrait"), (snapshot) => {
             const container = document.getElementById("table-retraits-body");
             document.getElementById("count-retraits").innerText = `${snapshot.size} demande(s)`;
             
@@ -192,7 +190,7 @@
                 const data = doc.data();
                 const statusBadge = data.statut === 'en_attente' 
                     ? '<span class="bg-amber-950 text-amber-400 border border-amber-800 text-xs px-2 py-0.5 rounded">En attente</span>'
-                    : '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-2 py-0.5 rounded">'+(data.statut || 'N/A')+'</span>';
+                    : `<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-2 py-0.5 rounded">${data.statut || 'N/A'}</span>`;
 
                 html += `
                     <tr class="hover:bg-slate-800/50">
@@ -214,58 +212,104 @@
             console.error("Erreur retraits:", error);
         });
 
-        // 2. ÉCOUTE DE LA COLLECTION "rewards_users"
-        onSnapshot(collection(db, "rewards_users"), (snapshot) => {
-            const container = document.getElementById("table-users-body");
-            document.getElementById("count-users").innerText = `${snapshot.size} utilisateur(s)`;
+        // 2. ÉCOUTE DE "users" ET "rewards_users" AVEC FUSION EN TEMPS RÉEL
+        let usersCache = {};
+        let rewardsCache = {};
 
-            if (snapshot.empty) {
+        function listenUsersAndRewards() {
+            // Écoute de la collection "users"
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                usersCache = {};
+                snapshot.forEach(doc => {
+                    usersCache[doc.id] = doc.data();
+                });
+                renderCombinedUsersTable();
+            }, (error) => {
+                console.error("Erreur lecture 'users':", error);
+            });
+
+            // Écoute de la collection "rewards_users"
+            onSnapshot(collection(db, "rewards_users"), (snapshot) => {
+                rewardsCache = {};
+                snapshot.forEach(doc => {
+                    rewardsCache[doc.id] = doc.data();
+                });
+                renderCombinedUsersTable();
+            }, (error) => {
+                console.error("Erreur lecture 'rewards_users':", error);
+            });
+        }
+
+        function renderCombinedUsersTable() {
+            const container = document.getElementById("table-users-body");
+            
+            // Union des IDs trouvés dans users et rewards_users
+            const allUserIds = Array.from(new Set([...Object.keys(usersCache), ...Object.keys(rewardsCache)]));
+            document.getElementById("count-users").innerText = `${allUserIds.length} utilisateur(s)`;
+
+            if (allUserIds.length === 0) {
                 container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Aucun utilisateur trouvé.</td></tr>`;
                 return;
             }
 
             let html = "";
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const sponsor = data.parrainePar || data.sponsorId || null;
-                const userXp = data.xp ?? 0;
-                const userRank = data.rank ?? data.rang ?? 0;
+            allUserIds.forEach(id => {
+                const userData = usersCache[id] || {};
+                const rewardData = rewardsCache[id] || {};
+
+                // Extraction des variables
+                const userName = userData.name || rewardData.name || 'Sans Nom';
+                const photoURL = userData.photoURL || rewardData.photoURL || null;
+                const sponsor = userData.parrainePar || userData.sponsorId || rewardData.parrainePar || rewardData.sponsorId || null;
+
+                // XP et Rank pris prioritairement dans "users"
+                const userXp = userData.xp ?? userData.XP ?? userData.Xp ?? rewardData.xp ?? 0;
+                const userRank = userData.rank ?? userData.rang ?? userData.Rank ?? userData.Rang ?? rewardData.rank ?? 0;
+
+                // Coins et Tâches pris prioritairement dans "rewards_users"
+                const userCoins = rewardData.coins ?? rewardData.coin ?? rewardData.Coins ?? userData.coins ?? userData.coin ?? 0;
+                const userTasks = rewardData.tasksCompleted ?? rewardData.toursfaits ?? rewardData.taches ?? userData.tasksCompleted ?? 0;
+
+                const userLastActive = userData.lastActiveDate || userData.dateDerniersPoints || rewardData.lastActiveDate || 'N/A';
+                const country = userData.country || rewardData.country || 'N/A';
+                const age = userData.age || rewardData.age || null;
+                const invitedCount = userData.invitedCount ?? rewardData.invitedCount ?? 0;
 
                 html += `
                     <tr class="hover:bg-slate-800/50">
                         <td class="p-3.5">
                             <div class="flex items-center gap-3">
-                                ${data.photoURL ? `<img src="${data.photoURL}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">${(data.name || 'U')[0].toUpperCase()}</div>`}
+                                ${photoURL ? `<img src="${photoURL}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">${userName[0].toUpperCase()}</div>`}
                                 <div>
-                                    <div class="font-medium text-slate-100">${data.name || 'Sans Nom'}</div>
-                                    <div class="text-xs text-slate-500 font-mono">${doc.id}</div>
+                                    <div class="font-medium text-slate-100">${userName}</div>
+                                    <div class="text-xs text-slate-500 font-mono">${id}</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="p-3.5 font-bold text-amber-400">${data.coins ?? 0}</td>
+                        <td class="p-3.5 font-bold text-amber-400">${userCoins}</td>
                         <td class="p-3.5 text-xs">
                             <span class="text-blue-400 font-bold">${userXp} XP</span> | 
                             <span class="text-purple-400 font-semibold">Rang #${userRank}</span> | 
-                            <span class="text-slate-400">${data.tasksCompleted ?? 0} tâches</span>
+                            <span class="text-slate-400">${userTasks} tâches</span>
                         </td>
                         <td class="p-3.5 font-mono text-xs">
                             ${sponsor ? `<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded">${sponsor}</span>` : '<span class="text-slate-600">Aucun</span>'}
                         </td>
-                        <td class="p-3.5 text-slate-300 font-medium">${data.invitedCount ?? 0} filleul(s)</td>
+                        <td class="p-3.5 text-slate-300 font-medium">${invitedCount} filleul(s)</td>
                         <td class="p-3.5 text-xs text-slate-400">
-                            ${data.country || 'N/A'} ${data.age ? `(${data.age} ans)` : ''}
+                            ${country} ${age ? `(${age} ans)` : ''}
                         </td>
-                        <td class="p-3.5 text-xs text-slate-400">${data.lastActiveDate || 'N/A'}</td>
+                        <td class="p-3.5 text-xs text-slate-400">${userLastActive}</td>
                     </tr>
                 `;
             });
             container.innerHTML = html;
-        }, (error) => {
-            console.error("Erreur rewards_users:", error);
-        });
+        }
 
-        // 3. ÉCOUTE DE LA COLLECTION "payment_proofs" (avec collectionGroup pour sous-dossiers)
-        onSnapshot(collectionGroup(db, "payment_proofs"), (snapshot) => {
+        listenUsersAndRewards();
+
+        // 3. ÉCOUTE DE LA COLLECTION "payment_proofs"
+        onSnapshot(collection(db, "payment_proofs"), (snapshot) => {
             const container = document.getElementById("grid-proofs");
             document.getElementById("count-proofs").innerText = `${snapshot.size} preuve(s)`;
 
