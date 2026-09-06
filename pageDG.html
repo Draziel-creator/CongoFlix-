@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Administrateur - Publicité RDC</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -19,7 +21,13 @@
             }
         }
     </script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: bold; }
@@ -42,16 +50,16 @@
     </header>
 
     <nav class="bg-cardbg/50 border-b border-bordercolor px-6 flex gap-6 overflow-x-auto">
-        <button onclick="switchTab('retraits')" id="tab-retraits" class="py-4 text-sm font-medium transition-all flex items-center gap-2 tab-active">
+        <button onclick="switchTab('retraits')" id="tab-retraits" class="py-4 text-sm font-medium transition-all flex items-center gap-2 tab-active whitespace-nowrap">
             <i class="fa-solid fa-hand-holding-dollar"></i> Demandes de Retrait
         </button>
-        <button onclick="switchTab('users')" id="tab-users" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200">
+        <button onclick="switchTab('users')" id="tab-users" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 whitespace-nowrap">
             <i class="fa-solid fa-users"></i> Utilisateurs (Rewards)
         </button>
-        <button onclick="switchTab('proofs')" id="tab-proofs" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200">
+        <button onclick="switchTab('proofs')" id="tab-proofs" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 whitespace-nowrap">
             <i class="fa-solid fa-file-invoice-dollar"></i> Preuves de Paiement
         </button>
-        <button onclick="switchTab('installs')" id="tab-installs" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200">
+        <button onclick="switchTab('installs')" id="tab-installs" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 whitespace-nowrap">
             <i class="fa-solid fa-download"></i> Installations Pending
         </button>
     </nav>
@@ -90,6 +98,16 @@
                 <div class="text-base font-bold text-slate-200 mt-1">
                     <span id="stat-total-preuves" class="text-purple-400">0</span> / <span id="stat-total-installs" class="text-cyan-400">0</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- GRAPHIQUE D'ACTIVITÉ (Intégré pour Chart.js) -->
+        <div class="bg-cardbg border border-bordercolor rounded-xl p-5 mb-6 shadow-sm">
+            <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-blue-500"></i> Aperçu de l'Activité
+            </h3>
+            <div class="h-64 w-full relative">
+                <canvas id="activityChart"></canvas>
             </div>
         </div>
 
@@ -257,6 +275,8 @@
         </div>
     </div>
 
+</body>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -276,6 +296,9 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    // Instance Globale du Graphique
+    let activityChartInstance = null;
+
     // Connexion automatique Admin au chargement
     async function connecterAdmin() {
         try {
@@ -290,7 +313,7 @@
         }
     }
 
-    // Ecouter l'état d'authentification
+    // Écouter l'état d'authentification
     onAuthStateChanged(auth, (user) => {
         const badge = document.getElementById("connection-status");
         if (!badge) return;
@@ -305,19 +328,70 @@
 
     connecterAdmin();
 
-    // Variables de stockage local pour la recherche et les calculs
+    // Cache local de données
     let cacheRetraits = [];
     let cacheUsers = {};
     let cacheRewards = {};
     let cacheProofs = [];
     let cacheInstalls = [];
-
-    // Variable stockant l'ID du document sélectionné pour l'approbation
     let currentDocIdToApprove = null;
 
-    // FONCTION DE CALCULS GLOBAL
+    // =======================================================
+    // 🧠 ALGORITHME D'AUDIT ANTI-TRICHE ET VERIFICATION
+    // =======================================================
+    window.verifierIntegriteUtilisateur = function(userId) {
+        const u = cacheUsers[userId] || {};
+        const r = cacheRewards[userId] || {};
+
+        // 1. Solde affiché dans la base de données (modifiable via console utilisateur)
+        const coinsDeclarees = Number(r.coins ?? r.coin ?? u.coins ?? 0);
+
+        // 2. Traitement de l'historique quotidien de visionnage/tâches
+        const historyMap = r.history || u.history || {};
+        let totalTachesHistorique = 0;
+
+        Object.entries(historyMap).forEach(([key, val]) => {
+            // Exclure les clés de clés système non-numériques si nécessaire
+            if (typeof val === 'number' && key !== 'w1_d1') {
+                totalTachesHistorique += val;
+            }
+        });
+
+        const tasksCompletedCount = Number(r.tasksCompleted ?? u.tasksCompleted ?? 0);
+        // Prendre la valeur maximale entre le total déclaré et la somme de l'historique
+        const totalTachesReelles = Math.max(totalTachesHistorique, tasksCompletedCount);
+
+        // 3. Règles de calcul officiel : 50 Pts par Tâche + Bonus Parrainage (ex: 250 Pts par filleul)
+        const PTS_PAR_TACHE = 50;
+        const PTS_PAR_FILLEUL = 250;
+        const totalFilleuls = Number(u.invitedCount ?? r.invitedCount ?? 0);
+
+        const coinsGagneesTheoriques = (totalTachesReelles * PTS_PAR_TACHE) + (totalFilleuls * PTS_PAR_FILLEUL);
+
+        // 4. Déduction des retraits déjà demandés ou approuvés
+        const retraitsUser = cacheRetraits.filter(req => req.userId === userId && req.statut !== 'rejete');
+        const totalCoinsDeduitsRetraits = retraitsUser.reduce((sum, req) => sum + (Number(req.coinsDeduits) || 0), 0);
+
+        // 5. Solde maximum légitime toléré (+ 500 coins de tolérance/bonus divers)
+        const soldeMaxAutorise = Math.max(0, coinsGagneesTheoriques - totalCoinsDeduitsRetraits) + 500;
+
+        const estValide = coinsDeclarees <= soldeMaxAutorise;
+        const ecartEcart = coinsDeclarees - soldeMaxAutorise;
+
+        return {
+            coinsDeclarees,
+            coinsGagneesTheoriques,
+            totalTachesReelles,
+            totalFilleuls,
+            estValide,
+            ecartEcart: ecartEcart > 0 ? ecartEcart : 0
+        };
+    };
+
+    // =======================================================
+    // 📊 CALCUL DES STATISTIQUES GLOBALES & GRAPHIQUE
+    // =======================================================
     function calculerStatistiques() {
-        // 1. Calculs des retraits
         const totalDemandes = cacheRetraits.length;
         const demandesAttente = cacheRetraits.filter(r => r.statut === 'en_attente').length;
         const totalPayeUSD = cacheRetraits
@@ -329,27 +403,25 @@
         const totalCoinsDeduits = cacheRetraits
             .reduce((sum, r) => sum + (Number(r.coinsDeduits) || 0), 0);
 
-        // 2. Calculs des utilisateurs
         const allUserIds = Array.from(new Set([...Object.keys(cacheUsers), ...Object.keys(cacheRewards)]));
         const totalUsers = allUserIds.length;
         
         let totalCoinsGlobal = 0;
         let totalFilleulsGlobal = 0;
         let totalXpGlobal = 0;
+        let totalFraudesDetectees = 0;
 
         allUserIds.forEach(id => {
             const u = cacheUsers[id] || {};
             const r = cacheRewards[id] || {};
-            totalCoinsGlobal += Number(r.coins ?? r.coin ?? r.Coins ?? u.coins ?? u.coin ?? 0);
+            totalCoinsGlobal += Number(r.coins ?? r.coin ?? u.coins ?? 0);
             totalFilleulsGlobal += Number(u.invitedCount ?? r.invitedCount ?? 0);
             totalXpGlobal += Number(u.xp ?? u.XP ?? r.xp ?? 0);
+
+            const audit = window.verifierIntegriteUtilisateur(id);
+            if (!audit.estValide) totalFraudesDetectees++;
         });
 
-        // 3. Calculs des preuves & installations
-        const totalPreuves = cacheProofs.length;
-        const totalInstalls = cacheInstalls.length;
-
-        // Mettre à jour les éléments HTML correspondants s'ils existent
         const setVal = (id, val) => {
             const el = document.getElementById(id);
             if (el) el.innerText = val;
@@ -364,24 +436,81 @@
         setVal("stat-coins-global", totalCoinsGlobal.toLocaleString());
         setVal("stat-filleuls-global", totalFilleulsGlobal);
         setVal("stat-xp-global", totalXpGlobal.toLocaleString());
-        setVal("stat-total-preuves", totalPreuves);
-        setVal("stat-total-installs", totalInstalls);
+        setVal("stat-total-preuves", cacheProofs.length);
+        setVal("stat-total-installs", cacheInstalls.length);
+        setVal("stat-fraudes-detectees", totalFraudesDetectees);
+
+        mettreAJourGraphiqueActivite();
     }
 
-    // Modal Approbation Retrait
+    // Génération/Mise à jour du graphique d'activités
+    function mettreAJourGraphiqueActivite() {
+        const canvas = document.getElementById('chart-activite-global');
+        if (!canvas || !window.Chart) return;
+
+        // Regroupement quotidien des tâches effectuées depuis les historiques
+        const activitesParDate = {};
+
+        Object.values(cacheRewards).forEach(rewardDoc => {
+            const history = rewardDoc.history || {};
+            Object.entries(history).forEach(([dateStr, count]) => {
+                if (dateStr.startsWith('202') && typeof count === 'number') {
+                    activitesParDate[dateStr] = (activitesParDate[dateStr] || 0) + count;
+                }
+            });
+        });
+
+        const datesTriees = Object.keys(activitesParDate).sort();
+        const volumesTaches = datesTriees.map(d => activitesParDate[d]);
+
+        if (activityChartInstance) {
+            activityChartInstance.data.labels = datesTriees;
+            activityChartInstance.data.datasets[0].data = volumesTaches;
+            activityChartInstance.update();
+        } else {
+            const ctx = canvas.getContext('2d');
+            activityChartInstance = new window.Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: datesTriees,
+                    datasets: [{
+                        label: 'Publicités / Tâches visionnées',
+                        data: volumesTaches,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#818cf8'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', font: { family: 'sans-serif', size: 12 } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+                        y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+    }
+
+    // Modal Approbation
     window.approuverRetrait = function(docId) {
         if (!auth.currentUser || auth.currentUser.uid !== "KJCbYLLsL8Wvw64ivXLWKRvrale2") {
-            showConfirmError("Erreur : Vous devez être connecté avec le compte Admin.");
+            showConfirmError("Erreur : Connexion Admin requise.");
             return;
         }
 
         currentDocIdToApprove = docId;
         const modal = document.getElementById("confirm-modal");
         const errDiv = document.getElementById("confirm-modal-error");
-        if (errDiv) {
-            errDiv.classList.add("hidden");
-            errDiv.innerText = "";
-        }
+        if (errDiv) { errDiv.classList.add("hidden"); errDiv.innerText = ""; }
         if (modal) modal.classList.remove("hidden");
     };
 
@@ -393,10 +522,7 @@
 
     function showConfirmError(msg) {
         const errDiv = document.getElementById("confirm-modal-error");
-        if (errDiv) {
-            errDiv.innerText = msg;
-            errDiv.classList.remove("hidden");
-        }
+        if (errDiv) { errDiv.innerText = msg; errDiv.classList.remove("hidden"); }
     }
 
     const btnConfirm = document.getElementById("btn-confirm-action");
@@ -415,7 +541,7 @@
                 });
                 closeConfirmModal();
             } catch (error) {
-                console.error("Erreur lors de l'approbation :", error);
+                console.error("Erreur d'approbation :", error);
                 showConfirmError("Erreur : " + error.message);
             } finally {
                 btnConfirm.disabled = false;
@@ -424,43 +550,9 @@
         });
     }
 
-    const confirmModal = document.getElementById("confirm-modal");
-    if (confirmModal) {
-        confirmModal.addEventListener("click", (e) => {
-            if (e.target.id === "confirm-modal") window.closeConfirmModal();
-        });
-    }
-
-    // Modal Vidéo
-    window.openVideoModal = function(url) {
-        const modal = document.getElementById('video-modal');
-        const player = document.getElementById('modal-video-player');
-        if (player) player.src = url;
-        if (modal) modal.classList.remove('hidden');
-    };
-
-    window.closeVideoModal = function() {
-        const modal = document.getElementById('video-modal');
-        const player = document.getElementById('modal-video-player');
-        if (player) {
-            player.pause();
-            player.src = '';
-        }
-        if (modal) modal.classList.add('hidden');
-    };
-
-    const videoModal = document.getElementById('video-modal');
-    if (videoModal) {
-        videoModal.addEventListener('click', (e) => {
-            if (e.target.id === 'video-modal') window.closeVideoModal();
-        });
-    }
-
     function formatDate(value) {
         if (!value) return "N/A";
-        if (value.seconds) {
-            return new Date(value.seconds * 1000).toLocaleString('fr-FR');
-        }
+        if (value.seconds) return new Date(value.seconds * 1000).toLocaleString('fr-FR');
         if (typeof value === 'string' || typeof value === 'number') {
             const parsedDate = new Date(value);
             return !isNaN(parsedDate) ? parsedDate.toLocaleString('fr-FR') : value;
@@ -468,7 +560,7 @@
         return "N/A";
     }
 
-    // 1. ECUTEUR RETRAITS
+    // 1. ÉCOUTEUR DEMANDES DE RETRAIT
     onSnapshot(collection(db, "demandes_retrait"), (snapshot) => {
         cacheRetraits = [];
         snapshot.forEach(doc => cacheRetraits.push({ id: doc.id, ...doc.data() }));
@@ -487,20 +579,25 @@
             const email = (item.userEmail || '').toLowerCase();
             const id = (item.userId || item.id || '').toLowerCase();
             const methode = (item.methode || '').toLowerCase();
-            const adresse = (item.adresseReception || '').toLowerCase();
-            return email.includes(query) || id.includes(query) || methode.includes(query) || adresse.includes(query);
+            return email.includes(query) || id.includes(query) || methode.includes(query);
         });
 
         const countElem = document.getElementById("count-retraits");
         if (countElem) countElem.innerText = `${filtered.length} demande(s)`;
 
         if (filtered.length === 0) {
-            container.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">Aucune demande trouvée.</td></tr>`;
+            container.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-500">Aucune demande trouvée.</td></tr>`;
             return;
         }
 
         let html = "";
         filtered.forEach(data => {
+            const audit = window.verifierIntegriteUtilisateur(data.userId);
+
+            const badgeAudit = audit.estValide 
+                ? '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 w-max"><i class="fa-solid fa-shield-check"></i> Légitime</span>'
+                : `<span class="bg-rose-950 text-rose-400 border border-rose-800 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 w-max font-bold animate-pulse"><i class="fa-solid fa-triangle-exclamation"></i> Truqué (+${audit.ecartEcart} coins)</span>`;
+
             const statusBadge = data.statut === 'en_attente' 
                 ? '<span class="bg-amber-950 text-amber-400 border border-amber-800 text-xs px-2 py-0.5 rounded">En attente</span>'
                 : data.statut === 'approuve'
@@ -528,6 +625,7 @@
                     </td>
                     <td class="p-3.5 font-bold text-emerald-400">$${data.montantUSD ?? 0}</td>
                     <td class="p-3.5 text-amber-400 font-medium">${data.coinsDeduits ?? 0} coins</td>
+                    <td class="p-3.5">${badgeAudit}</td>
                     <td class="p-3.5"><span class="bg-slate-800 px-2 py-1 rounded text-xs">${data.methode || 'N/A'}</span></td>
                     <td class="p-3.5 font-mono text-xs text-blue-300 break-all select-all">${data.adresseReception || 'N/A'}</td>
                     <td class="p-3.5">${statusBadge}</td>
@@ -542,7 +640,7 @@
     const searchRetraits = document.getElementById("search-retraits");
     if (searchRetraits) searchRetraits.addEventListener("input", renderRetraits);
 
-    // 2. ECUTEURS UTILISATEURS ET REWARDS
+    // 2. ÉCOUTEURS UTILISATEURS ET REWARDS
     function listenUsersAndRewards() {
         onSnapshot(collection(db, "users"), (snapshot) => {
             cacheUsers = {};
@@ -570,17 +668,15 @@
             const u = cacheUsers[id] || {};
             const r = cacheRewards[id] || {};
             const name = (u.name || r.name || '').toLowerCase();
-            const sponsor = (u.parrainePar || u.sponsorId || r.parrainePar || r.sponsorId || '').toLowerCase();
-            const country = (u.country || r.country || '').toLowerCase();
             const uid = id.toLowerCase();
-            return name.includes(query) || uid.includes(query) || sponsor.includes(query) || country.includes(query);
+            return name.includes(query) || uid.includes(query);
         });
 
         const countElem = document.getElementById("count-users");
         if (countElem) countElem.innerText = `${filteredIds.length} utilisateur(s)`;
 
         if (filteredIds.length === 0) {
-            container.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Aucun utilisateur trouvé.</td></tr>`;
+            container.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">Aucun utilisateur trouvé.</td></tr>`;
             calculerStatistiques();
             return;
         }
@@ -592,17 +688,15 @@
 
             const userName = userData.name || rewardData.name || 'Sans Nom';
             const photoURL = userData.photoURL || rewardData.photoURL || null;
-            const sponsor = userData.parrainePar || userData.sponsorId || rewardData.parrainePar || rewardData.sponsorId || null;
 
-            const userXp = userData.xp ?? userData.XP ?? userData.Xp ?? rewardData.xp ?? 0;
-            const userRank = userData.rank ?? userData.rang ?? userData.Rank ?? userData.Rang ?? rewardData.rank ?? 0;
-            const userCoins = rewardData.coins ?? rewardData.coin ?? rewardData.Coins ?? userData.coins ?? userData.coin ?? 0;
-            const userTasks = rewardData.tasksCompleted ?? rewardData.toursfaits ?? rewardData.taches ?? userData.tasksCompleted ?? 0;
+            const userXp = userData.xp ?? userData.XP ?? rewardData.xp ?? 0;
+            const userCoins = rewardData.coins ?? rewardData.coin ?? userData.coins ?? 0;
 
-            const userLastActive = userData.lastActiveDate || userData.dateDerniersPoints || rewardData.lastActiveDate || 'N/A';
-            const country = userData.country || rewardData.country || 'N/A';
-            const age = userData.age || rewardData.age || null;
-            const invitedCount = userData.invitedCount ?? rewardData.invitedCount ?? 0;
+            const audit = window.verifierIntegriteUtilisateur(id);
+
+            const badgeAudit = audit.estValide
+                ? '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-semibold">✅ Correct</span>'
+                : `<span class="bg-rose-950 text-rose-400 border border-rose-800 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">⚠️ Suspect (${audit.coinsGagneesTheoriques} max)</span>`;
 
             html += `
                 <tr class="hover:bg-slate-800/50">
@@ -615,20 +709,13 @@
                             </div>
                         </div>
                     </td>
-                    <td class="p-3.5 font-bold text-amber-400">${userCoins}</td>
-                    <td class="p-3.5 text-xs">
-                        <span class="text-blue-400 font-bold">${userXp} XP</span> | 
-                        <span class="text-purple-400 font-semibold">Rang #${userRank}</span> | 
-                        <span class="text-slate-400">${userTasks} tâches</span>
-                    </td>
-                    <td class="p-3.5 font-mono text-xs">
-                        ${sponsor ? `<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded">${sponsor}</span>` : '<span class="text-slate-600">Aucun</span>'}
-                    </td>
-                    <td class="p-3.5 text-slate-300 font-medium">${invitedCount} filleul(s)</td>
-                    <td class="p-3.5 text-xs text-slate-400">
-                        ${country} ${age ? `(${age} ans)` : ''}
-                    </td>
-                    <td class="p-3.5 text-xs text-slate-400">${userLastActive}</td>
+                    <td class="p-3.5 font-bold text-amber-400">${userCoins.toLocaleString()}</td>
+                    <td class="p-3.5">${badgeAudit}</td>
+                    <td class="p-3.5 text-xs text-slate-300 font-semibold">${audit.totalTachesReelles} tâches (${audit.totalTachesReelles * 50} pts)</td>
+                    <td class="p-3.5 text-xs text-blue-400 font-bold">${userXp} XP</td>
+                    <td class="p-3.5 text-slate-300 font-medium">${audit.totalFilleuls} filleul(s)</td>
+                    <td class="p-3.5 text-xs text-slate-400">${userData.country || rewardData.country || 'N/A'}</td>
+                    <td class="p-3.5 text-xs text-slate-400">${userData.lastActiveDate || rewardData.lastActiveDate || 'N/A'}</td>
                 </tr>
             `;
         });
@@ -640,28 +727,21 @@
     if (searchUsers) searchUsers.addEventListener("input", renderCombinedUsersTable);
     listenUsersAndRewards();
 
-    // 3. ECUTEUR PREUVES DE PAIEMENT
+    // 3. PREUVES DE PAIEMENT
     onSnapshot(collection(db, "payment_proofs"), (snapshot) => {
         cacheProofs = [];
         snapshot.forEach(doc => cacheProofs.push({ id: doc.id, ...doc.data() }));
         renderProofs();
         calculerStatistiques();
-    }, (error) => console.error("Erreur payment_proofs:", error));
+    });
 
     function renderProofs() {
         const container = document.getElementById("grid-proofs");
         if (!container) return;
-
         const searchInput = document.getElementById("search-proofs");
         const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
 
-        const filtered = cacheProofs.filter(item => {
-            const name = (item.name || '').toLowerCase();
-            const email = (item.userEmail || '').toLowerCase();
-            const msg = (item.message || '').toLowerCase();
-            return name.includes(query) || email.includes(query) || msg.includes(query);
-        });
-
+        const filtered = cacheProofs.filter(item => (item.name || '').toLowerCase().includes(query) || (item.userEmail || '').toLowerCase().includes(query));
         const countElem = document.getElementById("count-proofs");
         if (countElem) countElem.innerText = `${filtered.length} preuve(s)`;
 
@@ -695,31 +775,19 @@
         container.innerHTML = html;
     }
 
-    const searchProofs = document.getElementById("search-proofs");
-    if (searchProofs) searchProofs.addEventListener("input", renderProofs);
-
-    // 4. ECUTEUR INSTALLATIONS
+    // 4. INSTALLATIONS
     onSnapshot(collection(db, "pending_installs"), (snapshot) => {
         cacheInstalls = [];
         snapshot.forEach(doc => cacheInstalls.push({ id: doc.id, ...doc.data() }));
         renderInstalls();
         calculerStatistiques();
-    }, (error) => console.error("Erreur pending_installs:", error));
+    });
 
     function renderInstalls() {
         const container = document.getElementById("table-installs-body");
         if (!container) return;
 
-        const searchInput = document.getElementById("search-installs");
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
-
-        const filtered = cacheInstalls.filter(item => {
-            const ref = (item.refId || '').toLowerCase();
-            const ip = (item.ip || '').toLowerCase();
-            const ua = (item.userAgent || '').toLowerCase();
-            return ref.includes(query) || ip.includes(query) || ua.includes(query);
-        });
-
+        const filtered = cacheInstalls;
         const countElem = document.getElementById("count-installs");
         if (countElem) countElem.innerText = `${filtered.length} installation(s)`;
 
@@ -740,32 +808,6 @@
             `;
         });
         container.innerHTML = html;
-    }
-
-    const searchInstalls = document.getElementById("search-installs");
-    if (searchInstalls) searchInstalls.addEventListener("input", renderInstalls);
-</script>
-
-<script>
-    function switchTab(tabName) {
-        const tabs = ['retraits', 'users', 'proofs', 'installs'];
-        tabs.forEach(t => {
-            const sec = document.getElementById(`sec-${t}`);
-            const tab = document.getElementById(`tab-${t}`);
-            if (sec) sec.classList.add('hidden');
-            if (tab) {
-                tab.classList.remove('tab-active');
-                tab.classList.add('text-slate-400');
-            }
-        });
-
-        const activeSec = document.getElementById(`sec-${tabName}`);
-        const activeTab = document.getElementById(`tab-${tabName}`);
-        if (activeSec) activeSec.classList.remove('hidden');
-        if (activeTab) {
-            activeTab.classList.add('tab-active');
-            activeTab.classList.remove('text-slate-400');
-        }
     }
 </script>
 </body>
