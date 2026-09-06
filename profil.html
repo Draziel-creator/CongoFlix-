@@ -3839,14 +3839,27 @@ window.checkUserReferralStatus = async function(userId) {
 
 window.handleReferralButtonAction = async function() {
     if (window.g_myReferralLink) {
-        // ACTION : COPIER LE LIEN
-        navigator.clipboard.writeText(window.g_myReferralLink).then(() => {
+        // ACTION : COPIER LE MESSAGE EXPLICATIF COMPLET + LE LIEN
+        const fullMessage = `Salut ! 🖐️ Tu cherches un moyen simple de gagner de l'argent depuis ton téléphone ?
+
+🎬 Sur notre plateforme, c'est ultra rapide :
+1️⃣ Regarde de courtes vidéos et publicités interactives.
+2️⃣ Cumule des pièces (coins) à chaque visionnage.
+3️⃣ Retire tes pièces en vrai cash (Crypto BTC, PayPal, Mobile Money) !
+
+🎁 Clique sur mon lien de parrainage ci-dessous pour t'inscrire et récupérer ton bonus de bienvenue :
+${window.g_myReferralLink}`;
+
+        navigator.clipboard.writeText(fullMessage).then(() => {
             const btn = document.getElementById('btn-generate-link');
             if (btn) {
                 btn.innerHTML = `<i class="fa-solid fa-check"></i> Copié !`;
                 setTimeout(() => { setButtonToCopyState(); }, 2000);
             }
+        }).catch(err => {
+            console.error("Erreur lors de la copie :", err);
         });
+
     } else {
         // ACTION : GÉNÉRATION DU LIEN (Une seule fois)
         if (!auth.currentUser) return;
