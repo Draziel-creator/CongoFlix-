@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Administrateur - Publicité RDC</title>
-    
-    <!-- Tailwind CSS -->
+    <title>Administration - Publicité</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -13,802 +12,842 @@
             theme: {
                 extend: {
                     colors: {
-                        darkbg: '#0f172a',
                         cardbg: '#1e293b',
-                        bordercolor: '#334155'
+                        bordercolor: '#334155',
                     }
                 }
             }
         }
     </script>
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- FontAwesome Icons -->
+    <!-- FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        body { background-color: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: bold; }
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-    </style>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="min-h-screen flex flex-col relative">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
 
-    <header class="bg-cardbg border-b border-bordercolor p-4 sticky top-0 z-40 flex justify-between items-center shadow-lg">
-        <div class="flex items-center gap-3">
-            <i class="fa-solid fa-shield-halved text-blue-500 text-2xl"></i>
-            <h1 class="text-xl font-bold tracking-wide">PANNEAU ADMIN - GESTION</h1>
-        </div>
-        <div id="connection-status" class="flex items-center gap-2 text-xs bg-amber-950 text-amber-400 border border-amber-800 px-3 py-1.5 rounded-full">
-            <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-            Connexion Auth Admin en cours...
+    <!-- Header / Navbar -->
+    <header class="bg-slate-800/80 backdrop-blur border-b border-bordercolor sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-shield-halved text-indigo-500 text-2xl"></i>
+                <h1 class="font-bold text-lg text-slate-100">Admin Dashboard</h1>
+            </div>
+            <!-- Badge de statut Firebase -->
+            <div id="connection-status" class="flex items-center gap-2 text-xs bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1.5 rounded-full">
+                <span class="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></span> Connexion en cours...
+            </div>
         </div>
     </header>
 
-    <nav class="bg-cardbg/50 border-b border-bordercolor px-6 flex gap-6 overflow-x-auto">
-        <button onclick="switchTab('retraits')" id="tab-retraits" class="py-4 text-sm font-medium transition-all flex items-center gap-2 tab-active whitespace-nowrap">
-            <i class="fa-solid fa-hand-holding-dollar"></i> Demandes de Retrait
-        </button>
-        <button onclick="switchTab('users')" id="tab-users" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 whitespace-nowrap">
-            <i class="fa-solid fa-users"></i> Utilisateurs (Rewards)
-        </button>
-        <button onclick="switchTab('proofs')" id="tab-proofs" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 whitespace-nowrap">
-            <i class="fa-solid fa-file-invoice-dollar"></i> Preuves de Paiement
-        </button>
-        <button onclick="switchTab('installs')" id="tab-installs" class="py-4 text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 whitespace-nowrap">
-            <i class="fa-solid fa-download"></i> Installations Pending
-        </button>
-    </nav>
+    <div class="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6">
+        <!-- Navigation Menu -->
+        <aside class="w-full md:w-64 flex-shrink-0">
+            <nav class="bg-cardbg border border-bordercolor rounded-xl p-3 space-y-1 sticky top-20">
+                <button onclick="switchTab('tab-dashboard')" class="tab-btn active w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-indigo-400 bg-indigo-950/50 border border-indigo-800/50">
+                    <i class="fa-solid fa-chart-pie w-5"></i> Vue Globale
+                </button>
+                <button onclick="switchTab('tab-retraits')" class="tab-btn w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-money-bill-transfer w-5"></i> Retraits
+                </button>
+                <button onclick="switchTab('tab-users')" class="tab-btn w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-users w-5"></i> Utilisateurs
+                </button>
+                <button onclick="switchTab('tab-proofs')" class="tab-btn w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-file-invoice-dollar w-5"></i> Preuves
+                </button>
+                <button onclick="switchTab('tab-installs')" class="tab-btn w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-download w-5"></i> Installations
+                </button>
+            </nav>
+        </aside>
 
-    <main class="flex-1 p-6 max-w-7xl w-full mx-auto">
+        <!-- Zone de Contenu Principal -->
+        <main class="flex-1 space-y-6">
 
-        <!-- CARTES DE STATISTIQUES ET CALCULS EN TEMPS RÉEL -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
-                <span class="text-xs text-slate-400 font-medium">Montant Payé</span>
-                <div id="stat-montant-paye" class="text-lg font-extrabold text-emerald-400 mt-1">$0.00</div>
-            </div>
-            
-            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
-                <span class="text-xs text-slate-400 font-medium">En Attente (USD)</span>
-                <div id="stat-montant-attente" class="text-lg font-extrabold text-amber-400 mt-1">$0.00</div>
-            </div>
-
-            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
-                <span class="text-xs text-slate-400 font-medium">Utilisateurs Totaux</span>
-                <div id="stat-total-users" class="text-lg font-extrabold text-blue-400 mt-1">0</div>
-            </div>
-
-            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
-                <span class="text-xs text-slate-400 font-medium">Coins Globaux</span>
-                <div id="stat-coins-global" class="text-lg font-extrabold text-yellow-400 mt-1">0</div>
-            </div>
-
-            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
-                <span class="text-xs text-slate-400 font-medium">Filleuls Totaux</span>
-                <div id="stat-filleuls-global" class="text-lg font-extrabold text-indigo-400 mt-1">0</div>
-            </div>
-
-            <div class="bg-cardbg border border-bordercolor rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
-                <span class="text-xs text-slate-400 font-medium">Preuves / Installs</span>
-                <div class="text-base font-bold text-slate-200 mt-1">
-                    <span id="stat-total-preuves" class="text-purple-400">0</span> / <span id="stat-total-installs" class="text-cyan-400">0</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- GRAPHIQUE D'ACTIVITÉ (Intégré pour Chart.js) -->
-        <div class="bg-cardbg border border-bordercolor rounded-xl p-5 mb-6 shadow-sm">
-            <h3 class="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-chart-line text-blue-500"></i> Aperçu de l'Activité
-            </h3>
-            <div class="h-64 w-full relative">
-                <canvas id="activityChart"></canvas>
-            </div>
-        </div>
-
-        <!-- SECTION 1 : RETRAITS -->
-        <section id="sec-retraits" class="space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h2 class="text-lg font-semibold text-slate-200">Historique & Demandes de Retrait</h2>
-                <div class="flex items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-64">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                        <input type="text" id="search-retraits" placeholder="Filtrer (Email, ID, Adresse...)" class="w-full bg-slate-900 border border-bordercolor text-slate-200 text-xs rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-blue-500">
+            <!-- TAB 1: VUE GLOBALE & STATS -->
+            <div id="tab-dashboard" class="tab-content space-y-6">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor">
+                        <div class="text-xs text-slate-400 font-medium">Demandes Retraits</div>
+                        <div id="stat-total-retraits" class="text-xl font-bold text-slate-100 mt-1">0</div>
                     </div>
-                    <span id="count-retraits" class="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-slate-400 border border-bordercolor whitespace-nowrap">0 demande(s)</span>
-                </div>
-            </div>
-            
-            <div class="overflow-x-auto bg-cardbg rounded-xl border border-bordercolor shadow-sm">
-                <table class="w-full text-left text-sm text-slate-300">
-                    <thead class="bg-slate-900/80 text-xs uppercase text-slate-400 border-b border-bordercolor">
-                        <tr>
-                            <th class="p-3.5">Utilisateur</th>
-                            <th class="p-3.5">Montant USD</th>
-                            <th class="p-3.5">Coins Déduits</th>
-                            <th class="p-3.5">Méthode</th>
-                            <th class="p-3.5">Adresse de Réception</th>
-                            <th class="p-3.5">Statut</th>
-                            <th class="p-3.5">Date</th>
-                            <th class="p-3.5 text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-retraits-body" class="divide-y divide-bordercolor">
-                        <tr><td colspan="8" class="p-4 text-center text-slate-500">Chargement des données...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- SECTION 2 : UTILISATEURS -->
-        <section id="sec-users" class="space-y-4 hidden">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h2 class="text-lg font-semibold text-slate-200">Utilisateurs & Parrainages (Rewards)</h2>
-                <div class="flex items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-64">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                        <input type="text" id="search-users" placeholder="Filtrer (Nom, ID, Sponsor, Pays...)" class="w-full bg-slate-900 border border-bordercolor text-slate-200 text-xs rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-blue-500">
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor">
+                        <div class="text-xs text-amber-400 font-medium">Retraits en Attente</div>
+                        <div id="stat-retraits-attente" class="text-xl font-bold text-amber-400 mt-1">0</div>
                     </div>
-                    <span id="count-users" class="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-slate-400 border border-bordercolor whitespace-nowrap">0 utilisateur(s)</span>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto bg-cardbg rounded-xl border border-bordercolor shadow-sm">
-                <table class="w-full text-left text-sm text-slate-300">
-                    <thead class="bg-slate-900/80 text-xs uppercase text-slate-400 border-b border-bordercolor">
-                        <tr>
-                            <th class="p-3.5">Utilisateur</th>
-                            <th class="p-3.5">Coins</th>
-                            <th class="p-3.5">XP / Rang / Tâches</th>
-                            <th class="p-3.5">Parrain (Sponsor ID)</th>
-                            <th class="p-3.5">Filleuls Inscrits</th>
-                            <th class="p-3.5">Pays / Âge</th>
-                            <th class="p-3.5">Dernière Activité</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-users-body" class="divide-y divide-bordercolor">
-                        <tr><td colspan="7" class="p-4 text-center text-slate-500">Chargement des données...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- SECTION 3 : PREUVES -->
-        <section id="sec-proofs" class="space-y-4 hidden">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h2 class="text-lg font-semibold text-slate-200">Preuves de Paiement Soumises</h2>
-                <div class="flex items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-64">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                        <input type="text" id="search-proofs" placeholder="Filtrer (Nom, Email, Message...)" class="w-full bg-slate-900 border border-bordercolor text-slate-200 text-xs rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-blue-500">
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor">
+                        <div class="text-xs text-emerald-400 font-medium">Total Payé (USD)</div>
+                        <div id="stat-montant-paye" class="text-xl font-bold text-emerald-400 mt-1">$0.00</div>
                     </div>
-                    <span id="count-proofs" class="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-slate-400 border border-bordercolor whitespace-nowrap">0 preuve(s)</span>
-                </div>
-            </div>
-
-            <div id="grid-proofs" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="p-4 text-center text-slate-500 col-span-2">Chargement des données...</div>
-            </div>
-        </section>
-
-        <!-- SECTION 4 : INSTALLATIONS -->
-        <section id="sec-installs" class="space-y-4 hidden">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h2 class="text-lg font-semibold text-slate-200">Installations en Attente (Referrals)</h2>
-                <div class="flex items-center gap-3 w-full sm:w-auto">
-                    <div class="relative w-full sm:w-64">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-                        <input type="text" id="search-installs" placeholder="Filtrer (RefID, IP, UserAgent...)" class="w-full bg-slate-900 border border-bordercolor text-slate-200 text-xs rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-blue-500">
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor">
+                        <div class="text-xs text-amber-400 font-medium">Montant en Attente</div>
+                        <div id="stat-montant-attente" class="text-xl font-bold text-amber-400 mt-1">$0.00</div>
                     </div>
-                    <span id="count-installs" class="text-xs bg-slate-800 px-2.5 py-1 rounded-md text-slate-400 border border-bordercolor whitespace-nowrap">0 installation(s)</span>
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor">
+                        <div class="text-xs text-slate-400 font-medium">Coins Déduits</div>
+                        <div id="stat-coins-deduits" class="text-xl font-bold text-slate-100 mt-1">0</div>
+                    </div>
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor">
+                        <div class="text-xs text-indigo-400 font-medium">Total Utilisateurs</div>
+                        <div id="stat-total-users" class="text-xl font-bold text-indigo-400 mt-1">0</div>
+                    </div>
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor">
+                        <div class="text-xs text-amber-400 font-medium">Coins Globaux</div>
+                        <div id="stat-coins-global" class="text-xl font-bold text-amber-400 mt-1">0</div>
+                    </div>
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor">
+                        <div class="text-xs text-blue-400 font-medium">Total Filleuls</div>
+                        <div id="stat-filleuls-global" class="text-xl font-bold text-blue-400 mt-1">0</div>
+                    </div>
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor">
+                        <div class="text-xs text-purple-400 font-medium">XP Total</div>
+                        <div id="stat-xp-global" class="text-xl font-bold text-purple-400 mt-1">0</div>
+                    </div>
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor">
+                        <div class="text-xs text-slate-400 font-medium">Total Preuves</div>
+                        <div id="stat-total-preuves" class="text-xl font-bold text-slate-100 mt-1">0</div>
+                    </div>
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor">
+                        <div class="text-xs text-slate-400 font-medium">Total Installations</div>
+                        <div id="stat-total-installs" class="text-xl font-bold text-slate-100 mt-1">0</div>
+                    </div>
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor border-rose-900/50 bg-rose-950/20">
+                        <div class="text-xs text-rose-400 font-medium">Fraudes Détectées</div>
+                        <div id="stat-fraudes-detectees" class="text-xl font-bold text-rose-400 mt-1">0</div>
+                    </div>
+                </div>
+
+                <!-- Graphique d'Activité -->
+                <div class="bg-cardbg p-5 rounded-xl border border-bordercolor">
+                    <h2 class="text-sm font-bold text-slate-300 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-indigo-400"></i> Activité des Tâches / Publicités
+                    </h2>
+                    <div class="h-64 relative">
+                        <canvas id="chart-activite-global"></canvas>
+                    </div>
                 </div>
             </div>
 
-            <div class="overflow-x-auto bg-cardbg rounded-xl border border-bordercolor shadow-sm">
-                <table class="w-full text-left text-sm text-slate-300">
-                    <thead class="bg-slate-900/80 text-xs uppercase text-slate-400 border-b border-bordercolor">
-                        <tr>
-                            <th class="p-3.5">ID Parrain (RefID)</th>
-                            <th class="p-3.5">Adresse IP</th>
-                            <th class="p-3.5">Navigateur / System (UserAgent)</th>
-                            <th class="p-3.5">Date</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-installs-body" class="divide-y divide-bordercolor">
-                        <tr><td colspan="4" class="p-4 text-center text-slate-500">Chargement des données...</td></tr>
-                    </tbody>
-                </table>
+            <!-- TAB 2: DEMANDES DE RETRAIT -->
+            <div id="tab-retraits" class="tab-content hidden space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-cardbg p-4 rounded-xl border border-bordercolor">
+                    <div>
+                        <h2 class="font-bold text-slate-100">Demandes de Retrait</h2>
+                        <span id="count-retraits" class="text-xs text-slate-400">0 demande(s)</span>
+                    </div>
+                    <input type="text" id="search-retraits" placeholder="Rechercher email, ID, méthode..." class="bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 w-full sm:w-64">
+                </div>
+
+                <div class="bg-cardbg border border-bordercolor rounded-xl overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold border-b border-bordercolor">
+                            <tr>
+                                <th class="p-3.5">Utilisateur</th>
+                                <th class="p-3.5">Montant</th>
+                                <th class="p-3.5">Coins</th>
+                                <th class="p-3.5">Audit Anti-Triche</th>
+                                <th class="p-3.5">Méthode</th>
+                                <th class="p-3.5">Adresse</th>
+                                <th class="p-3.5">Statut</th>
+                                <th class="p-3.5">Date</th>
+                                <th class="p-3.5 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-retraits-body" class="divide-y divide-bordercolor">
+                            <tr><td colspan="9" class="p-4 text-center text-slate-500">Chargement...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </section>
 
-    </main>
+            <!-- TAB 3: UTILISATEURS -->
+            <div id="tab-users" class="tab-content hidden space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-cardbg p-4 rounded-xl border border-bordercolor">
+                    <div>
+                        <h2 class="font-bold text-slate-100">Liste des Utilisateurs</h2>
+                        <span id="count-users" class="text-xs text-slate-400">0 utilisateur(s)</span>
+                    </div>
+                    <input type="text" id="search-users" placeholder="Rechercher nom, UID..." class="bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 w-full sm:w-64">
+                </div>
 
-    <!-- MODAL LECTEUR VIDÉO -->
-    <div id="video-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-cardbg rounded-xl border border-bordercolor max-w-3xl w-full p-4 relative flex flex-col gap-3 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-bordercolor pb-3">
+                <div class="bg-cardbg border border-bordercolor rounded-xl overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold border-b border-bordercolor">
+                            <tr>
+                                <th class="p-3.5">Utilisateur</th>
+                                <th class="p-3.5">Coins</th>
+                                <th class="p-3.5">Intégrité</th>
+                                <th class="p-3.5">Tâches</th>
+                                <th class="p-3.5">XP</th>
+                                <th class="p-3.5">Filleuls</th>
+                                <th class="p-3.5">Pays</th>
+                                <th class="p-3.5">Dernière Activité</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-users-body" class="divide-y divide-bordercolor">
+                            <tr><td colspan="8" class="p-4 text-center text-slate-500">Chargement...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 4: PREUVES DE PAIEMENT -->
+            <div id="tab-proofs" class="tab-content hidden space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-cardbg p-4 rounded-xl border border-bordercolor">
+                    <div>
+                        <h2 class="font-bold text-slate-100">Preuves de Paiement</h2>
+                        <span id="count-proofs" class="text-xs text-slate-400">0 preuve(s)</span>
+                    </div>
+                    <input type="text" id="search-proofs" placeholder="Rechercher nom, email..." class="bg-slate-900 border border-bordercolor rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 w-full sm:w-64">
+                </div>
+
+                <div id="grid-proofs" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 text-center text-slate-500 col-span-2">Chargement...</div>
+                </div>
+            </div>
+
+            <!-- TAB 5: INSTALLATIONS -->
+            <div id="tab-installs" class="tab-content hidden space-y-4">
+                <div class="flex justify-between items-center bg-cardbg p-4 rounded-xl border border-bordercolor">
+                    <div>
+                        <h2 class="font-bold text-slate-100">Installations En Attente</h2>
+                        <span id="count-installs" class="text-xs text-slate-400">0 installation(s)</span>
+                    </div>
+                </div>
+
+                <div class="bg-cardbg border border-bordercolor rounded-xl overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold border-b border-bordercolor">
+                            <tr>
+                                <th class="p-3.5">Ref ID</th>
+                                <th class="p-3.5">Adresse IP</th>
+                                <th class="p-3.5">User Agent</th>
+                                <th class="p-3.5">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-installs-body" class="divide-y divide-bordercolor">
+                            <tr><td colspan="4" class="p-4 text-center text-slate-500">Chargement...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODALE DE CONFIRMATION APPROBATION RETRAIT -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-cardbg border border-bordercolor rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center">
                 <h3 class="font-bold text-slate-100 flex items-center gap-2">
-                    <i class="fa-solid fa-circle-play text-blue-500"></i> Visionnage de la Preuve Vidéo
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Confirmer l'approbation
                 </h3>
-                <button onclick="closeVideoModal()" class="text-slate-400 hover:text-white transition-colors text-lg px-2">
+                <button onclick="closeConfirmModal()" class="text-slate-400 hover:text-slate-200">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <div class="relative bg-black rounded-lg overflow-hidden aspect-video flex items-center justify-center">
-                <video id="modal-video-player" controls autoplay class="w-full h-full object-contain"></video>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL CONFIRMATION APPROBATION RETRAIT -->
-    <div id="confirm-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-all">
-        <div class="bg-cardbg rounded-2xl border border-bordercolor max-w-md w-full p-6 relative flex flex-col gap-5 shadow-2xl transform transition-all scale-100">
-            <div class="flex items-center gap-3 border-b border-bordercolor pb-4">
-                <div class="w-11 h-11 rounded-xl bg-emerald-950/80 border border-emerald-800/80 flex items-center justify-center text-emerald-400 text-xl shadow-inner shrink-0">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
-                <div>
-                    <h3 class="font-bold text-slate-100 text-base">Approuver la demande ?</h3>
-                    <p class="text-xs text-slate-400">Action d'administration sécurisée</p>
-                </div>
-            </div>
-            
-            <p class="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3.5 rounded-xl border border-bordercolor/60">
-                Êtes-vous sûr de vouloir approuver ce retrait ? Le statut de la demande passera définitivement à <span class="text-emerald-400 font-semibold">'Approuvé'</span> et l'utilisateur aura son reçu.
+            <p class="text-xs text-slate-300">
+                Êtes-vous sûr de vouloir approuver ce retrait ? Cette action mettra à jour le statut du document dans Firestore.
             </p>
-
-            <div id="confirm-modal-error" class="hidden text-xs bg-rose-950/80 text-rose-300 border border-rose-800 p-3 rounded-xl"></div>
-
-            <div class="flex justify-end items-center gap-2.5 pt-1">
-                <button onclick="closeConfirmModal()" class="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700/80 rounded-xl transition-all border border-bordercolor">
+            <div id="confirm-modal-error" class="hidden text-xs bg-rose-950 text-rose-400 border border-rose-800 p-2.5 rounded-lg"></div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 text-xs font-semibold text-slate-400 hover:bg-slate-800 rounded-lg transition-colors">
                     Annuler
                 </button>
-                <button id="btn-confirm-action" class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-md shadow-emerald-950 flex items-center gap-2">
-                    <i class="fa-solid fa-check"></i> Approuver
+                <button id="btn-confirm-action" class="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-check"></i> Confirmer
                 </button>
             </div>
         </div>
     </div>
 
-</body>
+    <!-- MODALE VISIONNAGE PREUVE VIDEO -->
+    <div id="video-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-cardbg border border-bordercolor rounded-xl max-w-2xl w-full p-4 space-y-3 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-slate-100 flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-circle-play text-blue-400"></i> Preuve Vidéo
+                </h3>
+                <button onclick="closeVideoModal()" class="text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="aspect-video bg-black rounded-lg overflow-hidden relative">
+                <video id="video-player" controls class="w-full h-full"></video>
+            </div>
+        </div>
+    </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    <!-- SCRIPT INTERFACE & NAVIGATION -->
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById(tabId);
+            if (target) target.classList.remove('hidden');
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
-        authDomain: "publicite-6445c.firebaseapp.com",
-        projectId: "publicite-6445c",
-        storageBucket: "publicite-6445c.firebasestorage.app",
-        messagingSenderId: "663385244466",
-        appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
-        measurementId: "G-T37TGB3SR0"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-
-    // Instance Globale du Graphique
-    let activityChartInstance = null;
-
-    // Connexion automatique Admin au chargement
-    async function connecterAdmin() {
-        try {
-            await signInWithEmailAndPassword(auth, "admin@publicite.com", "adminvotredomaine1");
-        } catch (error) {
-            console.error("Erreur d'authentification Admin :", error.message);
-            const badge = document.getElementById("connection-status");
-            if (badge) {
-                badge.className = "flex items-center gap-2 text-xs bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1.5 rounded-full";
-                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Erreur d'authentification Admin`;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors";
+            });
+            if (window.event && window.event.currentTarget) {
+                window.event.currentTarget.className = "tab-btn active w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors text-indigo-400 bg-indigo-950/50 border border-indigo-800/50";
             }
         }
-    }
 
-    // Écouter l'état d'authentification
-    onAuthStateChanged(auth, (user) => {
-        const badge = document.getElementById("connection-status");
-        if (!badge) return;
-        if (user && user.uid === "KJCbYLLsL8Wvw64ivXLWKRvrale2") {
-            badge.className = "flex items-center gap-2 text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-3 py-1.5 rounded-full";
-            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Admin Sécurisé (${user.email})`;
-        } else {
-            badge.className = "flex items-center gap-2 text-xs bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1.5 rounded-full";
-            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Non Autorisé`;
-        }
-    });
-
-    connecterAdmin();
-
-    // Cache local de données
-    let cacheRetraits = [];
-    let cacheUsers = {};
-    let cacheRewards = {};
-    let cacheProofs = [];
-    let cacheInstalls = [];
-    let currentDocIdToApprove = null;
-
-    // =======================================================
-    // 🧠 ALGORITHME D'AUDIT ANTI-TRICHE ET VERIFICATION
-    // =======================================================
-    window.verifierIntegriteUtilisateur = function(userId) {
-        const u = cacheUsers[userId] || {};
-        const r = cacheRewards[userId] || {};
-
-        // 1. Solde affiché dans la base de données (modifiable via console utilisateur)
-        const coinsDeclarees = Number(r.coins ?? r.coin ?? u.coins ?? 0);
-
-        // 2. Traitement de l'historique quotidien de visionnage/tâches
-        const historyMap = r.history || u.history || {};
-        let totalTachesHistorique = 0;
-
-        Object.entries(historyMap).forEach(([key, val]) => {
-            // Exclure les clés de clés système non-numériques si nécessaire
-            if (typeof val === 'number' && key !== 'w1_d1') {
-                totalTachesHistorique += val;
+        window.openVideoModal = function(url) {
+            const modal = document.getElementById('video-modal');
+            const player = document.getElementById('video-player');
+            if (modal && player) {
+                player.src = url;
+                modal.classList.remove('hidden');
+                player.play().catch(() => {});
             }
-        });
-
-        const tasksCompletedCount = Number(r.tasksCompleted ?? u.tasksCompleted ?? 0);
-        // Prendre la valeur maximale entre le total déclaré et la somme de l'historique
-        const totalTachesReelles = Math.max(totalTachesHistorique, tasksCompletedCount);
-
-        // 3. Règles de calcul officiel : 50 Pts par Tâche + Bonus Parrainage (ex: 250 Pts par filleul)
-        const PTS_PAR_TACHE = 50;
-        const PTS_PAR_FILLEUL = 250;
-        const totalFilleuls = Number(u.invitedCount ?? r.invitedCount ?? 0);
-
-        const coinsGagneesTheoriques = (totalTachesReelles * PTS_PAR_TACHE) + (totalFilleuls * PTS_PAR_FILLEUL);
-
-        // 4. Déduction des retraits déjà demandés ou approuvés
-        const retraitsUser = cacheRetraits.filter(req => req.userId === userId && req.statut !== 'rejete');
-        const totalCoinsDeduitsRetraits = retraitsUser.reduce((sum, req) => sum + (Number(req.coinsDeduits) || 0), 0);
-
-        // 5. Solde maximum légitime toléré (+ 500 coins de tolérance/bonus divers)
-        const soldeMaxAutorise = Math.max(0, coinsGagneesTheoriques - totalCoinsDeduitsRetraits) + 500;
-
-        const estValide = coinsDeclarees <= soldeMaxAutorise;
-        const ecartEcart = coinsDeclarees - soldeMaxAutorise;
-
-        return {
-            coinsDeclarees,
-            coinsGagneesTheoriques,
-            totalTachesReelles,
-            totalFilleuls,
-            estValide,
-            ecartEcart: ecartEcart > 0 ? ecartEcart : 0
-        };
-    };
-
-    // =======================================================
-    // 📊 CALCUL DES STATISTIQUES GLOBALES & GRAPHIQUE
-    // =======================================================
-    function calculerStatistiques() {
-        const totalDemandes = cacheRetraits.length;
-        const demandesAttente = cacheRetraits.filter(r => r.statut === 'en_attente').length;
-        const totalPayeUSD = cacheRetraits
-            .filter(r => r.statut === 'approuve')
-            .reduce((sum, r) => sum + (Number(r.montantUSD) || 0), 0);
-        const totalEnAttenteUSD = cacheRetraits
-            .filter(r => r.statut === 'en_attente')
-            .reduce((sum, r) => sum + (Number(r.montantUSD) || 0), 0);
-        const totalCoinsDeduits = cacheRetraits
-            .reduce((sum, r) => sum + (Number(r.coinsDeduits) || 0), 0);
-
-        const allUserIds = Array.from(new Set([...Object.keys(cacheUsers), ...Object.keys(cacheRewards)]));
-        const totalUsers = allUserIds.length;
-        
-        let totalCoinsGlobal = 0;
-        let totalFilleulsGlobal = 0;
-        let totalXpGlobal = 0;
-        let totalFraudesDetectees = 0;
-
-        allUserIds.forEach(id => {
-            const u = cacheUsers[id] || {};
-            const r = cacheRewards[id] || {};
-            totalCoinsGlobal += Number(r.coins ?? r.coin ?? u.coins ?? 0);
-            totalFilleulsGlobal += Number(u.invitedCount ?? r.invitedCount ?? 0);
-            totalXpGlobal += Number(u.xp ?? u.XP ?? r.xp ?? 0);
-
-            const audit = window.verifierIntegriteUtilisateur(id);
-            if (!audit.estValide) totalFraudesDetectees++;
-        });
-
-        const setVal = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = val;
         };
 
-        setVal("stat-total-retraits", totalDemandes);
-        setVal("stat-retraits-attente", demandesAttente);
-        setVal("stat-montant-paye", `$${totalPayeUSD.toFixed(2)}`);
-        setVal("stat-montant-attente", `$${totalEnAttenteUSD.toFixed(2)}`);
-        setVal("stat-coins-deduits", totalCoinsDeduits.toLocaleString());
-        setVal("stat-total-users", totalUsers);
-        setVal("stat-coins-global", totalCoinsGlobal.toLocaleString());
-        setVal("stat-filleuls-global", totalFilleulsGlobal);
-        setVal("stat-xp-global", totalXpGlobal.toLocaleString());
-        setVal("stat-total-preuves", cacheProofs.length);
-        setVal("stat-total-installs", cacheInstalls.length);
-        setVal("stat-fraudes-detectees", totalFraudesDetectees);
+        window.closeVideoModal = function() {
+            const modal = document.getElementById('video-modal');
+            const player = document.getElementById('video-player');
+            if (modal && player) {
+                player.pause();
+                player.src = "";
+                modal.classList.add('hidden');
+            }
+        };
+    </script>
 
-        mettreAJourGraphiqueActivite();
-    }
+    <!-- VOTRE SCRIPT MODULE NON MODIFIÉ -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    // Génération/Mise à jour du graphique d'activités
-    function mettreAJourGraphiqueActivite() {
-        const canvas = document.getElementById('chart-activite-global');
-        if (!canvas || !window.Chart) return;
+        const firebaseConfig = {
+            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+            authDomain: "publicite-6445c.firebaseapp.com",
+            projectId: "publicite-6445c",
+            storageBucket: "publicite-6445c.firebasestorage.app",
+            messagingSenderId: "663385244466",
+            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b",
+            measurementId: "G-T37TGB3SR0"
+        };
 
-        // Regroupement quotidien des tâches effectuées depuis les historiques
-        const activitesParDate = {};
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-        Object.values(cacheRewards).forEach(rewardDoc => {
-            const history = rewardDoc.history || {};
-            Object.entries(history).forEach(([dateStr, count]) => {
-                if (dateStr.startsWith('202') && typeof count === 'number') {
-                    activitesParDate[dateStr] = (activitesParDate[dateStr] || 0) + count;
-                }
-            });
-        });
+        // Instance Globale du Graphique
+        let activityChartInstance = null;
 
-        const datesTriees = Object.keys(activitesParDate).sort();
-        const volumesTaches = datesTriees.map(d => activitesParDate[d]);
-
-        if (activityChartInstance) {
-            activityChartInstance.data.labels = datesTriees;
-            activityChartInstance.data.datasets[0].data = volumesTaches;
-            activityChartInstance.update();
-        } else {
-            const ctx = canvas.getContext('2d');
-            activityChartInstance = new window.Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: datesTriees,
-                    datasets: [{
-                        label: 'Publicités / Tâches visionnées',
-                        data: volumesTaches,
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.15)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.35,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#818cf8'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#94a3b8', font: { family: 'sans-serif', size: 12 } } }
-                    },
-                    scales: {
-                        x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
-                        y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' }, beginAtZero: true }
-                    }
-                }
-            });
-        }
-    }
-
-    // Modal Approbation
-    window.approuverRetrait = function(docId) {
-        if (!auth.currentUser || auth.currentUser.uid !== "KJCbYLLsL8Wvw64ivXLWKRvrale2") {
-            showConfirmError("Erreur : Connexion Admin requise.");
-            return;
-        }
-
-        currentDocIdToApprove = docId;
-        const modal = document.getElementById("confirm-modal");
-        const errDiv = document.getElementById("confirm-modal-error");
-        if (errDiv) { errDiv.classList.add("hidden"); errDiv.innerText = ""; }
-        if (modal) modal.classList.remove("hidden");
-    };
-
-    window.closeConfirmModal = function() {
-        const modal = document.getElementById("confirm-modal");
-        if (modal) modal.classList.add("hidden");
-        currentDocIdToApprove = null;
-    };
-
-    function showConfirmError(msg) {
-        const errDiv = document.getElementById("confirm-modal-error");
-        if (errDiv) { errDiv.innerText = msg; errDiv.classList.remove("hidden"); }
-    }
-
-    const btnConfirm = document.getElementById("btn-confirm-action");
-    if (btnConfirm) {
-        btnConfirm.addEventListener("click", async () => {
-            if (!currentDocIdToApprove) return;
-
-            const originalText = btnConfirm.innerHTML;
-            btnConfirm.disabled = true;
-            btnConfirm.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Traitement...`;
-
+        // Connexion automatique Admin au chargement
+        async function connecterAdmin() {
             try {
-                await updateDoc(doc(db, "demandes_retrait", currentDocIdToApprove), {
-                    statut: "approuve",
-                    dateApprobation: new Date()
-                });
-                closeConfirmModal();
+                await signInWithEmailAndPassword(auth, "admin@publicite.com", "adminvotredomaine1");
             } catch (error) {
-                console.error("Erreur d'approbation :", error);
-                showConfirmError("Erreur : " + error.message);
-            } finally {
-                btnConfirm.disabled = false;
-                btnConfirm.innerHTML = originalText;
+                console.error("Erreur d'authentification Admin :", error.message);
+                const badge = document.getElementById("connection-status");
+                if (badge) {
+                    badge.className = "flex items-center gap-2 text-xs bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1.5 rounded-full";
+                    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Erreur d'authentification Admin`;
+                }
             }
-        });
-    }
-
-    function formatDate(value) {
-        if (!value) return "N/A";
-        if (value.seconds) return new Date(value.seconds * 1000).toLocaleString('fr-FR');
-        if (typeof value === 'string' || typeof value === 'number') {
-            const parsedDate = new Date(value);
-            return !isNaN(parsedDate) ? parsedDate.toLocaleString('fr-FR') : value;
-        }
-        return "N/A";
-    }
-
-    // 1. ÉCOUTEUR DEMANDES DE RETRAIT
-    onSnapshot(collection(db, "demandes_retrait"), (snapshot) => {
-        cacheRetraits = [];
-        snapshot.forEach(doc => cacheRetraits.push({ id: doc.id, ...doc.data() }));
-        renderRetraits();
-        calculerStatistiques();
-    }, (error) => console.error("Erreur retraits:", error));
-
-    function renderRetraits() {
-        const container = document.getElementById("table-retraits-body");
-        if (!container) return;
-
-        const searchInput = document.getElementById("search-retraits");
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
-
-        const filtered = cacheRetraits.filter(item => {
-            const email = (item.userEmail || '').toLowerCase();
-            const id = (item.userId || item.id || '').toLowerCase();
-            const methode = (item.methode || '').toLowerCase();
-            return email.includes(query) || id.includes(query) || methode.includes(query);
-        });
-
-        const countElem = document.getElementById("count-retraits");
-        if (countElem) countElem.innerText = `${filtered.length} demande(s)`;
-
-        if (filtered.length === 0) {
-            container.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-500">Aucune demande trouvée.</td></tr>`;
-            return;
         }
 
-        let html = "";
-        filtered.forEach(data => {
-            const audit = window.verifierIntegriteUtilisateur(data.userId);
-
-            const badgeAudit = audit.estValide 
-                ? '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 w-max"><i class="fa-solid fa-shield-check"></i> Légitime</span>'
-                : `<span class="bg-rose-950 text-rose-400 border border-rose-800 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 w-max font-bold animate-pulse"><i class="fa-solid fa-triangle-exclamation"></i> Truqué (+${audit.ecartEcart} coins)</span>`;
-
-            const statusBadge = data.statut === 'en_attente' 
-                ? '<span class="bg-amber-950 text-amber-400 border border-amber-800 text-xs px-2 py-0.5 rounded">En attente</span>'
-                : data.statut === 'approuve'
-                ? '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-2 py-0.5 rounded">Approuvé</span>'
-                : `<span class="bg-rose-950 text-rose-400 border border-rose-800 text-xs px-2 py-0.5 rounded">${data.statut || 'N/A'}</span>`;
-
-            let actionBtn = "";
-            if (data.statut === 'en_attente') {
-                actionBtn = `
-                    <button onclick="approuverRetrait('${data.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm mx-auto">
-                        <i class="fa-solid fa-check"></i> Approuver
-                    </button>
-                `;
-            } else if (data.statut === 'approuve') {
-                actionBtn = `<span class="text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1"><i class="fa-solid fa-circle-check"></i> Payé</span>`;
+        // Écouter l'état d'authentification
+        onAuthStateChanged(auth, (user) => {
+            const badge = document.getElementById("connection-status");
+            if (!badge) return;
+            if (user && user.uid === "KJCbYLLsL8Wvw64ivXLWKRvrale2") {
+                badge.className = "flex items-center gap-2 text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-3 py-1.5 rounded-full";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Admin Sécurisé (${user.email})`;
             } else {
-                actionBtn = `<span class="text-xs text-slate-500">-</span>`;
+                badge.className = "flex items-center gap-2 text-xs bg-rose-950 text-rose-400 border border-rose-800 px-3 py-1.5 rounded-full";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Non Autorisé`;
+            }
+        });
+
+        connecterAdmin();
+
+        // Cache local de données
+        let cacheRetraits = [];
+        let cacheUsers = {};
+        let cacheRewards = {};
+        let cacheProofs = [];
+        let cacheInstalls = [];
+        let currentDocIdToApprove = null;
+
+        // =======================================================
+        // 🧠 ALGORITHME D'AUDIT ANTI-TRICHE ET VERIFICATION
+        // =======================================================
+        window.verifierIntegriteUtilisateur = function(userId) {
+            const u = cacheUsers[userId] || {};
+            const r = cacheRewards[userId] || {};
+
+            // 1. Solde affiché dans la base de données (modifiable via console utilisateur)
+            const coinsDeclarees = Number(r.coins ?? r.coin ?? u.coins ?? 0);
+
+            // 2. Traitement de l'historique quotidien de visionnage/tâches
+            const historyMap = r.history || u.history || {};
+            let totalTachesHistorique = 0;
+
+            Object.entries(historyMap).forEach(([key, val]) => {
+                // Exclure les clés de clés système non-numériques si nécessaire
+                if (typeof val === 'number' && key !== 'w1_d1') {
+                    totalTachesHistorique += val;
+                }
+            });
+
+            const tasksCompletedCount = Number(r.tasksCompleted ?? u.tasksCompleted ?? 0);
+            // Prendre la valeur maximale entre le total déclaré et la somme de l'historique
+            const totalTachesReelles = Math.max(totalTachesHistorique, tasksCompletedCount);
+
+            // 3. Règles de calcul officiel : 50 Pts par Tâche + Bonus Parrainage (ex: 250 Pts par filleul)
+            const PTS_PAR_TACHE = 50;
+            const PTS_PAR_FILLEUL = 250;
+            const totalFilleuls = Number(u.invitedCount ?? r.invitedCount ?? 0);
+
+            const coinsGagneesTheoriques = (totalTachesReelles * PTS_PAR_TACHE) + (totalFilleuls * PTS_PAR_FILLEUL);
+
+            // 4. Déduction des retraits déjà demandés ou approuvés
+            const retraitsUser = cacheRetraits.filter(req => req.userId === userId && req.statut !== 'rejete');
+            const totalCoinsDeduitsRetraits = retraitsUser.reduce((sum, req) => sum + (Number(req.coinsDeduits) || 0), 0);
+
+            // 5. Solde maximum légitime toléré (+ 500 coins de tolérance/bonus divers)
+            const soldeMaxAutorise = Math.max(0, coinsGagneesTheoriques - totalCoinsDeduitsRetraits) + 500;
+
+            const estValide = coinsDeclarees <= soldeMaxAutorise;
+            const ecartEcart = coinsDeclarees - soldeMaxAutorise;
+
+            return {
+                coinsDeclarees,
+                coinsGagneesTheoriques,
+                totalTachesReelles,
+                totalFilleuls,
+                estValide,
+                ecartEcart: ecartEcart > 0 ? ecartEcart : 0
+            };
+        };
+
+        // =======================================================
+        // 📊 CALCUL DES STATISTIQUES GLOBALES & GRAPHIQUE
+        // =======================================================
+        function calculerStatistiques() {
+            const totalDemandes = cacheRetraits.length;
+            const demandesAttente = cacheRetraits.filter(r => r.statut === 'en_attente').length;
+            const totalPayeUSD = cacheRetraits
+                .filter(r => r.statut === 'approuve')
+                .reduce((sum, r) => sum + (Number(r.montantUSD) || 0), 0);
+            const totalEnAttenteUSD = cacheRetraits
+                .filter(r => r.statut === 'en_attente')
+                .reduce((sum, r) => sum + (Number(r.montantUSD) || 0), 0);
+            const totalCoinsDeduits = cacheRetraits
+                .reduce((sum, r) => sum + (Number(r.coinsDeduits) || 0), 0);
+
+            const allUserIds = Array.from(new Set([...Object.keys(cacheUsers), ...Object.keys(cacheRewards)]));
+            const totalUsers = allUserIds.length;
+            
+            let totalCoinsGlobal = 0;
+            let totalFilleulsGlobal = 0;
+            let totalXpGlobal = 0;
+            let totalFraudesDetectees = 0;
+
+            allUserIds.forEach(id => {
+                const u = cacheUsers[id] || {};
+                const r = cacheRewards[id] || {};
+                totalCoinsGlobal += Number(r.coins ?? r.coin ?? u.coins ?? 0);
+                totalFilleulsGlobal += Number(u.invitedCount ?? r.invitedCount ?? 0);
+                totalXpGlobal += Number(u.xp ?? u.XP ?? r.xp ?? 0);
+
+                const audit = window.verifierIntegriteUtilisateur(id);
+                if (!audit.estValide) totalFraudesDetectees++;
+            });
+
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = val;
+            };
+
+            setVal("stat-total-retraits", totalDemandes);
+            setVal("stat-retraits-attente", demandesAttente);
+            setVal("stat-montant-paye", `$${totalPayeUSD.toFixed(2)}`);
+            setVal("stat-montant-attente", `$${totalEnAttenteUSD.toFixed(2)}`);
+            setVal("stat-coins-deduits", totalCoinsDeduits.toLocaleString());
+            setVal("stat-total-users", totalUsers);
+            setVal("stat-coins-global", totalCoinsGlobal.toLocaleString());
+            setVal("stat-filleuls-global", totalFilleulsGlobal);
+            setVal("stat-xp-global", totalXpGlobal.toLocaleString());
+            setVal("stat-total-preuves", cacheProofs.length);
+            setVal("stat-total-installs", cacheInstalls.length);
+            setVal("stat-fraudes-detectees", totalFraudesDetectees);
+
+            mettreAJourGraphiqueActivite();
+        }
+
+        // Génération/Mise à jour du graphique d'activités
+        function mettreAJourGraphiqueActivite() {
+            const canvas = document.getElementById('chart-activite-global');
+            if (!canvas || !window.Chart) return;
+
+            // Regroupement quotidien des tâches effectuées depuis les historiques
+            const activitesParDate = {};
+
+            Object.values(cacheRewards).forEach(rewardDoc => {
+                const history = rewardDoc.history || {};
+                Object.entries(history).forEach(([dateStr, count]) => {
+                    if (dateStr.startsWith('202') && typeof count === 'number') {
+                        activitesParDate[dateStr] = (activitesParDate[dateStr] || 0) + count;
+                    }
+                });
+            });
+
+            const datesTriees = Object.keys(activitesParDate).sort();
+            const volumesTaches = datesTriees.map(d => activitesParDate[d]);
+
+            if (activityChartInstance) {
+                activityChartInstance.data.labels = datesTriees;
+                activityChartInstance.data.datasets[0].data = volumesTaches;
+                activityChartInstance.update();
+            } else {
+                const ctx = canvas.getContext('2d');
+                activityChartInstance = new window.Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: datesTriees,
+                        datasets: [{
+                            label: 'Publicités / Tâches visionnées',
+                            data: volumesTaches,
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.35,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#818cf8'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: '#94a3b8', font: { family: 'sans-serif', size: 12 } } }
+                        },
+                        scales: {
+                            x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+                            y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' }, beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Modal Approbation
+        window.approuverRetrait = function(docId) {
+            if (!auth.currentUser || auth.currentUser.uid !== "KJCbYLLsL8Wvw64ivXLWKRvrale2") {
+                showConfirmError("Erreur : Connexion Admin requise.");
+                return;
             }
 
-            html += `
-                <tr class="hover:bg-slate-800/50">
-                    <td class="p-3.5">
-                        <div class="font-medium text-slate-100">${data.userEmail || 'Inconnu'}</div>
-                        <div class="text-xs text-slate-500 font-mono">${data.userId || data.id}</div>
-                    </td>
-                    <td class="p-3.5 font-bold text-emerald-400">$${data.montantUSD ?? 0}</td>
-                    <td class="p-3.5 text-amber-400 font-medium">${data.coinsDeduits ?? 0} coins</td>
-                    <td class="p-3.5">${badgeAudit}</td>
-                    <td class="p-3.5"><span class="bg-slate-800 px-2 py-1 rounded text-xs">${data.methode || 'N/A'}</span></td>
-                    <td class="p-3.5 font-mono text-xs text-blue-300 break-all select-all">${data.adresseReception || 'N/A'}</td>
-                    <td class="p-3.5">${statusBadge}</td>
-                    <td class="p-3.5 text-xs text-slate-400">${formatDate(data.dateDemande)}</td>
-                    <td class="p-3.5 text-center">${actionBtn}</td>
-                </tr>
-            `;
-        });
-        container.innerHTML = html;
-    }
+            currentDocIdToApprove = docId;
+            const modal = document.getElementById("confirm-modal");
+            const errDiv = document.getElementById("confirm-modal-error");
+            if (errDiv) { errDiv.classList.add("hidden"); errDiv.innerText = ""; }
+            if (modal) modal.classList.remove("hidden");
+        };
 
-    const searchRetraits = document.getElementById("search-retraits");
-    if (searchRetraits) searchRetraits.addEventListener("input", renderRetraits);
+        window.closeConfirmModal = function() {
+            const modal = document.getElementById("confirm-modal");
+            if (modal) modal.classList.add("hidden");
+            currentDocIdToApprove = null;
+        };
 
-    // 2. ÉCOUTEURS UTILISATEURS ET REWARDS
-    function listenUsersAndRewards() {
-        onSnapshot(collection(db, "users"), (snapshot) => {
-            cacheUsers = {};
-            snapshot.forEach(doc => cacheUsers[doc.id] = doc.data());
-            renderCombinedUsersTable();
-        });
+        function showConfirmError(msg) {
+            const errDiv = document.getElementById("confirm-modal-error");
+            if (errDiv) { errDiv.innerText = msg; errDiv.classList.remove("hidden"); }
+        }
 
-        onSnapshot(collection(db, "rewards_users"), (snapshot) => {
-            cacheRewards = {};
-            snapshot.forEach(doc => cacheRewards[doc.id] = doc.data());
-            renderCombinedUsersTable();
-        });
-    }
+        const btnConfirm = document.getElementById("btn-confirm-action");
+        if (btnConfirm) {
+            btnConfirm.addEventListener("click", async () => {
+                if (!currentDocIdToApprove) return;
 
-    function renderCombinedUsersTable() {
-        const container = document.getElementById("table-users-body");
-        if (!container) return;
+                const originalText = btnConfirm.innerHTML;
+                btnConfirm.disabled = true;
+                btnConfirm.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Traitement...`;
 
-        const searchInput = document.getElementById("search-users");
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
-        
-        const allUserIds = Array.from(new Set([...Object.keys(cacheUsers), ...Object.keys(cacheRewards)]));
+                try {
+                    await updateDoc(doc(db, "demandes_retrait", currentDocIdToApprove), {
+                        statut: "approuve",
+                        dateApprobation: new Date()
+                    });
+                    closeConfirmModal();
+                } catch (error) {
+                    console.error("Erreur d'approbation :", error);
+                    showConfirmError("Erreur : " + error.message);
+                } finally {
+                    btnConfirm.disabled = false;
+                    btnConfirm.innerHTML = originalText;
+                }
+            });
+        }
 
-        const filteredIds = allUserIds.filter(id => {
-            const u = cacheUsers[id] || {};
-            const r = cacheRewards[id] || {};
-            const name = (u.name || r.name || '').toLowerCase();
-            const uid = id.toLowerCase();
-            return name.includes(query) || uid.includes(query);
-        });
+        function formatDate(value) {
+            if (!value) return "N/A";
+            if (value.seconds) return new Date(value.seconds * 1000).toLocaleString('fr-FR');
+            if (typeof value === 'string' || typeof value === 'number') {
+                const parsedDate = new Date(value);
+                return !isNaN(parsedDate) ? parsedDate.toLocaleString('fr-FR') : value;
+            }
+            return "N/A";
+        }
 
-        const countElem = document.getElementById("count-users");
-        if (countElem) countElem.innerText = `${filteredIds.length} utilisateur(s)`;
-
-        if (filteredIds.length === 0) {
-            container.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">Aucun utilisateur trouvé.</td></tr>`;
+        // 1. ÉCOUTEUR DEMANDES DE RETRAIT
+        onSnapshot(collection(db, "demandes_retrait"), (snapshot) => {
+            cacheRetraits = [];
+            snapshot.forEach(doc => cacheRetraits.push({ id: doc.id, ...doc.data() }));
+            renderRetraits();
             calculerStatistiques();
-            return;
-        }
+        }, (error) => console.error("Erreur retraits:", error));
 
-        let html = "";
-        filteredIds.forEach(id => {
-            const userData = cacheUsers[id] || {};
-            const rewardData = cacheRewards[id] || {};
+        function renderRetraits() {
+            const container = document.getElementById("table-retraits-body");
+            if (!container) return;
 
-            const userName = userData.name || rewardData.name || 'Sans Nom';
-            const photoURL = userData.photoURL || rewardData.photoURL || null;
+            const searchInput = document.getElementById("search-retraits");
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
 
-            const userXp = userData.xp ?? userData.XP ?? rewardData.xp ?? 0;
-            const userCoins = rewardData.coins ?? rewardData.coin ?? userData.coins ?? 0;
+            const filtered = cacheRetraits.filter(item => {
+                const email = (item.userEmail || '').toLowerCase();
+                const id = (item.userId || item.id || '').toLowerCase();
+                const methode = (item.methode || '').toLowerCase();
+                return email.includes(query) || id.includes(query) || methode.includes(query);
+            });
 
-            const audit = window.verifierIntegriteUtilisateur(id);
+            const countElem = document.getElementById("count-retraits");
+            if (countElem) countElem.innerText = `${filtered.length} demande(s)`;
 
-            const badgeAudit = audit.estValide
-                ? '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-semibold">✅ Correct</span>'
-                : `<span class="bg-rose-950 text-rose-400 border border-rose-800 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">⚠️ Suspect (${audit.coinsGagneesTheoriques} max)</span>`;
+            if (filtered.length === 0) {
+                container.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-500">Aucune demande trouvée.</td></tr>`;
+                return;
+            }
 
-            html += `
-                <tr class="hover:bg-slate-800/50">
-                    <td class="p-3.5">
-                        <div class="flex items-center gap-3">
-                            ${photoURL ? `<img src="${photoURL}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">${userName[0].toUpperCase()}</div>`}
-                            <div>
-                                <div class="font-medium text-slate-100">${userName}</div>
-                                <div class="text-xs text-slate-500 font-mono">${id}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="p-3.5 font-bold text-amber-400">${userCoins.toLocaleString()}</td>
-                    <td class="p-3.5">${badgeAudit}</td>
-                    <td class="p-3.5 text-xs text-slate-300 font-semibold">${audit.totalTachesReelles} tâches (${audit.totalTachesReelles * 50} pts)</td>
-                    <td class="p-3.5 text-xs text-blue-400 font-bold">${userXp} XP</td>
-                    <td class="p-3.5 text-slate-300 font-medium">${audit.totalFilleuls} filleul(s)</td>
-                    <td class="p-3.5 text-xs text-slate-400">${userData.country || rewardData.country || 'N/A'}</td>
-                    <td class="p-3.5 text-xs text-slate-400">${userData.lastActiveDate || rewardData.lastActiveDate || 'N/A'}</td>
-                </tr>
-            `;
-        });
-        container.innerHTML = html;
-        calculerStatistiques();
-    }
+            let html = "";
+            filtered.forEach(data => {
+                const audit = window.verifierIntegriteUtilisateur(data.userId);
 
-    const searchUsers = document.getElementById("search-users");
-    if (searchUsers) searchUsers.addEventListener("input", renderCombinedUsersTable);
-    listenUsersAndRewards();
+                const badgeAudit = audit.estValide 
+                    ? '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 w-max"><i class="fa-solid fa-shield-check"></i> Légitime</span>'
+                    : `<span class="bg-rose-950 text-rose-400 border border-rose-800 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 w-max font-bold animate-pulse"><i class="fa-solid fa-triangle-exclamation"></i> Truqué (+${audit.ecartEcart} coins)</span>`;
 
-    // 3. PREUVES DE PAIEMENT
-    onSnapshot(collection(db, "payment_proofs"), (snapshot) => {
-        cacheProofs = [];
-        snapshot.forEach(doc => cacheProofs.push({ id: doc.id, ...doc.data() }));
-        renderProofs();
-        calculerStatistiques();
-    });
+                const statusBadge = data.statut === 'en_attente' 
+                    ? '<span class="bg-amber-950 text-amber-400 border border-amber-800 text-xs px-2 py-0.5 rounded">En attente</span>'
+                    : data.statut === 'approuve'
+                    ? '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs px-2 py-0.5 rounded">Approuvé</span>'
+                    : `<span class="bg-rose-950 text-rose-400 border border-rose-800 text-xs px-2 py-0.5 rounded">${data.statut || 'N/A'}</span>`;
 
-    function renderProofs() {
-        const container = document.getElementById("grid-proofs");
-        if (!container) return;
-        const searchInput = document.getElementById("search-proofs");
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
-
-        const filtered = cacheProofs.filter(item => (item.name || '').toLowerCase().includes(query) || (item.userEmail || '').toLowerCase().includes(query));
-        const countElem = document.getElementById("count-proofs");
-        if (countElem) countElem.innerText = `${filtered.length} preuve(s)`;
-
-        if (filtered.length === 0) {
-            container.innerHTML = `<div class="p-4 text-center text-slate-500 col-span-2">Aucune preuve trouvée.</div>`;
-            return;
-        }
-
-        let html = "";
-        filtered.forEach(data => {
-            html += `
-                <div class="bg-cardbg p-4 rounded-xl border border-bordercolor flex flex-col justify-between gap-3 shadow-sm">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-bold text-slate-100">${data.name || 'Anonyme'}</h3>
-                            <p class="text-xs text-slate-400">${data.userEmail || 'Sans email'}</p>
-                        </div>
-                        <span class="text-xs text-slate-500">${formatDate(data.timestamp)}</span>
-                    </div>
-                    <p class="text-sm italic bg-slate-900/60 p-2.5 rounded border border-bordercolor/50 text-slate-300 font-sans">
-                        "${data.message || 'Aucun message'}"
-                    </p>
-                    ${data.videoUrl ? `
-                        <button onclick="openVideoModal('${data.videoUrl}')" class="text-xs bg-blue-600 hover:bg-blue-500 text-white p-2 rounded text-center font-medium transition-all flex items-center justify-center gap-2 w-full">
-                            <i class="fa-solid fa-play"></i> Visionner la preuve vidéo
+                let actionBtn = "";
+                if (data.statut === 'en_attente') {
+                    actionBtn = `
+                        <button onclick="approuverRetrait('${data.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm mx-auto">
+                            <i class="fa-solid fa-check"></i> Approuver
                         </button>
-                    ` : '<span class="text-xs text-slate-600">Aucune vidéo attachée</span>'}
-                </div>
-            `;
-        });
-        container.innerHTML = html;
-    }
+                    `;
+                } else if (data.statut === 'approuve') {
+                    actionBtn = `<span class="text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1"><i class="fa-solid fa-circle-check"></i> Payé</span>`;
+                } else {
+                    actionBtn = `<span class="text-xs text-slate-500">-</span>`;
+                }
 
-    // 4. INSTALLATIONS
-    onSnapshot(collection(db, "pending_installs"), (snapshot) => {
-        cacheInstalls = [];
-        snapshot.forEach(doc => cacheInstalls.push({ id: doc.id, ...doc.data() }));
-        renderInstalls();
-        calculerStatistiques();
-    });
-
-    function renderInstalls() {
-        const container = document.getElementById("table-installs-body");
-        if (!container) return;
-
-        const filtered = cacheInstalls;
-        const countElem = document.getElementById("count-installs");
-        if (countElem) countElem.innerText = `${filtered.length} installation(s)`;
-
-        if (filtered.length === 0) {
-            container.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Aucune installation trouvée.</td></tr>`;
-            return;
+                html += `
+                    <tr class="hover:bg-slate-800/50">
+                        <td class="p-3.5">
+                            <div class="font-medium text-slate-100">${data.userEmail || 'Inconnu'}</div>
+                            <div class="text-xs text-slate-500 font-mono">${data.userId || data.id}</div>
+                        </td>
+                        <td class="p-3.5 font-bold text-emerald-400">$${data.montantUSD ?? 0}</td>
+                        <td class="p-3.5 text-amber-400 font-medium">${data.coinsDeduits ?? 0} coins</td>
+                        <td class="p-3.5">${badgeAudit}</td>
+                        <td class="p-3.5"><span class="bg-slate-800 px-2 py-1 rounded text-xs">${data.methode || 'N/A'}</span></td>
+                        <td class="p-3.5 font-mono text-xs text-blue-300 break-all select-all">${data.adresseReception || 'N/A'}</td>
+                        <td class="p-3.5">${statusBadge}</td>
+                        <td class="p-3.5 text-xs text-slate-400">${formatDate(data.dateDemande)}</td>
+                        <td class="p-3.5 text-center">${actionBtn}</td>
+                    </tr>
+                `;
+            });
+            container.innerHTML = html;
         }
 
-        let html = "";
-        filtered.forEach(data => {
-            html += `
-                <tr class="hover:bg-slate-800/50">
-                    <td class="p-3.5 font-mono text-xs text-indigo-400">${data.refId || 'N/A'}</td>
-                    <td class="p-3.5 font-mono text-xs text-emerald-400">${data.ip || 'N/A'}</td>
-                    <td class="p-3.5 text-xs text-slate-400 max-w-xs truncate" title="${data.userAgent}">${data.userAgent || 'N/A'}</td>
-                    <td class="p-3.5 text-xs text-slate-400">${formatDate(data.createdAt)}</td>
-                </tr>
-            `;
+        const searchRetraits = document.getElementById("search-retraits");
+        if (searchRetraits) searchRetraits.addEventListener("input", renderRetraits);
+
+        // 2. ÉCOUTEURS UTILISATEURS ET REWARDS
+        function listenUsersAndRewards() {
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                cacheUsers = {};
+                snapshot.forEach(doc => cacheUsers[doc.id] = doc.data());
+                renderCombinedUsersTable();
+            });
+
+            onSnapshot(collection(db, "rewards_users"), (snapshot) => {
+                cacheRewards = {};
+                snapshot.forEach(doc => cacheRewards[doc.id] = doc.data());
+                renderCombinedUsersTable();
+            });
+        }
+
+        function renderCombinedUsersTable() {
+            const container = document.getElementById("table-users-body");
+            if (!container) return;
+
+            const searchInput = document.getElementById("search-users");
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+            
+            const allUserIds = Array.from(new Set([...Object.keys(cacheUsers), ...Object.keys(cacheRewards)]));
+
+            const filteredIds = allUserIds.filter(id => {
+                const u = cacheUsers[id] || {};
+                const r = cacheRewards[id] || {};
+                const name = (u.name || r.name || '').toLowerCase();
+                const uid = id.toLowerCase();
+                return name.includes(query) || uid.includes(query);
+            });
+
+            const countElem = document.getElementById("count-users");
+            if (countElem) countElem.innerText = `${filteredIds.length} utilisateur(s)`;
+
+            if (filteredIds.length === 0) {
+                container.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-500">Aucun utilisateur trouvé.</td></tr>`;
+                calculerStatistiques();
+                return;
+            }
+
+            let html = "";
+            filteredIds.forEach(id => {
+                const userData = cacheUsers[id] || {};
+                const rewardData = cacheRewards[id] || {};
+
+                const userName = userData.name || rewardData.name || 'Sans Nom';
+                const photoURL = userData.photoURL || rewardData.photoURL || null;
+
+                const userXp = userData.xp ?? userData.XP ?? rewardData.xp ?? 0;
+                const userCoins = rewardData.coins ?? rewardData.coin ?? userData.coins ?? 0;
+
+                const audit = window.verifierIntegriteUtilisateur(id);
+
+                const badgeAudit = audit.estValide
+                    ? '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] px-2 py-0.5 rounded-full font-semibold">✅ Correct</span>'
+                    : `<span class="bg-rose-950 text-rose-400 border border-rose-800 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">⚠️ Suspect (${audit.coinsGagneesTheoriques} max)</span>`;
+
+                html += `
+                    <tr class="hover:bg-slate-800/50">
+                        <td class="p-3.5">
+                            <div class="flex items-center gap-3">
+                                ${photoURL ? `<img src="${photoURL}" class="w-8 h-8 rounded-full object-cover">` : `<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">${userName[0].toUpperCase()}</div>`}
+                                <div>
+                                    <div class="font-medium text-slate-100">${userName}</div>
+                                    <div class="text-xs text-slate-500 font-mono">${id}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-3.5 font-bold text-amber-400">${userCoins.toLocaleString()}</td>
+                        <td class="p-3.5">${badgeAudit}</td>
+                        <td class="p-3.5 text-xs text-slate-300 font-semibold">${audit.totalTachesReelles} tâches (${audit.totalTachesReelles * 50} pts)</td>
+                        <td class="p-3.5 text-xs text-blue-400 font-bold">${userXp} XP</td>
+                        <td class="p-3.5 text-slate-300 font-medium">${audit.totalFilleuls} filleul(s)</td>
+                        <td class="p-3.5 text-xs text-slate-400">${userData.country || rewardData.country || 'N/A'}</td>
+                        <td class="p-3.5 text-xs text-slate-400">${userData.lastActiveDate || rewardData.lastActiveDate || 'N/A'}</td>
+                    </tr>
+                `;
+            });
+            container.innerHTML = html;
+            calculerStatistiques();
+        }
+
+        const searchUsers = document.getElementById("search-users");
+        if (searchUsers) searchUsers.addEventListener("input", renderCombinedUsersTable);
+        listenUsersAndRewards();
+
+        // 3. PREUVES DE PAIEMENT
+        onSnapshot(collection(db, "payment_proofs"), (snapshot) => {
+            cacheProofs = [];
+            snapshot.forEach(doc => cacheProofs.push({ id: doc.id, ...doc.data() }));
+            renderProofs();
+            calculerStatistiques();
         });
-        container.innerHTML = html;
-    }
-</script>
+
+        function renderProofs() {
+            const container = document.getElementById("grid-proofs");
+            if (!container) return;
+            const searchInput = document.getElementById("search-proofs");
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+            const filtered = cacheProofs.filter(item => (item.name || '').toLowerCase().includes(query) || (item.userEmail || '').toLowerCase().includes(query));
+            const countElem = document.getElementById("count-proofs");
+            if (countElem) countElem.innerText = `${filtered.length} preuve(s)`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-slate-500 col-span-2">Aucune preuve trouvée.</div>`;
+                return;
+            }
+
+            let html = "";
+            filtered.forEach(data => {
+                html += `
+                    <div class="bg-cardbg p-4 rounded-xl border border-bordercolor flex flex-col justify-between gap-3 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-slate-100">${data.name || 'Anonyme'}</h3>
+                                <p class="text-xs text-slate-400">${data.userEmail || 'Sans email'}</p>
+                            </div>
+                            <span class="text-xs text-slate-500">${formatDate(data.timestamp)}</span>
+                        </div>
+                        <p class="text-sm italic bg-slate-900/60 p-2.5 rounded border border-bordercolor/50 text-slate-300 font-sans">
+                            "${data.message || 'Aucun message'}"
+                        </p>
+                        ${data.videoUrl ? `
+                            <button onclick="openVideoModal('${data.videoUrl}')" class="text-xs bg-blue-600 hover:bg-blue-500 text-white p-2 rounded text-center font-medium transition-all flex items-center justify-center gap-2 w-full">
+                                <i class="fa-solid fa-play"></i> Visionner la preuve vidéo
+                            </button>
+                        ` : '<span class="text-xs text-slate-600">Aucune vidéo attachée</span>'}
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // 4. INSTALLATIONS
+        onSnapshot(collection(db, "pending_installs"), (snapshot) => {
+            cacheInstalls = [];
+            snapshot.forEach(doc => cacheInstalls.push({ id: doc.id, ...doc.data() }));
+            renderInstalls();
+            calculerStatistiques();
+        });
+
+        function renderInstalls() {
+            const container = document.getElementById("table-installs-body");
+            if (!container) return;
+
+            const filtered = cacheInstalls;
+            const countElem = document.getElementById("count-installs");
+            if (countElem) countElem.innerText = `${filtered.length} installation(s)`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">Aucune installation trouvée.</td></tr>`;
+                return;
+            }
+
+            let html = "";
+            filtered.forEach(data => {
+                html += `
+                    <tr class="hover:bg-slate-800/50">
+                        <td class="p-3.5 font-mono text-xs text-indigo-400">${data.refId || 'N/A'}</td>
+                        <td class="p-3.5 font-mono text-xs text-emerald-400">${data.ip || 'N/A'}</td>
+                        <td class="p-3.5 text-xs text-slate-400 max-w-xs truncate" title="${data.userAgent}">${data.userAgent || 'N/A'}</td>
+                        <td class="p-3.5 text-xs text-slate-400">${formatDate(data.createdAt)}</td>
+                    </tr>
+                `;
+            });
+            container.innerHTML = html;
+        }
+    </script>
 </body>
 </html>
