@@ -931,15 +931,15 @@ body, html {
                     <p>+100 Pts</p>
                     <button id="btn-video-14" class="btn-launch-grid" onclick="initierMissionVideo(14, 'https://youradexchange.com/video/select.php?r=12087062', 'video-14', 100)">Lancer</button>
                 </div>
-                <div class="video-card-small" id="card-video-1">
+                 <div class="video-card-small" id="card-video-1">
                 <i class="fa-solid fa-play"></i>
                 <h4>Tâche 36</h4>
                 <p>+100 Pts</p>
                 <button id="btn-video-15" class="btn-launch-grid" 
-                        onclick="initierMissionVideo(15, 'https://s.magsrv.com/v1/vast.php?idz=6022114', 'video-15', 100)">
+                        onclick="initierMissionVideo(15, '6022166', 'video-15', 100, 'exoclick')">
                     Lancer
                 </button>
-            </div>
+               </div>
             </div>
 
             <!-- ZONE ACCÈS DIRECT PAR COIN VIP -->
@@ -1583,9 +1583,9 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
 }
 
 // =============================================================================
-// INITIALISATION DE LA MISSION VIDÉO
+// INITIALISATION DE LA MISSION VIDÉO (ADCASH, CLICKADILLA & EXOCLICK)
 // =============================================================================
-function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
+function initierMissionVideo(indexVideo, zoneId, uniqueId, points, fournisseur = "auto") {
     const e = window.event;
     if (e) {
         e.preventDefault();
@@ -1665,41 +1665,78 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points) {
     };
 
     try {
-        // Remplacez la section "CAS 1" dans votre JS par ce bloc optimisé :
-if (zoneId.startsWith("http")) {
-    const idPlayerAdcash = `player-adcash-${indexVideo}`;
-    conteneurVideo.innerHTML = `<video id="${idPlayerAdcash}" playsinline style="width:100%; height:100%;"></video>`;
-    
-    if (typeof fluidPlayer === "function") {
-        fluidPlayer(idPlayerAdcash, {
-            layoutControls: {
-                fillToContainer: true,
-                autoPlay: true,
-                mute: true, // Requis pour contourner le blocage AutoPlay des navigateurs
-                playButtonShowing: false,
-                controlBar: {
-                    autoHide: true,
-                    animated: true
-                }
-            },
-            vastOptions: {
-                adList: [{ roll: 'preRoll', vastTag: zoneId }]
+        // CAS 1 : EXOCLICK OUTSTREAM
+        if (fournisseur === "exoclick") {
+            let cadreIframe = document.createElement("iframe");
+            cadreIframe.style.width = "100%";
+            cadreIframe.style.height = "100%";
+            cadreIframe.style.border = "none";
+            cadreIframe.style.scrolling = "no";
+            cadreIframe.style.background = "transparent";
+
+            let htmlExoclickVideo = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
+                    </style>
+                    <script async type="application/javascript" src="https://a.magsrv.com/ad-provider.js"><\/script>
+                </head>
+                <body>
+                    <ins class="eas6a97888e37" data-zoneid="${zoneId}"></ins>
+                    <script>
+                        (AdProvider = window.AdProvider || []).push({"serve": {}});
+                    <\/script>
+                </body>
+                </html>
+            `;
+
+            conteneurVideo.appendChild(cadreIframe);
+            let doc = cadreIframe.contentWindow.document;
+            doc.open();
+            doc.write(htmlExoclickVideo);
+            doc.close();
+
+            setTimeout(afficherDoigtImmediatement, 1500);
+            surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
+        }
+        // CAS 2 : FLUIDPLAYER / VAST (Adcash)
+        else if (zoneId.startsWith("http")) {
+            const idPlayerAdcash = `player-adcash-${indexVideo}`;
+            conteneurVideo.innerHTML = `<video id="${idPlayerAdcash}" playsinline style="width:100%; height:100%;"></video>`;
+            
+            if (typeof fluidPlayer === "function") {
+                fluidPlayer(idPlayerAdcash, {
+                    layoutControls: {
+                        fillToContainer: true,
+                        autoPlay: true,
+                        mute: true,
+                        playButtonShowing: false,
+                        controlBar: {
+                            autoHide: true,
+                            animated: true
+                        }
+                    },
+                    vastOptions: {
+                        adList: [{ roll: 'preRoll', vastTag: zoneId }]
+                    }
+                });
             }
-        });
-    }
 
-    const elVideoAdcash = document.getElementById(idPlayerAdcash);
-    if (elVideoAdcash) {
-        const triggerDirect = () => afficherDoigtImmediatement();
-        elVideoAdcash.addEventListener("play", triggerDirect);
-        elVideoAdcash.addEventListener("playing", triggerDirect);
-        elVideoAdcash.addEventListener("timeupdate", triggerDirect);
-        elVideoAdcash.addEventListener("loadedmetadata", triggerDirect);
-    }
+            const elVideoAdcash = document.getElementById(idPlayerAdcash);
+            if (elVideoAdcash) {
+                const triggerDirect = () => afficherDoigtImmediatement();
+                elVideoAdcash.addEventListener("play", triggerDirect);
+                elVideoAdcash.addEventListener("playing", triggerDirect);
+                elVideoAdcash.addEventListener("timeupdate", triggerDirect);
+                elVideoAdcash.addEventListener("loadedmetadata", triggerDirect);
+            }
 
-    surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
-}
-        // CAS 2 : C'est Clickadilla (ID numérique classique)
+            surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
+        }
+        // CAS 3 : CLICKADILLA
         else {
             let scriptVideo = document.createElement("script");
             scriptVideo.async = true;
