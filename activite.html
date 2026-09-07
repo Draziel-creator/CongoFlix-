@@ -835,6 +835,13 @@ body, html {
                     <p>+130 Pts</p>
                     <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', '355c9d0ee6ac5ec71d84d7f879fdc153', 'adsterra-160x600', 130, 12, '160x600')">Lancer</button>
                 </div>
+                 <!-- SECTION EXOCLICK -->
+            <div class="video-card-small" id="card-exoclick-1">
+                <i class="fa-solid fa-rectangle-ad" style="color: #00ccff;"></i>
+                <h4>Tâche ExoClick</h4>
+                <p>Récompense: +120 Pts</p>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6022134', 'exoclick-1', 120, 22, '300x250')">Lancer</button>
+            </div>
             </div>
 
             <!-- SECTION 4 : MISSIONS VIDÉOS FLASH -->
@@ -2281,6 +2288,40 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         }
     }
 
+    } else if (fournisseur === "exoclick") {
+    let cadreIframe = document.createElement("iframe");
+    cadreIframe.style.width = w;
+    cadreIframe.style.height = h;
+    cadreIframe.style.border = "none";
+    cadreIframe.style.scrolling = "no";
+    cadreIframe.style.background = "transparent";
+
+    let htmlExoclick = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
+            </style>
+            <script async type="application/javascript" src="https://a.magsrv.com/ad-provider.js"><\/script>
+        </head>
+        <body>
+            <ins class="eas6a97888e2" data-zoneid="${clePub}"></ins>
+            <script>
+                (AdProvider = window.AdProvider || []).push({"serve": {}});
+            <\/script>
+        </body>
+        </html>
+    `;
+
+    zoneCible.appendChild(cadreIframe);
+    let doc = cadreIframe.contentWindow.document;
+    doc.open();
+    doc.write(htmlExoclick);
+    doc.close();
+}
+    
     // Surveillance du chargement réels de la bannière (Toutes régies)
     if (fournisseur === "clickadilla") {
         surveillerClickadillaUnique(
