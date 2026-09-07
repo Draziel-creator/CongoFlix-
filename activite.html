@@ -1978,12 +1978,9 @@ function ObtenirDateAujourdhuiISO() {
     const jour = String(d.getDate()).padStart(2, '0');
     return `${annee}-${mois}-${jour}`;
 }
-// =============================================================================
-// LOGIQUE MISSIONS BANNIÈRE (CLICKADILLA, ADSTERRA, ADVERTICA & ADCASH)
-// =============================================================================
 
 // =============================================================================
-// LOGIQUE MISSIONS BANNIÈRE (CLICKADILLA, ADSTERRA, ADVERTICA & ADCASH)
+// LOGIQUE MISSIONS BANNIÈRE (CLICKADILLA, ADSTERRA, ADVERTICA, ADCASH & EXOCLICK)
 // =============================================================================
 
 async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, indexZone, formatPubOrWidth = "300x250", hauteurOptional = null) {
@@ -2276,6 +2273,39 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
                     doc.open();
                     doc.write(htmlClickadilla);
                     doc.close();
+
+                } else if (fournisseur === "exoclick") {
+                    let cadreIframe = document.createElement("iframe");
+                    cadreIframe.style.width = w;
+                    cadreIframe.style.height = h;
+                    cadreIframe.style.border = "none";
+                    cadreIframe.style.scrolling = "no";
+                    cadreIframe.style.background = "transparent";
+
+                    let htmlExoclick = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="utf-8">
+                            <style>
+                                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
+                            </style>
+                            <script async type="application/javascript" src="https://a.magsrv.com/ad-provider.js"><\/script>
+                        </head>
+                        <body>
+                            <ins class="eas6a97888e2" data-zoneid="${clePub}"></ins>
+                            <script>
+                                (AdProvider = window.AdProvider || []).push({"serve": {}});
+                            <\/script>
+                        </body>
+                        </html>
+                    `;
+
+                    zoneCible.appendChild(cadreIframe);
+                    let doc = cadreIframe.contentWindow.document;
+                    doc.open();
+                    doc.write(htmlExoclick);
+                    doc.close();
                 }
             }
         } catch(err) {
@@ -2287,42 +2317,8 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
             return;
         }
     }
-
-    } else if (fournisseur === "exoclick") {
-    let cadreIframe = document.createElement("iframe");
-    cadreIframe.style.width = w;
-    cadreIframe.style.height = h;
-    cadreIframe.style.border = "none";
-    cadreIframe.style.scrolling = "no";
-    cadreIframe.style.background = "transparent";
-
-    let htmlExoclick = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
-            </style>
-            <script async type="application/javascript" src="https://a.magsrv.com/ad-provider.js"><\/script>
-        </head>
-        <body>
-            <ins class="eas6a97888e2" data-zoneid="${clePub}"></ins>
-            <script>
-                (AdProvider = window.AdProvider || []).push({"serve": {}});
-            <\/script>
-        </body>
-        </html>
-    `;
-
-    zoneCible.appendChild(cadreIframe);
-    let doc = cadreIframe.contentWindow.document;
-    doc.open();
-    doc.write(htmlExoclick);
-    doc.close();
-}
     
-    // Surveillance du chargement réels de la bannière (Toutes régies)
+    // Surveillance du chargement réel de la bannière (Toutes régies)
     if (fournisseur === "clickadilla") {
         surveillerClickadillaUnique(
             "zone-pub-banniere-" + indexZone,
@@ -2348,7 +2344,6 @@ async function initierMissionBanniere(fournisseur, clePub, uniqueId, points, ind
         );
     }
 }
-
 // =============================================================================
 // SURVEILLANCE STRICTE CLICKADILLA (ANTI-DÉCLENCHEMENT À VIDE)
 // =============================================================================
