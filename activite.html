@@ -583,6 +583,7 @@ body, html {
                 <div id="zone-pub-video14" class="ad-slot-square"></div>
                 <div id="zone-pub-video15" class="ad-slot-square"></div>
                 <div id="zone-pub-video16" class="ad-slot-square"></div>
+                <div id="zone-pub-video17" class="ad-slot-square"></div>
                 
                 <div id="zone-pub-alternative" class="ad-slot-square" style="overflow-y: auto;">
                     <div class="box-banner-filler-300-250" id="box-banner-inside-modal"></div>
@@ -948,6 +949,15 @@ body, html {
                         Lancer
                     </button>
                 </div>
+                <div class="video-card-small" id="card-video-17">
+                <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                <h4>Tâche 38</h4>
+                <p>+100 Pts</p>
+                <button id="btn-video-17" class="btn-launch-grid" 
+                        onclick="initierMissionVideo(17, '01M20FDFPDQAZZ6KYAFHF8BZET', 'video-17', 100, 'twinrd')">
+                    Lancer
+                </button>
+            </div>
             </div>
 
             <!-- ZONE ACCÈS DIRECT PAR COIN VIP -->
@@ -1710,7 +1720,42 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points, fournisseur =
             setTimeout(afficherDoigtImmediatement, 1500);
             surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
         }
-        // CAS 2 : FLUIDPLAYER / VAST (Adcash)
+            // CAS 2 : TWINRD ENGINE (NOUVEAU RÉSEAU)
+else if (fournisseur === "twinrd") {
+    let cadreIframe = document.createElement("iframe");
+    cadreIframe.style.width = "100%";
+    cadreIframe.style.height = "100%";
+    cadreIframe.style.border = "none";
+    cadreIframe.style.scrolling = "no";
+    cadreIframe.style.background = "transparent";
+
+    let htmlTwinrdVideo = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
+            </style>
+        </head>
+        <body>
+            <ins data-tr-zone="${zoneId}">
+                <script type="text/javascript" async src="https://s.ad.twinrdengine.com/adlib.js"><\/script>
+            </ins>
+        </body>
+        </html>
+    `;
+
+    conteneurVideo.appendChild(cadreIframe);
+    let doc = cadreIframe.contentWindow.document;
+    doc.open();
+    doc.write(htmlTwinrdVideo);
+    doc.close();
+
+    setTimeout(afficherDoigtImmediatement, 1500);
+    surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
+}
+        // CAS 3 : FLUIDPLAYER / VAST (Adcash)
         else if (zoneId.startsWith("http")) {
             const idPlayerAdcash = `player-adcash-${indexVideo}`;
             conteneurVideo.innerHTML = `<video id="${idPlayerAdcash}" playsinline style="width:100%; height:100%;"></video>`;
@@ -1744,7 +1789,7 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points, fournisseur =
 
             surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
         }
-        // CAS 3 : CLICKADILLA
+        // CAS 4 : CLICKADILLA
         else {
             let scriptVideo = document.createElement("script");
             scriptVideo.async = true;
