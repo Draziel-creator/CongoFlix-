@@ -584,6 +584,7 @@ body, html {
                 <div id="zone-pub-video15" class="ad-slot-square"></div>
                 <div id="zone-pub-video16" class="ad-slot-square"></div>
                 <div id="zone-pub-video17" class="ad-slot-square"></div>
+                <div id="zone-pub-video18" class="ad-slot-square"></div>
                 
                 <div id="zone-pub-alternative" class="ad-slot-square" style="overflow-y: auto;">
                     <div class="box-banner-filler-300-250" id="box-banner-inside-modal"></div>
@@ -955,6 +956,15 @@ body, html {
                 <p>+100 Pts</p>
                 <button id="btn-video-17" class="btn-launch-grid" 
                         onclick="initierMissionVideo(17, '01M20FDFPDQAZZ6KYAFHF8BZET', 'video-17', 100, 'twinrd')">
+                    Lancer
+                </button>
+            </div>
+                <div class="video-card-small" id="card-video-18">
+                <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                <h4>Tâche 39</h4>
+                <p>+100 Pts</p>
+                <button id="btn-video-18" class="btn-launch-grid" 
+                        onclick="initierMissionVideo(18, '463038', 'video-18', 100, 'onclicka')">
                     Lancer
                 </button>
             </div>
@@ -1528,7 +1538,7 @@ function enregistrerTacheDansFirebase(taskId) {
 }
 
 // =============================================================================
-// 3. LOGIQUE MISSIONS VIDÉO (MODALE VIDÉO UNIFIÉE & DÉTECTION ADCASH / CLICKADILLA)
+// 3. LOGIQUE MISSIONS VIDÉO (MODALE VIDÉO UNIFIÉE & DÉTECTION ADCASH / CLICKADILLA / ONCLICKA)
 // =============================================================================
 
 function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
@@ -1547,7 +1557,7 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
 
         let pubVraimentAffichee = false;
 
-        // 1. Recherche d'une balise <video> réelle (Clickadilla ou Adcash/FluidPlayer)
+        // 1. Recherche d'une balise <video> réelle (Clickadilla, Onclicka, Adcash/FluidPlayer)
         const videos = conteneur.querySelectorAll('video');
         videos.forEach(v => {
             if (v.offsetWidth > 10 || v.offsetHeight > 10 || v.readyState > 0 || v.currentTime > 0 || v.videoWidth > 0) {
@@ -1560,7 +1570,7 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
             pubVraimentAffichee = true;
         }
 
-        // 3. Recherche d'une iframe injectée (Clickadilla / Lecteur VAST externe)
+        // 3. Recherche d'une iframe injectée
         const iframes = conteneur.querySelectorAll('iframe');
         iframes.forEach(iframe => {
             try {
@@ -1601,7 +1611,7 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
 }
 
 // =============================================================================
-// INITIALISATION DE LA MISSION VIDÉO (ADCASH, CLICKADILLA & EXOCLICK)
+// INITIALISATION DE LA MISSION VIDÉO (ADCASH, CLICKADILLA, EXOCLICK, TWINRD & ONCLICKA)
 // =============================================================================
 function initierMissionVideo(indexVideo, zoneId, uniqueId, points, fournisseur = "auto") {
     const e = window.event;
@@ -1720,42 +1730,53 @@ function initierMissionVideo(indexVideo, zoneId, uniqueId, points, fournisseur =
             setTimeout(afficherDoigtImmediatement, 1500);
             surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
         }
-            // CAS 2 : TWINRD ENGINE (NOUVEAU RÉSEAU)
-else if (fournisseur === "twinrd") {
-    let cadreIframe = document.createElement("iframe");
-    cadreIframe.style.width = "100%";
-    cadreIframe.style.height = "100%";
-    cadreIframe.style.border = "none";
-    cadreIframe.style.scrolling = "no";
-    cadreIframe.style.background = "transparent";
+        // CAS 2 : TWINRD ENGINE
+        else if (fournisseur === "twinrd") {
+            let cadreIframe = document.createElement("iframe");
+            cadreIframe.style.width = "100%";
+            cadreIframe.style.height = "100%";
+            cadreIframe.style.border = "none";
+            cadreIframe.style.scrolling = "no";
+            cadreIframe.style.background = "transparent";
 
-    let htmlTwinrdVideo = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
-            </style>
-        </head>
-        <body>
-            <ins data-tr-zone="${zoneId}">
-                <script type="text/javascript" async src="https://s.ad.twinrdengine.com/adlib.js"><\/script>
-            </ins>
-        </body>
-        </html>
-    `;
+            let htmlTwinrdVideo = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <style>
+                        html, body { margin: 0; padding: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent; overflow: hidden; }
+                    </style>
+                </head>
+                <body>
+                    <ins data-tr-zone="${zoneId}">
+                        <script type="text/javascript" async src="https://s.ad.twinrdengine.com/adlib.js"><\/script>
+                    </ins>
+                </body>
+                </html>
+            `;
 
-    conteneurVideo.appendChild(cadreIframe);
-    let doc = cadreIframe.contentWindow.document;
-    doc.open();
-    doc.write(htmlTwinrdVideo);
-    doc.close();
+            conteneurVideo.appendChild(cadreIframe);
+            let doc = cadreIframe.contentWindow.document;
+            doc.open();
+            doc.write(htmlTwinrdVideo);
+            doc.close();
 
-    setTimeout(afficherDoigtImmediatement, 1500);
-    surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
-}
-        // CAS 3 : FLUIDPLAYER / VAST (Adcash)
+            setTimeout(afficherDoigtImmediatement, 1500);
+            surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
+        }
+        // CAS 3 : ONCLICKA (Même fonctionnement direct que Clickadilla)
+        else if (fournisseur === "onclicka") {
+            let scriptVideo = document.createElement("script");
+            scriptVideo.async = true;
+            scriptVideo.src = "https://js.onclckmn.com/static/onclicka.js";
+            scriptVideo.setAttribute("data-admpid", zoneId);
+            scriptVideo.onerror = afficherErreurPanne;
+            conteneurVideo.appendChild(scriptVideo);
+
+            surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
+        }
+        // CAS 4 : FLUIDPLAYER / VAST (Adcash)
         else if (zoneId.startsWith("http")) {
             const idPlayerAdcash = `player-adcash-${indexVideo}`;
             conteneurVideo.innerHTML = `<video id="${idPlayerAdcash}" playsinline style="width:100%; height:100%;"></video>`;
@@ -1789,7 +1810,7 @@ else if (fournisseur === "twinrd") {
 
             surveillerVideoClickadillaReelle(idZoneCible, afficherDoigtImmediatement, afficherErreurPanne);
         }
-        // CAS 4 : CLICKADILLA
+        // CAS 5 : CLICKADILLA (Par défaut)
         else {
             let scriptVideo = document.createElement("script");
             scriptVideo.async = true;
