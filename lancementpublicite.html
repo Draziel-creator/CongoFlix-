@@ -383,6 +383,254 @@
         #flowerCanvas {
             position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; display: none;
         }
+
+ /* --- BOUTON PULSANT EN HAUT À GAUCHE --- */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+}
+
+.help-trigger-btn {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 204, 0, 0.4);
+    color: #ffcc00;
+    padding: 5px 10px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    animation: pulseHelp 2s infinite;
+}
+
+.help-trigger-btn i {
+    font-size: 13px;
+}
+
+.help-trigger-btn:hover {
+    background: rgba(255, 204, 0, 0.2);
+    transform: scale(1.05);
+}
+
+@keyframes pulseHelp {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.5);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(255, 204, 0, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
+    }
+}
+
+/* --- MODALE STYLISÉE --- */
+.how-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(5, 8, 20, 0.85);
+    backdrop-filter: blur(10px);
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+.how-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.how-modal-card {
+    background: #0f1424;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 204, 0, 0.15);
+    overflow: hidden;
+    transform-origin: top left;
+    animation: openModalAnim 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.27) forwards;
+}
+
+/* Animation d'ouverture normale */
+@keyframes openModalAnim {
+    0% {
+        opacity: 0;
+        transform: scale(0.6) translate(-20%, -20%);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translate(0, 0);
+    }
+}
+
+/* ANIMATION D'ASPIRATION AU FERMAGE */
+.how-modal-overlay.closing .how-modal-card {
+    animation: suckInAnim 0.45s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+}
+
+@keyframes suckInAnim {
+    0% {
+        opacity: 1;
+        transform: scale(1) translate(0, 0);
+        filter: blur(0px);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.02) translate(-300px, -450px);
+        filter: blur(10px);
+    }
+}
+
+.how-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 2;
+    transition: background 0.2s;
+}
+
+.how-modal-close:hover {
+    background: rgba(255, 60, 60, 0.5);
+}
+
+.how-modal-header {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(255, 204, 0, 0.08) 0%, transparent 100%);
+}
+
+.how-modal-icon {
+    font-size: 35px;
+    margin-bottom: 5px;
+}
+
+.how-modal-header h2 {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.how-modal-body {
+    padding: 15px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* CARTE AMBRE / JAUNE POUR RANG 0 */
+.alert-box-warning {
+    background: rgba(255, 204, 0, 0.1);
+    border: 1px solid #ffcc00;
+    border-radius: 12px;
+    padding: 12px;
+    color: #ffe899;
+}
+
+.alert-title {
+    color: #ffcc00;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.alert-box-warning p {
+    font-size: 11px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* ETAPES GUIDE */
+.guide-step {
+    display: flex;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.step-num {
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    color: #fff;
+    font-weight: 800;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+}
+
+.step-text h4 {
+    color: #38ef7d;
+    font-size: 13px;
+    margin: 0 0 4px 0;
+}
+
+.step-text p {
+    color: #bbb;
+    font-size: 11px;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.how-modal-footer {
+    padding: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-understand {
+    width: 100%;
+    background: linear-gradient(90deg, #ffcc00, #ff9900);
+    border: none;
+    color: #000;
+    font-weight: 800;
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: transform 0.2s;
+}
+
+.btn-understand:hover {
+    transform: scale(1.02);
+}       
     </style>
 </head>
 <body>
@@ -391,16 +639,25 @@
 
     <div class="app-container">
 
-        <header class="app-header" id="appHeader">
-            <div class="balance-pill">
-                <span class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="balanceText">0</span></span>
-                <div class="balance-plus" id="addCoinsBtn">+</div>
-                <div class="profile-avatar" id="goToProfil">
-                    <img id="nav-user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profil">
-                </div>
-            </div>
-        </header>
+        <!-- HEADER AVEC BOUTON À GAUCHE DE LA BANDE -->
+<header class="app-header" id="appHeader">
+    
+    <!-- Bouton Aide Pulsant -->
+    <button class="help-trigger-btn" id="openHowItWorksBtn">
+        <i class="fa-solid fa-circle-question"></i>
+        <span>Comment ça marche ?</span>
+    </button>
 
+    <!-- Bande de Solde -->
+    <div class="balance-pill">
+        <span class="balance-amount"><i class="fa-solid fa-coins"></i> <span id="balanceText">0</span></span>
+        <div class="balance-plus" id="addCoinsBtn">+</div>
+        <div class="profile-avatar" id="goToProfil">
+            <img id="nav-user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profil">
+        </div>
+    </div>
+</header>
+        
         <div class="top-controls-bar">
             <button class="btn-toggle-header" id="toggleHeaderBtn" title="Plier/Déplier">
                 <i class="fa-solid fa-chevron-up" id="toggleHeaderIcon"></i>
@@ -443,6 +700,11 @@
 
                 <h2 class="section-title">🔥 Tendances du jour</h2>
                 <div class="trends-container">
+                     <div class="trend-card" onclick="redirectToPage('profil.html')">
+                        <div class="trend-icon"><i class="fa-solid fa-users"></i></div>
+                        <p class="trend-title">Parrainage</p>
+                        <span class="trend-reward">« Obtenez 5 % de bénéfice sur chaque récupération de points du jour par chacun de vos filleuls ! »</span>
+                    </div>
                     <div class="trend-card" onclick="redirectToPage('activite.html')">
                         <div class="trend-icon"><i class="fa-solid fa-bolt"></i></div>
                         <p class="trend-title">Pub Flash</p>
@@ -453,12 +715,7 @@
                         <p class="trend-title">Top Offre</p>
                         <span class="trend-reward"></span>
                     </div>
-                    <div class="trend-card" onclick="redirectToPage('profil.html')">
-                        <div class="trend-icon"><i class="fa-solid fa-users"></i></div>
-                        <p class="trend-title">Parrainage</p>
-                        <span class="trend-reward">« Obtenez 5 % de bénéfice sur chaque récupération de points du jour par chacun de vos filleuls ! »</span>
                     </div>
-                </div>
 
                 <h2 class="section-title">🌐 Activité Mondiale en Direct</h2>
                 <div class="globe-card" id="globeCard">
@@ -479,7 +736,7 @@
 
         <div class="ticker-container">
             <div class="ticker-text" style="animation-duration: 25s;">
-                ⚠️ <strong>Rappel :</strong> Multi-comptes interdits. 🎉 votre compte pourrait être banni si l'ont detecte plusieurs compte sur votre appreil <strong>
+                ⚠️ <strong>Rappel :</strong> Multi-comptes interdits. votre compte pourrait être banni si l'ont detecte plusieurs compte sur votre appareil <strong>
             </div>
         </div>
 
@@ -559,6 +816,53 @@
         appHeader.classList.toggle('collapsed');
         icon.className = appHeader.classList.contains('collapsed') ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
     });
+    
+    document.addEventListener("DOMContentLoaded", () => {
+    const modal = document.getElementById("howItWorksModal");
+    const openBtn = document.getElementById("openHowItWorksBtn");
+    const closeBtn = document.getElementById("closeHowItWorksBtn");
+    const gotItBtn = document.getElementById("gotItModalBtn");
+
+    const STORAGE_KEY = "congoFlix_hasSeenGuide_v1";
+
+    // 1. Vérification : Première ouverture de la page ?
+    if (!localStorage.getItem(STORAGE_KEY)) {
+        setTimeout(() => {
+            ouvrirModaleGuide();
+        }, 800); // S'ouvre automatiquement au bout de 0.8s la toute première fois
+    }
+
+    function ouvrirModaleGuide() {
+        modal.classList.remove("closing");
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+    }
+
+    function fermerModaleGuide() {
+        // Enregistre que l'utilisateur a vu la modale
+        localStorage.setItem(STORAGE_KEY, "true");
+
+        // Lance l'animation d'aspiration
+        modal.classList.add("closing");
+
+        setTimeout(() => {
+            modal.classList.remove("active", "closing");
+            document.body.style.overflow = "";
+        }, 430); // Correspond à la durée de l'animation CSS
+    }
+
+    // Événements
+    openBtn.addEventListener("click", ouvrirModaleGuide);
+    closeBtn.addEventListener("click", fermerModaleGuide);
+    gotItBtn.addEventListener("click", fermerModaleGuide);
+
+    // Fermer en cliquant à l'extérieur
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+            fermerModaleGuide();
+        }
+    });
+});
 
     // ==========================================
     // RÉCUPÉRATION DE LA VRAIE GÉOLOCALISATION
@@ -1120,5 +1424,81 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 </script>
+    <!-- MODALE D'EXPLICATION PRO -->
+<div class="how-modal-overlay" id="howItWorksModal">
+    <div class="how-modal-card">
+        
+        <button class="how-modal-close" id="closeHowItWorksBtn">&times;</button>
+
+        <div class="how-modal-header">
+            <div class="how-modal-icon">💡</div>
+            <h2>Guide Utilisateur — Publicité+</h2>
+        </div>
+
+        <div class="how-modal-body">
+            
+            <!-- NOTE CRUCIALE EN JAUNE/AMBRE EN HAUT -->
+            <div class="alert-box-warning">
+                <div class="alert-title">⚡ NOTE CRUCIALE (RANG 0 &amp; DÉBLOCAGE)</div>
+                <p>
+                    Tout utilisateur au <strong>Rang 0</strong> doit effectuer <strong>7 jours verts consécutifs</strong> (compléter au moins 15 tâches par jour). 
+                    Après ces 7 jours, rendez-vous dans votre espace <strong>Compte</strong> et cliquez sur <strong>« Cliquer pour débloquer »</strong> afin de passer au <strong>Rang 1</strong>. 
+                    Ensuite, accumulez vos <strong>XP</strong> sur chaque tâche pour gravir les échelons jusqu'au <strong>Rang 5</strong> (le niveau ultime qui débloque 100 % des activités du site).
+                </p>
+            </div>
+
+            <!-- ÉTAPE 1 -->
+            <div class="guide-step">
+                <div class="step-num">1</div>
+                <div class="step-text">
+                    <h4>Bloqueurs de publicités (AdBlock)</h4>
+                    <p>Pour être rémunéré, <strong>désactivez impérativement tout bloqueur de pub</strong> (dans vos applications, Chrome ou votre téléphone). Sinon, vos gains ne pourront pas être validés.</p>
+                </div>
+            </div>
+
+            <!-- ÉTAPE 2 -->
+            <div class="guide-step">
+                <div class="step-num">2</div>
+                <div class="step-text">
+                    <h4>Disponibilité des bannières &amp; Connexion</h4>
+                    <p>Si une publicité ne s'affiche pas, c'est simplement que la régie n'a pas de visuel disponible pour votre région à ce moment-là. Vérifiez votre connexion Internet et réessayez un peu plus tard.</p>
+                </div>
+            </div>
+
+            <!-- ÉTAPE 3 -->
+            <div class="guide-step">
+                <div class="step-num">3</div>
+                <div class="step-text">
+                    <h4>Validation des gains quotidiens</h4>
+                    <p><strong>Règle d'or :</strong> N'oubliez pas de cliquer sur <strong>« Récupérer mes gains du jour »</strong> dans la section <em>Activité</em> <strong>avant 00h00</strong>. Après minuit, tout gain non récupéré de la journée sera définitivement perdu.</p>
+                </div>
+            </div>
+
+            <!-- ÉTAPE 4 -->
+            <div class="guide-step">
+                <div class="step-num">4</div>
+                <div class="step-text">
+                    <h4>Fair-Play &amp; Sécurité</h4>
+                    <p>Les <strong>VPN</strong> et le <strong>multi-compte</strong> sont strictement interdits. Si notre algorithme détecte plusieurs comptes sur votre appareil, ils seront <strong>bannis définitivement</strong> et la totalité des gains sera gelée.</p>
+                </div>
+            </div>
+
+            <!-- ÉTAPE 5 -->
+            <div class="guide-step">
+                <div class="step-num">5</div>
+                <div class="step-text">
+                    <h4>Seuil de Retrait &amp; Paiements</h4>
+                    <p>Le seuil minimum de retrait est fixé à <strong>50 $ (soit 50 000 points)</strong>, payable par Crypto, PayPal et très prochainement par Mobile Money.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="how-modal-footer">
+            <button class="btn-understand" id="gotItModalBtn">J'ai compris, c'est parti !</button>
+        </div>
+
+    </div>
+</div>
 </body>
 </html>
