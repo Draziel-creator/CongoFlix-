@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connexion Google Firebase</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #0f111a;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .card-container {
+            background: #1a1d2d;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        .btn-google {
+            background-color: #ffffff;
+            color: #757575;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .btn-google:hover {
+            background-color: #f1f1f1;
+            transform: translateY(-2px);
+        }
+        .btn-google img {
+            width: 20px;
+            height: 20px;
+        }
+        .profile-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .profile-avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 3px solid #3b82f6;
+            object-fit: cover;
+        }
+        .info-item {
+            background: #25293c;
+            padding: 10px 15px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 13px;
+            color: #cbd5e1;
+            word-break: break-all;
+        }
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-logout:hover {
+            background: #c0392b;
+        }
+        .status-loading {
+            color: #ff9d00;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card-container">
+        <!-- ETAT 0: CHARGEMENT INITIAL -->
+        <div id="loader-state" class="status-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i> Vérification de la session...
+        </div>
+
+        <!-- ETAT 1: FORMULAIRE DE CONNEXION -->
+        <div id="login-state" style="display: none;">
+            <h2>Connexion</h2>
+            <p style="font-size: 13px; color: #8a8d9f; margin-bottom: 20px;">Connectez-vous en un clic avec votre compte Google.</p>
+            
+            <button class="btn-google" id="btn-google-login">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
+                Se connecter avec Google
+            </button>
+        </div>
+
+        <!-- ETAT 2: PROFIL UTILISATEUR APRES CONNEXION -->
+        <div id="profile-state" style="display: none;" class="profile-box">
+            <h2>Profil Utilisateur</h2>
+            <img id="user-photo" src="" alt="Avatar" class="profile-avatar">
+            
+            <div class="info-item">
+                <strong>Nom :</strong> <span id="user-name">-</span>
+            </div>
+            <div class="info-item">
+                <strong>Email :</strong> <span id="user-email">-</span>
+            </div>
+            <div class="info-item">
+                <strong>UID Firebase :</strong> <span id="user-uid">-</span>
+            </div>
+
+            <button class="btn-logout" id="btn-logout">
+                <i class="fa-solid fa-right-from-bracket"></i> Se déconnecter
+            </button>
+        </div>
+    </div>
+
+    <!-- SCRIPT MODULE FIREBASE V10 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            onAuthStateChanged, 
+            signOut 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc, 
+            setDoc, 
+            serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = { 
+            apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
+            authDomain: "publicite-6445c.firebaseapp.com",
+            projectId: "publicite-6445c",
+            storageBucket: "publicite-6445c.firebasestorage.app",
+            messagingSenderId: "663385244466",
+            appId: "1:663385244466:web:b72a95c96a8e2b8e6bcd2b", 
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        const loaderState = document.getElementById("loader-state");
+        const loginState = document.getElementById("login-state");
+        const profileState = document.getElementById("profile-state");
+
+        const btnGoogleLogin = document.getElementById("btn-google-login");
+        const btnLogout = document.getElementById("btn-logout");
+
+        // 1. ECOUTE DE L'ETAT DE CONNEXION
+        onAuthStateChanged(auth, async (user) => {
+            loaderState.style.display = "none";
+
+            if (user) {
+                // Utilisateur connecté
+                loginState.style.display = "none";
+                profileState.style.display = "flex";
+
+                document.getElementById("user-photo").src = user.photoURL || "https://via.placeholder.com/90";
+                document.getElementById("user-name").textContent = user.displayName || "Non renseigné";
+                document.getElementById("user-email").textContent = user.email || "Non renseigné";
+                document.getElementById("user-uid").textContent = user.uid;
+
+                // Synchronisation / Création du profil dans Firestore
+                await synchroniserProfilFirestore(user);
+            } else {
+                // Utilisateur déconnecté
+                profileState.style.display = "none";
+                loginState.style.display = "block";
+            }
+        });
+
+        // 2. ACTION : BOUTON SE CONNECTER AVEC GOOGLE
+        btnGoogleLogin.addEventListener("click", async () => {
+            try {
+                btnGoogleLogin.disabled = true;
+                btnGoogleLogin.style.opacity = "0.7";
+                btnGoogleLogin.innerText = "Connexion en cours...";
+
+                await signInWithPopup(auth, googleProvider);
+            } catch (error) {
+                console.error("Erreur d'authentification Google :", error);
+                alert("Échec de la connexion Google : " + error.message);
+            } finally {
+                btnGoogleLogin.disabled = false;
+                btnGoogleLogin.style.opacity = "1";
+                btnGoogleLogin.innerHTML = `
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
+                    Se connecter avec Google
+                `;
+            }
+        });
+
+        // 3. ACTION : BOUTON SE DECONNECTER
+        btnLogout.addEventListener("click", async () => {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Erreur de déconnexion :", error);
+            }
+        });
+
+        // 4. CRÉATION DU DOCUMENT UTILISATEUR FIRESTORE SI PREMIÈRE CONNEXION
+        async function synchroniserProfilFirestore(user) {
+            try {
+                const userRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userRef);
+
+                if (!userSnap.exists()) {
+                    // Création initiale avec Rang 0 par défaut
+                    await setDoc(userRef, {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || "",
+                        photoURL: user.photoURL || "",
+                        rank: 0,
+                        xp: 0,
+                        points: 0,
+                        createdAt: serverTimestamp()
+                    });
+                }
+            } catch (err) {
+                console.error("Erreur synchronisation Firestore :", err);
+            }
+        }
+    </script>
+</body>
+</html>
