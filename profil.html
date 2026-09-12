@@ -1413,6 +1413,19 @@ box-sizing: border-box;
                 </div>
                 
                 <button class="btn-main" id="authBtn" onclick="handleAuth()">SE CONNECTER</button>
+
+                <!-- SÉPARATEUR DE CONNEXION -->
+                <div id="google-auth-divider" style="display: flex; align-items: center; margin: 20px 0; color: #555875; font-size: 13px;">
+                    <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.12);"></div>
+                    <span style="padding: 0 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">OU</span>
+                    <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.12);"></div>
+                </div>
+                
+                <!-- BOUTON GOOGLE VITRINE DESIGN -->
+                <button type="button" id="btn-google-login" onclick="handleGoogleLogin()" style="width: 100%; padding: 12px; background: #ffffff; color: #111111; font-weight: 600; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1); transition: transform 0.2s, background 0.2s;">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" style="width: 18px; height: 18px;">
+                    Se connecter avec Google
+                </button>
                 <div style="margin-top:25px; font-size:13px; color:#555875;" id="switchBox">
                     Nouveau sur la plateforme ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>
                 </div>
@@ -4613,10 +4626,60 @@ function validateFormState() {
     }
 }
 
+    window.handleGoogleLogin = async () => {
+    const err = document.getElementById('error-msg');
+    const btnGoogle = document.getElementById('btn-google-login');
+    if (err) err.style.display = 'none';
+
+    try {
+        if (btnGoogle) {
+            btnGoogle.disabled = true;
+            btnGoogle.style.opacity = "0.7";
+            btnGoogle.innerText = "Connexion en cours...";
+        }
+
+        // 1. Authentification Google via Popup
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+
+        // 2. Vérification d'existence du compte dans Firestore
+        const userDocRef = doc(db, "rewards_users", user.uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (!userSnap.exists()) {
+            // Aucun profil enregistré -> Déconnexion immédiate
+            await signOut(auth);
+            if (err) {
+                err.style.display = 'block';
+                err.innerText = "Aucun compte trouvé avec cet email Google. Veuillez d'abord créer un compte avec parrainage.";
+            }
+        }
+        // Si le document existe, onAuthStateChanged s'occupe automatiquement du chargement !
+
+    } catch (error) {
+        console.error("Erreur de connexion Google :", error);
+        if (err && error.code !== 'auth/popup-closed-by-user') {
+            err.style.display = 'block';
+            err.innerText = "Erreur Google : " + error.message;
+        }
+    } finally {
+        if (btnGoogle) {
+            btnGoogle.disabled = false;
+            btnGoogle.style.opacity = "1";
+            btnGoogle.innerHTML = `
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" style="width: 18px; height: 18px;">
+                Se connecter avec Google
+            `;
+        }
+    }
+};
+
 window.toggleAuthMode = () => {
     isLoginMode = !isLoginMode;
     const birthdateBlock = document.getElementById('birthdate-block');
     const sponsorBlock = document.getElementById('sponsor-search-block');
+    const googleDivider = document.getElementById('google-auth-divider');
+    const googleBtn = document.getElementById('btn-google-login');
     const err = document.getElementById('error-msg');
 
     // Réinitialisation de la recherche parrain
@@ -4634,12 +4697,18 @@ window.toggleAuthMode = () => {
     if (err) err.style.display = 'none';
 
     if (isLoginMode) {
+        // MODE CONNEXION : Afficher le bouton Google, masquer les champs d'inscription
         if (birthdateBlock) birthdateBlock.classList.add('hidden');
         if (sponsorBlock) sponsorBlock.classList.add('hidden');
+        if (googleDivider) googleDivider.style.display = 'flex';
+        if (googleBtn) googleBtn.style.display = 'flex';
         document.getElementById('authBtn').disabled = false;
     } else {
+        // MODE INSCRIPTION : Masquer le bouton Google, afficher date et parrain
         if (birthdateBlock) birthdateBlock.classList.remove('hidden');
         if (sponsorBlock) sponsorBlock.classList.remove('hidden');
+        if (googleDivider) googleDivider.style.display = 'none';
+        if (googleBtn) googleBtn.style.display = 'none';
         if (typeof checkLocalStorageDeviceLock === "function") checkLocalStorageDeviceLock();
     }
 
@@ -4650,7 +4719,7 @@ window.toggleAuthMode = () => {
             'Déjà inscrit ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Se connecter</span>';
     }
 };
-
+        
 window.togglePasswordVisibility = () => {
     const p = document.getElementById('password');
     if (p) p.type = p.type === "password" ? "text" : "password";
