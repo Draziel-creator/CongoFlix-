@@ -534,6 +534,74 @@ body, html {
 @keyframes popInAlert { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes goldGlow { 0% { text-shadow: 0 0 0px var(--accent-cyan); } 50% { text-shadow: 0 0 15px var(--accent-cyan); } 100% { text-shadow: 0 0 0px var(--accent-cyan); } }
 .pulse-gold-active { animation: goldGlow 0.5s ease-in-out; }
+
+    /* --- MODALE ANIMÉE BONUS --- */
+.modal-bonus-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-bonus-box {
+    background: #181920;
+    border: 1px solid rgba(255, 157, 0, 0.3);
+    border-radius: 20px;
+    padding: 28px 22px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 157, 0, 0.15);
+    animation: surgissementModal 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    color: #ffffff;
+}
+
+@keyframes surgissementModal {
+    0% { transform: scale(0.4) translateY(60px); opacity: 0; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.modal-bonus-icon {
+    font-size: 52px;
+    margin-bottom: 12px;
+}
+
+.modal-bonus-box h3 {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+
+.modal-bonus-box p {
+    margin: 0 0 22px 0;
+    font-size: 14px;
+    color: #d1d5db;
+    line-height: 1.5;
+}
+
+.modal-bonus-btn {
+    background: linear-gradient(135deg, #ff9d00, #e67e22);
+    color: #fff;
+    border: none;
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(230, 126, 34, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    width: 100%;
+}
+
+.modal-bonus-btn:active {
+    transform: scale(0.96);
+}
 </style>
 </head>
 <body>
@@ -3008,12 +3076,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // =============================================================================
+// FONCTIONS DE LA MODALE SURGISSANTE
+// =============================================================================
+function afficherModalBonusCustom(titre, message, type = "info") {
+    const overlay = document.getElementById("modal-bonus-custom");
+    const iconEl = document.getElementById("modal-bonus-icon");
+    const titleEl = document.getElementById("modal-bonus-title");
+    const msgEl = document.getElementById("modal-bonus-message");
+
+    if (!overlay || !iconEl || !titleEl || !msgEl) return;
+
+    titleEl.innerText = titre;
+    msgEl.innerHTML = message;
+
+    if (type === "success") {
+        iconEl.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#28a745;"></i>';
+    } else if (type === "error" || type === "danger") {
+        iconEl.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:#e74c3c;"></i>';
+    } else if (type === "warning") {
+        iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color:#f39c12;"></i>';
+    } else {
+        iconEl.innerHTML = '<i class="fa-solid fa-circle-info" style="color:#3498db;"></i>';
+    }
+
+    overlay.style.display = "flex";
+}
+
+function fermerModalBonusCustom(event, forcer = false) {
+    if (forcer || (event && event.target.id === "modal-bonus-custom")) {
+        const overlay = document.getElementById("modal-bonus-custom");
+        if (overlay) overlay.style.display = "none";
+    }
+}
+
+
+// =============================================================================
 // GESTION DU BONUS QUOTIDIEN EN LIGNE (3 TOURS PAR JOUR / FIRESTORE)
 // =============================================================================
 
 let timerBonusInterval = null;
 
-// --- 1. VÉRIFICATION ET MISE À JOUR DE L'AFFICHAGE DU BONUS ---
 async function verifierStatutBonus() {
     const btnVideo = document.getElementById("btn-bonus-video");
     const txtVideo = document.getElementById("txt-bonus-video");
@@ -3041,7 +3143,6 @@ async function verifierStatutBonus() {
     const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
     try {
-        // A) Vérification du Rang dans users
         const userSnap = await db.collection("users").doc(currentUserId).get();
         let rangUtilisateur = 0;
         if (userSnap.exists) {
@@ -3060,7 +3161,6 @@ async function verifierStatutBonus() {
             return;
         }
 
-        // B) Lecture dans la sous-collection bonus_quotidien avec l'ID de la date actuelle
         const bonusDocRef = db.collection("users").doc(currentUserId).collection("bonus_quotidien").doc(dateAujourdhui);
         const bonusSnap = await bonusDocRef.get();
 
@@ -3073,7 +3173,6 @@ async function verifierStatutBonus() {
             dernierClicTimestamp = bData.lastClickTimestamp || 0;
         }
 
-        // C) Cas 1 : Limite des 3 tours atteinte aujourd'hui (CORRECTION DES GUILLEMETS ICI)
         if (clicsAujourdhui >= 3) {
             textes.forEach(t => t.innerHTML = `<span style="color:#28a745; font-weight:bold;"><i class="fa-solid fa-circle-check"></i> Bonus 3/3 récupérés pour aujourd'hui !</span>`);
             boutons.forEach(b => {
@@ -3085,9 +3184,8 @@ async function verifierStatutBonus() {
             return;
         }
 
-        // D) Cas 2 : Cooldown de 1 minute (60 secondes) entre deux clics
         const tempsEcoule = Math.floor((Date.now() - dernierClicTimestamp) / 1000);
-        const delaiAttente = 60; // 60 secondes
+        const delaiAttente = 60;
 
         if (dernierClicTimestamp > 0 && tempsEcoule < delaiAttente) {
             let secondesRestantes = delaiAttente - tempsEcoule;
@@ -3118,7 +3216,6 @@ async function verifierStatutBonus() {
             return;
         }
 
-        // E) Cas 3 : Tour prêt à être joué !
         const toursRestants = 3 - clicsAujourdhui;
         textes.forEach(t => t.innerHTML = `Il vous reste <strong style="color:#ffcc00;">${toursRestants} tour(s)</strong> aujourd'hui.`);
         
@@ -3134,8 +3231,6 @@ async function verifierStatutBonus() {
     }
 }
 
-
-// --- 2. CLIC ET TRAITEMENT DU BONUS (LIAISON FIRESTORE ET REDIRECTION) ---
 async function tenterChanceBonus(event) {
     if (event) event.preventDefault();
 
@@ -3145,7 +3240,6 @@ async function tenterChanceBonus(event) {
 
     if (!currentUserId) return;
 
-    // Ouverture préventive d'un onglet vierge pour contourner le blocage des popups par les navigateurs
     const windowRef = window.open('about:blank', '_blank');
 
     const btnVideo = document.getElementById("btn-bonus-video");
@@ -3160,7 +3254,6 @@ async function tenterChanceBonus(event) {
     const dateAujourdhui = typeof ObtenirDateAujourdhuiISO === "function" ? ObtenirDateAujourdhuiISO() : new Date().toISOString().split('T')[0];
 
     try {
-        // A) Vérification du Rang
         const userSnap = await db.collection("users").doc(currentUserId).get();
         let rangUtilisateur = 0;
         if (userSnap.exists) {
@@ -3169,12 +3262,11 @@ async function tenterChanceBonus(event) {
 
         if (rangUtilisateur < 1) {
             if (windowRef) windowRef.close();
-            alert("Accès refusé : Votre compte est au Rang 0.");
+            afficherModalBonusCustom("Accès Refusé", "Votre compte est au Rang 0. Montez de rang pour débloquer le bonus.", "error");
             verifierStatutBonus();
             return;
         }
 
-        // B) Lecture de l'historique bonus du jour
         const bonusDocRef = db.collection("users").doc(currentUserId).collection("bonus_quotidien").doc(dateAujourdhui);
         const bonusSnap = await bonusDocRef.get();
 
@@ -3189,7 +3281,7 @@ async function tenterChanceBonus(event) {
 
         if (clicsAujourdhui >= 3) {
             if (windowRef) windowRef.close();
-            alert("Vous avez déjà utilisé vos 3 tours quotidiens pour aujourd'hui.");
+            afficherModalBonusCustom("Limite Atteinte", "Vous avez déjà utilisé vos 3 tours quotidiens pour aujourd'hui.", "warning");
             verifierStatutBonus();
             return;
         }
@@ -3197,56 +3289,46 @@ async function tenterChanceBonus(event) {
         const tempsEcoule = Math.floor((Date.now() - dernierClicTimestamp) / 1000);
         if (dernierClicTimestamp > 0 && tempsEcoule < 60) {
             if (windowRef) windowRef.close();
-            alert(`Veuillez patienter encore ${60 - tempsEcoule} secondes.`);
+            afficherModalBonusCustom("Veuillez Patienter", `Patientez encore <strong>${60 - tempsEcoule} secondes</strong> avant le prochain tour.`, "warning");
             verifierStatutBonus();
             return;
         }
 
-        // C) RECUPERATION DU LIEN DEPUIS FIRESTORE
-        // Collection: configuration -> Document: bonus_links
         const linksDoc = await db.collection("configuration").doc("bonus_links").get();
-        
         let targetUrl = "";
         if (linksDoc.exists) {
             const linksData = linksDoc.data();
-            // Tour 0 -> lien1, Tour 1 -> lien2, Tour 2 -> lien3
             const fieldKey = `lien${clicsAujourdhui + 1}`;
             targetUrl = linksData[fieldKey] || linksData["lien1"] || "";
         }
 
         if (!targetUrl) {
             if (windowRef) windowRef.close();
-            alert("Le lien du bonus est momentanément indisponible. Veuillez réessayer plus tard.");
+            afficherModalBonusCustom("Lien Indisponible", "Le lien du bonus est temporairement indisponible. Réessayez plus tard.", "error");
             verifierStatutBonus();
             return;
         }
 
-        // Redirection de la fenêtre ouverte vers le lien Adsterra récupéré
         if (windowRef) {
             windowRef.location.href = targetUrl;
         } else {
             window.open(targetUrl, '_blank');
         }
 
-        // D) Enregistrement Firebase
         const nvxClicsCount = clicsAujourdhui + 1;
         const maint = Date.now();
-
         const batch = db.batch();
 
-        // 1. Mettre à jour le compteur du jour
         batch.set(bonusDocRef, {
             clicsCount: nvxClicsCount,
             lastClickTimestamp: maint,
             date: dateAujourdhui
         }, { merge: true });
 
-        // 2. Créditer +5 XP
         batch.set(db.collection("users").doc(currentUserId), {
             xp: firebase.firestore.FieldValue.increment(5)
         }, { merge: true });
 
-        // 3. Ajouter à l'historique v2
         const histDoc = db.collection("users").doc(currentUserId).collection("historique_taches_v2").doc(`bonus_${dateAujourdhui}_${nvxClicsCount}`);
         batch.set(histDoc, {
             date: dateAujourdhui,
@@ -3257,20 +3339,13 @@ async function tenterChanceBonus(event) {
 
         await batch.commit();
 
-        const msgSuccess = `Tour ${nvxClicsCount}/3 effectué ! +5 XP ont été crédités sur votre compte.`;
-        if (typeof afficherAlertePersonnalisee === "function") {
-            afficherAlertePersonnalisee(msgSuccess, "Bonus Crédité !");
-        } else {
-            alert(msgSuccess);
-        }
-
-        // Met à jour l'état des boutons dans les modales
+        afficherModalBonusCustom("Bonus Crédité !", `Tour ${nvxClicsCount}/3 effectué avec succès ! <br><strong style="color:#28a745;">+5 XP</strong> ont été ajoutés à votre compte.`, "success");
         verifierStatutBonus();
 
     } catch (err) {
         console.error("Erreur d'exécution du bonus :", err);
         if (windowRef) windowRef.close();
-        alert("Une erreur est survenue lors de la réclamation du bonus.");
+        afficherModalBonusCustom("Erreur", "Une erreur réseau est survenue lors de la réclamation du bonus.", "error");
         verifierStatutBonus();
     }
 }
@@ -3707,5 +3782,15 @@ l.parentNode.insertBefore(s, l);
 })({})
 </script>
 <script src="https://pl29315759.profitableratecpmnetwork.com/ac/91/ae/ac91ae3c0f08f8755cfdc77e415d3a07.js"></script>
+
+<!-- MODALE DE NOTIFICATION SURGISSANTE -->
+<div id="modal-bonus-custom" class="modal-bonus-overlay" style="display:none;" onclick="fermerModalBonusCustom(event)">
+    <div class="modal-bonus-box">
+        <div id="modal-bonus-icon" class="modal-bonus-icon"></div>
+        <h3 id="modal-bonus-title"></h3>
+        <p id="modal-bonus-message"></p>
+        <button type="button" class="modal-bonus-btn" onclick="fermerModalBonusCustom(null, true)">Compris</button>
+    </div>
+</div>
 </body>
 </html>
