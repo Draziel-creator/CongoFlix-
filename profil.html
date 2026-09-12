@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Script offi Lottie Player -->
     <script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.mjs" type="module"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Lecteur officiel Open-Source Lottie -->
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -1828,10 +1829,8 @@ box-sizing: border-box;
     <script type="module">
     // 1. IMPORTS
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithCredential } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, onSnapshot, limit, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    
-    // 🔥 IMPORT STORAGE AJOUTÉ
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
     // BASE URL DE TON SITE OU BLOGGER
@@ -1850,9 +1849,9 @@ box-sizing: border-box;
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app); // 🔥 SERVICE STORAGE INITIALISÉ
-    const googleProvider = new GoogleAuthProvider();    
+    const storage = getStorage(app);
 
+        
     // 3. DONNÉES DE RANG (PLACÉES EN HAUT POUR ÊTRE DISPONIBLES DE SUITE)
     const RANKS_METADATA = {
         0:  { name: "Novice", medal: "fa-solid fa-lock", color: "#6c757d" },
@@ -4627,52 +4626,75 @@ function validateFormState() {
     }
 }
 
-    window.handleGoogleLogin = async () => {
+   window.handleGoogleLogin = () => {
     const err = document.getElementById('error-msg');
     const btnGoogle = document.getElementById('btn-google-login');
     if (err) err.style.display = 'none';
 
-    try {
-        if (btnGoogle) {
-            btnGoogle.disabled = true;
-            btnGoogle.style.opacity = "0.7";
-            btnGoogle.innerText = "Connexion en cours...";
+    if (typeof google === 'undefined' || !google.accounts) {
+        if (err) {
+            err.style.display = 'block';
+            err.innerText = "Le service Google se charge. Veuillez réessayer dans un instant.";
         }
+        return;
+    }
 
-        // 1. Authentification Google via Popup
-        const result = await signInWithPopup(auth, googleProvider);
-        const user = result.user;
+    // Client OAuth direct (Incompatible avec la perte de sessionStorage)
+    const client = google.accounts.oauth2.initTokenClient({
+        // Remplacez par votre Client ID Web (Trouvable dans Firebase Console > Paramètres du projet > Général / Identifiants)
+        client_id: "663385244466-d49dlanquqpof32po6iqpe8hbdi5mare.apps.googleusercontent.com", 
+        scope: "email profile openid",
+        callback: async (response) => {
+            if (response.error) {
+                console.error("Erreur Google OAuth :", response);
+                return;
+            }
 
-        // 2. Vérification d'existence du compte dans Firestore
-        const userDocRef = doc(db, "rewards_users", user.uid);
-        const userSnap = await getDoc(userDocRef);
+            try {
+                if (btnGoogle) {
+                    btnGoogle.disabled = true;
+                    btnGoogle.style.opacity = "0.7";
+                    btnGoogle.innerText = "Connexion en cours...";
+                }
 
-        if (!userSnap.exists()) {
-            // Aucun profil enregistré -> Déconnexion immédiate
-            await signOut(auth);
-            if (err) {
-                err.style.display = 'block';
-                err.innerText = "Aucun compte trouvé avec cet email Google. Veuillez d'abord créer un compte avec parrainage.";
+                // Authentification Firebase directe via le jeton d'accès
+                const credential = GoogleAuthProvider.credential(null, response.access_token);
+                const userCredential = await signInWithCredential(auth, credential);
+                const user = userCredential.user;
+
+                // Vérification de l'existence du profil dans la base de données
+                const userDocRef = doc(db, "rewards_users", user.uid);
+                const userSnap = await getDoc(userDocRef);
+
+                if (!userSnap.exists()) {
+                    await signOut(auth);
+                    if (err) {
+                        err.style.display = 'block';
+                        err.innerText = "Aucun compte trouvé avec cet email Google. Veuillez d'abord créer un compte avec parrainage.";
+                    }
+                }
+
+            } catch (error) {
+                console.error("Erreur Firebase :", error);
+                if (err) {
+                    err.style.display = 'block';
+                    err.innerText = "Erreur de connexion : " + error.message;
+                }
+            } finally {
+                if (btnGoogle) {
+                    btnGoogle.disabled = false;
+                    btnGoogle.style.opacity = "1";
+                    btnGoogle.innerHTML = `
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" style="width: 18px; height: 18px;">
+                        Se connecter avec Google
+                    `;
+                }
             }
         }
-        // Si le document existe, onAuthStateChanged s'occupe automatiquement du chargement !
+    });
 
-    } catch (error) {
-        console.error("Erreur de connexion Google :", error);
-        if (err && error.code !== 'auth/popup-closed-by-user') {
-            err.style.display = 'block';
-            err.innerText = "Erreur Google : " + error.message;
-        }
-    } finally {
-        if (btnGoogle) {
-            btnGoogle.disabled = false;
-            btnGoogle.style.opacity = "1";
-            btnGoogle.innerHTML = `
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" style="width: 18px; height: 18px;">
-                Se connecter avec Google
-            `;
-        }
-    }
+    // Ouvre la boîte de dialogue native Google
+    client.requestAccessToken();
 };
 
 window.toggleAuthMode = () => {
