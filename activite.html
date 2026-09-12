@@ -3007,7 +3007,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-    // =============================================================================
+// =============================================================================
 // GESTION DU BONUS QUOTIDIEN EN LIGNE (3 TOURS PAR JOUR / FIRESTORE)
 // =============================================================================
 
@@ -3061,8 +3061,6 @@ async function verifierStatutBonus() {
         }
 
         // B) Lecture dans la sous-collection bonus_quotidien avec l'ID de la date actuelle
-        // Grâce au document nommé 'dateAujourdhui', si on est un nouveau jour, il n'existe pas encore
-        // et les clics repassent automatiquement à 0 / 3 !
         const bonusDocRef = db.collection("users").doc(currentUserId).collection("bonus_quotidien").doc(dateAujourdhui);
         const bonusSnap = await bonusDocRef.get();
 
@@ -3075,9 +3073,9 @@ async function verifierStatutBonus() {
             dernierClicTimestamp = bData.lastClickTimestamp || 0;
         }
 
-        // C) Cas 1 : Limite des 3 tours atteinte aujourd'hui
+        // C) Cas 1 : Limite des 3 tours atteinte aujourd'hui (CORRECTION DES GUILLEMETS ICI)
         if (clicsAujourdhui >= 3) {
-            textes.forEach(t => t.innerHTML = "<span style='color:#28a745; font-weight:bold;'><i class="fa-solid fa-circle-check"></i> Bonus 3/3 récupérés pour aujourd'hui !</span>");
+            textes.forEach(t => t.innerHTML = `<span style="color:#28a745; font-weight:bold;"><i class="fa-solid fa-circle-check"></i> Bonus 3/3 récupérés pour aujourd'hui !</span>`);
             boutons.forEach(b => {
                 b.disabled = true;
                 b.style.background = "#28a745";
@@ -3276,7 +3274,8 @@ async function tenterChanceBonus(event) {
         verifierStatutBonus();
     }
 }
-        // =============================================================================
+    
+// =============================================================================
 // FONCTION UTILITAIRE : OBTENIR LA DATE DU JOUR (FORMAT YYYY-MM-DD)
 // =============================================================================
 function ObtenirDateAujourdhuiISO() {
