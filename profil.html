@@ -1415,18 +1415,15 @@ box-sizing: border-box;
                 
                 <button class="btn-main" id="authBtn" onclick="handleAuth()">SE CONNECTER</button>
 
-                <!-- SÉPARATEUR DE CONNEXION -->
+                   <!-- SÉPARATEUR DE CONNEXION -->
                 <div id="google-auth-divider" style="display: flex; align-items: center; margin: 20px 0; color: #555875; font-size: 13px;">
                     <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.12);"></div>
                     <span style="padding: 0 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">OU</span>
                     <div style="flex: 1; height: 1px; background: rgba(255, 255, 255, 0.12);"></div>
                 </div>
                 
-                <!-- BOUTON GOOGLE VITRINE DESIGN -->
-                <button type="button" id="btn-google-login" onclick="handleGoogleLogin()" style="width: 100%; padding: 12px; background: #ffffff; color: #111111; font-weight: 600; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1); transition: transform 0.2s, background 0.2s;">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" style="width: 18px; height: 18px;">
-                    Se connecter avec Google
-                </button>
+                <!-- CONTENEUR DU BOUTON GOOGLE OFFICIEL -->
+                <div id="btn-google-container" style="width: 100%; display: flex; justify-content: center; min-height: 44px;"></div>
                 <div style="margin-top:25px; font-size:13px; color:#555875;" id="switchBox">
                     Nouveau sur la plateforme ? <span style="color:var(--neon); cursor:pointer; font-weight:600;" onclick="toggleAuthMode()">Créer un compte</span>
                 </div>
@@ -4626,40 +4623,48 @@ function validateFormState() {
     }
 }
 
-// 1. Initialisation de Google ID Token (Intégré dans la même page)
+// 1. Initialisation de Google Auth et rendu du bouton officiel
 window.initGoogleAuth = () => {
     if (typeof google !== 'undefined' && google.accounts) {
         google.accounts.id.initialize({
             client_id: "663385244466-d49dlanquqpof32po6iqpe8hbdi5mare.apps.googleusercontent.com",
             callback: handleGoogleCredentialResponse,
-            auto_select: false
+            use_fedcm_for_prompt: false // 🔥 Empêche le blocage FedCM sur Android WebView
         });
+
+        // Génère le bouton Google officiel directement dans la page
+        const btnContainer = document.getElementById('btn-google-container');
+        if (btnContainer) {
+            google.accounts.id.renderButton(btnContainer, {
+                type: "standard",
+                theme: "outline",
+                size: "large",
+                text: "signin_with",
+                shape: "rectangular",
+                logo_alignment: "left",
+                width: 280
+            });
+        }
     }
 };
 
-// Lancer l'initialisation après le chargement de la page
+// Lancer le chargement automatique du bouton
 window.addEventListener('load', () => {
-    setTimeout(window.initGoogleAuth, 1000);
+    setTimeout(window.initGoogleAuth, 800);
 });
 
-// 2. Traitement du jeton renvoyé par Google
+// 2. Traitement de la connexion une fois l'utilisateur authentifié
 async function handleGoogleCredentialResponse(response) {
     const err = document.getElementById('error-msg');
-    const btnGoogle = document.getElementById('btn-google-login');
     if (err) err.style.display = 'none';
 
     try {
-        if (btnGoogle) {
-            btnGoogle.disabled = true;
-            btnGoogle.innerText = "Connexion en cours...";
-        }
-
-        // Connexion Firebase avec le jeton d'identité (ID Token)
+        // Authentification Firebase grâce au jeton Google
         const credential = GoogleAuthProvider.credential(response.credential);
         const userCredential = await signInWithCredential(auth, credential);
         const user = userCredential.user;
 
-        // Vérification de l'existence du profil dans Firestore
+        // Vérification de l'existence du compte dans Firestore
         const userDocRef = doc(db, "rewards_users", user.uid);
         const userSnap = await getDoc(userDocRef);
 
@@ -4670,7 +4675,7 @@ async function handleGoogleCredentialResponse(response) {
                 err.innerText = "Aucun compte trouvé avec cet email Google. Veuillez d'abord créer un compte avec parrainage.";
             }
         }
-        // Si le profil existe, onAuthStateChanged recharge automatiquement l'interface !
+        // Si le profil existe, onAuthStateChanged connecte l'utilisateur immédiatement !
 
     } catch (error) {
         console.error("Erreur connexion Google :", error);
@@ -4678,42 +4683,14 @@ async function handleGoogleCredentialResponse(response) {
             err.style.display = 'block';
             err.innerText = "Erreur Google : " + error.message;
         }
-    } finally {
-        if (btnGoogle) {
-            btnGoogle.disabled = false;
-            btnGoogle.innerHTML = `
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" style="width: 18px; height: 18px;">
-                Se connecter avec Google
-            `;
-        }
     }
 }
-
-// 3. Fonction appelée au clic sur votre bouton HTML
-window.handleGoogleLogin = () => {
-    if (typeof google !== 'undefined' && google.accounts) {
-        // Affiche la boîte de dialogue Google directement superposée sur l'application
-        google.accounts.id.prompt((notification) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                // Si le prompt automatique ne s'affiche pas, forcer l'affichage
-                google.accounts.id.prompt();
-            }
-        });
-    } else {
-        const err = document.getElementById('error-msg');
-        if (err) {
-            err.style.display = 'block';
-            err.innerText = "Le service Google se charge, veuillez réessayer dans 2 secondes.";
-        }
-    }
-};
-
 window.toggleAuthMode = () => {
     isLoginMode = !isLoginMode;
     const birthdateBlock = document.getElementById('birthdate-block');
     const sponsorBlock = document.getElementById('sponsor-search-block');
     const googleDivider = document.getElementById('google-auth-divider');
-    const googleBtn = document.getElementById('btn-google-login');
+    const googleContainer = document.getElementById('btn-google-container') || document.getElementById('btn-google-login');
     const err = document.getElementById('error-msg');
 
     // Réinitialisation de la recherche parrain
@@ -4735,14 +4712,14 @@ window.toggleAuthMode = () => {
         if (birthdateBlock) birthdateBlock.classList.add('hidden');
         if (sponsorBlock) sponsorBlock.classList.add('hidden');
         if (googleDivider) googleDivider.style.display = 'flex';
-        if (googleBtn) googleBtn.style.display = 'flex';
+        if (googleContainer) googleContainer.style.display = 'flex';
         document.getElementById('authBtn').disabled = false;
     } else {
         // MODE INSCRIPTION : Masquer le bouton Google, afficher date et parrain
         if (birthdateBlock) birthdateBlock.classList.remove('hidden');
         if (sponsorBlock) sponsorBlock.classList.remove('hidden');
         if (googleDivider) googleDivider.style.display = 'none';
-        if (googleBtn) googleBtn.style.display = 'none';
+        if (googleContainer) googleContainer.style.display = 'none';
         if (typeof checkLocalStorageDeviceLock === "function") checkLocalStorageDeviceLock();
     }
 
