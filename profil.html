@@ -4626,75 +4626,86 @@ function validateFormState() {
     }
 }
 
-   window.handleGoogleLogin = () => {
+// 1. Initialisation de Google ID Token (Intégré dans la même page)
+window.initGoogleAuth = () => {
+    if (typeof google !== 'undefined' && google.accounts) {
+        google.accounts.id.initialize({
+            client_id: "663385244466-d49dlanquqpof32po6iqpe8hbdi5mare.apps.googleusercontent.com",
+            callback: handleGoogleCredentialResponse,
+            auto_select: false
+        });
+    }
+};
+
+// Lancer l'initialisation après le chargement de la page
+window.addEventListener('load', () => {
+    setTimeout(window.initGoogleAuth, 1000);
+});
+
+// 2. Traitement du jeton renvoyé par Google
+async function handleGoogleCredentialResponse(response) {
     const err = document.getElementById('error-msg');
     const btnGoogle = document.getElementById('btn-google-login');
     if (err) err.style.display = 'none';
 
-    if (typeof google === 'undefined' || !google.accounts) {
+    try {
+        if (btnGoogle) {
+            btnGoogle.disabled = true;
+            btnGoogle.innerText = "Connexion en cours...";
+        }
+
+        // Connexion Firebase avec le jeton d'identité (ID Token)
+        const credential = GoogleAuthProvider.credential(response.credential);
+        const userCredential = await signInWithCredential(auth, credential);
+        const user = userCredential.user;
+
+        // Vérification de l'existence du profil dans Firestore
+        const userDocRef = doc(db, "rewards_users", user.uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (!userSnap.exists()) {
+            await signOut(auth);
+            if (err) {
+                err.style.display = 'block';
+                err.innerText = "Aucun compte trouvé avec cet email Google. Veuillez d'abord créer un compte avec parrainage.";
+            }
+        }
+        // Si le profil existe, onAuthStateChanged recharge automatiquement l'interface !
+
+    } catch (error) {
+        console.error("Erreur connexion Google :", error);
         if (err) {
             err.style.display = 'block';
-            err.innerText = "Le service Google se charge. Veuillez réessayer dans un instant.";
+            err.innerText = "Erreur Google : " + error.message;
         }
-        return;
+    } finally {
+        if (btnGoogle) {
+            btnGoogle.disabled = false;
+            btnGoogle.innerHTML = `
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" style="width: 18px; height: 18px;">
+                Se connecter avec Google
+            `;
+        }
     }
+}
 
-    // Client OAuth direct (Incompatible avec la perte de sessionStorage)
-    const client = google.accounts.oauth2.initTokenClient({
-        // Remplacez par votre Client ID Web (Trouvable dans Firebase Console > Paramètres du projet > Général / Identifiants)
-        client_id: "663385244466-d49dlanquqpof32po6iqpe8hbdi5mare.apps.googleusercontent.com", 
-        scope: "email profile openid",
-        callback: async (response) => {
-            if (response.error) {
-                console.error("Erreur Google OAuth :", response);
-                return;
+// 3. Fonction appelée au clic sur votre bouton HTML
+window.handleGoogleLogin = () => {
+    if (typeof google !== 'undefined' && google.accounts) {
+        // Affiche la boîte de dialogue Google directement superposée sur l'application
+        google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                // Si le prompt automatique ne s'affiche pas, forcer l'affichage
+                google.accounts.id.prompt();
             }
-
-            try {
-                if (btnGoogle) {
-                    btnGoogle.disabled = true;
-                    btnGoogle.style.opacity = "0.7";
-                    btnGoogle.innerText = "Connexion en cours...";
-                }
-
-                // Authentification Firebase directe via le jeton d'accès
-                const credential = GoogleAuthProvider.credential(null, response.access_token);
-                const userCredential = await signInWithCredential(auth, credential);
-                const user = userCredential.user;
-
-                // Vérification de l'existence du profil dans la base de données
-                const userDocRef = doc(db, "rewards_users", user.uid);
-                const userSnap = await getDoc(userDocRef);
-
-                if (!userSnap.exists()) {
-                    await signOut(auth);
-                    if (err) {
-                        err.style.display = 'block';
-                        err.innerText = "Aucun compte trouvé avec cet email Google. Veuillez d'abord créer un compte avec parrainage.";
-                    }
-                }
-
-            } catch (error) {
-                console.error("Erreur Firebase :", error);
-                if (err) {
-                    err.style.display = 'block';
-                    err.innerText = "Erreur de connexion : " + error.message;
-                }
-            } finally {
-                if (btnGoogle) {
-                    btnGoogle.disabled = false;
-                    btnGoogle.style.opacity = "1";
-                    btnGoogle.innerHTML = `
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" style="width: 18px; height: 18px;">
-                        Se connecter avec Google
-                    `;
-                }
-            }
+        });
+    } else {
+        const err = document.getElementById('error-msg');
+        if (err) {
+            err.style.display = 'block';
+            err.innerText = "Le service Google se charge, veuillez réessayer dans 2 secondes.";
         }
-    });
-
-    // Ouvre la boîte de dialogue native Google
-    client.requestAccessToken();
+    }
 };
 
 window.toggleAuthMode = () => {
