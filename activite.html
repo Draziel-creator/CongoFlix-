@@ -114,124 +114,75 @@ body, html {
 }
 
 /* ======================================================
-   2. GRILLE DE CARTES & LISTE VERTICALE (STYLE CATALOGUE)
+   2. LISTE VERTICALE & CARTES EN VITRINE (AVEC EFFET MIROIR)
    ====================================================== */
-.video-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-}
 
-.video-card-small {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-    border: 2px solid rgba(0, 255, 204, 0.25);
-    border-radius: 16px;
-    padding: 16px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 255, 204, 0.05);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    backdrop-filter: blur(8px);
+/* Transforme la grille 2 colonnes en une liste verticale fluide */
+.video-grid {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
+    gap: 14px;
 }
 
-.video-card-small::before {
-    content: '';
-    position: absolute;
-    top: 0; left: -150%; width: 50%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
-    transform: skewX(-25deg);
-    transition: 0.75s;
-}
-
-.video-card-small:hover::before {
-    left: 150%;
-}
-
-.video-card-small:hover {
-    transform: translateY(-4px);
-    border-color: var(--accent-cyan);
-    box-shadow: 0 8px 22px rgba(0, 255, 204, 0.3);
-}
-
-.video-card-small i {
-    font-size: 24px;
-    color: var(--accent-cyan);
-    text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
-    margin-bottom: 8px;
-}
-
-.video-card-small h4 {
-    margin: 4px 0;
-    font-size: 13px;
-    font-weight: 700;
-    color: #ffffff;
-}
-
-.video-card-small p {
-    margin: 0 0 10px 0;
-    font-size: 11px;
-    color: #8a8d9f;
-}
-
-.btn-launch-grid {
-    background: linear-gradient(90deg, var(--accent-cyan), #00a2ff);
-    color: #030408;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 20px;
-    font-weight: 800;
-    font-size: 11px;
-    cursor: pointer;
-    width: 100%;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 10px rgba(0, 255, 204, 0.2);
-}
-
-.btn-launch-grid:active {
-    transform: scale(0.96);
-}
-
-/* ======================================================
-   LISTE VERTICALE & CARTES (STYLE SHORT TV)
-   ====================================================== */
 .video-list-vertical {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
 }
 
-.video-card-horizontal {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+/* Style de base de chaque carte "Vitrine" */
+.video-card-small, .video-card-horizontal {
+    background: linear-gradient(135deg, #131722 0%, #090d1a 100%);
+    border: 1px solid rgba(0, 255, 204, 0.2);
     border-radius: 16px;
-    padding: 12px;
+    padding: 14px;
     display: flex;
-    align-items: flex-start; /* Aligne tout en haut pour que la vignette et le texte commencent ensemble */
-    gap: 12px;
+    align-items: center;
+    gap: 15px;
     position: relative;
-    backdrop-filter: blur(8px);
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
     transition: all 0.3s ease;
 }
 
-.video-card-horizontal:hover {
-    border-color: rgba(0, 255, 204, 0.4);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 255, 204, 0.1);
+/* Effet au survol des cartes vitrines */
+.video-card-small:hover, .video-card-horizontal:hover {
+    border-color: var(--accent-cyan);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 255, 204, 0.15);
 }
 
-.video-thumb-wrapper {
-    position: relative;
-    width: 75px;
-    height: 100px;
+/* --- EFFET MIROIR : Une carte sur deux inverse l'ordre (Image à droite / Texte à gauche) --- */
+.video-grid .video-card-small:nth-child(even),
+.video-list-vertical .video-card-horizontal:nth-child(even) {
+    flex-direction: row-reverse;
+    background: linear-gradient(135deg, #090d1a 0%, #131722 100%);
+    border-color: rgba(255, 215, 0, 0.2); /* Légère touche dorée alternée pour le miroir */
+}
+
+.video-grid .video-card-small:nth-child(even):hover,
+.video-list-vertical .video-card-horizontal:nth-child(even):hover {
+    border-color: var(--accent-gold);
+}
+
+/* Miniature / Icône de la vitrine */
+.video-card-small i, .video-thumb-wrapper {
+    width: 65px;
+    height: 80px;
     border-radius: 10px;
-    overflow: hidden;
+    background: #030408;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    background: #000;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.video-card-small i {
+    font-size: 28px;
+    color: var(--accent-cyan);
+    text-shadow: 0 0 12px rgba(0, 255, 204, 0.6);
+    margin-bottom: 0;
 }
 
 .video-thumb-wrapper img {
@@ -240,92 +191,54 @@ body, html {
     object-fit: cover;
 }
 
-.badge-top {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    background: linear-gradient(135deg, #ff416c, #ff4b2b);
-    color: #fff;
-    font-size: 8.5px;
-    font-weight: 800;
-    padding: 2px 5px;
-    border-radius: 5px;
-    text-transform: uppercase;
-    box-shadow: 0 2px 6px rgba(255, 65, 108, 0.4);
+/* Détails du texte à l'intérieur de la vitrine */
+.video-card-small h4, .video-title {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    text-align: left;
+}
+
+/* Si la carte est inversée (effet miroir), on aligne le texte de l'autre côté pour que ce soit propre */
+.video-grid .video-card-small:nth-child(even) h4,
+.video-list-vertical .video-card-horizontal:nth-child(even) .video-details {
+    text-align: left; 
+}
+
+.video-card-small p, .video-desc {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: var(--accent-gold);
+    font-weight: 600;
+    text-align: left;
 }
 
 .video-details {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    min-width: 0;
+    justify-content: center;
 }
 
-.video-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-    gap: 6px;
-}
-
-.video-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #ffffff;
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.video-rating {
-    font-size: 10.5px;
-    font-weight: 700;
-    color: var(--accent-gold, #ffd700);
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    background: rgba(255, 215, 0, 0.08);
-    padding: 2px 6px;
-    border-radius: 6px;
-    flex-shrink: 0;
-}
-
-.video-desc {
-    font-size: 10.5px;
-    color: #8a8d9f;
-    margin: 0 0 10px 0;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    line-height: 1.35;
-}
-
-.btn-download-action {
-    background: linear-gradient(90deg, var(--accent-cyan, #00ffcc), #0099ff);
+/* Bouton Lancer / Télécharger style vitrine */
+.btn-launch-grid, .btn-download-action {
+    background: linear-gradient(90deg, var(--accent-cyan), #0099ff);
     color: #030408;
     border: none;
-    padding: 6px 14px;
+    padding: 8px 16px;
     border-radius: 10px;
     font-weight: 800;
-    font-size: 10.5px;
+    font-size: 11px;
     cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
     width: fit-content;
-    box-shadow: 0 3px 10px rgba(0, 255, 204, 0.2);
-    transition: transform 0.2s;
+    box-shadow: 0 4px 12px rgba(0, 255, 204, 0.25);
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.btn-download-action:active {
+.btn-launch-grid:active, .btn-download-action:active {
     transform: scale(0.95);
 }
-
 /* ======================================================
    3. DASHBOARD, SÉCURITÉ & NAVIGATION
    ====================================================== */
