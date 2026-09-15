@@ -114,7 +114,7 @@ body, html {
 }
 
 /* ======================================================
-   2. GRILLE DE CARTES VIDÉO / OFFRES
+   2. GRILLE DE CARTES & LISTE VERTICALE (STYLE CATALOGUE)
    ====================================================== */
 .video-grid {
     display: grid;
@@ -196,19 +196,132 @@ body, html {
     transform: scale(0.96);
 }
 
-.video-card-small:nth-child(even) {
-    border-color: rgba(255, 215, 0, 0.25);
-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.05);
+/* NOUVEAU : Style de liste verticale type Short TV (inspiré de votre capture) */
+.video-list-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.video-card-small:nth-child(even):hover {
-    border-color: var(--accent-gold);
-    box-shadow: 0 8px 22px rgba(255, 215, 0, 0.3);
+.video-card-horizontal {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
 }
 
-.video-card-small:nth-child(even) i {
+.video-card-horizontal:hover {
+    border-color: rgba(0, 255, 204, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 255, 204, 0.1);
+}
+
+.video-thumb-wrapper {
+    position: relative;
+    width: 75px;
+    height: 100px;
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #000;
+}
+
+.video-thumb-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.badge-top {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: linear-gradient(135deg, #ff416c, #ff4b2b);
+    color: #fff;
+    font-size: 8.5px;
+    font-weight: 800;
+    padding: 2px 5px;
+    border-radius: 5px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 6px rgba(255, 65, 108, 0.4);
+}
+
+.video-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
+.video-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2px;
+}
+
+.video-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+}
+
+.video-rating {
+    font-size: 10.5px;
+    font-weight: 700;
     color: var(--accent-gold);
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(255, 215, 0, 0.08);
+    padding: 2px 6px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.video-desc {
+    font-size: 10px;
+    color: #8a8d9f;
+    margin: 0 0 8px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.35;
+}
+
+.btn-download-action {
+    background: linear-gradient(90deg, var(--accent-cyan), #0099ff);
+    color: #030408;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 10.5px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: fit-content;
+    box-shadow: 0 3px 10px rgba(0, 255, 204, 0.2);
+    transition: transform 0.2s;
+}
+
+.btn-download-action:active {
+    transform: scale(0.95);
 }
 
 /* ======================================================
@@ -225,7 +338,7 @@ body, html {
 .vip-zone-card { background: linear-gradient(135deg, #0e122b 0%, #050714 100%); border: 1px solid rgba(255,215,0,0.15); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .container-iframe-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020306; z-index: 3000; display: none; flex-direction: column; }
 
-/* CONTAINER TRANSPARENT (AUCUN FOND RELIÉ) */
+/* NAVIGATION TRANSPARENTE EN CAPSULES */
 .nav-bar {
     position: fixed;
     bottom: 16px;
@@ -240,12 +353,11 @@ body, html {
     justify-content: space-between;
     align-items: center;
     z-index: 1000;
-    pointer-events: none; /* Rend la zone entre les boutons transparente aux clics */
+    pointer-events: none;
 }
 
-/* BOUTONS CAPSULES FUTURISTES INDÉPENDANTS */
 .nav-item {
-    pointer-events: auto; /* Active le clic sur chaque bouton */
+    pointer-events: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -258,7 +370,7 @@ body, html {
     text-decoration: none;
     font-size: 10px;
     font-weight: 600;
-    border-radius: 16px; /* Forme rectangulaire arrondie / capsule */
+    border-radius: 16px;
     background: rgba(12, 16, 28, 0.75);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
@@ -272,7 +384,6 @@ body, html {
     transition: transform 0.3s ease;
 }
 
-/* EFFET HOVER (SURVOL) */
 .nav-item:hover {
     transform: translateY(-3px);
     color: #ffffff;
@@ -280,7 +391,6 @@ body, html {
     box-shadow: 0 10px 20px rgba(0, 255, 204, 0.15);
 }
 
-/* BOUTON ACTIF AVEC PULSATION FUTURISTE */
 .nav-item.active {
     color: #00ffcc;
     background: rgba(0, 255, 204, 0.08);
@@ -293,7 +403,6 @@ body, html {
     filter: drop-shadow(0 0 6px #00ffcc);
 }
 
-/* ANIMATION DE PULSATION NÉON */
 @keyframes pulseFuturistic {
     0%, 100% {
         box-shadow: 0 0 12px rgba(0, 255, 204, 0.25), inset 0 0 8px rgba(0, 255, 204, 0.1);
@@ -307,126 +416,21 @@ body, html {
 }
 
 /* ======================================================
-   4. MODALE 1 : FLUX & VIDÉO
+   4, 5, 6. MODALES & DIALOGUES
    ====================================================== */
-.pub-modal-overlay {
+.pub-modal-overlay, .banniere-modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(2, 3, 6, 0.96); z-index: 2000;
     display: none; justify-content: center; align-items: center; flex-direction: column;
 }
 
-.pub-modal-content {
+.pub-modal-content, .banniere-modal-content {
     background: #090d1a; border: 2px solid var(--accent-cyan); border-radius: 24px;
     padding: 20px; width: 85%; max-width: 350px; text-align: center; position: relative;
     box-shadow: 0 0 40px rgba(0, 255, 204, 0.2);
 }
 
-.btn-fermer-modal {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #8a8d9f;
-    font-size: 14px;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    z-index: 9999;
-}
-
-.btn-fermer-modal:hover {
-    background: rgba(255, 74, 74, 0.2);
-    color: var(--danger-red);
-    border-color: rgba(255, 74, 74, 0.4);
-}
-
-.pub-square-container {
-    width: 300px; height: 250px; margin: 0 auto 15px auto; background: #030408;
-    border: 1px dashed rgba(255, 255, 255, 0.1); position: relative;
-    display: flex; justify-content: center; align-items: center; overflow: hidden;
-}
-
-.blue-status-layer {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #090d1a;
-    display: flex; flex-direction: column; justify-content: center; align-items: center; 
-    z-index: 10; gap: 8px;
-}
-
-/* Le doigt doit impérativement avoir un z-index supérieur à la couche bleue (z-index: 10) */
-.finger-pulse-indicator, 
-#finger-indicator {
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: rgba(3, 4, 8, 0.85);
-    display: none; 
-    flex-direction: column; 
-    justify-content: center; 
-    align-items: center;
-    cursor: pointer; 
-    z-index: 100 !important; /* Priorité absolue au-dessus du loader et de l'iframe */
-    gap: 10px; 
-    color: var(--accent-cyan);
-}
-
-.finger-pulse-indicator i, 
-#finger-indicator i { 
-    font-size: 38px; 
-    color: #00ffcc;
-    animation: pulseFinger 1s infinite alternate; 
-}
-
-.finger-pulse-indicator span, 
-#finger-indicator span { 
-    font-size: 12px; 
-    font-weight: 800; 
-    letter-spacing: 1px; 
-    color: #ffffff;
-}
-
-.ad-slot-square { width: 100%; height: 100%; display: none; justify-content: center; align-items: center; }
-.fine-banner-row { width: 100%; display: flex; justify-content: center; align-items: center; margin-bottom: 4px; }
-
-.pub-modal-actions { display: flex; flex-direction: column; gap: 10px; }
-.btn-modal-action {
-    width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: 700; font-size: 13px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.btn-modal-claim { background: #1c2235; color: #686c87; }
-.btn-modal-claim.ready { background: var(--accent-cyan); color: #030408; box-shadow: 0 4px 12px rgba(0,255,204,0.3); }
-.btn-modal-claim.pret-a-reclamer {
-    background-color: #28a745 !important;
-    color: #ffffff !important;
-    cursor: pointer !important;
-    box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
-    animation: pulseGreenBtn 1.5s infinite;
-}
-.btn-modal-visit { background: #102a45; color: #00ffcc; border: 1px solid rgba(0,255,204,0.2); }
-
-/* ======================================================
-   5. MODALE 2 : BANNIÈRE
-   ====================================================== */
-.banniere-modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(2, 3, 6, 0.96); z-index: 2000;
-    display: none; justify-content: center; align-items: center; flex-direction: column;
-}
-
-.banniere-modal-content {
-    background: #090d1a; border: 2px solid var(--accent-cyan); border-radius: 24px;
-    padding: 20px; width: 85%; max-width: 350px; text-align: center; position: relative;
-    box-shadow: 0 0 40px rgba(0, 255, 204, 0.2);
-}
-
-.btn-fermer-banniere-modal {
+.btn-fermer-modal, .btn-fermer-banniere-modal {
     position: absolute; top: 15px; left: 15px;
     background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
     color: #8a8d9f; font-size: 14px; width: 28px; height: 28px; border-radius: 8px;
@@ -434,36 +438,48 @@ body, html {
     transition: all 0.2s ease; z-index: 9999;
 }
 
-.btn-fermer-banniere-modal:hover {
+.btn-fermer-modal:hover, .btn-fermer-banniere-modal:hover {
     background: rgba(255, 74, 74, 0.2);
     color: var(--danger-red);
     border-color: rgba(255, 74, 74, 0.4);
 }
 
-.banniere-square-container {
+.pub-square-container, .banniere-square-container {
     width: 300px; height: 250px; margin: 0 auto 15px auto; background: #030408;
     border: 1px dashed rgba(255, 255, 255, 0.1); position: relative;
     display: flex; justify-content: center; align-items: center; overflow: hidden;
 }
 
-.banniere-status-layer {
+.blue-status-layer, .banniere-status-layer {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #090d1a;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; 
     z-index: 10; gap: 8px;
 }
 
-.banniere-modal-actions { display: flex; flex-direction: column; gap: 10px; }
+.finger-pulse-indicator, #finger-indicator {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(3, 4, 8, 0.85); display: none; flex-direction: column; 
+    justify-content: center; align-items: center; cursor: pointer; 
+    z-index: 100 !important; gap: 10px; color: var(--accent-cyan);
+}
 
-.btn-banniere-modal-action {
-    width: 100%; padding: 12px; border-radius: 12px; border: none;
-    font-weight: 700; font-size: 13px; cursor: pointer;
+.finger-pulse-indicator i, #finger-indicator i { 
+    font-size: 38px; color: #00ffcc; animation: pulseFinger 1s infinite alternate; 
+}
+
+.finger-pulse-indicator span, #finger-indicator span { 
+    font-size: 12px; font-weight: 800; letter-spacing: 1px; color: #ffffff; 
+}
+
+.pub-modal-actions, .banniere-modal-actions { display: flex; flex-direction: column; gap: 10px; }
+.btn-modal-action, .btn-banniere-modal-action {
+    width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: 700; font-size: 13px; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 8px;
 }
 
-.btn-banniere-modal-claim { background: #1c2235; color: #686c87; }
-
-.btn-banniere-modal-claim.pret-a-reclamer,
-.btn-banniere-modal-claim.ready {
+.btn-modal-claim, .btn-banniere-modal-claim { background: #1c2235; color: #686c87; }
+.btn-modal-claim.ready, .btn-banniere-modal-claim.ready,
+.btn-modal-claim.pret-a-reclamer, .btn-banniere-modal-claim.pret-a-reclamer {
     background-color: #28a745 !important;
     color: #ffffff !important;
     cursor: pointer !important;
@@ -471,18 +487,15 @@ body, html {
     animation: pulseGreenBtn 1.5s infinite;
 }
 
-/* ======================================================
-   6. MODALE 3 : ALERTE PERSONNALISÉE
-   ====================================================== */
-.custom-alert-overlay {
+/* MODALE ALERTE & BONUS */
+.custom-alert-overlay, .modal-bonus-overlay {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     background: rgba(10, 14, 29, 0.82);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    z-index: 999999;
-    display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
+    z-index: 999999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
 }
 
-.custom-alert-box {
+.custom-alert-box, .modal-bonus-box {
     background: #181d36; border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 20px; width: 100%; max-width: 380px; padding: 28px 24px;
     text-align: center; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
@@ -494,11 +507,9 @@ body, html {
     background: rgba(255, 179, 0, 0.15); border: 2px solid #ffb300;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
 }
-
 .custom-alert-icon i { font-size: 30px; color: #ffb300; }
-
-.custom-alert-box h3 { margin: 0 0 10px 0; color: #ffffff; font-size: 19px; font-weight: 700; }
-.custom-alert-box p { margin: 0 0 22px 0; color: #a0a5c0; font-size: 13.5px; line-height: 1.5; }
+.custom-alert-box h3, .modal-bonus-box h3 { margin: 0 0 10px 0; color: #ffffff; font-size: 19px; font-weight: 700; }
+.custom-alert-box p, .modal-bonus-box p { margin: 0 0 22px 0; color: #a0a5c0; font-size: 13.5px; line-height: 1.5; }
 
 .btn-custom-alert-ok {
     width: 100%; padding: 13px; border: none; border-radius: 12px;
@@ -508,22 +519,12 @@ body, html {
     gap: 8px; box-shadow: 0 8px 20px rgba(67, 100, 247, 0.4);
 }
 
-.btn-custom-alert-ok:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(67, 100, 247, 0.6); }
-.btn-custom-alert-ok:active { transform: translateY(0); }
-      /* ==========================================
-   1. CONTENEUR PRINCIPAL DE L'APPLICATION
-   ========================================== */
-.app-container {
-    width: 100%; 
-    height: 100%; 
-    max-width: 450px; 
-    background: #020306;
-    position: relative; /* ⚠️ CRUCIAL : Bloque le bouton à l'intérieur de l'app */
-    display: flex; 
-    flex-direction: column;
-    box-shadow: 0 0 50px rgba(0,0,0,0.9);
+.modal-bonus-btn {
+    background: linear-gradient(135deg, #ff9d00, #e67e22);
+    color: #fff; border: none; padding: 12px 28px; font-size: 15px;
+    font-weight: bold; border-radius: 30px; cursor: pointer; width: 100%;
+    box-shadow: 0 4px 18px rgba(230, 126, 34, 0.4);
 }
-
 
 /* ======================================================
    7. ANIMATIONS (@KEYFRAMES)
@@ -534,78 +535,10 @@ body, html {
 @keyframes popInAlert { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes goldGlow { 0% { text-shadow: 0 0 0px var(--accent-cyan); } 50% { text-shadow: 0 0 15px var(--accent-cyan); } 100% { text-shadow: 0 0 0px var(--accent-cyan); } }
 .pulse-gold-active { animation: goldGlow 0.5s ease-in-out; }
-
-    /* --- MODALE ANIMÉE BONUS --- */
-.modal-bonus-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(6px);
-    z-index: 999999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.modal-bonus-box {
-    background: #181920;
-    border: 1px solid rgba(255, 157, 0, 0.3);
-    border-radius: 20px;
-    padding: 28px 22px;
-    max-width: 380px;
-    width: 100%;
-    text-align: center;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 157, 0, 0.15);
-    animation: surgissementModal 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    color: #ffffff;
-}
-
-@keyframes surgissementModal {
-    0% { transform: scale(0.4) translateY(60px); opacity: 0; }
-    100% { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-.modal-bonus-icon {
-    font-size: 52px;
-    margin-bottom: 12px;
-}
-
-.modal-bonus-box h3 {
-    margin: 0 0 10px 0;
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-}
-
-.modal-bonus-box p {
-    margin: 0 0 22px 0;
-    font-size: 14px;
-    color: #d1d5db;
-    line-height: 1.5;
-}
-
-.modal-bonus-btn {
-    background: linear-gradient(135deg, #ff9d00, #e67e22);
-    color: #fff;
-    border: none;
-    padding: 12px 28px;
-    font-size: 15px;
-    font-weight: bold;
-    border-radius: 30px;
-    cursor: pointer;
-    box-shadow: 0 4px 18px rgba(230, 126, 34, 0.4);
-    transition: transform 0.2s, box-shadow 0.2s;
-    width: 100%;
-}
-
-.modal-bonus-btn:active {
-    transform: scale(0.96);
-}
-</style>
+</style>        
 </head>
 <body>
-    <!-- 3. LA MODALE PEUT RESTER ICI EN DEHORS -->
+    <!-- 3. LA MODALE BONUS CASINO -->
     <div class="pub-modal-overlay" id="modal-bonus-casino" style="display: none;">
         <button class="close-modal-x" onclick="fermerModalBonus()"><i class="fa-solid fa-xmark"></i></button>
         <div class="pub-modal-content" style="max-width: 340px; text-align: center; padding: 25px;">
@@ -778,16 +711,31 @@ body, html {
 <!-- CONTENEUR PRINCIPAL DE L'APPLICATION -->
 <div class="app-container">
 
-    <header class="app-header">
-        <div class="btn-back" id="header-back-btn" onclick="window.history.back()"><i class="fa-solid fa-chevron-left"></i></div>
-        <h1 class="header-title" id="wall-title">Zone Récompenses</h1>
-        <div style="width: 36px;"></div>
+    <!-- EN-TÊTE CINÉMATOGRAPHIQUE IMMERSIF & DYNAMIQUE -->
+    <header class="app-header cinematic-header" id="cinematic-header-bg" style="position: relative; background: linear-gradient(180deg, rgba(7,9,20,0.2) 0%, rgba(7,9,20,0.9) 100%), url('https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1000&auto=format&fit=crop') center/cover no-repeat; padding: 20px 15px; min-height: 140px; display: flex; flex-direction: column; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div class="btn-back" id="header-back-btn" onclick="window.history.back()" style="background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer;"><i class="fa-solid fa-chevron-left" style="color: #fff;"></i></div>
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #00ccff; font-weight: 700; background: rgba(0,204,255,0.15); padding: 4px 10px; border-radius: 20px;" id="badge-current-space">Espace 1 / 5</span>
+            <div style="width: 36px;"></div>
+        </div>
+        <div style="margin-top: 10px;">
+            <h1 class="header-title" id="wall-title" style="font-size: 20px; font-weight: 800; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin: 0;">Zone Vidéos & Bannières</h1>
+        </div>
     </header>
 
-    <div class="content-scroll">
+    <!-- BARRE DES 5 ONGLETS / ESPACES (Swipe & Switch fluides) -->
+    <div class="spaces-tabs-bar" style="display: flex; background: #0b0e1b; padding: 8px 10px; gap: 6px; overflow-x: auto; border-bottom: 1px solid #1e2235; scrollbar-width: none;">
+        <button class="space-tab-btn active" onclick="switchSpace(1)" id="tab-btn-1" style="flex: 1; white-space: nowrap; background: linear-gradient(135deg, #1e2235, #131722); border: 1px solid #ff9d00; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;"><i class="fa-solid fa-play-circle"></i> Vidéos & Bannières</button>
+        <button class="space-tab-btn" onclick="switchSpace(2)" id="tab-btn-2" style="flex: 1; white-space: nowrap; background: #131722; border: 1px solid #1e2235; color: #8a8d9f; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-gamepad"></i> Gaming</button>
+        <button class="space-tab-btn" onclick="switchSpace(3)" id="tab-btn-3" style="flex: 1; white-space: nowrap; background: #131722; border: 1px solid #1e2235; color: #8a8d9f; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-crown"></i> Murs d'Offres</button>
+        <button class="space-tab-btn" onclick="switchSpace(4)" id="tab-btn-4" style="flex: 1; white-space: nowrap; background: #131722; border: 1px solid #1e2235; color: #8a8d9f; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-bolt"></i> Bonus Flash</button>
+        <button class="space-tab-btn" onclick="switchSpace(5)" id="tab-btn-5" style="flex: 1; white-space: nowrap; background: #131722; border: 1px solid #1e2235; color: #8a8d9f; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;"><i class="fa-solid fa-users"></i> Communauté</button>
+    </div>
+
+    <div class="content-scroll" style="padding-bottom: 90px;">
         
-        <!-- SECTION COMPTEUR DU JOUR ET CAGNOTTE -->
-        <div class="dashboard-row">
+        <!-- SECTION COMPTEUR DU JOUR ET CAGNOTTE (Visible sur tous les espaces ou l'espace principal) -->
+        <div class="dashboard-row" style="margin-top: 15px;">
             <div class="cagnotte-card">
                 <div style="font-size: 12px; font-weight: 600; color: #8a8d9f;">💰 Somme cumulée du jour</div>
                 <div class="cagnotte-valeur" id="cagnotte-valeur-txt">0 Points</div>
@@ -800,311 +748,531 @@ body, html {
             </div>
         </div>
 
-        <button class="btn-main-action-collect" id="btn-main-action-collect" onclick="encaisserGainsDuJour()">Encaisser mes gains du jour</button>
+        <!-- BOUTON D'ENCAISSEMENT PLACÉ JUSTE AU-DESSUS DES TÂCHES -->
+        <button class="btn-main-action-collect" id="btn-main-action-collect" onclick="encaisserGainsDuJour()" style="margin-bottom: 20px;">Encaisser mes gains du jour</button>
 
-<!-- SECTION 2 : ADVERTICA -->
-<div class="section-title">💎 Missions Exclusives Advertica</div>
-<div class="video-grid">
 
-    <div class="video-card-small" id="card-advertica-1">
-        <i class="fa-solid fa-square" style="color: var(--accent-gold);"></i>
-        <h4>Tâche 1</h4>
-        <p>Récompense: +150 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'z44a27d7180', 'advertica-1', 150, 1, '300x250')">
-            Lancer
-        </button>
-    </div>
+<!-- ========================================== -->
+    <!-- ESPACE 1 : VIDÉOS & BANNIÈRES (Actif par défaut) -->
+    <!-- ========================================== -->
+    <div class="space-content-panel" id="space-panel-1" style="display: block;">
 
-    <div class="video-card-small" id="card-advertica-3">
-        <i class="fa-solid fa-heading" style="color: var(--accent-gold);"></i>
-        <h4>Tâche 2</h4>
-        <p>Récompense: +130 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'a6abeef76c6', 'advertica-3', 130, 2, '728x90')">
-            Lancer
-        </button>
-    </div>
+        <!-- SECTION 2 : ADVERTICA -->
+        <div class="section-title">💎 Missions Exclusives Advertica</div>
+        <div class="video-grid">
 
-    <div class="video-card-small" id="card-advertica-4">
-        <i class="fa-solid fa-grip-lines" style="color: var(--accent-gold);"></i>
-        <h4>Tâche 3</h4>
-        <p>Récompense: +120 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'nd6f53bc667', 'advertica-4', 120, 3, '468x60')">
-            Lancer
-        </button>
-    </div>
+            <div class="task-card-horizontal" id="card-advertica-1">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-square" style="color: var(--accent-gold);"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 1</h4>
+                    <p>Récompense: +150 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'z44a27d7180', 'advertica-1', 150, 1, '300x250')">
+                    Lancer
+                </button>
+            </div>
 
-    <div class="video-card-small" id="card-advertica-5">
-        <i class="fa-solid fa-window-minimize" style="color: var(--accent-gold);"></i>
-        <h4>Tâche 4</h4>
-        <p>Récompense: +110 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'd202dffa0f1', 'advertica-5', 110, 4, '320x50')">
-            Lancer
-        </button>
-    </div>
+            <div class="task-card-horizontal" id="card-advertica-3">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-heading" style="color: var(--accent-gold);"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 2</h4>
+                    <p>Récompense: +130 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'a6abeef76c6', 'advertica-3', 130, 2, '728x90')">
+                    Lancer
+                </button>
+            </div>
 
-    <div class="video-card-small" id="card-advertica-6">
-        <i class="fa-solid fa-arrows-up-down" style="color: var(--accent-gold);"></i>
-        <h4>Tâche 5</h4>
-        <p>Récompense: +140 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'rdc40ede7cc', 'advertica-6', 140, 5, '160x600')">
-            Lancer
-        </button>
-    </div>
+            <div class="task-card-horizontal" id="card-advertica-4">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-grip-lines" style="color: var(--accent-gold);"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 3</h4>
+                    <p>Récompense: +120 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'nd6f53bc667', 'advertica-4', 120, 3, '468x60')">
+                    Lancer
+                </button>
+            </div>
 
-    <div class="video-card-small" id="card-advertica-7">
-        <i class="fa-solid fa-arrows-up-down" style="color: var(--accent-gold);"></i>
-        <h4>Tâche 6</h4>
-        <p>Récompense: +130 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'vb49a378f64', 'advertica-7', 130, 6, '120x600')">
-            Lancer
-        </button>
-    </div>
+            <div class="task-card-horizontal" id="card-advertica-5">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-window-minimize" style="color: var(--accent-gold);"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 4</h4>
+                    <p>Récompense: +110 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'd202dffa0f1', 'advertica-5', 110, 4, '320x50')">
+                    Lancer
+                </button>
+            </div>
 
-    <div class="video-card-small" id="card-advertica-8">
-        <i class="fa-solid fa-expand" style="color: var(--accent-gold);"></i>
-        <h4>Tâche 7</h4>
-        <p>Récompense: +160 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 't0b8dadeb06', 'advertica-8', 160, 7, '300x600')">
-            Lancer
-        </button>
-    </div>
+            <div class="task-card-horizontal" id="card-advertica-6">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-arrows-up-down" style="color: var(--accent-gold);"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 5</h4>
+                    <p>Récompense: +140 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'rdc40ede7cc', 'advertica-6', 140, 5, '160x600')">
+                    Lancer
+                </button>
+            </div>
 
-    <div class="video-card-small" id="card-advertica-9">
-        <i class="fa-solid fa-tv" style="color: var(--accent-gold);"></i>
-        <h4>Tâche 8</h4>
-        <p>Récompense: +170 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'ta969c73068', 'advertica-9', 170, 8, '970x250')">
-            Lancer
-        </button>
-    </div>
+            <div class="task-card-horizontal" id="card-advertica-7">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-arrows-up-down" style="color: var(--accent-gold);"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 6</h4>
+                    <p>Récompense: +130 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'vb49a378f64', 'advertica-7', 130, 6, '120x600')">
+                    Lancer
+                </button>
+            </div>
 
-    <div class="video-card-small" id="card-advertica-10">
-        <i class="fa-solid fa-arrows-up-down-left-right" style="color: var(--accent-gold);"></i>
-        <h4>Tâche 9</h4>
-        <p>Récompense: +180 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'g96d7f9bd90', 'advertica-10', 180, 9, '300x1050')">
-            Lancer
-        </button>
-    </div>
+            <div class="task-card-horizontal" id="card-advertica-8">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-expand" style="color: var(--accent-gold);"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 7</h4>
+                    <p>Récompense: +160 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 't0b8dadeb06', 'advertica-8', 160, 7, '300x600')">
+                    Lancer
+                </button>
+            </div>
 
-</div>
+            <div class="task-card-horizontal" id="card-advertica-9">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-tv" style="color: var(--accent-gold);"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 8</h4>
+                    <p>Récompense: +170 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'ta969c73068', 'advertica-9', 170, 8, '970x250')">
+                    Lancer
+                </button>
+            </div>
 
-<!-- SECTION 3 : ADSTERRA & EXOCLICK -->
-<div class="section-title">🔮 Missions Spéciales Adsterra</div>
-<div class="video-grid">
-    <div class="video-card-small" id="card-adsterra-1">
-        <i class="fa-solid fa-arrows-up-down"></i>
-        <h4>Tâche 10</h4>
-        <p>+90 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', 'f37eede0de06b709e6c6db90820d116e', 'adsterra-160x300', 90, 10, '160x300')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-adsterra-2">
-        <i class="fa-solid fa-bolt-lightning"></i>
-        <h4>Tâche 11</h4>
-        <p>+100 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_native', '2488fee72aaf9bf875080b7e81f37d58', 'task_native_7', 100, 11, 'native')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-adsterra-3">
-        <i class="fa-solid fa-window-minimize"></i>
-        <h4>Tâche 12</h4>
-        <p>+80 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', '7221685de42e37b3b02c60ff0bee506a', 'adsterra-320x50', 80, 12, '320x50')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-adsterra-4">
-        <i class="fa-solid fa-heading"></i>
-        <h4>Tâche 13</h4>
-        <p>+110 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', '1facbab7132cdcadf3fe0ead26074277', 'adsterra-728x90', 110, 13, '728x90')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-adsterra-5">
-        <i class="fa-solid fa-grip-lines"></i>
-        <h4>Tâche 14</h4>
-        <p>+80 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', 'f4457d9de2541809ff0cdd731f5f78e2', 'adsterra-468x60', 80, 14, '468x60')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-adsterra-6">
-        <i class="fa-solid fa-square"></i>
-        <h4>Tâche 15</h4>
-        <p>+100 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', 'e86dd4055cd86d43aa42fbae392c77d2', 'adsterra-300x250', 100, 15, '300x250')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-adsterra-7" style="grid-column: span 2;">
-        <i class="fa-solid fa-arrows-up-down"></i>
-        <h4>Tâche 16</h4>
-        <p>+130 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', '355c9d0ee6ac5ec71d84d7f879fdc153', 'adsterra-160x600', 130, 16, '160x600')">Lancer</button>
-    </div>
+            <div class="task-card-horizontal" id="card-advertica-10">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-arrows-up-down-left-right" style="color: var(--accent-gold);"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 9</h4>
+                    <p>Récompense: +180 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('advertica', 'g96d7f9bd90', 'advertica-10', 180, 9, '300x1050')">
+                    Lancer
+                </button>
+            </div>
 
-    <!-- SECTION EXOCLICK -->
-    <div class="video-card-small" id="card-exoclick-1">
-        <i class="fa-solid fa-rectangle-ad" style="color: #00ccff;"></i>
-        <h4>Tâche 17</h4>
-        <p>Récompense: +120 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6022134', 'exoclick-1', 120, 17, '300x250')">Lancer</button>
-    </div>
+        </div>
 
-    <div class="video-card-small" id="card-exoclick-2">
-        <i class="fa-solid fa-border-all" style="color: #00ccff;"></i>
-        <h4>Tâche 18</h4>
-        <p>Récompense: +160 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6025504', 'exoclick-2', 160, 18, 'native')">Lancer</button>
-    </div>
+        <!-- SECTION 3 : ADSTERRA & EXOCLICK -->
+        <div class="section-title" style="margin-top: 25px;">🔮 Missions Spéciales Adsterra</div>
+        <div class="video-grid">
+            <div class="task-card-horizontal" id="card-adsterra-1">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-arrows-up-down"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 10</h4>
+                    <p>+90 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', 'f37eede0de06b709e6c6db90820d116e', 'adsterra-160x300', 90, 10, '160x300')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-adsterra-2">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-bolt-lightning"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 11</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra_native', '2488fee72aaf9bf875080b7e81f37d58', 'task_native_7', 100, 11, 'native')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-adsterra-3">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-window-minimize"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 12</h4>
+                    <p>+80 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', '7221685de42e37b3b02c60ff0bee506a', 'adsterra-320x50', 80, 12, '320x50')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-adsterra-4">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-heading"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 13</h4>
+                    <p>+110 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', '1facbab7132cdcadf3fe0ead26074277', 'adsterra-728x90', 110, 13, '728x90')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-adsterra-5">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-grip-lines"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 14</h4>
+                    <p>+80 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', 'f4457d9de2541809ff0cdd731f5f78e2', 'adsterra-468x60', 80, 14, '468x60')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-adsterra-6">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-square"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 15</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', 'e86dd4055cd86d43aa42fbae392c77d2', 'adsterra-300x250', 100, 15, '300x250')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-adsterra-7">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-arrows-up-down"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 16</h4>
+                    <p>+130 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('adsterra', '355c9d0ee6ac5ec71d84d7f879fdc153', 'adsterra-160x600', 130, 16, '160x600')">Lancer</button>
+            </div>
 
-    <div class="video-card-small" id="card-exoclick-3">
-        <i class="fa-solid fa-rectangle-ad" style="color: #00ccff;"></i>
-        <h4>Tâche 19</h4>
-        <p>Récompense: +150 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6025524', 'exoclick-3', 150, 19, '728x90')">Lancer</button>
-    </div>
+            <!-- SECTION EXOCLICK -->
+            <div class="task-card-horizontal" id="card-exoclick-1">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-rectangle-ad" style="color: #00ccff;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 17</h4>
+                    <p>Récompense: +120 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6022134', 'exoclick-1', 120, 17, '300x250')">Lancer</button>
+            </div>
 
-    <div class="video-card-small" id="card-exoclick-4">
-        <i class="fa-solid fa-mobile-screen" style="color: #00ccff;"></i>
-        <h4>Tâche 20</h4>
-        <p>Récompense: +140 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6025522', 'exoclick-4', 140, 20, '160x600')">Lancer</button>
-    </div>
+            <div class="task-card-horizontal" id="card-exoclick-2">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-border-all" style="color: #00ccff;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 18</h4>
+                    <p>Récompense: +160 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6025504', 'exoclick-2', 160, 18, 'native')">Lancer</button>
+            </div>
 
-    <div class="video-card-small" id="card-exoclick-5">
-        <i class="fa-solid fa-bolt" style="color: #00ccff;"></i>
-        <h4>Tâche 21</h4>
-        <p>Récompense: +100 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6025534', 'exoclick-5', 100, 21, '300x500')">Lancer</button>
-    </div>
+            <div class="task-card-horizontal" id="card-exoclick-3">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-rectangle-ad" style="color: #00ccff;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 19</h4>
+                    <p>Récompense: +150 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6025524', 'exoclick-3', 150, 19, '728x90')">Lancer</button>
+            </div>
 
-    <div class="video-card-small" id="card-exoclick-6">
-        <i class="fa-solid fa-rectangle-ad" style="color: #00ccff;"></i>
-        <h4>Tâche 22</h4>
-        <p>Récompense: +110 Pts</p>
-        <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6025550', 'exoclick-6', 110, 22, '900x250')">Lancer</button>
-    </div>
-</div>
+            <div class="task-card-horizontal" id="card-exoclick-4">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-mobile-screen" style="color: #00ccff;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 20</h4>
+                    <p>Récompense: +140 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6025522', 'exoclick-4', 140, 20, '160x600')">Lancer</button>
+            </div>
 
-           <!-- SECTION 4 : MISSIONS VIDÉOS FLASH -->
-<div class="section-title">🎬 Missions Vidéos Flash</div>
-<div class="video-grid">
-    <div class="video-card-small" id="card-video-1">
-        <i class="fa-solid fa-play"></i>
-        <h4>Tâche 23</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-1" class="btn-launch-grid" onclick="initierMissionVideo(1, '447672', 'video-1', 100)">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-2">
-        <i class="fa-solid fa-play"></i>
-        <h4>Tâche 24</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-2" class="btn-launch-grid" onclick="initierMissionVideo(2, '447741', 'video-2', 100)">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-3">
-        <i class="fa-solid fa-play"></i>
-        <h4>Tâche 25</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-3" class="btn-launch-grid" onclick="initierMissionVideo(3, '447743', 'video-3', 100)">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-4">
-        <i class="fa-solid fa-play"></i>
-        <h4>Tâche 26</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-4" class="btn-launch-grid" onclick="initierMissionVideo(4, '447744', 'video-4', 100)">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-5">
-        <i class="fa-solid fa-play"></i>
-        <h4>Tâche 27</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-5" class="btn-launch-grid" onclick="initierMissionVideo(5, '447745', 'video-5', 100)">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-6">
-        <i class="fa-solid fa-play"></i>
-        <h4>Tâche 28</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-6" class="btn-launch-grid" onclick="initierMissionVideo(6, '447746', 'video-6', 100)">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-7">
-        <i class="fa-solid fa-play"></i>
-        <h4>Tâche 29</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-7" class="btn-launch-grid" onclick="initierMissionVideo(7, '447748', 'video-7', 100)">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-8">
-        <i class="fa-solid fa-play"></i>
-        <h4>Tâche 30</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-8" class="btn-launch-grid" onclick="initierMissionVideo(8, '447749', 'video-8', 100)">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-9">
-        <i class="fa-solid fa-play"></i>
-        <h4>Tâche 31</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-9" class="btn-launch-grid" onclick="initierMissionVideo(9, '447750', 'video-9', 100)">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-10">
-        <i class="fa-solid fa-play"></i>
-        <h4>Tâche 32</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-10" class="btn-launch-grid" onclick="initierMissionVideo(10, '447751', 'video-10', 100)">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-11">
-        <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
-        <h4>Tâche 33</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-11" class="btn-launch-grid" onclick="initierMissionVideo(11, '463278', 'video-11', 100, 'onclicka')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-12">
-        <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
-        <h4>Tâche 34</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-12" class="btn-launch-grid" onclick="initierMissionVideo(12, '463279', 'video-12', 100, 'onclicka')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-13">
-        <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
-        <h4>Tâche 35</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-13" class="btn-launch-grid" onclick="initierMissionVideo(13, '463280', 'video-13', 100, 'onclicka')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-14">
-        <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
-        <h4>Tâche 36</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-14" class="btn-launch-grid" onclick="initierMissionVideo(14, '463281', 'video-14', 100, 'onclicka')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-15">
-        <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
-        <h4>Tâche 37</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-15" class="btn-launch-grid" onclick="initierMissionVideo(15, '463282', 'video-15', 100, 'onclicka')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-16">
-        <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
-        <h4>Tâche 38</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-16" class="btn-launch-grid" onclick="initierMissionVideo(16, '463283', 'video-16', 100, 'onclicka')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-17">
-        <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
-        <h4>Tâche 39</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-17" class="btn-launch-grid" onclick="initierMissionVideo(17, '463284', 'video-17', 100, 'onclicka')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-18">
-        <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
-        <h4>Tâche 40</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-18" class="btn-launch-grid" onclick="initierMissionVideo(18, '463285', 'video-18', 100, 'onclicka')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-19">
-        <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
-        <h4>Tâche 41</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-19" class="btn-launch-grid" onclick="initierMissionVideo(19, '463286', 'video-19', 100, 'onclicka')">Lancer</button>
-    </div>
-    <div class="video-card-small" id="card-video-20">
-        <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
-        <h4>Tâche 42</h4>
-        <p>+100 Pts</p>
-        <button id="btn-video-20" class="btn-launch-grid" onclick="initierMissionVideo(20, '463038', 'video-20', 100, 'onclicka')">Lancer</button>
-    </div>
-</div>
+            <div class="task-card-horizontal" id="card-exoclick-5">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-bolt" style="color: #00ccff;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 21</h4>
+                    <p>Récompense: +100 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6025534', 'exoclick-5', 100, 21, '300x500')">Lancer</button>
+            </div>
 
-            <!-- ZONE ACCÈS DIRECT PAR COIN VIP -->
+            <div class="task-card-horizontal" id="card-exoclick-6">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-rectangle-ad" style="color: #00ccff;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 22</h4>
+                    <p>Récompense: +110 Pts</p>
+                </div>
+                <button class="btn-launch-grid" onclick="initierMissionBanniere('exoclick', '6025550', 'exoclick-6', 110, 22, '900x250')">Lancer</button>
+            </div>
+        </div>
+
+        <!-- SECTION 4 : MISSIONS VIDÉOS FLASH -->
+        <div class="section-title" style="margin-top: 25px;">🎬 Missions Vidéos Flash</div>
+        <div class="video-grid">
+            <div class="task-card-horizontal" id="card-video-1">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 23</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-1" class="btn-launch-grid" onclick="initierMissionVideo(1, '447672', 'video-1', 100)">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-2">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 24</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-2" class="btn-launch-grid" onclick="initierMissionVideo(2, '447741', 'video-2', 100)">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-3">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 25</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-3" class="btn-launch-grid" onclick="initierMissionVideo(3, '447743', 'video-3', 100)">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-4">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 26</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-4" class="btn-launch-grid" onclick="initierMissionVideo(4, '447744', 'video-4', 100)">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-5">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 27</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-5" class="btn-launch-grid" onclick="initierMissionVideo(5, '447745', 'video-5', 100)">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-6">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 28</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-6" class="btn-launch-grid" onclick="initierMissionVideo(6, '447746', 'video-6', 100)">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-7">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 29</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-7" class="btn-launch-grid" onclick="initierMissionVideo(7, '447748', 'video-7', 100)">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-8">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 30</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-8" class="btn-launch-grid" onclick="initierMissionVideo(8, '447749', 'video-8', 100)">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-9">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 31</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-9" class="btn-launch-grid" onclick="initierMissionVideo(9, '447750', 'video-9', 100)">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-10">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 32</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-10" class="btn-launch-grid" onclick="initierMissionVideo(10, '447751', 'video-10', 100)">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-11">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 33</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-11" class="btn-launch-grid" onclick="initierMissionVideo(11, '463278', 'video-11', 100, 'onclicka')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-12">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 34</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-12" class="btn-launch-grid" onclick="initierMissionVideo(12, '463279', 'video-12', 100, 'onclicka')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-13">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 35</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-13" class="btn-launch-grid" onclick="initierMissionVideo(13, '463280', 'video-13', 100, 'onclicka')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-14">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 36</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-14" class="btn-launch-grid" onclick="initierMissionVideo(14, '463281', 'video-14', 100, 'onclicka')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-15">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 37</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-15" class="btn-launch-grid" onclick="initierMissionVideo(15, '463282', 'video-15', 100, 'onclicka')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-16">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 38</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-16" class="btn-launch-grid" onclick="initierMissionVideo(16, '463283', 'video-16', 100, 'onclicka')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-17">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 39</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-17" class="btn-launch-grid" onclick="initierMissionVideo(17, '463284', 'video-17', 100, 'onclicka')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-18">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 40</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-18" class="btn-launch-grid" onclick="initierMissionVideo(18, '463285', 'video-18', 100, 'onclicka')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-19">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 41</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-19" class="btn-launch-grid" onclick="initierMissionVideo(19, '463286', 'video-19', 100, 'onclicka')">Lancer</button>
+            </div>
+            
+            <div class="task-card-horizontal" id="card-video-20">
+                <div class="task-thumb">
+                    <i class="fa-solid fa-play" style="color: #ff9d00;"></i>
+                </div>
+                <div class="task-details">
+                    <h4>Tâche 42</h4>
+                    <p>+100 Pts</p>
+                </div>
+                <button id="btn-video-20" class="btn-launch-grid" onclick="initierMissionVideo(20, '463038', 'video-20', 100, 'onclicka')">Lancer</button>
+            </div>
+        </div>
+
+        </div> <!-- Fin Panel Espace 1 -->
+
+
+        <!-- ========================================== -->
+        <!-- ESPACE 2 : ZONE GAMING -->
+        <!-- ========================================== -->
+        <div class="space-content-panel" id="space-panel-2" style="display: none;">
+            <div class="section-title">🕹️ Espace Gaming & Défis Cyberpunk</div>
+            <div style="background: #131722; padding: 25px; border-radius: 12px; text-align: center; border: 1px dashed rgba(0, 204, 255, 0.3);">
+                <i class="fa-solid fa-gamepad" style="font-size: 40px; color: #00ccff; margin-bottom: 12px;"></i>
+                <h3 style="color: #fff; margin-bottom: 8px;">Mini-Jeux & Tournois Actifs</h3>
+                <p style="color: #8a8d9f; font-size: 13px; margin-bottom: 15px;">Participe aux sessions gaming rapides pour accumuler des multiplicateurs de points exclusifs.</p>
+                <button class="btn-launch-grid" style="width: 100%; background: linear-gradient(135deg, #00ccff, #0066ff); color: #fff;">Lancer une session gaming</button>
+            </div>
+        </div>
+
+
+        <!-- ========================================== -->
+        <!-- ESPACE 3 : MURS D'OFFRES VIP -->
+        <!-- ========================================== -->
+        <div class="space-content-panel" id="space-panel-3" style="display: none;">
             <div class="section-title">👑 Murs d'Offres VIP</div>
             <div class="vip-zone-card" id="bloc-zone-vip" style="position: relative; background: #131722; padding: 15px; border-radius: 12px;">
                 <div id="overlay-vip" onclick="intercepterClicVip(event)" style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(7, 9, 20, 0.92); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; cursor:pointer; transition: opacity 0.8s ease, background 0.5s ease;">
@@ -1117,44 +1285,73 @@ body, html {
                 <button class="btn-launch-grid" style="width:100%; margin-bottom: 8px;" onclick="ouvrirIframeVIP('mur2')">Accéder au Mur VIP 2</button>
                 <button class="btn-launch-grid" style="width:100%;" onclick="ouvrirIframeVIP('mur3')">Accéder au Mur VIP 3</button>
             </div>
-
-        </div> <!-- Fin content-scroll -->
-
-        <!-- BARRE DE NAVIGATION -->
-        <nav class="nav-bar">
-            <a href="lancementpublicite.html" class="nav-item">
-                <i class="fa-solid fa-house nav-icon"></i>
-                <span>Accueil</span>
-            </a>
-            <a href="messages.html" class="nav-item">
-                <i class="fa-regular fa-comment-dots nav-icon"></i>
-                <span>Messages</span>
-            </a>
-            <a href="statpub.html" class="nav-item">
-                <i class="fa-solid fa-chart-simple nav-icon"></i>
-                <span>Stats</span>
-            </a>
-            <a href="activite.html" class="nav-item">
-                <i class="fa-solid fa-bolt nav-icon"></i>
-                <span>Activités</span>
-            </a>
-        </nav>
-
-    </div> <!-- Fin app-container -->
-
-    <!-- MODALE D'ALERTE PERSONNALISÉE -->
-    <div class="custom-alert-overlay" id="custom-alert-modal" style="display: none;">
-        <div class="custom-alert-box">
-            <div class="custom-alert-icon">
-                <i class="fa-solid fa-circle-exclamation"></i>
-            </div>
-            <h3 id="custom-alert-title">Tâche indisponible</h3>
-            <p id="custom-alert-message">Cette tâche est déjà validée et bloquée pour aujourd'hui.</p>
-            <button class="btn-custom-alert-ok" onclick="fermerAlertePersonnalisee()">
-                <i class="fa-solid fa-check"></i> J'ai compris
-            </button>
         </div>
+
+
+        <!-- ========================================== -->
+        <!-- ESPACE 4 : BONUS EXCLUSIFS -->
+        <!-- ========================================== -->
+        <div class="space-content-panel" id="space-panel-4" style="display: none;">
+            <div class="section-title">🎁 Bonus Exclusifs & Trésors</div>
+            <div style="background: #131722; padding: 20px; border-radius: 12px; text-align: center; border: 1px dashed rgba(255, 157, 0, 0.4);">
+                <i class="fa-solid fa-gem" style="font-size: 40px; color: #ff9d00; margin-bottom: 12px;"></i>
+                <h3 style="color: #fff; margin-bottom: 8px;">Coffre aux Trésors Quotidiens</h3>
+                <p style="color: #8a8d9f; font-size: 13px; margin-bottom: 15px;">Récupère des bonus surprises exclusifs valables uniquement pendant les heures de forte affluence.</p>
+                <button class="btn-launch-grid" onclick="ouvrirModalBonus && ouvrirModalBonus()" style="width: 100%; background: linear-gradient(135deg, #ff9d00, #e67e22); color: #fff;">Ouvrir le coffre mystère</button>
+            </div>
+        </div>
+
+
+        <!-- ========================================== -->
+        <!-- ESPACE 5 : COMMUNAUTÉ & PARTAGE -->
+        <!-- ========================================== -->
+        <div class="space-content-panel" id="space-panel-5" style="display: none;">
+            <div class="section-title">🌐 Réseau & Communauté RDC</div>
+            <div style="background: #131722; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #1e2235;">
+                <i class="fa-solid fa-share-nodes" style="font-size: 40px; color: #00ccff; margin-bottom: 12px;"></i>
+                <h3 style="color: #fff; margin-bottom: 8px;">Partage et Parrainage</h3>
+                <p style="color: #8a8d9f; font-size: 13px; margin-bottom: 15px;">Invite tes proches et partage l'application pour débloquer des avantages permanents.</p>
+                <button class="btn-launch-grid" style="width: 100%;">Copier mon lien de parrainage</button>
+            </div>
+        </div>
+
+    </div> <!-- Fin content-scroll -->
+
+    <!-- BARRE DE NAVIGATION INFÉRIEURE -->
+    <nav class="nav-bar">
+        <a href="lancementpublicite.html" class="nav-item">
+            <i class="fa-solid fa-house nav-icon"></i>
+            <span>Accueil</span>
+        </a>
+        <a href="messages.html" class="nav-item">
+            <i class="fa-regular fa-comment-dots nav-icon"></i>
+            <span>Messages</span>
+        </a>
+        <a href="statpub.html" class="nav-item">
+            <i class="fa-solid fa-chart-simple nav-icon"></i>
+            <span>Stats</span>
+        </a>
+        <a href="activite.html" class="nav-item">
+            <i class="fa-solid fa-bolt nav-icon"></i>
+            <span>Activités</span>
+        </a>
+    </nav>
+
+</div> <!-- Fin app-container -->
+
+<!-- MODALE D'ALERTE PERSONNALISÉE -->
+<div class="custom-alert-overlay" id="custom-alert-modal" style="display: none;">
+    <div class="custom-alert-box">
+        <div class="custom-alert-icon">
+            <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <h3 id="custom-alert-title">Tâche indisponible</h3>
+        <p id="custom-alert-message">Cette tâche est déjà validée et bloquée pour aujourd'hui.</p>
+        <button class="btn-custom-alert-ok" onclick="fermerAlertePersonnalisee()">
+            <i class="fa-solid fa-check"></i> J'ai compris
+        </button>
     </div>
+</div>
     
 <!-- ========================================================================== -->
 <!-- LOGIQUE LOGICIELLE COMPLÈTE SYNCHRONISÉE FIREBASE                          -->
@@ -3792,5 +3989,53 @@ l.parentNode.insertBefore(s, l);
         <button type="button" class="modal-bonus-btn" onclick="fermerModalBonusCustom(null, true)">Compris</button>
     </div>
 </div>
+        <!-- SCRIPT DE NAVIGATION DES 5 ESPACES (À AJOUTER DANS TON FICHIER JS) -->
+<script>
+function switchSpace(spaceNumber) {
+    // Masquer tous les panneaux
+    for (let i = 1; i <= 5; i++) {
+        const panel = document.getElementById('space-panel-' + i);
+        const btn = document.getElementById('tab-btn-' + i);
+        if (panel) panel.style.display = 'none';
+        if (btn) {
+            btn.style.background = '#131722';
+            btn.style.borderColor = '#1e2235';
+            btn.style.color = '#8a8d9f';
+            btn.style.fontWeight = '600';
+        }
+    }
+
+    // Afficher le panneau actif sélectionné
+    const activePanel = document.getElementById('space-panel-' + spaceNumber);
+    const activeBtn = document.getElementById('tab-btn-' + spaceNumber);
+    const titleHeader = document.getElementById('wall-title');
+    const badgeSpace = document.getElementById('badge-current-space');
+    const headerBg = document.getElementById('cinematic-header-bg');
+
+    if (activePanel) activePanel.style.display = 'block';
+    if (activeBtn) {
+        activeBtn.style.background = 'linear-gradient(135deg, #1e2235, #131722)';
+        activeBtn.style.borderColor = '#ff9d00';
+        activeBtn.style.color = '#fff';
+        activeBtn.style.fontWeight = '700';
+    }
+
+    if (badgeSpace) badgeSpace.innerText = `Espace ${spaceNumber} / 5`;
+
+    // Personnalisation dynamique du titre et de la bannière immersive selon l'espace choisi
+    const spaceMeta = {
+        1: { title: "Zone Vidéos & Bannières", bg: "url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjQc0f9rzxyY7Md_R2Pr8u8YaQwr189v20U9PQjYVsqgfItq-3QvBUxmZ1u36RRpkVBjJfRtv9Sk4vY3khGWoxfZ7tLs7QzzFMR_qTiaPRqqBYWuQbU19loMr3yLZhSd45mtA4cz3eWmp9vAjiXmOl38fBpSBj-mkCKb6to33yUXIQCTYthK9-UyjOrw_Ku/s1600/1000046449.jpg')" },
+        2: { title: "Espace Gaming & Défis", bg: "url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjnADoKhfSNj-K6gaj0jsMS333_cRCzzeDwcBH3vEmXvudi693AoyILtorFkIYVUFavkdRFhHXc1k2Zcl2tQslIjqJtwnk0KHakkMUDDx1v1xurx8OUN1PlAQMWl0834WzlqxgMJ4Dl-ZyBwkBzCB9zyRoBrF8qnbwP18nunBIN0TKPH6glEWXGOi7QPdPP/s1600/1000046450.jpg')" },
+        3: { title: "Murs d'Offres VIP", bg: "url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhJo9kNmDR8Rgd4glktr77fqEpFhZmuq2ngF5iCtWANdVZZgRqrWXEBLboNRWOlgp5srk6wX1NiLPWXWoFRzpo0bUtmQYmEUWnBOKaPW1FqIh176YfykRia-Z_reriJEmB09jkmpEeneujbZ74hGOCG5KbBfuFpp5lxjGTe2AxdgmXmITXyhuWbx_bDhme5/s1600/1000046451.jpg')" },
+        4: { title: "Bonus Exclusifs & Flash", bg: "url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEifQFTWjcVSHkiQVkY4F71LpdOMs0f_aN8U6NJEkPiXgRpbTJI0ZUGzuRyUN1r87knpqOoGTEfKeNJGZpYOtgIqu8sG3oSQUhEuvb1GYsKKxsKpmOsjwghkDyTNxJ7-C3CTyA005NxDz_-Vu2HoeDYDQ9Q_Kz713iDiaC-lmSg0itNW0FcO9mQ8L7kUOszD/s1600/1000046453.jpg')" },
+        5: { title: "Réseau & Communauté RDC", bg: "url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhXKDLdeeiURAZ8hoYyoe_e4monJnTIc0oAR92eHeMi3VoaZY_wRaukWYUZ0n7GOWuZhhynwEkP_3Rm5bdEl8awek7AucVwPB_SvDVKxVS6TlVM5xl6JTRW8MfLd9O14yLFBAhtly14HNg9ttQ_jE1ML_ZI7gs-cosDvWe-Xhrgw7mon9S6WImGrkOkCPTq/s1600/1000046452.jpg')" }
+    };
+
+    if (spaceMeta[spaceNumber]) {
+        if (titleHeader) titleHeader.innerText = spaceMeta[spaceNumber].title;
+        if (headerBg) headerBg.style.backgroundImage = `linear-gradient(180deg, rgba(7,9,20,0.2) 0%, rgba(7,9,20,0.9) 100%), ${spaceMeta[spaceNumber].bg} center/cover no-repeat`;
+    }
+}
+</script>
 </body>
 </html>
