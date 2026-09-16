@@ -1634,7 +1634,7 @@ function enregistrerTacheDansFirebase(taskId) {
 }
 
 // =============================================================================
-// 3. LOGIQUE MISSIONS VIDÉO (MODALE VIDÉO UNIFIÉE & DÉTECTION ADCASH / CLICKADILLA / ONCLICKA)
+// 3. LOGIQUE MISSIONS VIDÉO (ULTRA-SÉCURISÉE : CLICKADILLA, ONCLICKA, ADCASH)
 // =============================================================================
 
 function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
@@ -1653,40 +1653,50 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
 
         let pubVraimentAffichee = false;
 
-        // 1. Recherche d'une balise <video> réelle (Clickadilla, Onclicka, Adcash/FluidPlayer)
+        // 1. Recherche d'une balise <video> locale et active
         const videos = conteneur.querySelectorAll('video');
         videos.forEach(v => {
-            if (v.offsetWidth > 10 || v.offsetHeight > 10 || v.readyState > 0 || v.currentTime > 0 || v.videoWidth > 0) {
+            if (!v.paused && v.readyState >= 2 && v.videoWidth > 0) {
                 pubVraimentAffichee = true;
             }
         });
 
-        // 2. Recherche spécifique aux conteneurs FluidPlayer (Adcash VAST)
-        if (conteneur.querySelector('.fluid_video_wrapper, .fluid_controls_container, .fluid_initial_play_button')) {
+        // 2. Recherche spécifique aux conteneurs de lecteurs publicitaires connus (FluidPlayer, VAST, etc.)
+        if (conteneur.querySelector('.fluid_video_wrapper, .fluid_controls_container, .fluid_initial_play_button, .vast-player, .video-ad')) {
             pubVraimentAffichee = true;
         }
 
-        // 3. Recherche d'une iframe injectée
+        // 3. Recherche sécurisée des iframes (CRUCIAL POUR ONCLICKA ET CLICKADILLA)
         const iframes = conteneur.querySelectorAll('iframe');
         iframes.forEach(iframe => {
-            try {
-                const doc = iframe.contentWindow.document || iframe.contentDocument;
-                if (doc) {
-                    const subVideos = doc.querySelectorAll('video');
-                    subVideos.forEach(v => {
-                        if (v.offsetWidth > 10 || v.readyState > 0) pubVraimentAffichee = true;
-                    });
-                    if (doc.querySelector('.vast-player, .video-ad, canvas')) {
-                        pubVraimentAffichee = true;
+            // FILTRE ANTI-BUG : On s'assure que l'iframe n'est pas un pixel invisible ou un conteneur vide 0x0
+            const aUneTailleVisible = iframe.offsetWidth > 50 || iframe.offsetHeight > 50;
+            const aUneSourceValide = iframe.src && iframe.src !== 'about:blank' && !iframe.src.startsWith('javascript:');
+
+            if (aUneTailleVisible && aUneSourceValide) {
+                try {
+                    const doc = iframe.contentWindow.document || iframe.contentDocument;
+                    if (doc) {
+                        // Si on est sur le même domaine, on vérifie l'intérieur
+                        const subVideos = doc.querySelectorAll('video');
+                        subVideos.forEach(v => {
+                            if (!v.paused && v.readyState >= 2) pubVraimentAffichee = true;
+                        });
+                        if (doc.querySelector('video, canvas, .vast-player, .video-ad')) {
+                            pubVraimentAffichee = true;
+                        }
                     }
+                } catch (crossOriginErr) {
+                    // C'EST ICI QUE ONCLICKA & CLICKADILLA PASSENT :
+                    // L'erreur CORS confirme qu'une iframe publicitaire externe est bien injectée.
+                    // Grâce aux filtres de taille et de source, on sait que c'est une vraie pub active 
+                    // et non un écran noir figé ou un plantage réseau.
+                    pubVraimentAffichee = true;
                 }
-            } catch (crossOriginErr) {
-                // L'accès cross-origin confirme qu'une iframe externe active est injectée
-                pubVraimentAffichee = true;
             }
         });
 
-        // VALIDATION : Si une vraie vidéo est détectée
+        // VALIDATION FINALE : Si le lecteur ou l'iframe publicitaire est validé
         if (pubVraimentAffichee) {
             detectee = true;
             if (intervalVerification) clearInterval(intervalVerification);
@@ -1697,13 +1707,13 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
 
     intervalVerification = setInterval(verifierLecteurVideoActif, 500);
 
-    // Temps de tolérance de 10 secondes pour le chargement du flux publicitaire
+    // Temps de tolérance de 12 secondes pour laisser le temps à Onclicka/Clickadilla de charger le flux
     timerPanne = setTimeout(() => {
         if (!detectee) {
             if (intervalVerification) clearInterval(intervalVerification);
-            surEchec();
+            surEchec(); // Déclenche l'échec si la régie ne renvoie vraiment rien (bloqué/erreur)
         }
-    }, 10000);
+    }, 12000);
 }
 
 // =============================================================================
