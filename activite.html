@@ -1020,18 +1020,24 @@ body, html {
     </div>
 </div> <!-- Fin Panel Espace 1 -->
         <!-- ========================================== -->
-        <!-- ESPACE 2 : ZONE GAMING -->
-        <!-- ========================================== -->
-        <div class="space-content-panel" id="space-panel-2" style="display: none;">
-            <div class="section-title">🕹️ Espace Gaming & Défis Cyberpunk</div>
-            <div style="background: #131722; padding: 25px; border-radius: 12px; text-align: center; border: 1px dashed rgba(0, 204, 255, 0.3);">
-                <i class="fa-solid fa-gamepad" style="font-size: 40px; color: #00ccff; margin-bottom: 12px;"></i>
-                <h3 style="color: #fff; margin-bottom: 8px;">Mini-Jeux & Tournois Actifs</h3>
-                <p style="color: #8a8d9f; font-size: 13px; margin-bottom: 15px;">Participe aux sessions gaming rapides pour accumuler des multiplicateurs de points exclusifs.</p>
-                <button class="btn-launch-grid" style="width: 100%; background: linear-gradient(135deg, #00ccff, #0066ff); color: #fff;">Lancer une session gaming</button>
-            </div>
-        </div>
+<!-- ESPACE 2 : ZONE GAMING -->
+<!-- ========================================== -->
+<div class="space-content-panel" id="space-panel-2" style="display: none;">
+    <div class="section-title">🕹️ Espace Gaming & Défis Cyberpunk</div>
+    
+    <div style="background: #131722; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed rgba(0, 204, 255, 0.3); text-align: center;">
+        <p style="color: #8a8d9f; font-size: 13px; margin: 0;">Choisis un jeu ci-dessous, joue dans ton navigateur et accumule des points !</p>
+    </div>
 
+    <!-- C'est ici que les jeux de GameMonetize vont s'injecter automatiquement -->
+    <div id="catalogue-jeux-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;">
+        <!-- Chargement en cours... -->
+        <div style="grid-column: 1 / -1; text-align: center; color: #8a8d9f; padding: 20px;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; color: #00ccff; margin-bottom: 8px;"></i>
+            <p style="font-size: 12px; margin: 0;">Chargement du catalogue des jeux...</p>
+        </div>
+    </div>
+</div>
 
         <!-- ========================================== -->
         <!-- ESPACE 3 : MURS D'OFFRES VIP -->
@@ -3337,6 +3343,42 @@ async function tenterChanceBonus(event) {
         verifierStatutBonus();
     }
 }
+
+async function chargerJeuxGameMonetize() {
+    try {
+        const conteneur = document.getElementById('catalogue-jeux-container');
+        if (!conteneur) return;
+
+        // Appel du flux JSON officiel de ton compte GameMonetize
+        const reponse = await fetch('https://gamemonetize.com/feed.php?format=json&num=50&page=1');
+        const listeJeux = await reponse.json();
+
+        conteneur.innerHTML = ''; // On vide le message de chargement
+
+        listeJeux.forEach(jeu => {
+            conteneur.innerHTML += `
+                <div style="background: #1a1a2e; border-radius: 8px; padding: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <img src="${jeu.image}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 6px;" alt="${jeu.title}">
+                        <h4 style="font-size: 11px; color: #fff; margin: 6px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${jeu.title}">${jeu.title}</h4>
+                    </div>
+                    <a href="${jeu.url}" target="_blank" style="display: block; background: linear-gradient(135deg, #00ccff, #0066ff); color: #fff; padding: 6px; border-radius: 4px; font-size: 11px; text-decoration: none; font-weight: bold; margin-top: 4px;">
+                        <i class="fa-solid fa-play"></i> Jouer
+                    </a>
+                </div>
+            `;
+        });
+    } catch (erreur) {
+        console.error("Erreur chargement jeux :", erreur);
+        const conteneur = document.getElementById('catalogue-jeux-container');
+        if (conteneur) {
+            conteneur.innerHTML = `<p style="color: #e74c3c; font-size: 12px; grid-column: 1 / -1; text-align: center;">Impossible de charger les jeux pour le moment.</p>`;
+        }
+    }
+}
+
+// Lancer le chargement au démarrage
+document.addEventListener("DOMContentLoaded", chargerJeuxGameMonetize);
     
 // =============================================================================
 // FONCTION UTILITAIRE : OBTENIR LA DATE DU JOUR (FORMAT YYYY-MM-DD)
