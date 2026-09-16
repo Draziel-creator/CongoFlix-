@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CongoFlix Arcade - Catalogue Officiel</title>
+    <title>Arcade - Catalogue Officiel</title>
     <!-- FontAwesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -22,7 +22,7 @@
 
         .header-catalogue {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             padding: 20px;
             background: linear-gradient(135deg, rgba(0, 204, 255, 0.1), rgba(255, 0, 127, 0.1));
             border-radius: 16px;
@@ -64,6 +64,40 @@
             box-shadow: 0 0 10px rgba(0, 204, 255, 0.4);
         }
 
+        /* Barre de recherche */
+        .search-container {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto 25px auto;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #00ccff;
+            font-size: 14px;
+        }
+
+        .search-container input {
+            width: 100%;
+            background: #141824;
+            border: 1px solid rgba(0, 204, 255, 0.3);
+            padding: 12px 15px 12px 48px;
+            border-radius: 30px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .search-container input:focus {
+            border-color: #00ccff;
+            box-shadow: 0 0 15px rgba(0, 204, 255, 0.4);
+        }
+
         /* Grille des jeux */
         #catalogue-jeux-container {
             display: grid;
@@ -95,6 +129,7 @@
             height: 110px;
             object-fit: cover;
             display: block;
+            background: #1a1f2c;
         }
 
         .jeu-info {
@@ -176,6 +211,12 @@
         <p>Explore le catalogue mondial, choisis ton jeu et enflamme le score !</p>
     </div>
 
+    <!-- Barre de recherche -->
+    <div class="search-container">
+        <i class="fa-solid fa-search"></i>
+        <input type="text" id="input-recherche" placeholder="Rechercher un jeu par son nom..." oninput="filtrerJeux()">
+    </div>
+
     <!-- Grille principale des jeux -->
     <div id="catalogue-jeux-container">
         <!-- Chargement initial -->
@@ -194,31 +235,40 @@
 
     <script>
         let tousLesJeux = [];
+        let jeuxFiltres = [];
         let indexActuel = 0;
         const nombreParPage = 50;
 
         async function initialiserCatalogue() {
             const conteneur = document.getElementById('catalogue-jeux-container');
-            const sectionBouton = document.getElementById('section-bouton-plus');
 
             try {
-                // On récupère le flux global (format=1 pour JSON, sans bride pour tout récupérer d'un coup en mémoire)
                 let urlFlux = 'https://gamemonetize.com/feed.php?format=1&page=1';
                 
                 const reponse = await fetch(urlFlux);
                 const texteReponse = await reponse.text();
 
-                // Traitement JSON / XML de sécurité
+                tousLesJeux = [];
+
                 if (texteReponse.trim().startsWith('[') || texteReponse.trim().startsWith('{')) {
-                    tousLesJeux = JSON.parse(texteReponse);
+                    let donneesBrutes = JSON.parse(texteReponse);
+                    if (!Array.isArray(donneesBrutes)) {
+                        donneesBrutes = donneesBrutes.games || donneesBrutes.items || [donneesBrutes];
+                    }
+                    // Normalisation des propriétés JSON (thumb -> image)
+                    tousLesJeux = donneesBrutes.map(item => ({
+                        title: item.title || item.name || 'Jeu sans nom',
+                        image: item.thumb || item.image || item.thumbnail || '',
+                        url: item.url || item.link || '#'
+                    }));
                 } else if (texteReponse.trim().startsWith('<?xml') || texteReponse.trim().startsWith('<rss')) {
                     const parser = new DOMParser();
                     const xmlDoc = parser.parseFromString(texteReponse, "text/xml");
                     const items = xmlDoc.querySelectorAll('item');
                     
                     items.forEach(item => {
-                        const title = item.querySelector('title')?.textContent || 'Jeu';
-                        const image = item.querySelector('image')?.textContent || item.querySelector('thumbnail')?.textContent || '';
+                        const title = item.querySelector('title')?.textContent || 'Jeu sans nom';
+                        const image = item.querySelector('image')?.textContent || item.querySelector('thumbnail')?.textContent || item.querySelector('thumb')?.textContent || '';
                         const url = item.querySelector('url')?.textContent || item.querySelector('link')?.textContent || '#';
                         tousLesJeux.push({ title, image, url });
                     });
@@ -229,11 +279,11 @@
                     return;
                 }
 
-                // On vide le loader initial
+                // Initialiser les jeux filtrés avec l'ensemble complet au démarrage
+                jeuxFiltres = tousLesJeux;
                 conteneur.innerHTML = '';
                 indexActuel = 0;
 
-                // Afficher la première tranche de 50 jeux
                 chargerTrancheSuivante();
 
             } catch (erreur) {
@@ -242,19 +292,38 @@
             }
         }
 
+        function filtrerJeux() {
+            const terme = document.getElementById('input-recherche').value.toLowerCase().trim();
+            const conteneur = document.getElementById('catalogue-jeux-container');
+
+            // Filtrer le tableau complet selon la saisie
+            jeuxFiltres = tousLesJeux.filter(jeu => jeu.title.toLowerCase().includes(terme));
+
+            // Réinitialiser l'affichage
+            conteneur.innerHTML = '';
+            indexActuel = 0;
+
+            if (jeuxFiltres.length === 0) {
+                conteneur.innerHTML = `<p style="color: #8a8d9f; font-size: 13px; grid-column: 1 / -1; text-align: center;">Aucun jeu ne correspond à votre recherche.</p>`;
+                document.getElementById('section-bouton-plus').style.display = 'none';
+                return;
+            }
+
+            chargerTrancheSuivante();
+        }
+
         function chargerTrancheSuivante() {
             const conteneur = document.getElementById('catalogue-jeux-container');
             const sectionBouton = document.getElementById('section-bouton-plus');
 
-            // Déterminer la fin de la tranche (ex: 0 à 50, puis 50 à 100, etc.)
             const fin = indexActuel + nombreParPage;
-            const tranche = tousLesJeux.slice(indexActuel, fin);
+            const tranche = jeuxFiltres.slice(indexActuel, fin);
 
             tranche.forEach(jeu => {
                 conteneur.innerHTML += `
                     <div class="jeu-card">
                         <a href="${jeu.url}" target="_blank" style="display: block; text-decoration: none;">
-                            <img src="${jeu.image}" alt="${jeu.title}" loading="lazy">
+                            <img src="${jeu.image}" alt="${jeu.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/150?text=CongoFlix'">
                         </a>
                         <div class="jeu-info">
                             <h4 title="${jeu.title}">${jeu.title}</h4>
@@ -268,11 +337,11 @@
 
             indexActuel = fin;
 
-            // Gérer l'affichage du bouton "Charger plus"
-            if (indexActuel < tousLesJeux.length) {
+            // Afficher ou masquer le bouton "Charger plus" en fonction du reste des résultats filtrés
+            if (indexActuel < jeuxFiltres.length) {
                 sectionBouton.style.display = 'block';
             } else {
-                sectionBouton.style.display = 'none'; // Tous les jeux ont été affichés
+                sectionBouton.style.display = 'none';
             }
         }
 
