@@ -1634,7 +1634,7 @@ function enregistrerTacheDansFirebase(taskId) {
 }
 
 // =============================================================================
-// 3. LOGIQUE MISSIONS VIDÉO (ULTRA-SÉCURISÉE : CLICKADILLA, ONCLICKA, ADCASH)
+// 3. LOGIQUE MISSIONS VIDÉO (10% VISUEL & ANTI-ÉCRAN NOIR STRICT)
 // =============================================================================
 
 function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
@@ -1647,57 +1647,64 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
     let detectee = false;
     let timerPanne = null;
     let intervalVerification = null;
+    let dernierTemps = -1;
+    let compteurStabilite = 0; // Exige que la vidéo joue de manière stable pour éviter les flashs noirs
 
     function verifierLecteurVideoActif() {
         if (detectee) return;
 
-        let pubVraimentAffichee = false;
+        let pubVisuellementActive = false;
 
-        // 1. Recherche d'une balise <video> locale et active
+        // 1. Recherche d'une balise <video> réelle (utilisée par Clickadilla / Onclicka / Adcash)
         const videos = conteneur.querySelectorAll('video');
         videos.forEach(v => {
-            if (!v.paused && v.readyState >= 2 && v.videoWidth > 0) {
-                pubVraimentAffichee = true;
-            }
-        });
-
-        // 2. Recherche spécifique aux conteneurs de lecteurs publicitaires connus (FluidPlayer, VAST, etc.)
-        if (conteneur.querySelector('.fluid_video_wrapper, .fluid_controls_container, .fluid_initial_play_button, .vast-player, .video-ad')) {
-            pubVraimentAffichee = true;
-        }
-
-        // 3. Recherche sécurisée des iframes (CRUCIAL POUR ONCLICKA ET CLICKADILLA)
-        const iframes = conteneur.querySelectorAll('iframe');
-        iframes.forEach(iframe => {
-            // FILTRE ANTI-BUG : On s'assure que l'iframe n'est pas un pixel invisible ou un conteneur vide 0x0
-            const aUneTailleVisible = iframe.offsetWidth > 50 || iframe.offsetHeight > 50;
-            const aUneSourceValide = iframe.src && iframe.src !== 'about:blank' && !iframe.src.startsWith('javascript:');
-
-            if (aUneTailleVisible && aUneSourceValide) {
-                try {
-                    const doc = iframe.contentWindow.document || iframe.contentDocument;
-                    if (doc) {
-                        // Si on est sur le même domaine, on vérifie l'intérieur
-                        const subVideos = doc.querySelectorAll('video');
-                        subVideos.forEach(v => {
-                            if (!v.paused && v.readyState >= 2) pubVraimentAffichee = true;
-                        });
-                        if (doc.querySelector('video, canvas, .vast-player, .video-ad')) {
-                            pubVraimentAffichee = true;
-                        }
+            // CONDITIONS STRICTES ANTI-ÉCRAN NOIR :
+            // - La vidéo ne doit PAS être en pause (!v.paused)
+            // - Le navigateur a assez de données (readyState >= 2)
+            // - LE PLUS IMPORTANT : videoWidth > 0 prouve que la régie a décédé une vraie image vidéo (pas un écran noir vide)
+            // - Le lecteur a une taille visible à l'écran (offsetWidth > 50)
+            if (!v.paused && v.readyState >= 2 && v.videoWidth > 50 && v.offsetWidth > 50) {
+                
+                // On s'assure que le temps de lecture avance (la vidéo n'est pas figée sur une image noire)
+                if (v.currentTime !== dernierTemps) {
+                    dernierTemps = v.currentTime;
+                    compteurStabilite++;
+                    
+                    // On exige 2 vérifications consécutives (soit ~1 seconde de lecture fluide) 
+                    // pour valider que ce n'est pas un bug d'affichage éphémère.
+                    if (compteurStabilite >= 2) {
+                        pubVisuellementActive = true;
                     }
-                } catch (crossOriginErr) {
-                    // C'EST ICI QUE ONCLICKA & CLICKADILLA PASSENT :
-                    // L'erreur CORS confirme qu'une iframe publicitaire externe est bien injectée.
-                    // Grâce aux filtres de taille et de source, on sait que c'est une vraie pub active 
-                    // et non un écran noir figé ou un plantage réseau.
-                    pubVraimentAffichee = true;
                 }
             }
         });
 
-        // VALIDATION FINALE : Si le lecteur ou l'iframe publicitaire est validé
-        if (pubVraimentAffichee) {
+        // 2. Recherche dans les iframes de la régie (si elles affichent un player intégré visible)
+        const iframes = conteneur.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            if (iframe.offsetWidth > 100 && iframe.offsetHeight > 100) {
+                try {
+                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                    if (doc) {
+                        const subVideos = doc.querySelectorAll('video');
+                        subVideos.forEach(v => {
+                            if (!v.paused && v.readyState >= 2 && v.videoWidth > 50) {
+                                pubVisuellementActive = true;
+                            }
+                        });
+                    }
+                } catch (crossOriginErr) {
+                    // Pour Onclicka / Clickadilla en cross-origin : 
+                    // Si l'iframe est bien visible et que le conteneur parent a des classes de player actif
+                    if (conteneur.querySelector('.fluid_video_wrapper, .vast-player, .video-ad')) {
+                        pubVisuellementActive = true;
+                    }
+                }
+            }
+        });
+
+        // VALIDATION FINALE : Uniquement si la vidéo est confirmée active visuellement
+        if (pubVisuellementActive) {
             detectee = true;
             if (intervalVerification) clearInterval(intervalVerification);
             if (timerPanne) clearTimeout(timerPanne);
@@ -1705,17 +1712,18 @@ function surveillerVideoClickadillaReelle(idZone, surSucces, surEchec) {
         }
     }
 
+    // Vérification toutes les 500ms
     intervalVerification = setInterval(verifierLecteurVideoActif, 500);
 
-    // Temps de tolérance de 12 secondes pour laisser le temps à Onclicka/Clickadilla de charger le flux
+    // Temps de tolérance de 12 secondes : si au bout de 12s la régie n'a affiché 
+    // qu'un écran noir ou rien du tout, on déclenche l'échec.
     timerPanne = setTimeout(() => {
         if (!detectee) {
             if (intervalVerification) clearInterval(intervalVerification);
-            surEchec(); // Déclenche l'échec si la régie ne renvoie vraiment rien (bloqué/erreur)
+            surEchec(); // Bloque et refuse de donner des points sur écran noir
         }
     }, 12000);
 }
-
 // =============================================================================
 // INITIALISATION DE LA MISSION VIDÉO (ADCASH, CLICKADILLA, EXOCLICK, TWINRD & ONCLICKA)
 // =============================================================================
