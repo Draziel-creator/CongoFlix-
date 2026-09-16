@@ -3344,33 +3344,46 @@ async function tenterChanceBonus(event) {
     }
 }
 
+
 async function chargerJeuxGameMonetize() {
     const conteneur = document.getElementById('catalogue-jeux-container');
     if (!conteneur) return;
 
     try {
-        // Colle ton lien brut exact ici entre les guillemets :
-        let urlFlux = 'https://gamemonetize.com/feed.php?format=0&page=1';
-
-        // Cette ligne s'assure de corriger le format automatiquement pour éviter le bug XML
-        if (urlFlux.includes('format=0')) {
-            urlFlux = urlFlux.replace('format=0', 'format=json');
-        } else if (!urlFlux.includes('format=')) {
-            urlFlux += '&format=json';
-        }
-
+        // On prend ton lien et on force format=1 (qui active le JSON chez eux)
+        let urlFlux = 'https://gamemonetize.com/feed.php?format=1&num=50&page=1';
+        
         const reponse = await fetch(urlFlux);
         const texteReponse = await reponse.text();
 
-        // Sécurité : si le serveur renvoie encore du XML
-        if (texteReponse.trim().startsWith("<?xml") || texteReponse.trim().startsWith("<rss")) {
-            conteneur.innerHTML = `<p style="color: #e74c3c; font-size: 12px; grid-column: 1 / -1; text-align: center;">Erreur : Le lien ne renvoie pas du JSON.</p>`;
+        let listeJeux = [];
+
+        // 1. Si le serveur renvoie du JSON
+        if (texteReponse.trim().startsWith('[') || texteReponse.trim().startsWith('{')) {
+            listeJeux = JSON.parse(texteReponse);
+        } 
+        // 2. Si le serveur renvoie du XML (au cas où)
+        else if (texteReponse.trim().startsWith('<?xml') || texteReponse.trim().startsWith('<rss')) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(texteReponse, "text/xml");
+            const items = xmlDoc.querySelectorAll('item');
+            
+            items.forEach(item => {
+                const title = item.querySelector('title')?.textContent || 'Jeu';
+                const image = item.querySelector('image')?.textContent || item.querySelector('thumbnail')?.textContent || '';
+                const url = item.querySelector('url')?.textContent || item.querySelector('link')?.textContent || '#';
+                listeJeux.push({ title, image, url });
+            });
+        }
+
+        if (listeJeux.length === 0) {
+            conteneur.innerHTML = `<p style="color: #e74c3c; font-size: 12px; grid-column: 1 / -1; text-align: center;">Aucun jeu trouvé dans le flux.</p>`;
             return;
         }
 
-        const listeJeux = JSON.parse(texteReponse);
-        conteneur.innerHTML = ''; 
+        conteneur.innerHTML = ''; // On vide le chargement
 
+        // Affichage des jeux dans la grille
         listeJeux.forEach(jeu => {
             conteneur.innerHTML += `
                 <div style="background: #1a1a2e; border-radius: 8px; padding: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; justify-content: space-between;">
@@ -3390,6 +3403,7 @@ async function chargerJeuxGameMonetize() {
     }
 }
 
+// Lancer le chargement au démarrage
 document.addEventListener("DOMContentLoaded", chargerJeuxGameMonetize);
     
 // =============================================================================
