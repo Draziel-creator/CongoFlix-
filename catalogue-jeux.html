@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CongoFlix Arcade - Catalogue Officiel</title>
+    <!-- FontAwesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0b0e14;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .header-catalogue {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(0, 204, 255, 0.1), rgba(255, 0, 127, 0.1));
+            border-radius: 16px;
+            border: 1px solid rgba(0, 204, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 204, 255, 0.1);
+        }
+
+        .header-catalogue h1 {
+            font-size: 22px;
+            color: #00ccff;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header-catalogue p {
+            color: #8a8d9f;
+            font-size: 13px;
+        }
+
+        .btn-retour {
+            display: inline-block;
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #00ccff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid rgba(0, 204, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .btn-retour:hover {
+            background: rgba(0, 204, 255, 0.15);
+            box-shadow: 0 0 10px rgba(0, 204, 255, 0.4);
+        }
+
+        /* Grille des jeux */
+        #catalogue-jeux-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .jeu-card {
+            background: #141824;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 204, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .jeu-card:hover {
+            transform: translateY(-4px);
+            border-color: #00ccff;
+            box-shadow: 0 6px 20px rgba(0, 204, 255, 0.3);
+        }
+
+        .jeu-card img {
+            width: 100%;
+            height: 110px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .jeu-info {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .jeu-info h4 {
+            font-size: 12px;
+            color: #fff;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-jouer {
+            display: block;
+            background: linear-gradient(135deg, #00ccff, #0066ff);
+            color: #fff;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            text-decoration: none;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 102, 255, 0.4);
+            transition: opacity 0.2s;
+        }
+
+        .btn-jouer:hover {
+            opacity: 0.9;
+        }
+
+        /* Bouton Charger Plus */
+        .charger-plus-container {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        #btn-charger-plus {
+            background: linear-gradient(135deg, #ff007f, #7f00ff);
+            color: #fff;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        #btn-charger-plus:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 0, 127, 0.6);
+        }
+
+        #btn-charger-plus:disabled {
+            background: #2a2f45;
+            color: #6c7293;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="activite.html" class="btn-retour"><i class="fa-solid fa-arrow-left"></i> Retour à l'accueil</a>
+
+    <div class="header-catalogue">
+        <h1>🕹️ Cyber Arcade Zone</h1>
+        <p>Explore le catalogue mondial, choisis ton jeu et enflamme le score !</p>
+    </div>
+
+    <!-- Grille principale des jeux -->
+    <div id="catalogue-jeux-container">
+        <!-- Chargement initial -->
+        <div style="grid-column: 1 / -1; text-align: center; color: #8a8d9f; padding: 40px;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #00ccff; margin-bottom: 12px;"></i>
+            <p style="font-size: 13px;">Connexion au flux des serveurs de jeux...</p>
+        </div>
+    </div>
+
+    <!-- Bouton Charger Plus -->
+    <div class="charger-plus-container" id="section-bouton-plus" style="display: none;">
+        <button id="btn-charger-plus" onclick="chargerTrancheSuivante()">
+            <i class="fa-solid fa-plus-circle"></i> Charger plus de jeux
+        </button>
+    </div>
+
+    <script>
+        let tousLesJeux = [];
+        let indexActuel = 0;
+        const nombreParPage = 50;
+
+        async function initialiserCatalogue() {
+            const conteneur = document.getElementById('catalogue-jeux-container');
+            const sectionBouton = document.getElementById('section-bouton-plus');
+
+            try {
+                // On récupère le flux global (format=1 pour JSON, sans bride pour tout récupérer d'un coup en mémoire)
+                let urlFlux = 'https://gamemonetize.com/feed.php?format=1&page=1';
+                
+                const reponse = await fetch(urlFlux);
+                const texteReponse = await reponse.text();
+
+                // Traitement JSON / XML de sécurité
+                if (texteReponse.trim().startsWith('[') || texteReponse.trim().startsWith('{')) {
+                    tousLesJeux = JSON.parse(texteReponse);
+                } else if (texteReponse.trim().startsWith('<?xml') || texteReponse.trim().startsWith('<rss')) {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(texteReponse, "text/xml");
+                    const items = xmlDoc.querySelectorAll('item');
+                    
+                    items.forEach(item => {
+                        const title = item.querySelector('title')?.textContent || 'Jeu';
+                        const image = item.querySelector('image')?.textContent || item.querySelector('thumbnail')?.textContent || '';
+                        const url = item.querySelector('url')?.textContent || item.querySelector('link')?.textContent || '#';
+                        tousLesJeux.push({ title, image, url });
+                    });
+                }
+
+                if (tousLesJeux.length === 0) {
+                    conteneur.innerHTML = `<p style="color: #e74c3c; font-size: 13px; grid-column: 1 / -1; text-align: center;">Aucun jeu disponible pour le moment.</p>`;
+                    return;
+                }
+
+                // On vide le loader initial
+                conteneur.innerHTML = '';
+                indexActuel = 0;
+
+                // Afficher la première tranche de 50 jeux
+                chargerTrancheSuivante();
+
+            } catch (erreur) {
+                console.error("Erreur critique de chargement :", erreur);
+                conteneur.innerHTML = `<p style="color: #e74c3c; font-size: 13px; grid-column: 1 / -1; text-align: center;">Impossible de synchroniser le catalogue de jeux.</p>`;
+            }
+        }
+
+        function chargerTrancheSuivante() {
+            const conteneur = document.getElementById('catalogue-jeux-container');
+            const sectionBouton = document.getElementById('section-bouton-plus');
+
+            // Déterminer la fin de la tranche (ex: 0 à 50, puis 50 à 100, etc.)
+            const fin = indexActuel + nombreParPage;
+            const tranche = tousLesJeux.slice(indexActuel, fin);
+
+            tranche.forEach(jeu => {
+                conteneur.innerHTML += `
+                    <div class="jeu-card">
+                        <a href="${jeu.url}" target="_blank" style="display: block; text-decoration: none;">
+                            <img src="${jeu.image}" alt="${jeu.title}" loading="lazy">
+                        </a>
+                        <div class="jeu-info">
+                            <h4 title="${jeu.title}">${jeu.title}</h4>
+                            <a href="${jeu.url}" target="_blank" class="btn-jouer">
+                                <i class="fa-solid fa-play"></i> Jouer
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            indexActuel = fin;
+
+            // Gérer l'affichage du bouton "Charger plus"
+            if (indexActuel < tousLesJeux.length) {
+                sectionBouton.style.display = 'block';
+            } else {
+                sectionBouton.style.display = 'none'; // Tous les jeux ont été affichés
+            }
+        }
+
+        // Lancement automatique au chargement de la page
+        document.addEventListener("DOMContentLoaded", initialiserCatalogue);
+    </script>
+</body>
+</html>
