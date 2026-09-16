@@ -3344,25 +3344,24 @@ async function tenterChanceBonus(event) {
     }
 }
 
-
 async function chargerJeuxGameMonetize() {
     const conteneur = document.getElementById('catalogue-jeux-container');
     if (!conteneur) return;
 
     try {
-        // On prend ton lien et on force format=1 (qui active le JSON chez eux)
-        let urlFlux = 'https://gamemonetize.com/feed.php?format=1&num=50&page=1';
+        // Utilisation du lien du flux (le format=1 active le JSON)
+        let urlFlux = 'https://gamemonetize.com/feed.php?format=1&page=1';
         
         const reponse = await fetch(urlFlux);
         const texteReponse = await reponse.text();
 
         let listeJeux = [];
 
-        // 1. Si le serveur renvoie du JSON
+        // 1. Analyse du format JSON
         if (texteReponse.trim().startsWith('[') || texteReponse.trim().startsWith('{')) {
             listeJeux = JSON.parse(texteReponse);
         } 
-        // 2. Si le serveur renvoie du XML (au cas où)
+        // 2. Analyse du format XML de secours
         else if (texteReponse.trim().startsWith('<?xml') || texteReponse.trim().startsWith('<rss')) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(texteReponse, "text/xml");
@@ -3381,19 +3380,21 @@ async function chargerJeuxGameMonetize() {
             return;
         }
 
-        conteneur.innerHTML = ''; // On vide le chargement
+        conteneur.innerHTML = ''; // On vide le message de chargement
 
-        // Affichage des jeux dans la grille
+        // Affichage de tous les jeux du catalogue avec une grande image bien visible
         listeJeux.forEach(jeu => {
             conteneur.innerHTML += `
-                <div style="background: #1a1a2e; border-radius: 8px; padding: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <img src="${jeu.image}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 6px;" alt="${jeu.title}">
-                        <h4 style="font-size: 11px; color: #fff; margin: 6px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${jeu.title}">${jeu.title}</h4>
-                    </div>
-                    <a href="${jeu.url}" target="_blank" style="display: block; background: linear-gradient(135deg, #00ccff, #0066ff); color: #fff; padding: 6px; border-radius: 4px; font-size: 11px; text-decoration: none; font-weight: bold; margin-top: 4px;">
-                        <i class="fa-solid fa-play"></i> Jouer
+                <div style="background: #1a1a2e; border-radius: 10px; overflow: hidden; border: 1px solid rgba(0, 204, 255, 0.2); display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                    <a href="${jeu.url}" target="_blank" style="display: block; text-decoration: none;">
+                        <img src="${jeu.image}" style="width: 100%; height: 140px; object-fit: cover; display: block;" alt="${jeu.title}">
                     </a>
+                    <div style="padding: 8px; display: flex; flex-direction: column; gap: 6px;">
+                        <h4 style="font-size: 11px; color: #fff; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${jeu.title}">${jeu.title}</h4>
+                        <a href="${jeu.url}" target="_blank" style="display: block; background: linear-gradient(135deg, #00ccff, #0066ff); color: #fff; padding: 6px; border-radius: 6px; font-size: 11px; text-decoration: none; font-weight: bold; text-align: center;">
+                            <i class="fa-solid fa-play"></i> Jouer
+                        </a>
+                    </div>
                 </div>
             `;
         });
@@ -3405,7 +3406,7 @@ async function chargerJeuxGameMonetize() {
 
 // Lancer le chargement au démarrage
 document.addEventListener("DOMContentLoaded", chargerJeuxGameMonetize);
-    
+
 // =============================================================================
 // FONCTION UTILITAIRE : OBTENIR LA DATE DU JOUR (FORMAT YYYY-MM-DD)
 // =============================================================================
