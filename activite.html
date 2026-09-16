@@ -3345,14 +3345,25 @@ async function tenterChanceBonus(event) {
 }
 
 async function chargerJeuxGameMonetize() {
+    const conteneur = document.getElementById('catalogue-jeux-container');
+    if (!conteneur) return;
+
     try {
-        const conteneur = document.getElementById('catalogue-jeux-container');
-        if (!conteneur) return;
+        // On s'assure de demander explicitement du JSON
+        const urlFlux = 'https://gamemonetize.com/feed.php?format=json&num=50&page=1';
+        const reponse = await fetch(urlFlux);
+        
+        // On récupère le texte brut d'abord pour voir si c'est du XML ou du JSON
+        const texteReponse = await reponse.text();
 
-        // Appel du flux JSON officiel de ton compte GameMonetize
-        const reponse = await fetch('https://gamemonetize.com/feed.php?format=json&num=50&page=1');
-        const listeJeux = await reponse.json();
+        // Si le serveur renvoie du XML par erreur, on affiche un avertissement clair
+        if (texteReponse.trim().startsWith("<?xml") || texteReponse.trim().startsWith("<rss")) {
+            console.error("Le lien GameMonetize renvoie du XML au lieu du JSON.");
+            conteneur.innerHTML = `<p style="color: #e74c3c; font-size: 12px; grid-column: 1 / -1; text-align: center;">Erreur de format du flux (XML reçu au lieu de JSON).</p>`;
+            return;
+        }
 
+        const listeJeux = JSON.parse(texteReponse);
         conteneur.innerHTML = ''; // On vide le message de chargement
 
         listeJeux.forEach(jeu => {
@@ -3370,10 +3381,7 @@ async function chargerJeuxGameMonetize() {
         });
     } catch (erreur) {
         console.error("Erreur chargement jeux :", erreur);
-        const conteneur = document.getElementById('catalogue-jeux-container');
-        if (conteneur) {
-            conteneur.innerHTML = `<p style="color: #e74c3c; font-size: 12px; grid-column: 1 / -1; text-align: center;">Impossible de charger les jeux pour le moment.</p>`;
-        }
+        conteneur.innerHTML = `<p style="color: #e74c3c; font-size: 12px; grid-column: 1 / -1; text-align: center;">Impossible de charger les jeux (Erreur réseau ou CORS).</p>`;
     }
 }
 
