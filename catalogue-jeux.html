@@ -64,7 +64,7 @@
         }
 
         .header-catalogue h1 {
-            font-size: 22px;
+            font-size: 20px;
             color: #00ccff;
             margin-bottom: 8px;
             text-transform: uppercase;
@@ -75,37 +75,6 @@
             color: #8a8d9f;
             font-size: 13px;
             line-height: 1.5;
-        }
-
-        /* --- BARRE DE RECHERCHE --- */
-        .search-container {
-            position: relative;
-            margin-bottom: 25px;
-        }
-
-        .search-container i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #8a8d9f;
-        }
-
-        .search-container input {
-            width: 100%;
-            background: #141824;
-            border: 1px solid rgba(0, 204, 255, 0.3);
-            padding: 12px 15px 12px 45px;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-        }
-
-        .search-container input:focus {
-            border-color: #00ccff;
-            box-shadow: 0 0 10px rgba(0, 204, 255, 0.3);
         }
 
         /* --- POST D'INSCRIPTION & CHEVAL --- */
@@ -164,14 +133,14 @@
             transform: scale(1.02);
         }
 
-        /* --- PISTE DE COURSE MODERNE & CLASSEMENT --- */
+        /* --- PISTE DE COURSE & CLASSEMENT --- */
         .race-track-container {
             background: linear-gradient(145deg, #0f172a, #1e293b);
             border: 2px dashed rgba(255, 215, 0, 0.4);
             border-radius: 16px;
             padding: 15px;
             margin-bottom: 25px;
-            max-height: 300px;
+            max-height: 350px;
             overflow-y: auto;
             position: relative;
         }
@@ -234,12 +203,37 @@
             z-index: 5;
         }
 
-        /* Correction direction du cheval en course (tourné vers la droite -> vers l'arrivée) */
         .horse-running-right {
             transform: scaleX(-1);
         }
 
-        /* --- GRILLE DES JEUX & TÂCHES --- */
+        /* --- BARRE DE RECHERCHE --- */
+        .search-container {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8a8d9f;
+        }
+
+        .search-container input {
+            width: 100%;
+            background: #141824;
+            border: 1px solid rgba(0, 204, 255, 0.3);
+            padding: 12px 15px 12px 45px;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
+        /* --- GRILLE DES JEUX --- */
         #catalogue-jeux-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -310,6 +304,84 @@
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0, 255, 204, 0.4);
         }
+
+        /* --- MODALE STYLISÉE --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(11, 14, 20, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 100000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeInModal 0.3s ease-out;
+        }
+
+        @keyframes fadeInModal {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-card {
+            background: linear-gradient(145deg, #141824, #1a2234);
+            border: 1px solid rgba(0, 204, 255, 0.4);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 204, 255, 0.2);
+            text-align: center;
+        }
+
+        .modal-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .modal-header i {
+            font-size: 32px;
+            color: #00ccff;
+        }
+
+        .modal-header h3 {
+            color: #fff;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal-body {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .btn-modal-action {
+            background: linear-gradient(135deg, #00ffcc, #0072ff);
+            color: #000;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+            transition: transform 0.2s;
+            width: 100%;
+        }
+
+        .btn-modal-action:hover {
+            transform: scale(1.02);
+        }
     </style>
 </head>
 <body>
@@ -321,9 +393,23 @@
         <p>Pour une expérience optimale de course et de tournoi, pivotez votre téléphone en mode paysage.</p>
     </div>
 
+    <!-- MODALE MAGNIFIQUE (Remplace toutes les alertes) -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <i class="fa-solid fa-circle-info" id="modal-icon"></i>
+                <h3 id="modal-title">CongoFlix Info</h3>
+            </div>
+            <div class="modal-body" id="modal-message">
+                Message de la modale ici...
+            </div>
+            <button class="btn-modal-action" onclick="fermerModal()">Compris</button>
+        </div>
+    </div>
+
     <!-- EN-TÊTE DU TOURNOI -->
     <div class="header-catalogue">
-        <h1>🕹️ Cyber Arcade Zone & 🏆 Tournoi Officiel🌍 World Arena (Min. 20 Participants)</h1>
+        <h1>🕹️ Cyber Arcade Zone & 🏆 Tournoi Officiel 🌍 World Arena (Min. 20 Participants)</h1>
         <p>Explore le catalogue mondial, recherche ton jeu ou inscris ton cheval pour le grand tournoi éliminatoire !</p>
     </div>
 
@@ -353,24 +439,13 @@
         <button class="btn-inscrire" onclick="inscrireAuTournoi()">Valider l'Inscription au Tournoi</button>
     </div>
 
-    <!-- CLASSEMENT EN DIRECT DES CHEVAUX (TOP 16) - AVEC CHEVAL CORRIGÉ VERS LA DROITE -->
+    <!-- CLASSEMENT EN DIRECT DES CHEVAUX (MIS A JOUR AUTOMATIQUEMENT) -->
     <div class="race-track-container" id="leaderboard-container">
         <div class="finish-line-banner">
-            <span>🏁 LIGNE D'ARRIVÉE & CLASSEMENT (TOP 16)</span>
+            <span>🏁 LIGNE D'ARRIVÉE & CLASSEMENT (0/20 JOUEURS)</span>
             <span><i class="fa-solid fa-flag-checkered"></i> Piste Active</span>
         </div>
-        <div class="horse-row">
-            <div class="horse-meta">
-                <span class="horse-badge-num">#1</span>
-                <div class="horse-mini-wrapper">
-                    <span class="horse-head-number">07</span>
-                    <!-- Cheval en course tourné vers la droite grâce à .horse-running-right -->
-                    <lottie-player class="horse-running-right" src="https://lottie.host/0de37597-dffe-4971-a7f4-5d1dba50714d/t37vcDyeQY.json" background="transparent" speed="1.5" style="width: 100%; height: 100%;" loop autoplay></lottie-player>
-                </div>
-                <span>Étalon Alpha (Vitesse Max)</span>
-            </div>
-            <span style="color: #00ffcc; font-size: 12px; font-weight: bold;">En plein galop ➔</span>
-        </div>
+        <!-- Les chevaux s'afficheront ici dynamiquement en temps réel -->
     </div>
 
     <!-- BARRE DE RECHERCHE -->
@@ -381,7 +456,6 @@
 
     <!-- GRILLE PRINCIPALE DES JEUX -->
     <div id="catalogue-jeux-container">
-        <!-- Chargement initial -->
         <div style="grid-column: 1 / -1; text-align: center; color: #8a8d9f; padding: 40px;">
             <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #00ccff; margin-bottom: 12px;"></i>
             <p style="font-size: 13px;">Connexion au flux des serveurs de jeux...</p>
@@ -416,7 +490,6 @@
 
         let currentUserId = null;
 
-        // Suivi de l'utilisateur connecté pour l'enregistrer dans sa collection
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUserId = user.uid;
@@ -425,7 +498,18 @@
             }
         });
 
-        // 1. AUTOMATISATION DU LOBBY : Écoute en temps réel de la liste des chevaux
+        // Gestion de la modale personnalisée
+        window.showModal = function(title, message) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerHTML = message;
+            document.getElementById('custom-modal').style.display = 'flex';
+        };
+
+        window.fermerModal = function() {
+            document.getElementById('custom-modal').style.display = 'none';
+        };
+
+        // 1. AUTOMATISATION DU LOBBY : Affichage en direct de la liste des chevaux inscrits
         const q = query(collection(db, "tournoi_chevaux"), orderBy("timestamp", "asc"));
 
         onSnapshot(q, (snapshot) => {
@@ -439,26 +523,29 @@
                 </div>
             `;
 
-            let position = 1;
-            snapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                htmlContent += `
-                    <div class="horse-row">
-                        <div class="horse-meta">
-                            <span class="horse-badge-num">#${position}</span>
-                            <div class="horse-mini-wrapper">
-                                <span class="horse-head-number">${data.numero}</span>
-                                <lottie-player class="horse-running-right" src="https://lottie.host/0de37597-dffe-4971-a7f4-5d1dba50714d/t37vcDyeQY.json" background="transparent" speed="1.5" style="width: 100%; height: 100%;" loop autoplay></lottie-player>
+            if (snapshot.size === 0) {
+                htmlContent += `<div style="text-align: center; color: #8a8d9f; padding: 20px; font-size: 13px;">Aucun cheval inscrit pour le moment. Soyez le premier !</div>`;
+            } else {
+                let position = 1;
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    htmlContent += `
+                        <div class="horse-row">
+                            <div class="horse-meta">
+                                <span class="horse-badge-num">#${position}</span>
+                                <div class="horse-mini-wrapper">
+                                    <span class="horse-head-number">${data.numero}</span>
+                                    <lottie-player class="horse-running-right" src="https://lottie.host/0de37597-dffe-4971-a7f4-5d1dba50714d/t37vcDyeQY.json" background="transparent" speed="1.5" style="width: 100%; height: 100%;" loop autoplay></lottie-player>
+                                </div>
+                                <span>${data.nom} <small style="color:#00ccff;">(${data.couleur})</small></span>
                             </div>
-                            <span>${data.nom} <small style="color:#00ccff;">(${data.couleur})</small></span>
+                            <span style="color: #00ffcc; font-size: 12px; font-weight: bold;">En piste ➔</span>
                         </div>
-                        <span style="color: #00ffcc; font-size: 12px; font-weight: bold;">Prêt ➔</span>
-                    </div>
-                `;
-                position++;
-            });
+                    `;
+                    position++;
+                });
+            }
 
-            // Si le salon atteint les 20 joueurs : verrouillage automatique
             const registrationBox = document.querySelector('.registration-box');
             if (snapshot.size >= 20) {
                 htmlContent += `<div style="text-align:center; color:#ffd700; padding:10px; font-weight:bold;">🔥 SALON COMPLET (20/20) ! Le départ de la course est imminent...</div>`;
@@ -476,7 +563,7 @@
             leaderboardContainer.innerHTML = htmlContent;
         });
 
-        // 2. AUTOMATISATION DE L'INSCRIPTION : Vérification dynamique & Enregistrement global + Profil User
+        // 2. AUTOMATISATION DE L'INSCRIPTION : Vérification dynamique & Enregistrement
         window.inscrireAuTournoi = async function() {
             const nom = document.getElementById('input-nom-cheval').value.trim();
             const numero = document.getElementById('input-num-cheval').value.trim();
@@ -484,20 +571,18 @@
             const avertissement = document.getElementById('avertissement-couleur');
 
             if (!nom || !numero) {
-                alert("Veuillez renseigner le nom et le numéro de votre cheval !");
+                showModal("Champs requis", "Veuillez renseigner le nom et le numéro de votre cheval avant de valider !");
                 return;
             }
 
             try {
-                // Récupération de tous les inscrits actuels pour l'analyse non-mécanique
                 const querySnapshot = await getDocs(collection(db, "tournoi_chevaux"));
                 
                 if (querySnapshot.size >= 20) {
-                    alert("Désolé, le tournoi vient de se remplir (20/20 joueurs).");
+                    showModal("Salon Complet", "Désolé, le tournoi vient de se remplir (20/20 joueurs).");
                     return;
                 }
 
-                // Vérification dynamique des couleurs prises par de vrais joueurs dans ce tournoi
                 let colorCount = 0;
                 querySnapshot.forEach((docSnap) => {
                     if (docSnap.data().couleur === couleur) {
@@ -505,7 +590,6 @@
                     }
                 });
 
-                // Avertissement informatif (Ne bloque JAMAIS l'inscription)
                 if (colorCount > 0) {
                     if (avertissement) {
                         avertissement.style.display = 'block';
@@ -525,21 +609,21 @@
                 // Enregistrement dans le lobby global du tournoi
                 await addDoc(collection(db, "tournoi_chevaux"), donneesCheval);
 
-                // Enregistrement dans la collection "users" de l'utilisateur connecté (si connecté)
+                // Enregistrement dans la collection "users" de l'utilisateur connecté
                 if (currentUserId) {
                     await setDoc(doc(db, "users", currentUserId), {
                         tournoi_cheval: donneesCheval
                     }, { merge: true });
                 }
 
-                // Nettoyage automatique des champs après succès
+                // Nettoyage des champs
                 document.getElementById('input-nom-cheval').value = '';
                 document.getElementById('input-num-cheval').value = '';
 
-                alert(`Félicitations ${nom} ! Votre cheval #${numero} (${couleur}) est officiellement inscrit sur la piste.`);
+                showModal("Inscription Réussie !", `Félicitations <b>${nom}</b> ! Votre cheval #${numero} (${couleur}) a rejoint la piste en temps réel.`);
             } catch (e) {
                 console.error("Erreur critique lors de l'inscription : ", e);
-                alert("Erreur de connexion au serveur de tournoi.");
+                showModal("Erreur", "Impossible de se connecter au serveur du tournoi pour l'instant.");
             }
         };
 
