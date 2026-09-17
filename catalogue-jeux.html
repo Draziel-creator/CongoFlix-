@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tournoi & Arcade</title>
+    <title>CongoFlix - Tournoi & Arcade</title>
     <!-- FontAwesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Lottie Player -->
@@ -75,6 +75,37 @@
             color: #8a8d9f;
             font-size: 13px;
             line-height: 1.5;
+        }
+
+        /* --- BARRE DE RECHERCHE --- */
+        .search-container {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8a8d9f;
+        }
+
+        .search-container input {
+            width: 100%;
+            background: #141824;
+            border: 1px solid rgba(0, 204, 255, 0.3);
+            padding: 12px 15px 12px 45px;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
+        .search-container input:focus {
+            border-color: #00ccff;
+            box-shadow: 0 0 10px rgba(0, 204, 255, 0.3);
         }
 
         /* --- POST D'INSCRIPTION & CHEVAL --- */
@@ -183,7 +214,6 @@
             font-weight: bold;
         }
 
-        /* Petit cheval réaliste avec numéro attaché à la tête */
         .horse-mini-wrapper {
             position: relative;
             width: 45px;
@@ -204,32 +234,14 @@
             z-index: 5;
         }
 
-        /* --- SECTION TÂCHES & JEUX (MASQUÉS AU DÉPART) --- */
-        .btn-voir-taches-container {
-            text-align: center;
-            margin: 30px 0;
+        /* Correction direction du cheval en course (tourné vers la droite -> vers l'arrivée) */
+        .horse-running-right {
+            transform: scaleX(-1);
         }
 
-        #btn-voir-taches {
-            background: linear-gradient(135deg, #ff007f, #7f00ff);
-            color: #fff;
-            border: none;
-            padding: 15px 35px;
-            border-radius: 30px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(255, 0, 127, 0.5);
-            transition: all 0.3s ease;
-        }
-
-        #btn-voir-taches:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 25px rgba(255, 0, 127, 0.8);
-        }
-
+        /* --- GRILLE DES JEUX & TÂCHES --- */
         #catalogue-jeux-container {
-            display: none; /* Masqué par défaut pour un chargement instantané */
+            display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 15px;
             margin-bottom: 30px;
@@ -311,8 +323,8 @@
 
     <!-- EN-TÊTE DU TOURNOI -->
     <div class="header-catalogue">
-        <h1>🏆 Tournoi Officiel🌍 World Arena (Min. 20 Participants)</h1>
-        <p>Accès libre aux jeux sans limite. Inscris ton cheval pour le grand tournoi éliminatoire (16 participants au 1er tour, 4 semaines de phases + 3 jours de finale magique !).</p>
+        <h1>🕹️ Cyber Arcade Zone & 🏆 Tournoi Officiel🌍 World Arena (Min. 20 Participants)</h1>
+        <p>Explore le catalogue mondial, recherche ton jeu ou inscris ton cheval pour le grand tournoi éliminatoire !</p>
     </div>
 
     <!-- POST D'INSCRIPTION AU TOURNOI -->
@@ -341,45 +353,45 @@
         <button class="btn-inscrire" onclick="inscrireAuTournoi()">Valider l'Inscription au Tournoi</button>
     </div>
 
-    <!-- CLASSEMENT EN DIRECT DES CHEVAUX (TOP 16) -->
+    <!-- CLASSEMENT EN DIRECT DES CHEVAUX (TOP 16) - AVEC CHEVAL CORRIGÉ VERS LA DROITE -->
     <div class="race-track-container" id="leaderboard-container">
         <div class="finish-line-banner">
             <span>🏁 LIGNE D'ARRIVÉE & CLASSEMENT (TOP 16)</span>
-            <span><i class="fa-solid-flag-checkered"></i> Piste Active</span>
+            <span><i class="fa-solid fa-flag-checkered"></i> Piste Active</span>
         </div>
-        <!-- Les chevaux en course s'afficheront dynamiquement ici -->
         <div class="horse-row">
             <div class="horse-meta">
                 <span class="horse-badge-num">#1</span>
                 <div class="horse-mini-wrapper">
                     <span class="horse-head-number">07</span>
-                    <lottie-player src="https://lottie.host/0de37597-dffe-4971-a7f4-5d1dba50714d/t37vcDyeQY.json" background="transparent" speed="1.5" style="width: 100%; height: 100%;" loop autoplay></lottie-player>
+                    <!-- Cheval en course tourné vers la droite grâce à .horse-running-right -->
+                    <lottie-player class="horse-running-right" src="https://lottie.host/0de37597-dffe-4971-a7f4-5d1dba50714d/t37vcDyeQY.json" background="transparent" speed="1.5" style="width: 100%; height: 100%;" loop autoplay></lottie-player>
                 </div>
-                <span>Étalon Alpha (Rouge)</span>
+                <span>Étalon Alpha (Vitesse Max)</span>
             </div>
-            <span style="color: #00ffcc; font-size: 12px; font-weight: bold;">Vitesse: Course Max</span>
+            <span style="color: #00ffcc; font-size: 12px; font-weight: bold;">En plein galop ➔</span>
         </div>
     </div>
 
-    <!-- BOUTON UNIQUE POUR AFFICHER LES TÂCHES (OPTIMISATION VITESSE DE CHARGEMENT) -->
-    <div class="btn-voir-taches-container" id="section-btn-taches">
-        <button id="btn-voir-taches" onclick="chargerTachesEtJeux()">
-            <i class="fa-solid fa-tasks"></i> Voir mes tâches & Catalogue de jeux
-        </button>
+    <!-- BARRE DE RECHERCHE -->
+    <div class="search-container">
+        <i class="fa-solid fa-search"></i>
+        <input type="text" id="input-recherche" placeholder="Rechercher un jeu ou une tâche par son nom..." oninput="filtrerJeux()">
     </div>
 
-    <!-- GRILLE DES JEUX (CHARGÉE UNIQUEMENT AU CLIC) -->
+    <!-- GRILLE PRINCIPALE DES JEUX -->
     <div id="catalogue-jeux-container">
+        <!-- Chargement initial -->
         <div style="grid-column: 1 / -1; text-align: center; color: #8a8d9f; padding: 40px;">
             <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #00ccff; margin-bottom: 12px;"></i>
-            <p style="font-size: 13px;">Chargement du flux des serveurs...</p>
+            <p style="font-size: 13px;">Connexion au flux des serveurs de jeux...</p>
         </div>
     </div>
 
     <!-- BOUTON CHARGER PLUS -->
-    <div class="charger-plus-container" id="section-bouton-plus">
+    <div class="charger-plus-container" id="section-bouton-plus" style="display: none;">
         <button id="btn-charger-plus" onclick="chargerTrancheSuivante()">
-            <i class="fa-solid fa-plus-circle"></i> Afficher plus de tâches (50 suivantes)
+            <i class="fa-solid fa-plus-circle"></i> Charger plus de jeux
         </button>
     </div>
 
@@ -387,7 +399,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { 
             apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
@@ -402,20 +414,15 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Vérification de la connexion de l'utilisateur en base de données au chargement
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                console.log("Utilisateur connecté :", user.email);
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 if (userDoc.exists()) {
                     window.currentUserData = userDoc.data();
                 }
-            } else {
-                console.log("Aucun utilisateur connecté, redirection ou mode invité activé.");
             }
         });
 
-        // Détection mobile et orientation portrait/paysage
         function verifierOrientationMobile() {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             const overlay = document.getElementById('orientation-overlay');
@@ -432,14 +439,12 @@
 
     <script>
         let tousLesJeux = [];
+        let jeuxFiltres = [];
         let indexActuel = 0;
         const nombreParPage = 50;
 
-        // Fonction pour déclencher le chargement des 50 PREMIÈRES TÂCHES/JEUX
-        async function chargerTachesEtJeux() {
-            document.getElementById('section-btn-taches').style.display = 'none';
+        async function initialiserCatalogue() {
             const conteneur = document.getElementById('catalogue-jeux-container');
-            conteneur.style.display = 'grid';
 
             try {
                 let urlFlux = 'https://gamemonetize.com/feed.php?format=1&page=1';
@@ -447,31 +452,63 @@
                 const texteReponse = await reponse.text();
 
                 tousLesJeux = [];
+
                 if (texteReponse.trim().startsWith('[') || texteReponse.trim().startsWith('{')) {
                     let donneesBrutes = JSON.parse(texteReponse);
                     if (!Array.isArray(donneesBrutes)) {
                         donneesBrutes = donneesBrutes.games || donneesBrutes.items || [donneesBrutes];
                     }
                     tousLesJeux = donneesBrutes.map(item => ({
-                        title: item.title || item.name || 'Tâche / Jeu sans nom',
+                        title: item.title || item.name || 'Jeu sans nom',
                         image: item.thumb || item.image || item.thumbnail || '',
                         url: item.url || item.link || '#'
                     }));
+                } else if (texteReponse.trim().startsWith('<?xml') || texteReponse.trim().startsWith('<rss')) {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(texteReponse, "text/xml");
+                    const items = xmlDoc.querySelectorAll('item');
+                    
+                    items.forEach(item => {
+                        const title = item.querySelector('title')?.textContent || 'Jeu sans nom';
+                        const image = item.querySelector('image')?.textContent || item.querySelector('thumbnail')?.textContent || item.querySelector('thumb')?.textContent || '';
+                        const url = item.querySelector('url')?.textContent || item.querySelector('link')?.textContent || '#';
+                        tousLesJeux.push({ title, image, url });
+                    });
                 }
 
                 if (tousLesJeux.length === 0) {
-                    conteneur.innerHTML = `<p style="color: #e74c3c; grid-column: 1 / -1; text-align: center;">Aucune tâche disponible.</p>`;
+                    conteneur.innerHTML = `<p style="color: #e74c3c; font-size: 13px; grid-column: 1 / -1; text-align: center;">Aucun jeu disponible pour le moment.</p>`;
                     return;
                 }
 
+                jeuxFiltres = tousLesJeux;
                 conteneur.innerHTML = '';
                 indexActuel = 0;
+
                 chargerTrancheSuivante();
 
             } catch (erreur) {
-                console.error("Erreur de chargement des tâches :", erreur);
-                conteneur.innerHTML = `<p style="color: #e74c3c; grid-column: 1 / -1; text-align: center;">Erreur de connexion aux serveurs de tâches.</p>`;
+                console.error("Erreur critique de chargement :", erreur);
+                conteneur.innerHTML = `<p style="color: #e74c3c; font-size: 13px; grid-column: 1 / -1; text-align: center;">Impossible de synchroniser le catalogue de jeux.</p>`;
             }
+        }
+
+        function filtrerJeux() {
+            const terme = document.getElementById('input-recherche').value.toLowerCase().trim();
+            const conteneur = document.getElementById('catalogue-jeux-container');
+
+            jeuxFiltres = tousLesJeux.filter(jeu => jeu.title.toLowerCase().includes(terme));
+
+            conteneur.innerHTML = '';
+            indexActuel = 0;
+
+            if (jeuxFiltres.length === 0) {
+                conteneur.innerHTML = `<p style="color: #8a8d9f; font-size: 13px; grid-column: 1 / -1; text-align: center;">Aucun jeu ne correspond à votre recherche.</p>`;
+                document.getElementById('section-bouton-plus').style.display = 'none';
+                return;
+            }
+
+            chargerTrancheSuivante();
         }
 
         function chargerTrancheSuivante() {
@@ -479,7 +516,7 @@
             const sectionBouton = document.getElementById('section-bouton-plus');
 
             const fin = indexActuel + nombreParPage;
-            const tranche = tousLesJeux.slice(indexActuel, fin);
+            const tranche = jeuxFiltres.slice(indexActuel, fin);
 
             tranche.forEach(jeu => {
                 conteneur.innerHTML += `
@@ -490,7 +527,7 @@
                         <div class="jeu-info">
                             <h4 title="${jeu.title}">${jeu.title}</h4>
                             <a href="${jeu.url}" target="_blank" class="btn-jouer">
-                                <i class="fa-solid fa-play"></i> Exécuter / Jouer
+                                <i class="fa-solid fa-play"></i> Jouer
                             </a>
                         </div>
                     </div>
@@ -499,14 +536,13 @@
 
             indexActuel = fin;
 
-            if (indexActuel < tousLesJeux.length) {
+            if (indexActuel < jeuxFiltres.length) {
                 sectionBouton.style.display = 'block';
             } else {
                 sectionBouton.style.display = 'none';
             }
         }
 
-        // Logique d'inscription avec vérification des couleurs existantes
         async function inscrireAuTournoi() {
             const nom = document.getElementById('input-nom-cheval').value.trim();
             const numero = document.getElementById('input-num-cheval').value.trim();
@@ -518,17 +554,17 @@
                 return;
             }
 
-            // Simulation de vérification des couleurs déjà prises
-            const couleursPrises = ['Rouge', 'Bleu']; // Exemple basé sur ta base de données
+            const couleursPrises = ['Rouge', 'Bleu'];
             if (couleursPrises.includes(couleur)) {
                 avertissement.style.display = 'block';
-                avertissement.innerHTML = `⚠️ Attention : 5 personnes utilisent déjà la couleur <b>${couleur}</b>. Voulez-vous vraiment l'utiliser ? (Cliquez à nouveau pour confirmer)`;
-                couleursPrises.push('confirme_' + couleur); // Confirmation au 2ème clic
+                avertissement.innerHTML = `⚠️ Attention : 5 personnes utilisent déjà la couleur <b>${couleur}</b>.`;
                 return;
             }
 
-            alert(`Félicitations ${nom}! Votre cheval #${numero} (${couleur}) est inscrit au tournoi. Le tournoi débutera dès que 20 participants seront atteints.`);
+            alert(`Félicitations ${nom}! Votre cheval #${numero} (${couleur}) est inscrit au tournoi.`);
         }
+
+        document.addEventListener("DOMContentLoaded", initialiserCatalogue);
     </script>
 </body>
 </html>
