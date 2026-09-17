@@ -604,11 +604,36 @@
                 }
 
                 let colorCount = 0;
+                let nomDejaPris = false;
+                let numeroDejaPris = false;
+
                 querySnapshot.forEach((docSnap) => {
-                    if (docSnap.data().couleur === couleur) {
+                    const data = docSnap.data();
+                    
+                    if (data.couleur === couleur) {
                         colorCount++;
                     }
+                    // Vérification insensible à la casse pour le nom
+                    if (data.nom && data.nom.trim().toLowerCase() === nom.toLowerCase()) {
+                        nomDejaPris = true;
+                    }
+                    // Vérification pour le numéro
+                    if (data.numero && data.numero.trim() === numero.trim()) {
+                        numeroDejaPris = true;
+                    }
                 });
+
+                // Bloquer si le nom est déjà pris
+                if (nomDejaPris) {
+                    showModal("Nom Indisponible", `Le nom de cheval <b>"${nom}"</b> est déjà pris par un autre participant. Veuillez en choisir un autre pour votre écurie !`);
+                    return;
+                }
+
+                // Bloquer si le numéro est déjà pris
+                if (numeroDejaPris) {
+                    showModal("Numéro Déjà Attribué", `Le numéro de dossard <b>#${numero}</b> est déjà porté par un autre cheval sur la piste. Choisissez un autre numéro !`);
+                    return;
+                }
 
                 if (colorCount > 0) {
                     if (avertissement) {
@@ -618,7 +643,6 @@
                 } else {
                     if (avertissement) avertissement.style.display = 'none';
                 }
-
                 const donneesCheval = {
                     nom: nom,
                     numero: numero,
