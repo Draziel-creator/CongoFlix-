@@ -479,8 +479,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, setDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+        import { getFirestore, collection, addDoc, doc, setDoc, getDocs, getDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         const firebaseConfig = { 
             apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
             authDomain: "publicite-6445c.firebaseapp.com",
@@ -570,7 +569,7 @@
             leaderboardContainer.innerHTML = htmlContent;
         });
         
-        // 2. AUTOMATISATION DE L'INSCRIPTION : Vérification dynamique & Enregistrement
+        // 2. AUTOMATISATION DE L'INSCRIPTION : Vérification d'unicité & Enregistrement
         window.inscrireAuTournoi = async function() {
             const nom = document.getElementById('input-nom-cheval').value.trim();
             const numero = document.getElementById('input-num-cheval').value.trim();
@@ -582,11 +581,25 @@
                 return;
             }
 
+            if (!currentUserId) {
+                showModal("Authentification Requise", "Veuillez vous connecter à votre compte pour enregistrer votre cheval sur la piste.");
+                return;
+            }
+
             try {
+                // VÉRIFICATION : Un seul cheval par personne
+                const userDocRef = doc(db, "users", currentUserId);
+                const userSnap = await getDoc(userDocRef);
+                
+                if (userSnap.exists() && userSnap.data().tournoi_cheval) {
+                    showModal("Écurie Déjà Enregistrée", "<b>Restriction Professionnelle :</b> Conformément au règlement officiel du tournoi, chaque participant n'est autorisé à posséder qu'<b>un seul et unique cheval</b> en compétition. Votre écurie est déjà active sur la grille de départ.");
+                    return;
+                }
+
                 const querySnapshot = await getDocs(collection(db, "tournoi_chevaux"));
                 
                 if (querySnapshot.size >= 20) {
-                    showModal("Salon Complet", "Désolé, le tournoi vient de se remplir (20/20 joueurs).");
+                    showModal("Salon Complet", "Désolé, le tournoi vient d'atteindre sa capacité maximale (20/20 joueurs).");
                     return;
                 }
 
@@ -616,24 +629,22 @@
                 // Enregistrement dans le lobby global du tournoi
                 await addDoc(collection(db, "tournoi_chevaux"), donneesCheval);
 
-                // Enregistrement dans la collection "users" de l'utilisateur connecté
-                if (currentUserId) {
-                    await setDoc(doc(db, "users", currentUserId), {
-                        tournoi_cheval: donneesCheval
-                    }, { merge: true });
-                }
+                // Enregistrement de la propriété dans la collection "users" de l'utilisateur
+                await setDoc(userDocRef, {
+                    tournoi_cheval: donneesCheval
+                }, { merge: true });
 
                 // Nettoyage des champs
                 document.getElementById('input-nom-cheval').value = '';
                 document.getElementById('input-num-cheval').value = '';
 
-                showModal("Inscription Réussie !", `Félicitations <b>${nom}</b> ! Votre cheval #${numero} (${couleur}) a rejoint la piste en temps réel.`);
+                showModal("Inscription Réussie !", `Félicitations <b>${nom}</b> ! Votre cheval #${numero} (${couleur}) a officiellement intégré la grille de départ.`);
             } catch (e) {
                 console.error("Erreur critique lors de l'inscription : ", e);
                 showModal("Erreur", "Impossible de se connecter au serveur du tournoi pour l'instant.");
             }
         };
-
+        
         function verifierOrientationMobile() {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             const overlay = document.getElementById('orientation-overlay');
