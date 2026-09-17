@@ -395,11 +395,11 @@
         </button>
     </div>
 
-    <!-- SCRIPTS FIREBASE & LOGIQUE MÉTIER -->
+    <!-- SCRIPTS FIREBASE & LOGIQUE D'AUTOMATISATION DU TOURNOI -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { 
             apiKey: "AIzaSyBAL9enbjp1vnv7h6yariu_sWvUp5QeRVQ",
@@ -414,14 +414,134 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        onAuthStateChanged(auth, async (user) => {
+        let currentUserId = null;
+
+        // Suivi de l'utilisateur connecté pour l'enregistrer dans sa collection
+        onAuthStateChanged(auth, (user) => {
             if (user) {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    window.currentUserData = userDoc.data();
-                }
+                currentUserId = user.uid;
+            } else {
+                currentUserId = null;
             }
         });
+
+        // 1. AUTOMATISATION DU LOBBY : Écoute en temps réel de la liste des chevaux
+        const q = query(collection(db, "tournoi_chevaux"), orderBy("timestamp", "asc"));
+
+        onSnapshot(q, (snapshot) => {
+            const leaderboardContainer = document.getElementById('leaderboard-container');
+            if (!leaderboardContainer) return;
+
+            let htmlContent = `
+                <div class="finish-line-banner">
+                    <span>🏁 LIGNE D'ARRIVÉE & CLASSEMENT (${snapshot.size}/20 JOUEURS)</span>
+                    <span><i class="fa-solid fa-flag-checkered"></i> Piste Active</span>
+                </div>
+            `;
+
+            let position = 1;
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                htmlContent += `
+                    <div class="horse-row">
+                        <div class="horse-meta">
+                            <span class="horse-badge-num">#${position}</span>
+                            <div class="horse-mini-wrapper">
+                                <span class="horse-head-number">${data.numero}</span>
+                                <lottie-player class="horse-running-right" src="https://lottie.host/0de37597-dffe-4971-a7f4-5d1dba50714d/t37vcDyeQY.json" background="transparent" speed="1.5" style="width: 100%; height: 100%;" loop autoplay></lottie-player>
+                            </div>
+                            <span>${data.nom} <small style="color:#00ccff;">(${data.couleur})</small></span>
+                        </div>
+                        <span style="color: #00ffcc; font-size: 12px; font-weight: bold;">Prêt ➔</span>
+                    </div>
+                `;
+                position++;
+            });
+
+            // Si le salon atteint les 20 joueurs : verrouillage automatique
+            const registrationBox = document.querySelector('.registration-box');
+            if (snapshot.size >= 20) {
+                htmlContent += `<div style="text-align:center; color:#ffd700; padding:10px; font-weight:bold;">🔥 SALON COMPLET (20/20) ! Le départ de la course est imminent...</div>`;
+                if (registrationBox) {
+                    registrationBox.style.opacity = '0.5';
+                    registrationBox.style.pointerEvents = 'none';
+                }
+            } else {
+                if (registrationBox) {
+                    registrationBox.style.opacity = '1';
+                    registrationBox.style.pointerEvents = 'auto';
+                }
+            }
+
+            leaderboardContainer.innerHTML = htmlContent;
+        });
+
+        // 2. AUTOMATISATION DE L'INSCRIPTION : Vérification dynamique & Enregistrement global + Profil User
+        window.inscrireAuTournoi = async function() {
+            const nom = document.getElementById('input-nom-cheval').value.trim();
+            const numero = document.getElementById('input-num-cheval').value.trim();
+            const couleur = document.getElementById('select-couleur-cheval').value;
+            const avertissement = document.getElementById('avertissement-couleur');
+
+            if (!nom || !numero) {
+                alert("Veuillez renseigner le nom et le numéro de votre cheval !");
+                return;
+            }
+
+            try {
+                // Récupération de tous les inscrits actuels pour l'analyse non-mécanique
+                const querySnapshot = await getDocs(collection(db, "tournoi_chevaux"));
+                
+                if (querySnapshot.size >= 20) {
+                    alert("Désolé, le tournoi vient de se remplir (20/20 joueurs).");
+                    return;
+                }
+
+                // Vérification dynamique des couleurs prises par de vrais joueurs dans ce tournoi
+                let colorCount = 0;
+                querySnapshot.forEach((docSnap) => {
+                    if (docSnap.data().couleur === couleur) {
+                        colorCount++;
+                    }
+                });
+
+                // Avertissement informatif (Ne bloque JAMAIS l'inscription)
+                if (colorCount > 0) {
+                    if (avertissement) {
+                        avertissement.style.display = 'block';
+                        avertissement.innerHTML = `⚠️ Info : ${colorCount} autre(s) joueur(s) ont déjà choisi la couleur <b>${couleur}</b>.`;
+                    }
+                } else {
+                    if (avertissement) avertissement.style.display = 'none';
+                }
+
+                const donneesCheval = {
+                    nom: nom,
+                    numero: numero,
+                    couleur: couleur,
+                    timestamp: serverTimestamp()
+                };
+
+                // Enregistrement dans le lobby global du tournoi
+                await addDoc(collection(db, "tournoi_chevaux"), donneesCheval);
+
+                // Enregistrement dans la collection "users" de l'utilisateur connecté (si connecté)
+                if (currentUserId) {
+                    await setDoc(doc(db, "users", currentUserId), {
+                        tournoi_cheval: donneesCheval
+                    }, { merge: true });
+                }
+
+                // Nettoyage automatique des champs après succès
+                document.getElementById('input-nom-cheval').value = '';
+                document.getElementById('input-num-cheval').value = '';
+
+                alert(`Félicitations ${nom} ! Votre cheval #${numero} (${couleur}) est officiellement inscrit sur la piste.`);
+            } catch (e) {
+                console.error("Erreur critique lors de l'inscription : ", e);
+                alert("Erreur de connexion au serveur de tournoi.");
+            }
+        };
 
         function verifierOrientationMobile() {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -541,27 +661,6 @@
             } else {
                 sectionBouton.style.display = 'none';
             }
-        }
-
-        async function inscrireAuTournoi() {
-            const nom = document.getElementById('input-nom-cheval').value.trim();
-            const numero = document.getElementById('input-num-cheval').value.trim();
-            const couleur = document.getElementById('select-couleur-cheval').value;
-            const avertissement = document.getElementById('avertissement-couleur');
-
-            if (!nom || !numero) {
-                alert("Veuillez renseigner le nom et le numéro de votre cheval !");
-                return;
-            }
-
-            const couleursPrises = ['Rouge', 'Bleu'];
-            if (couleursPrises.includes(couleur)) {
-                avertissement.style.display = 'block';
-                avertissement.innerHTML = `⚠️ Attention : 5 personnes utilisent déjà la couleur <b>${couleur}</b>.`;
-                return;
-            }
-
-            alert(`Félicitations ${nom}! Votre cheval #${numero} (${couleur}) est inscrit au tournoi.`);
         }
 
         document.addEventListener("DOMContentLoaded", initialiserCatalogue);
