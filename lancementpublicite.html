@@ -755,74 +755,72 @@
 <style>
     .trends-container {
         display: flex;
-        flex-direction: column;
+        flex-direction: row; /* 🟢 Remet les cartes en ligne pour le swipe horizontal */
         gap: 12px;
+        overflow-x: auto;    /* 🟢 Active le défilement horizontal au doigt */
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 10px;
         width: 100%;
-        margin-bottom: 20px;
+        -webkit-overflow-scrolling: touch;
     }
-    
-    /* Format rectangle fixe pour garder l'alignement parfait */
+    .trends-container::-webkit-scrollbar {
+        display: none;
+    }
     .trend-card {
+        flex: 0 0 260px; /* 🟢 Largeur fixe pour garder le format rectangle par carte */
+        scroll-snap-align: start;
         display: flex;
         align-items: center;
         background: #131722;
         border: 1px solid #1e2235;
-        padding: 12px 15px;
+        padding: 12px;
         border-radius: 12px;
         cursor: pointer;
-        height: 70px; /* Hauteur fixe rectangulaire, impossible à casser */
+        height: 75px;
         box-sizing: border-box;
-        transition: transform 0.2s ease, border-color 0.2s ease;
-        -webkit-tap-highlight-color: transparent;
     }
-    
-    .trend-card:active {
-        transform: scale(0.98);
-        border-color: #00ffcc;
-    }
-
     .trend-icon {
         font-size: 20px;
         color: #00ffcc;
         background: rgba(0, 255, 204, 0.1);
-        width: 42px;
-        height: 42px;
+        width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 10px;
-        margin-right: 14px;
+        margin-right: 12px;
         flex-shrink: 0;
     }
-
-    /* La poche invisible qui bloque tout débordement */
     .trend-content {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        overflow: hidden; 
+        overflow: hidden;
         flex: 1;
     }
-
     .trend-title {
         font-size: 13px;
         font-weight: 700;
         color: #fff;
-        margin: 0 0 3px 0;
+        margin: 0 0 2px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
-
     .trend-reward {
         font-size: 11px;
         color: #8a8d9f;
+        margin: 0;
         white-space: nowrap;
         overflow: hidden;
-        margin: 0;
         text-overflow: ellipsis;
     }
 </style>
 
 <div class="trends-container">
-    <!-- Carte Parrainage avec effet machine à écrire -->
+    <!-- Carte Parrainage -->
     <div class="trend-card" onclick="redirectToPage('profil.html')">
         <div class="trend-icon"><i class="fa-solid fa-users"></i></div>
         <div class="trend-content">
