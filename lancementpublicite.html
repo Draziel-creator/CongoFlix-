@@ -755,30 +755,40 @@
 <style>
     .trends-container {
         display: flex;
-        flex-direction: row; /* 🟢 Remet les cartes en ligne pour le swipe horizontal */
+        flex-direction: row;
         gap: 12px;
-        overflow-x: auto;    /* 🟢 Active le défilement horizontal au doigt */
+        overflow-x: auto;
         overflow-y: hidden;
         scroll-snap-type: x mandatory;
-        padding-bottom: 10px;
+        padding: 4px 2px 12px 2px;
         width: 100%;
         -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
     }
     .trends-container::-webkit-scrollbar {
         display: none;
     }
     .trend-card {
-        flex: 0 0 260px; /* 🟢 Largeur fixe pour garder le format rectangle par carte */
+        flex: 0 0 260px;
+        width: 260px;
+        height: 75px;
         scroll-snap-align: start;
         display: flex;
         align-items: center;
         background: #131722;
         border: 1px solid #1e2235;
-        padding: 12px;
+        padding: 0 14px;
         border-radius: 12px;
         cursor: pointer;
-        height: 75px;
         box-sizing: border-box;
+        /* 🟢 Supprime le flash bleu et bloque la sélection de texte parasite */
+        -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    .trend-card:active {
+        background: #1a1f2c;
+        border-color: #00ffcc;
     }
     .trend-icon {
         font-size: 20px;
@@ -792,6 +802,7 @@
         border-radius: 10px;
         margin-right: 12px;
         flex-shrink: 0;
+        pointer-events: none; /* Empêche l'icône de bloquer le swipe */
     }
     .trend-content {
         display: flex;
@@ -799,11 +810,12 @@
         justify-content: center;
         overflow: hidden;
         flex: 1;
+        pointer-events: none; /* Empêche le texte de perturber le glissement tactile */
     }
     .trend-title {
         font-size: 13px;
         font-weight: 700;
-        color: #fff;
+        color: #fff !important;
         margin: 0 0 2px 0;
         white-space: nowrap;
         overflow: hidden;
@@ -811,7 +823,7 @@
     }
     .trend-reward {
         font-size: 11px;
-        color: #8a8d9f;
+        color: #8a8d9f !important;
         margin: 0;
         white-space: nowrap;
         overflow: hidden;
@@ -847,6 +859,30 @@
         </div>
     </div>
 </div>
+
+<script>
+const texteParrainage = "« Obtenez 5 % de bénéfice sur chaque récupération de points de vos filleuls ! »";
+let indexLettre = 0;
+
+function lancerMachineAEcrire() {
+    const elementCible = document.getElementById("typewriter-parrainage");
+    if (!elementCible) return;
+
+    if (indexLettre < texteParrainage.length) {
+        elementCible.textContent += texteParrainage.charAt(indexLettre);
+        indexLettre++;
+        setTimeout(lancerMachineAEcrire, 50);
+    } else {
+        setTimeout(() => {
+            elementCible.textContent = "";
+            indexLettre = 0;
+            lancerMachineAEcrire();
+        }, 3000);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", lancerMachineAEcrire);
+</script>
 
                 <h2 class="section-title">🌐 Activité Mondiale en Direct</h2>
                 <div class="globe-card" id="globeCard">
@@ -1651,32 +1687,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
   }
-</script>    
-
-<script>
-const texteParrainage = "« Obtenez 5 % de bénéfice sur chaque récupération de points de vos filleuls ! »";
-let indexLettre = 0;
-
-function lancerMachineAEcrire() {
-    const elementCible = document.getElementById("typewriter-parrainage");
-    if (!elementCible) return;
-
-    if (indexLettre < texteParrainage.length) {
-        elementCible.innerHTML += texteParrainage.charAt(indexLettre);
-        indexLettre++;
-        setTimeout(lancerMachineAEcrire, 50); // Vitesse de frappe (50 millisecondes par lettre)
-    } else {
-        // Pause de 3 secondes une fois la phrase finie, puis on efface et on recommence à l'infini
-        setTimeout(() => {
-            elementCible.innerHTML = "";
-            indexLettre = 0;
-            lancerMachineAEcrire();
-        }, 3000);
-    }
-}
-
-// Lancement automatique au chargement de la page
-document.addEventListener("DOMContentLoaded", lancerMachineAEcrire);
-</script>    
+</script>      
 </body>
 </html>
