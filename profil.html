@@ -3518,8 +3518,8 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==========================================
 window.g_userRank = window.g_userRank || 0;
 window.g_userCoins = window.g_userCoins || 0;
-const COINS_PER_DOLLAR = 1000; // Taux de conversion : 1000 pièces = 1 USD
-const MIN_WITHDRAW_USD = 50;   // Seuil minimum de retrait : 50 USD (50 000 pièces)
+const COINS_PER_DOLLAR = 10000; // Taux de conversion : 10000 pièces = 1 USD
+const MIN_WITHDRAW_USD = 5;   // Seuil minimum de retrait : 5 USD (50 000 pièces)
 
 // ==========================================
 // 2. FONCTIONS LOGIQUES ET FIREBASE
@@ -3534,7 +3534,7 @@ window.updateUserRewardsData = function(coinsAmount, rankLevel) {
         window.g_userRank = parseInt(rankLevel, 10) || 0;
     }
 
-    // Calcul de la valeur en USD (1000 coins = 1$)
+    // Calcul de la valeur en USD (10000 coins = 1$)
     const cashValue = window.g_userCoins / COINS_PER_DOLLAR;
 
     // Mise à jour de l'affichage dans le DOM
@@ -3607,8 +3607,8 @@ const currentRank = (typeof RANKS_METADATA !== 'undefined' && RANKS_METADATA[ran
 // ==========================================
 window.g_userRank = window.g_userRank || 0;
 window.g_userCoins = window.g_userCoins || 0;
-window.COINS_PER_DOLLAR = 1000;
-window.MIN_WITHDRAW_USD = 50;
+window.COINS_PER_DOLLAR = 10000;
+window.MIN_WITHDRAW_USD = 5;
 
 // Fix pour les événements HTML (oninput)
 window.handleUsernameInput = function(inputElement) {
@@ -3627,7 +3627,7 @@ window.evalWithdrawGateStatus = function() {
 
     const isLockHidden = lockOverlay && (lockOverlay.classList.contains('hidden') || lockOverlay.style.display === 'none');
     const isRankValid = (window.g_userRank >= 1) || isLockHidden;
-    const isBalanceValid = currentCashUSD >= window.MIN_WITHDRAW_USD; // 50$ (50 000 coins)
+    const isBalanceValid = currentCashUSD >= window.MIN_WITHDRAW_USD; // 0$ (0 coins)
 
     if (isRankValid && isBalanceValid) {
         btn.removeAttribute('disabled');
