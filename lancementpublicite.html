@@ -781,7 +781,6 @@
         border-radius: 12px;
         cursor: pointer;
         box-sizing: border-box;
-        /* 🟢 Supprime le flash bleu et bloque la sélection de texte parasite */
         -webkit-tap-highlight-color: transparent;
         -webkit-user-select: none;
         user-select: none;
@@ -802,7 +801,7 @@
         border-radius: 10px;
         margin-right: 12px;
         flex-shrink: 0;
-        pointer-events: none; /* Empêche l'icône de bloquer le swipe */
+        pointer-events: none;
     }
     .trend-content {
         display: flex;
@@ -810,13 +809,14 @@
         justify-content: center;
         overflow: hidden;
         flex: 1;
-        pointer-events: none; /* Empêche le texte de perturber le glissement tactile */
+        min-width: 0; /* 🟢 BLOQUE le texte pour qu'il ne dépasse jamais de la carte */
+        pointer-events: none;
     }
     .trend-title {
         font-size: 13px;
         font-weight: 700;
         color: #fff !important;
-        margin: 0 0 2px 0;
+        margin: 0 0 3px 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -859,6 +859,30 @@
         </div>
     </div>
 </div>
+
+<script>
+const texteParrainage = "« Obtenez 5 % de bénéfice sur chaque récupération de points de vos filleuls ! »";
+let indexLettre = 0;
+
+function lancerMachineAEcrire() {
+    const elementCible = document.getElementById("typewriter-parrainage");
+    if (!elementCible) return;
+
+    if (indexLettre < texteParrainage.length) {
+        elementCible.textContent += texteParrainage.charAt(indexLettre);
+        indexLettre++;
+        setTimeout(lancerMachineAEcrire, 50);
+    } else {
+        setTimeout(() => {
+            elementCible.textContent = "";
+            indexLettre = 0;
+            lancerMachineAEcrire();
+        }, 3000);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", lancerMachineAEcrire);
+</script>
 
 <script>
 const texteParrainage = "« Obtenez 5 % de bénéfice sur chaque récupération de points de vos filleuls ! »";
