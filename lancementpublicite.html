@@ -774,7 +774,7 @@
         height: 75px;
         scroll-snap-align: start;
         display: flex;
-        flex-direction: row !important; /* 🟢 Force l'icône à gauche et le texte à droite */
+        flex-direction: row !important;
         align-items: center;
         background: #131722;
         border: 1px solid #1e2235;
@@ -782,7 +782,7 @@
         border-radius: 12px;
         cursor: pointer;
         box-sizing: border-box;
-        overflow: hidden; /* 🟢 Barrière magique : empêche tout texte de sortir de la carte */
+        overflow: hidden; /* Empêche tout débordement hors de la carte */
         position: relative;
         -webkit-tap-highlight-color: transparent;
         -webkit-user-select: none;
@@ -805,13 +805,14 @@
         margin-right: 12px;
         flex-shrink: 0;
         pointer-events: none;
+        z-index: 2; /* Assure que l'icône est au premier plan */
     }
     .trend-content {
         display: flex;
         flex-direction: column;
         justify-content: center;
         flex: 1;
-        min-width: 0; /* 🟢 Empêche le texte long de repousser les bords */
+        min-width: 0;
         overflow: hidden;
         pointer-events: none;
     }
@@ -820,31 +821,45 @@
         font-weight: 700;
         color: #fff !important;
         margin: 0 0 2px 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        pointer-events: none;
     }
-    .trend-reward {
+
+    /* --- La fenêtre du "tapis roulant" (la poche) --- */
+    .ticker-window {
+        width: 100%;
+        overflow: hidden; /* Masque le texte qui sort de la fenêtre */
+        position: relative;
+        height: 14px; /* Hauteur exacte de la ligne de texte */
+    }
+
+    /* Le texte qui défile (à l'intérieur de la fenêtre) */
+    .trend-reward-ticker {
         font-size: 11px;
         color: #8a8d9f !important;
         margin: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: nowrap; /* Empêche le texte de passer à la ligne */
+        display: inline-block;
+        position: absolute;
+        left: 0;
+        /* L'animation sera gérée par JS pour un contrôle total */
+        transition: transform 0.05s linear; 
     }
 </style>
 
 <div class="trends-container">
-    <!-- Carte Parrainage -->
+    <!-- Carte Parrainage avec Tapis Roulant -->
     <div class="trend-card" onclick="redirectToPage('profil.html')">
         <div class="trend-icon"><i class="fa-solid fa-users"></i></div>
         <div class="trend-content">
             <p class="trend-title">Parrainage</p>
-            <span class="trend-reward" id="typewriter-parrainage"></span>
+            <!-- Fenêtre masquante pour l'effet -->
+            <div class="ticker-window">
+                <span class="trend-reward-ticker" id="ticker-parrainage"></span>
+            </div>
         </div>
     </div>
 
-    <!-- Carte Pub Flash -->
+    <!-- Carte Pub Flash (inchangée) -->
     <div class="trend-card" onclick="redirectToPage('activite.html')">
         <div class="trend-icon"><i class="fa-solid fa-bolt"></i></div>
         <div class="trend-content">
@@ -853,7 +868,7 @@
         </div>
     </div>
 
-    <!-- Carte Top Offre -->
+    <!-- Carte Top Offre (inchangée) -->
     <div class="trend-card" onclick="redirectToPage('activite.html')">
         <div class="trend-icon"><i class="fa-solid fa-fire"></i></div>
         <div class="trend-content">
@@ -862,36 +877,54 @@
         </div>
     </div>
 </div>
-
 <script>
 (function() {
-    const texteParrainageUnique = "« Obtenez 5 % de bénéfice sur chaque récupération de points de vos filleuls ! »";
-    let indexLettreUnique = 0;
+    const texteBrut = "« Obtenez 5 % de bénéfice sur chaque récupération de points de vos filleuls ! »";
+    // On ajoute une espace insécable à la fin pour créer une séparation nette dans la boucle
+    const texteFinal = texteBrut + "&nbsp;&nbsp;&nbsp;"; 
+    const elementTicker = document.getElementById("ticker-parrainage");
 
-    function lancerMachineAEcrireUnique() {
-        const elementCible = document.getElementById("typewriter-parrainage");
-        if (!elementCible) return;
+    function demarrerTapisRoulant() {
+        if (!elementTicker) return;
 
-        if (indexLettreUnique < texteParrainageUnique.length) {
-            elementCible.textContent += texteParrainageUnique.charAt(indexLettreUnique);
-            indexLettreUnique++;
-            setTimeout(lancerMachineAEcrireUnique, 50);
-        } else {
-            setTimeout(() => {
-                elementCible.textContent = "";
-                indexLettreUnique = 0;
-                lancerMachineAEcrireUnique();
-            }, 3000);
+        // Initialisation du texte
+        elementTicker.innerHTML = texteFinal;
+        
+        // On mesure la largeur du texte une fois inséré
+        const largeurTexte = elementTicker.offsetWidth;
+        
+        // Position de départ (à droite de la fenêtre)
+        let positionActuelle = 0; 
+        
+        function animation() {
+            // On déplace le texte vers la gauche de 1 pixel
+            positionActuelle -= 1;
+            
+            // Applique le déplacement
+            elementTicker.style.transform = `translateX(${positionActuelle}px)`;
+            
+            // Si le texte est complètement sorti de la fenêtre (par la gauche)
+            if (Math.abs(positionActuelle) >= largeurTexte) {
+                // On le remet instantanément au point de départ (à droite)
+                positionActuelle = 0;
+            }
+            
+            // Rappelle la fonction pour la prochaine image (environ 60 fois par seconde)
+            requestAnimationFrame(animation);
         }
+        
+        // Lance l'animation
+        animation();
     }
 
+    // Démarrage au chargement de la page
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", lancerMachineAEcrireUnique);
+        document.addEventListener("DOMContentLoaded", demarrerTapisRoulant);
     } else {
-        lancerMachineAEcrireUnique();
+        demarrerTapisRoulant();
     }
 })();
-</script>
+</script>               
                 <h2 class="section-title">🌐 Activité Mondiale en Direct</h2>
                 <div class="globe-card" id="globeCard">
                     <div class="globe-overlay-info">
