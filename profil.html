@@ -5231,19 +5231,25 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 <script>
-// Neutralise la règle des 50$ et force le bouton de retrait à fonctionner
-document.addEventListener("DOMContentLoaded", function() {
-    const btnWithdraw = document.getElementById("btn-withdraw-gains");
-    if (btnWithdraw) {
-        // Supprime l'attribut disabled s'il est rajouté par un autre script
-        btnWithdraw.removeAttribute("disabled");
-        // Rétablit l'affichage normal
-        btnWithdraw.style.pointerEvents = "auto";
-        btnWithdraw.style.opacity = "1";
-        // Force la redirection vers la page de retrait au clic
-        btnWithdraw.onclick = function(e) {
+// METHODE RADICALE : Tue tous les scripts cachés qui bloquent ce bouton
+window.addEventListener("load", function() {
+    const oldBtn = document.getElementById("btn-withdraw-gains");
+    if (oldBtn) {
+        // On clone le bouton pour effacer tous les écouteurs de scripts cachés
+        const newBtn = oldBtn.cloneNode(true);
+        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+        
+        // On le force à être totalement actif
+        newBtn.removeAttribute("disabled");
+        newBtn.style.pointerEvents = "auto";
+        newBtn.style.opacity = "1";
+        newBtn.style.cursor = "pointer";
+        
+        // On lui réassigne proprement l'action de redirection
+        newBtn.addEventListener("click", function(e) {
+            e.preventDefault();
             window.location.href = 'retrait.html';
-        };
+        });
     }
 });
 </script>    
