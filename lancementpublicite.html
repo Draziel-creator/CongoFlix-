@@ -774,6 +774,7 @@
         height: 75px;
         scroll-snap-align: start;
         display: flex;
+        flex-direction: row !important; /* 🟢 Force l'icône à gauche et le texte à droite */
         align-items: center;
         background: #131722;
         border: 1px solid #1e2235;
@@ -781,6 +782,8 @@
         border-radius: 12px;
         cursor: pointer;
         box-sizing: border-box;
+        overflow: hidden; /* 🟢 Barrière magique : empêche tout texte de sortir de la carte */
+        position: relative;
         -webkit-tap-highlight-color: transparent;
         -webkit-user-select: none;
         user-select: none;
@@ -790,11 +793,11 @@
         border-color: #00ffcc;
     }
     .trend-icon {
-        font-size: 20px;
+        font-size: 18px;
         color: #00ffcc;
         background: rgba(0, 255, 204, 0.1);
-        width: 40px;
-        height: 40px;
+        width: 38px;
+        height: 38px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -807,16 +810,16 @@
         display: flex;
         flex-direction: column;
         justify-content: center;
-        overflow: hidden;
         flex: 1;
-        min-width: 0; /* 🟢 BLOQUE le texte pour qu'il ne dépasse jamais de la carte */
+        min-width: 0; /* 🟢 Empêche le texte long de repousser les bords */
+        overflow: hidden;
         pointer-events: none;
     }
     .trend-title {
         font-size: 13px;
         font-weight: 700;
         color: #fff !important;
-        margin: 0 0 3px 0;
+        margin: 0 0 2px 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -861,27 +864,33 @@
 </div>
 
 <script>
-const texteParrainage = "« Obtenez 5 % de bénéfice sur chaque récupération de points de vos filleuls ! »";
-let indexLettre = 0;
+(function() {
+    const texteParrainageUnique = "« Obtenez 5 % de bénéfice sur chaque récupération de points de vos filleuls ! »";
+    let indexLettreUnique = 0;
 
-function lancerMachineAEcrire() {
-    const elementCible = document.getElementById("typewriter-parrainage");
-    if (!elementCible) return;
+    function lancerMachineAEcrireUnique() {
+        const elementCible = document.getElementById("typewriter-parrainage");
+        if (!elementCible) return;
 
-    if (indexLettre < texteParrainage.length) {
-        elementCible.textContent += texteParrainage.charAt(indexLettre);
-        indexLettre++;
-        setTimeout(lancerMachineAEcrire, 50);
-    } else {
-        setTimeout(() => {
-            elementCible.textContent = "";
-            indexLettre = 0;
-            lancerMachineAEcrire();
-        }, 3000);
+        if (indexLettreUnique < texteParrainageUnique.length) {
+            elementCible.textContent += texteParrainageUnique.charAt(indexLettreUnique);
+            indexLettreUnique++;
+            setTimeout(lancerMachineAEcrireUnique, 50);
+        } else {
+            setTimeout(() => {
+                elementCible.textContent = "";
+                indexLettreUnique = 0;
+                lancerMachineAEcrireUnique();
+            }, 3000);
+        }
     }
-}
 
-document.addEventListener("DOMContentLoaded", lancerMachineAEcrire);
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", lancerMachineAEcrireUnique);
+    } else {
+        lancerMachineAEcrireUnique();
+    }
+})();
 </script>
                 <h2 class="section-title">🌐 Activité Mondiale en Direct</h2>
                 <div class="globe-card" id="globeCard">
