@@ -750,24 +750,105 @@
         Regarder et gagner <i class="fa-solid fa-play" style="font-size: 11px;"></i>
     </button>
 
-                <h2 class="section-title">🔥 Tendances du jour</h2>
-                <div class="trends-container">
-                     <div class="trend-card" onclick="redirectToPage('profil.html')">
-                        <div class="trend-icon"><i class="fa-solid fa-users"></i></div>
-                        <p class="trend-title">Parrainage</p>
-                        <span class="trend-reward">« Obtenez 5 % de bénéfice sur chaque récupération de points du jour par chacun de vos filleuls ! »</span>
-                    </div>
-                    <div class="trend-card" onclick="redirectToPage('activite.html')">
-                        <div class="trend-icon"><i class="fa-solid fa-bolt"></i></div>
-                        <p class="trend-title">Pub Flash</p>
-                        <span class="trend-reward"></span>
-                    </div>
-                    <div class="trend-card" onclick="redirectToPage('activite.html')">
-                        <div class="trend-icon"><i class="fa-solid fa-fire"></i></div>
-                        <p class="trend-title">Top Offre</p>
-                        <span class="trend-reward"></span>
-                    </div>
-                    </div>
+<h2 class="section-title">🔥 Tendances du jour</h2>
+
+<style>
+    .trends-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    /* Format rectangle fixe pour garder l'alignement parfait */
+    .trend-card {
+        display: flex;
+        align-items: center;
+        background: #131722;
+        border: 1px solid #1e2235;
+        padding: 12px 15px;
+        border-radius: 12px;
+        cursor: pointer;
+        height: 70px; /* Hauteur fixe rectangulaire, impossible à casser */
+        box-sizing: border-box;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .trend-card:active {
+        transform: scale(0.98);
+        border-color: #00ffcc;
+    }
+
+    .trend-icon {
+        font-size: 20px;
+        color: #00ffcc;
+        background: rgba(0, 255, 204, 0.1);
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        margin-right: 14px;
+        flex-shrink: 0;
+    }
+
+    /* La poche invisible qui bloque tout débordement */
+    .trend-content {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden; 
+        flex: 1;
+    }
+
+    .trend-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+        margin: 0 0 3px 0;
+    }
+
+    .trend-reward {
+        font-size: 11px;
+        color: #8a8d9f;
+        white-space: nowrap;
+        overflow: hidden;
+        margin: 0;
+        text-overflow: ellipsis;
+    }
+</style>
+
+<div class="trends-container">
+    <!-- Carte Parrainage avec effet machine à écrire -->
+    <div class="trend-card" onclick="redirectToPage('profil.html')">
+        <div class="trend-icon"><i class="fa-solid fa-users"></i></div>
+        <div class="trend-content">
+            <p class="trend-title">Parrainage</p>
+            <span class="trend-reward" id="typewriter-parrainage"></span>
+        </div>
+    </div>
+
+    <!-- Carte Pub Flash -->
+    <div class="trend-card" onclick="redirectToPage('activite.html')">
+        <div class="trend-icon"><i class="fa-solid fa-bolt"></i></div>
+        <div class="trend-content">
+            <p class="trend-title">Pub Flash</p>
+            <span class="trend-reward">Missions rapides disponibles</span>
+        </div>
+    </div>
+
+    <!-- Carte Top Offre -->
+    <div class="trend-card" onclick="redirectToPage('activite.html')">
+        <div class="trend-icon"><i class="fa-solid fa-fire"></i></div>
+        <div class="trend-content">
+            <p class="trend-title">Top Offre</p>
+            <span class="trend-reward">Maximisez vos gains journaliers</span>
+        </div>
+    </div>
+</div>
 
                 <h2 class="section-title">🌐 Activité Mondiale en Direct</h2>
                 <div class="globe-card" id="globeCard">
@@ -1572,6 +1653,32 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
   }
+</script>    
+
+<script>
+const texteParrainage = "« Obtenez 5 % de bénéfice sur chaque récupération de points de vos filleuls ! »";
+let indexLettre = 0;
+
+function lancerMachineAEcrire() {
+    const elementCible = document.getElementById("typewriter-parrainage");
+    if (!elementCible) return;
+
+    if (indexLettre < texteParrainage.length) {
+        elementCible.innerHTML += texteParrainage.charAt(indexLettre);
+        indexLettre++;
+        setTimeout(lancerMachineAEcrire, 50); // Vitesse de frappe (50 millisecondes par lettre)
+    } else {
+        // Pause de 3 secondes une fois la phrase finie, puis on efface et on recommence à l'infini
+        setTimeout(() => {
+            elementCible.innerHTML = "";
+            indexLettre = 0;
+            lancerMachineAEcrire();
+        }, 3000);
+    }
+}
+
+// Lancement automatique au chargement de la page
+document.addEventListener("DOMContentLoaded", lancerMachineAEcrire);
 </script>    
 </body>
 </html>
