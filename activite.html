@@ -1093,17 +1093,77 @@ body, html {
 <div class="space-content-panel" id="space-panel-3" style="display: none;">
     <div class="section-title">👑 Murs d'Offres VIP</div>
     
+    <!-- Styles intégrés pour les effets vitrine, miroir et pulsation -->
+    <style>
+        @keyframes vipPulse {
+            0% { transform: scale(1); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+            50% { transform: scale(1.02); box-shadow: 0 6px 20px rgba(255,255,255,0.2); }
+            100% { transform: scale(1); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        }
+        .vip-btn-vitrine {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+            animation: vipPulse 3s infinite ease-in-out;
+            transition: transform 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        /* Effet miroir / reflet vitrine sur la moitié supérieure du bouton */
+        .vip-btn-vitrine::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3), rgba(255,255,255,0.0));
+            border-radius: 12px 12px 0 0;
+            pointer-events: none;
+        }
+        .vip-btn-vitrine:active {
+            transform: scale(0.97);
+        }
+        .btn-bleu-ciel {
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+        }
+        .btn-jaune {
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #1a1a1a !important;
+            text-shadow: 0 1px 1px rgba(255,255,255,0.5) !important;
+        }
+        .btn-vert {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+        }
+    </style>
+
     <!-- Conteneur principal avec une hauteur minimale pour stabiliser l'overlay sur mobile -->
-    <div class="vip-zone-card" id="bloc-zone-vip" style="position: relative; background: #131722; padding: 15px; border-radius: 12px; min-height: 180px;">
+    <div class="vip-zone-card" id="bloc-zone-vip" style="position: relative; background: #131722; padding: 15px; border-radius: 12px; min-height: 230px;">
         
-        <!-- Les boutons des murs (accessibles uniquement si débloqué) -->
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <button onclick="ouvrirIframeOffresVIP('mur1')" style="padding: 12px; background: #1e2235; color: #fff; border: 1px solid #2a2e39; border-radius: 8px; cursor: pointer;">Accéder au Mur VIP 1</button>
-            <button onclick="ouvrirIframeOffresVIP('mur2')" style="padding: 12px; background: #1e2235; color: #fff; border: 1px solid #2a2e39; border-radius: 8px; cursor: pointer;">Accéder au Mur VIP 2</button>
-            <button onclick="ouvrirIframeOffresVIP('mur3')" style="padding: 12px; background: #1e2235; color: #fff; border: 1px solid #2a2e39; border-radius: 8px; cursor: pointer;">Accéder au Mur VIP 3</button>
+        <!-- Les boutons des murs avec les styles demandés -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <button onclick="ouvrirIframeOffresVIP('mur1')" class="vip-btn-vitrine btn-bleu-ciel">
+                <i class="fa-solid fa-gem" style="margin-right: 8px;"></i> Accéder au Mur VIP 1
+            </button>
+            <button onclick="ouvrirIframeOffresVIP('mur2')" class="vip-btn-vitrine btn-jaune">
+                <i class="fa-solid fa-crown" style="margin-right: 8px;"></i> Accéder au Mur VIP 2
+            </button>
+            <button onclick="ouvrirIframeOffresVIP('mur3')" class="vip-btn-vitrine btn-vert">
+                <i class="fa-solid fa-bolt" style="margin-right: 8px;"></i> Accéder au Mur VIP 3
+            </button>
         </div>
 
-        <!-- Overlay de verrouillage (ajusté avec des ID précis et des propriétés tactiles) -->
+        <!-- Overlay de verrouillage -->
         <div id="vip-lock-overlay" onclick="intercepterClicVip(event)" style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(7, 9, 20, 0.95); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; cursor:pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: opacity 0.8s ease, background 0.5s ease;">
             <i class="fa-solid fa-lock" id="vip-lock-icon" style="font-size: 36px; color: #ff3b30; margin-bottom: 10px; pointer-events: none; transition: all 0.5s ease;"></i>
             <span id="vip-lock-title" style="color: #fff; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; pointer-events: none; transition: color 0.5s ease;">Espace VIP Verrouillé</span>
@@ -1111,7 +1171,6 @@ body, html {
         </div>
     </div>
 </div>
-
 
         <!-- ========================================== -->
         <!-- ESPACE 4 : BONUS EXCLUSIFS -->
