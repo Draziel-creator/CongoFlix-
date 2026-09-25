@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shorts & TikTok Feed</title>
+    <title>Phoenix Stream Feed</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: sans-serif; }
-        
-        /* Conteneur Plein Écran Vertical */
+        body, html { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+
+        /* Conteneur défilement TikTok / Phoenix */
         .feed-container {
             height: 100vh;
             width: 100vw;
@@ -20,68 +21,178 @@
         .feed-container::-webkit-scrollbar { display: none; }
 
         .video-card {
+            position: relative;
             width: 100vw;
             height: 100vh;
             scroll-snap-align: start;
             scroll-snap-stop: always;
-            position: relative;
-            background: #111;
+            background: #000;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        iframe {
+        /* Lecteur MP4 Brut Plein Écran */
+        video {
             width: 100%;
             height: 100%;
-            border: none;
-            pointer-events: auto;
+            object-fit: cover;
         }
 
-        .overlay-info {
+        /* Interface utilisateur style application native */
+        .bottom-info {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             left: 15px;
-            right: 15px;
+            right: 80px;
             z-index: 10;
-            color: white;
-            pointer-events: none;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
+
+        .side-actions {
+            position: absolute;
+            right: 15px;
+            bottom: 100px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        /* Loader pendant l'extraction du flux */
+        .loader {
+            position: absolute;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-left-color: #ef4444;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <div class="feed-container" id="feed">
-        <!-- Les vraies vidéos automatiques seront injectées ici -->
+        <!-- Les cartes vidéos chargées dynamiquement -->
     </div>
 
     <script>
-        // IDs de vraies vidéos publiques YouTube Shorts (Mise à jour automatique possible via API)
-        // Les Shorts YouTube se lisent parfaitement dans AppCreator24 sans blocage CORS
-        const youtubeShortsIDs = [
-            "L3N2S_9x008",
-            "J---aiyznGQ",
-            "3JX4-iRTh18",
-            "fC7oUOUEEi4"
+        // 1. Liste des liens de vidéos RDC / Buzz (TikTok, Youtube Shorts) que tu veux afficher dans ton appli
+        const sourceVideos = [
+            {
+                url: "https://www.tiktok.com/@tiktok/video/7106594312292453675", // Exemple de lien TikTok
+                author: "@RDC_Vibes",
+                desc: "Les meilleurs moments de la musique Congolaise 🇨🇩🔥 #Kinshasa #RDC"
+            },
+            {
+                url: "https://www.tiktok.com/@tiktok/video/7016543210987654321", // Exemple
+                author: "@Goma_News",
+                desc: "Actu & Buzz direct depuis Goma 📍 #RDC"
+            }
         ];
 
         const feed = document.getElementById('feed');
 
-        function loadRealVideos() {
-            feed.innerHTML = youtubeShortsIDs.map((id, index) => `
-                <div class="video-card">
-                    <iframe 
-                        src="https://www.youtube.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&controls=0&mute=0&rel=0&modestbranding=1" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen>
-                    </iframe>
-                </div>
-            `).join('');
+        // 2. Moteur d'extraction style Phoenix (Utilise un proxy d'extraction de flux direct .mp4)
+        async function fetchDirectMp4(videoUrl) {
+            try {
+                // API d'extraction sans filigrane
+                const apiUrl = `https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(videoUrl)}`;
+                const res = await fetch(apiUrl);
+                const data = await res.json();
+                
+                // Retourne l'URL du fichier MP4 direct sans filigrane
+                return data.video.noWatermark || data.video.watermark;
+            } catch (err) {
+                console.error("Erreur d'extraction flux direct :", err);
+                return null;
+            }
         }
 
-        // Lancement au chargement de la page
-        window.onload = loadRealVideos;
+        // 3. Construction du Feed Vidéo
+        async function buildFeed() {
+            feed.innerHTML = ''; // Nettoyage
+
+            for (let i = 0; i < sourceVideos.length; i++) {
+                const item = sourceVideos[i];
+                
+                // Création du bloc vidéo
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.innerHTML = `
+                    <div class="loader" id="loader-${i}"></div>
+                    <video id="video-${i}" loop playsinline preload="none" onclick="togglePlay(this)"></video>
+                    
+                    <div class="side-actions">
+                        <div class="action-icon"><i class="fa-solid fa-heart"></i></div>
+                        <div class="action-icon"><i class="fa-solid fa-comment"></i></div>
+                        <div class="action-icon"><i class="fa-solid fa-share"></i></div>
+                    </div>
+
+                    <div class="bottom-info">
+                        <h3 class="font-bold text-base mb-1">${item.author}</h3>
+                        <p class="text-sm opacity-90">${item.desc}</p>
+                    </div>
+                `;
+                feed.appendChild(card);
+
+                // Extraction du MP4 en arrière-plan
+                const mp4Url = await fetchDirectMp4(item.url);
+                const videoElem = document.getElementById(`video-${i}`);
+                const loaderElem = document.getElementById(`loader-${i}`);
+
+                if (mp4Url) {
+                    videoElem.src = mp4Url;
+                    loaderElem.style.display = 'none'; // Masquer le chargement
+                }
+            }
+
+            setupScrollObserver();
+        }
+
+        // 4. Lecture automatique au défilement (Scroll)
+        function setupScrollObserver() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const video = entry.target.querySelector('video');
+                    if (video && video.src) {
+                        if (entry.isIntersecting) {
+                            video.play().catch(() => {});
+                        } else {
+                            video.pause();
+                            video.currentTime = 0;
+                        }
+                    }
+                });
+            }, { threshold: 0.7 });
+
+            document.querySelectorAll('.video-card').forEach(card => observer.observe(card));
+        }
+
+        function togglePlay(video) {
+            if (video.paused) video.play();
+            else video.pause();
+        }
+
+        // Initialisation
+        buildFeed();
     </script>
 </body>
 </html>
