@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TikTok Feed - Web App</title>
+    <!-- Tailwind CSS pour un design ultra moderne -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Conteneur défilement TikTok */
+        .tiktok-container {
+            height: 100vh;
+            width: 100vw;
+            max-width: 480px; /* Taille smartphone sur PC */
+            margin: 0 auto;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scrollbar-width: none; /* Cache la barre de scroll */="https://p16.muscdn.com/obj/tos-maliva-p-0068/06kv6rfcesljdjr45ukb0000d844090v0200010605",
+        }
+        .tiktok-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Chaque carte vidéo */
+        .video-card {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Lecteur Vidéo Plein Écran Vertical */
+        .video-player {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Gradient Overlay pour lisibilité */
+        .overlay-gradient {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0.3) 100%);
+            pointer-events: none;
+        }
+
+        /* Boutons d'action latéraux */
+        .side-bar {
+            position: absolute;
+            right: 12px;
+            bottom: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            z-index: 20;
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .action-btn:active {
+            transform: scale(1.2);
+        }
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+
+        /* Infos Auteur / Légende */
+        .bottom-info {
+            position: absolute;
+            bottom: 25px;
+            left: 15px;
+            right: 80px;
+            z-index: 20;
+            color: white;
+        }
+
+        /* Indicateur de pause / Lecture */
+        .play-pause-overlay {
+            position: absolute;
+            font-size: 60px;
+            color: rgba(255,255,255,0.7);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        /* Animation Disque de Musique */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .music-disc {
+            animation: spin 3s linear infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Overlay de démarrage rapide pour activer le son (Politique Autoplay Navigateurs) -->
+    <div id="start-screen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center text-white cursor-pointer" onclick="startApp()">
+        <div class="w-20 h-20 bg-pink-600 rounded-full flex items-center justify-center text-3xl mb-4 animate-bounce">
+            <i class="fa-solid fa-play ml-1"></i>
+        </div>
+        <p class="text-xl font-bold">Appuyer pour lancer le Feed</p>
+        <p class="text-xs text-gray-400 mt-2">Expérience TikTok Verticale Directe</p>
+    </div>
+
+    <!-- Feed principal TikTok -->
+    <div class="tiktok-container" id="video-feed">
+        <!-- Les vidéos seront générées ici dynamiquement -->
+    </div>
+
+    <script>
+        // Vrais flux vidéos MP4 directes en format vertical HD (Sans Filigrane)
+        const videosData = [
+            {
+                id: 1,
+                src: "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-clothing-store-40049-large.mp4",
+                author: "@fashion_vibes",
+                caption: "Nouveau look cyberpunk 🔥 #style #fashion #neon",
+                music: "Son original - FashionVibes",
+                likes: "124.5K",
+                comments: "842",
+                avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+            },
+            {
+                id: 2,
+                src: "https://assets.mixkit.co/videos/preview/mixkit-skater-performing-a-trick-in-a-skatepark-42893-large.mp4",
+                author: "@skate_pro",
+                caption: "Plaqué du premier coup ! 🛹💨 #skate #trick #fun",
+                music: "Skate Park Energy - Official Sound",
+                likes: "89.2K",
+                comments: "310",
+                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+            },
+            {
+                id: 3,
+                src: "https://assets.mixkit.co/videos/preview/mixkit-young-woman-dancing-in-a-wild-way-42614-large.mp4",
+                author: "@dance_trend",
+                caption: "Nouveau challenge TikTok dance 💃 Suivez le rythme !",
+                music: "Dance Beat 2026 - TikTok Hit",
+                likes: "450.1K",
+                comments: "2.4K",
+                avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+            },
+            {
+                id: 4,
+                src: "https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-smartphone-with-green-screen-41528-large.mp4",
+                author: "@tech_insider",
+                caption: "L'application ultime pour votre téléphone 📲 #tech #app",
+                music: "Futuristic Tech Beats",
+                likes: "32.8K",
+                comments: "115",
+                avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop"
+            }
+        ];
+
+        const container = document.getElementById('video-feed');
+
+        // Générer le HTML des cartes vidéo
+        function renderFeed() {
+            container.innerHTML = videosData.map((video, index) => `
+                <div class="video-card" data-index="${index}">
+                    <video 
+                        class="video-player" 
+                        src="${video.src}" 
+                        loop 
+                        playsinline
+                        preload="metadata"
+                        onclick="togglePlay(this)">
+                    </video>
+
+                    <div class="play-pause-overlay">
+                        <i class="fa-solid fa-play"></i>
+                    </div>
+
+                    <div class="overlay-gradient"></div>
+
+                    <!-- Barre d'actions à droite -->
+                    <div class="side-bar">
+                        <!-- Photo Profil -->
+                        <div class="relative mb-2">
+                            <img src="${video.avatar}" class="w-12 h-12 rounded-full border-2 border-white object-cover">
+                            <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-plus"></i>
+                            </div>
+                        </div>
+
+                        <!-- Bouton Like -->
+                        <div class="action-btn" onclick="toggleLike(this)">
+                            <div class="action-icon">
+                                <i class="fa-solid fa-heart"></i>
+                            </div>
+                            <span class="text-xs font-semibold">${video.likes}</span>
+                        </div>
+
+                        <!-- Bouton Commentaire -->
+                        <div class="action-btn">
+                            <div class="action-icon">
+                                <i class="fa-solid fa-comment-dots"></i>
+                            </div>
+                            <span class="text-xs font-semibold">${video.comments}</span>
+                        </div>
+
+                        <!-- Bouton Partager -->
+                        <div class="action-btn" onclick="shareVideo('${video.caption}')">
+                            <div class="action-icon">
+                                <i class="fa-solid fa-share"></i>
+                            </div>
+                            <span class="text-xs font-semibold">Partager</span>
+                        </div>
+
+                        <!-- Disque Musique -->
+                        <div class="w-10 h-10 rounded-full bg-gray-800 border-4 border-gray-900 flex items-center justify-center overflow-hidden music-disc mt-2">
+                            <img src="${video.avatar}" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+
+                    <!-- Informations Auteur & Légende -->
+                    <div class="bottom-info">
+                        <h3 class="font-bold text-lg mb-1 drop-shadow-md">${video.author}</h3>
+                        <p class="text-sm opacity-90 mb-3 line-clamp-2 drop-shadow">${video.caption}</p>
+                        <div class="flex items-center text-xs opacity-80">
+                            <i class="fa-solid fa-music mr-2"></i>
+                            <p class="truncate">${video.music}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            setupIntersectionObserver();
+        }
+
+        // Gestion de la lecture automatique au Scroll (Intersection Observer)
+        function setupIntersectionObserver() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const video = entry.target.querySelector('video');
+                    if (entry.isIntersecting) {
+                        video.play().catch(e => console.log("Autoplay bloqué :", e));
+                    } else {
+                        video.pause();
+                        video.currentTime = 0; // Remet au début quand on quitte
+                    }
+                });
+            }, { threshold: 0.6 }); // 60% de la vidéo doit être visible
+
+            document.querySelectorAll('.video-card').forEach(card => {
+                observer.observe(card);
+            });
+        }
+
+        // Mettre en pause ou relancer la vidéo au clic
+        function togglePlay(video) {
+            const card = video.closest('.video-card');
+            const icon = card.querySelector('.play-pause-overlay');
+            
+            if (video.paused) {
+                video.play();
+                icon.style.opacity = '0';
+            } else {
+                video.pause();
+                icon.style.opacity = '1';
+                setTimeout(() => {
+                    if(!video.paused) icon.style.opacity = '0';
+                }, 1000);
+            }
+        }
+
+        // Lancer l'application après le premier clic utilisateur (Autorisation Audio)
+        function startApp() {
+            document.getElementById('start-screen').style.display = 'none';
+            const firstVideo = document.querySelector('video');
+            if(firstVideo) {
+                firstVideo.play();
+            }
+        }
+
+        // Aimer une vidéo (changement de couleur)
+        function toggleLike(element) {
+            const icon = element.querySelector('.fa-heart');
+            if (icon.classList.contains('text-red-500')) {
+                icon.classList.remove('text-red-500');
+            } else {
+                icon.classList.add('text-red-500');
+            }
+        }
+
+        // Partager
+        function shareVideo(title) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'TikTok Video',
+                    text: title,
+                    url: window.location.href,
+                });
+            } else {
+                alert("Lien de la vidéo copié !");
+            }
+        }
+
+        // Initialisation
+        renderFeed();
+    </script>
+</body>
+</html>
