@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>CongoFlix - Espace Gaming</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root { 
+            --gold: #ffd700; 
+            --gold-gradient: linear-gradient(135deg, #ffd700, #ffb300);
+            --blue-verify: #1d9bf0;
+            --bg: #050505; 
+            --card-bg: linear-gradient(145deg, rgba(20,20,20,0.9), rgba(10,10,10,0.95)); 
+            --search-bg: rgba(255, 255, 255, 0.08);
+            --mirror-border: rgba(255, 215, 0, 0.25);
+        }
+        
+        body { 
+            background: var(--bg); 
+            color: #fff; 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; 
+            padding: 0;
+            padding-top: env(safe-area-inset-top);
+            overflow-x: hidden;
+        }
+
+        /* BARRE DU HAUT / HEADER GAMING */
+        .hero-section {
+            position: relative;
+            width: 100%;
+            padding: 20px 15px 15px 15px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(5,5,5,1) 100%);
+            border-bottom: 1px solid var(--mirror-border);
+            box-sizing: border-box;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.05);
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .back-btn { 
+            color: #fff;
+            font-size: 22px;
+            text-decoration: none;
+            transition: transform 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .back-btn:active {
+            transform: scale(0.9);
+            color: var(--gold);
+        }
+
+        .search-box {
+            flex: 1;
+            height: 42px;
+            background: var(--search-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 21px;
+            border: 1px solid var(--mirror-border);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .search-icon { color: var(--gold); font-size: 15px; margin-right: 10px; }
+
+        #searchInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            z-index: 2;
+        }
+
+        #searchPlaceholder {
+            position: absolute;
+            left: 40px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            z-index: 1;
+        }
+
+        #typewriter-cursor {
+            width: 2px;
+            height: 14px;
+            background-color: var(--gold);
+            margin-left: 2px;
+            animation: blink 0.7s infinite;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* TITRE GAMING LUMINEUX */
+        .province-label {
+            width: 100%;
+            text-align: center;
+            font-size: 26px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #fff;
+            animation: shine 3s infinite alternate;
+            margin-top: 5px;
+        }
+
+        @keyframes shine {
+            from { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--gold); opacity: 0.9; }
+            to { text-shadow: 0 0 10px #fff, 0 0 25px var(--gold), 0 0 40px var(--gold); opacity: 1; }
+        }
+
+        /* BANNIÈRE D'EXPLICATION GAMING */
+        .container { padding: 15px; max-width: 800px; margin: 0 auto; }
+
+        .gaming-info-banner {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(0, 0, 0, 0.6));
+            border: 1px solid var(--mirror-border);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .gaming-info-icon {
+            font-size: 32px;
+            color: var(--gold);
+            background: rgba(255, 215, 0, 0.1);
+            width: 55px;
+            height: 55px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--mirror-border);
+            flex-shrink: 0;
+        }
+
+        .gaming-info-text h3 {
+            margin: 0 0 4px 0;
+            font-size: 15px;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .gaming-info-text p {
+            margin: 0;
+            font-size: 12px;
+            color: #ccc;
+            line-height: 1.4;
+        }
+
+        .section-header { 
+            color: var(--gold); 
+            font-size: 13px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* LISTE DE JEUX EN LIGNE HORIZONTALE FINE (EFFET MIROIR) */
+        #catalogue-jeux-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .jeu-card { 
+            display: flex; 
+            align-items: center;
+            background: var(--card-bg); 
+            border-radius: 14px; 
+            height: 80px; 
+            padding: 8px 12px;
+            box-sizing: border-box;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* EFFET MIROIR MAGNIFIQUE SUR CHAQUE CARTE */
+        .jeu-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.15), transparent);
+            transform: skewX(-25deg);
+            transition: 0.75s;
+        }
+
+        .jeu-card:hover::before, .jeu-card:active::before {
+            left: 150%;
+        }
+
+        .jeu-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.15);
+        }
+
+        /* IMAGE DE GAUCHE */
+        .jeu-thumb {
+            width: 64px;
+            height: 64px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            background: #111;
+        }
+
+        /* DU MILIEU : TITRE DU JEU */
+        .jeu-info {
+            flex: 1;
+            padding: 0 12px;
+            overflow: hidden;
+        }
+
+        .jeu-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            margin: 0 0 4px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-transform: capitalize;
+        }
+
+        .jeu-badge {
+            font-size: 10px;
+            color: var(--gold);
+            background: rgba(255, 215, 0, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        /* À DROITE : BOUTON JOUER AVEC EFFET MIROIR */
+        .btn-jouer {
+            background: var(--gold-gradient);
+            color: #000;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            flex-shrink: 0;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .btn-jouer:active {
+            transform: scale(0.95);
+        }
+
+        #loading { text-align: center; color: var(--gold); padding: 40px 0; font-size: 14px; }
+
+        /* BOUTON AFFICHER PLUS */
+        .section-bouton-plus {
+            text-align: center;
+            margin: 25px 0 15px 0;
+            display: none;
+        }
+
+        .btn-plus {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--gold);
+            border: 1px solid var(--gold);
+            padding: 14px 30px;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .btn-plus:active {
+            background: var(--gold);
+            color: #000;
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BARRE SUPERIEURE AVEC RECHERCHE ET TITRE (SANS PUB) -->
+    <div class="hero-section">
+        <div class="top-bar">
+            <!-- FLECHE RETOUR ARRIERE CONSERVÉE INTACTE -->
+            <a href="go:W1" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+            
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <div id="searchPlaceholder">
+                    <span id="typewriter-text"></span><div id="typewriter-cursor"></div>
+                </div>
+                <input type="text" id="searchInput" autocomplete="off" oninput="filtrerJeux()">
+            </div>
+        </div>
+        <div class="province-label"><i class="fa-solid fa-gamepad"></i> ESPACE GAMING</div>
+    </div>
+
+    <div class="container">
+        
+        <!-- EXPLICATION DE L'ESPACE GAMING INTEGRÉ -->
+        <div class="gaming-info-banner">
+            <div class="gaming-info-icon">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div class="gaming-info-text">
+                <h3>Jeux Instantanés CongoFlix</h3>
+                <p>Jouez directement dans l'application <b>sans aucun téléchargement</b> et <b>sans limite</b>. Choisissez un jeu et lancez la partie !</p>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <i class="fa-solid fa-fire"></i> CATALOGUE DES JEUX
+        </div>
+
+        <div id="loading"><i class="fa-solid fa-spinner fa-spin"></i> Chargement des jeux...</div>
+        
+        <!-- CONTENEUR DES JEUX EN LIGNES HORIZONTALES -->
+        <div id="catalogue-jeux-container"></div>
+
+        <!-- BOUTON AFFICHER PLUS -->
+        <div id="section-bouton-plus" class="section-bouton-plus">
+            <button class="btn-plus" onclick="chargerTrancheSuivante()">
+                AFFICHER PLUS DE JEUX <i class="fa-solid fa-chevron-down"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT DU CATALOGUE GAMEMONETIZE & ANIMATION DE RECHERCHE -->
+    <script>
+        // LOGIQUE DE RECHERCHE ANIMÉE (TYPEWRITER)
+        const words = ["Chercher un jeu...", "Action, Course, Arcade...", "Jeux rapides et gratuits..."];
+        let wordIdx = 0, charIdx = 0, isDel = false;
+        
+        function type() {
+            const current = words[wordIdx];
+            const textElem = document.getElementById("typewriter-text");
+            if(textElem) {
+                textElem.textContent = isDel ? current.substring(0, charIdx--) : current.substring(0, charIdx++);
+                let speed = isDel ? 40 : 80;
+                if (!isDel && charIdx > current.length) { speed = 2000; isDel = true; }
+                else if (isDel && charIdx < 0) { isDel = false; wordIdx = (wordIdx + 1) % words.length; speed = 500; }
+                setTimeout(type, speed);
+            }
+        }
+
+        // GESTION DES JEUX ET GAMEMONETIZE
+        let tousLesJeux = [];
+        let jeuxFiltres = [];
+        let indexActuel = 0;
+        const nombreParPage = 50;
+
+        async function initialiserCatalogue() {
+            const conteneur = document.getElementById('catalogue-jeux-container');
+            const loadingElem = document.getElementById('loading');
+
+            try {
+                let urlFlux = 'https://gamemonetize.com/feed.php?format=1&page=1';
+                const reponse = await fetch(urlFlux);
+                const texteReponse = await reponse.text();
+
+                tousLesJeux = [];
+
+                if (texteReponse.trim().startsWith('[') || texteReponse.trim().startsWith('{')) {
+                    let donneesBrutes = JSON.parse(texteReponse);
+                    if (!Array.isArray(donneesBrutes)) {
+                        donneesBrutes = donneesBrutes.games || donneesBrutes.items || [donneesBrutes];
+                    }
+                    tousLesJeux = donneesBrutes.map(item => ({
+                        title: item.title || item.name || 'Jeu CongoFlix',
+                        image: item.thumb || item.image || item.thumbnail || '',
+                        url: item.url || item.link || '#'
+                    }));
+                } else if (texteReponse.trim().startsWith('<?xml') || texteReponse.trim().startsWith('<rss')) {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(texteReponse, "text/xml");
+                    const items = xmlDoc.querySelectorAll('item');
+                    
+                    items.forEach(item => {
+                        const title = item.querySelector('title')?.textContent || 'Jeu CongoFlix';
+                        const image = item.querySelector('image')?.textContent || item.querySelector('thumbnail')?.textContent || item.querySelector('thumb')?.textContent || '';
+                        const url = item.querySelector('url')?.textContent || item.querySelector('link')?.textContent || '#';
+                        tousLesJeux.push({ title, image, url });
+                    });
+                }
+
+                if (loadingElem) loadingElem.style.display = 'none';
+
+                if (tousLesJeux.length === 0) {
+                    conteneur.innerHTML = `<p style="color: #ff5555; font-size: 13px; text-align: center;">Aucun jeu disponible pour le moment.</p>`;
+                    return;
+                }
+
+                jeuxFiltres = tousLesJeux;
+                conteneur.innerHTML = '';
+                indexActuel = 0;
+
+                chargerTrancheSuivante();
+
+            } catch (erreur) {
+                console.error("Erreur de chargement :", erreur);
+                if (loadingElem) loadingElem.style.display = 'none';
+                conteneur.innerHTML = `<p style="color: #ff5555; font-size: 13px; text-align: center;">Impossible de charger les jeux. Vérifiez votre connexion.</p>`;
+            }
+        }
+
+        function filtrerJeux() {
+            const terme = document.getElementById('searchInput').value.toLowerCase().trim();
+            const conteneur = document.getElementById('catalogue-jeux-container');
+            const placeholder = document.getElementById('searchPlaceholder');
+
+            if(placeholder) {
+                placeholder.style.display = terme.length > 0 ? "none" : "flex";
+            }
+
+            jeuxFiltres = tousLesJeux.filter(jeu => jeu.title.toLowerCase().includes(terme));
+
+            conteneur.innerHTML = '';
+            indexActuel = 0;
+
+            if (jeuxFiltres.length === 0) {
+                conteneur.innerHTML = `<p style="color: #8a8d9f; font-size: 13px; text-align: center; padding: 20px 0;">Aucun jeu ne correspond à votre recherche.</p>`;
+                document.getElementById('section-bouton-plus').style.display = 'none';
+                return;
+            }
+
+            chargerTrancheSuivante();
+        }
+
+        function chargerTrancheSuivante() {
+            const conteneur = document.getElementById('catalogue-jeux-container');
+            const sectionBouton = document.getElementById('section-bouton-plus');
+
+            const fin = indexActuel + nombreParPage;
+            const tranche = jeuxFiltres.slice(indexActuel, fin);
+
+            tranche.forEach(jeu => {
+                conteneur.innerHTML += `
+                    <div class="jeu-card">
+                        <img src="${jeu.image}" class="jeu-thumb" alt="${jeu.title}" loading="lazy" onerror="this.src='https://via.placeholder.com/64/111/ffd700?text=GAME'">
+                        <div class="jeu-info">
+                            <h4 class="jeu-title" title="${jeu.title}">${jeu.title}</h4>
+                            <span class="jeu-badge"><i class="fa-solid fa-play"></i> Gratuit</span>
+                        </div>
+                        <a href="${jeu.url}" target="_blank" class="btn-jouer">
+                            JOUER
+                        </a>
+                    </div>
+                `;
+            });
+
+            indexActuel = fin;
+
+            if (indexActuel < jeuxFiltres.length) {
+                sectionBouton.style.display = 'block';
+            } else {
+                sectionBouton.style.display = 'none';
+            }
+        }
+
+        window.onload = () => {
+            type();
+            initialiserCatalogue();
+        };
+    </script>
+</body>
+</html>
